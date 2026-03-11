@@ -1,0 +1,158 @@
+/**
+ * YouTube Live API Service
+ * Handles OAuth2 and Broadcast/Stream creation
+ */
+
+const SCOPES = 'https://www.googleapis.com/auth/youtube.force-ssl';
+const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'];
+
+declare global {
+    interface Window {
+        gapi: any;
+        google: any;
+    }
+}
+
+export class YouTubeService {
+    private static instance: YouTubeService;
+    private tokenClient: any;
+    private accessToken: string | null = null;
+
+    private constructor() { }
+
+    public static getInstance(): YouTubeService {
+        if (!YouTubeService.instance) {
+            YouTubeService.instance = new YouTubeService();
+        }
+        return YouTubeService.instance;
+    }
+
+    public async init(clientId: string): Promise<void> {
+        if (!clientId) return;
+        return new Promise((resolve, reject) => {
+            const scriptgis = document.createElement('script');
+            scriptgis.src = 'https://accounts.google.com/gsi/client';
+            scriptgis.onload = () => {
+                this.tokenClient = window.google.accounts.oauth2.initTokenClient({
+                    client_id: clientId,
+                    scope: SCOPES,
+                    callback: (response: any) => {
+                        if (response.error !== undefined) {
+                            reject(response);
+                        }
+                        this.accessToken = response.access_token;
+                        sessionStorage.setItem('yt_access_token', response.access_token);
+                        if (this.onAuthChange) this.onAuthChange(response.access_token);
+                    },
+                });
+
+                const scriptgapi = document.createElement('script');
+                scriptgapi.src = 'https://apis.google.com/js/api.js';
+                scriptgapi.onload = () => {
+                    window.gapi.load('client', async () => {
+                        await window.gapi.client.init({
+                            discoveryDocs: DISCOVERY_DOCS,
+                        });
+                        resolve();
+                    });
+                };
+                document.body.appendChild(scriptgapi);
+            };
+            scriptgis.onerror = reject;
+            document.body.appendChild(scriptgis);
+        });
+    }
+
+    private onAuthChange: ((token: string | null) => void) | null = null;
+
+    public subscribeAuth(callback: (token: string | null) => void) {
+        this.onAuthChange = callback;
+        const savedToken = sessionStorage.getItem('yt_access_token');
+        if (savedToken) {
+            this.accessToken = savedToken;
+            callback(savedToken);
+        }
+    }
+
+    public async logIn() {
+        if (!this.tokenClient) throw new Error('Not initialized');
+        this.tokenClient.requestAccessToken({ prompt: 'consent' });
+    }
+
+    public logOut() {
+        this.accessToken = null;
+        sessionStorage.removeItem('yt_access_token');
+        if (this.onAuthChange) this.onAuthChange(null);
+    }
+
+    public getIsAuthenticated(): boolean {
+        return !!this.accessToken;
+    }
+
+    public async createLiveBroadcast(title: string, description: string) {
+        if (!this.accessToken) throw new Error('Not authenticated');
+
+        // 1. Create Broadcast
+        const broadcastResponse = await fetch('https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet,status,contentDetails', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${this.accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                snippet: {
+                    title: title,
+                    scheduledStartTime: new Date().toISOString(),
+                    description: description
+                },
+                status: {
+                    privacyStatus: 'unlisted', // Default to unlisted for safety
+                    selfDeclaredMadeForKids: false
+                },
+                contentDetails: {
+                    enableAutoStart: true,
+                    enableAutoStop: true,
+                    monitorStream: {
+                        enableMonitorStream: false
+                    }
+                }
+            })
+        });
+        const broadcast = await broadcastResponse.json();
+
+        // 2. Create Stream
+        const streamResponse = await fetch('https://www.googleapis.com/youtube/v3/liveStreams?part=snippet,cdn', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${this.accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                snippet: {
+                    title: title + ' Stream'
+                },
+                cdn: {
+                    frameRate: '30fps',
+                    ingestionType: 'rtmp',
+                    resolution: '720p'
+                }
+            })
+        });
+        const stream = await streamResponse.json();
+
+        // 3. Bind Broadcast to Stream
+        await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts/bind?id=${broadcast.id}&part=id,contentDetails&streamId=${stream.id}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${this.accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        return {
+            broadcastId: broadcast.id,
+            streamKey: stream.cdn.ingestionInfo.streamName,
+            rtmpUrl: stream.cdn.ingestionInfo.ingestionAddress
+        };
+    }
+}
