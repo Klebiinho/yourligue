@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, AlertTriangle, ShieldAlert, Settings2, XCircle, Target, Trash2, Crown, Pause, Play } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play } from 'lucide-react';
+
 import TeamLogo from '../components/TeamLogo';
 
 const MatchControl = () => {
     const { matchId } = useParams<{ matchId: string }>();
     const navigate = useNavigate();
     const { matches, teams, endMatch, addEvent, removeEvent, updateTimer, updateMatch } = useLeague();
-    const [activeTab, setActiveTab] = useState<'main' | 'penalties'>('main');
+
 
     const match = matches.find((m: Match) => m.id === matchId);
     const homeTeam = teams.find((t: Team) => t.id === match?.homeTeamId);
@@ -81,9 +82,6 @@ const MatchControl = () => {
         </div>
     );
 
-    const homePenaltyGoals = match.events.filter((e: MatchEvent) => e.type === 'penalty_goal' && e.teamId === homeTeam.id).length;
-    const awayPenaltyGoals = match.events.filter((e: MatchEvent) => e.type === 'penalty_goal' && e.teamId === awayTeam.id).length;
-
     const formatTime = (totalSeconds: number) => {
         const mins = Math.floor(totalSeconds / 60);
         const secs = totalSeconds % 60;
@@ -112,9 +110,6 @@ const MatchControl = () => {
         if (matchId) addEvent(matchId, { type, teamId, playerId, minute: currentMinute });
     };
 
-    const handlePeralty = (teamId: string, playerId: string, success: boolean) => {
-        if (matchId) addEvent(matchId, { type: success ? 'penalty_goal' : 'penalty_miss', teamId, playerId, minute: currentMinute });
-    };
 
     return (
         <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>

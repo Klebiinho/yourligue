@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { Trophy, Users, Activity, Target, Award, Shield, AlertTriangle, Calendar, MapPin, ChevronRight } from 'lucide-react';
+
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
@@ -11,7 +11,6 @@ const Dashboard = () => {
     const totalPlayers = teams.reduce((acc, t) => acc + t.players.length, 0);
     const liveMatches = matches.filter(m => m.status === 'live').length;
     const finishedMatches = matches.filter(m => m.status === 'finished').length;
-    const scheduled = matches.filter(m => m.status === 'scheduled').slice(0, 5);
 
     const allPlayers = teams.flatMap(t => t.players.map(p => ({ ...p, team: t })));
     const topScorer = allPlayers.length > 0 ? [...allPlayers].sort((a, b) => b.stats.goals - a.stats.goals)[0] : null;

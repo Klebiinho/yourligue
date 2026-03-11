@@ -406,10 +406,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             }).eq('id', matchId);
         }
 
-        // Update player stats
-        await supabase.from('players').update({
-            goals: supabase.rpc ? undefined : undefined, // will be recalculated on reload
-        });
+        // Recalculation happens on loadLeagueData
+
     };
 
     const removeEvent = async (matchId: string, eventId: string) => {
