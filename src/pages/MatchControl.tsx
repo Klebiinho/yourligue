@@ -14,6 +14,23 @@ const MatchControl = () => {
     const [isYtAuthenticated, setIsYtAuthenticated] = useState(false);
     const [activeTab, setActiveTab] = useState<'main' | 'penalties'>('main');
 
+    const getPlayerStatus = (playerId: string) => {
+        const playerEvents = match?.events.filter(e => e.playerId === playerId) || [];
+        const yellowCards = playerEvents.filter(e => e.type === 'yellow_card').length;
+        const hasDirectRed = playerEvents.some(e => e.type === 'red_card');
+        const isRedCarded = hasDirectRed || yellowCards >= 2;
+
+        return { isRedCarded, yellowCards, hasDirectRed };
+    };
+
+    const handleUndoLastCard = (playerId: string) => {
+        const playerEvents = match?.events.filter(e => e.playerId === playerId) || [];
+        const lastCardEvent = [...playerEvents].reverse().find(e => e.type === 'yellow_card' || e.type === 'red_card');
+        if (lastCardEvent) {
+            removeEvent(id!, lastCardEvent.id);
+        }
+    };
+
     useEffect(() => {
         const yt = YouTubeService.getInstance();
         const clientId = import.meta.env.VITE_YOUTUBE_CLIENT_ID || localStorage.getItem('yt_client_id');
@@ -340,9 +357,39 @@ const MatchControl = () => {
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         {activeTab === 'main' ? (
                                             <>
-                                                <button onClick={() => handleGol(homeTeam.id, player.id)} className="btn-accent" style={{ padding: '8px', minWidth: 'auto', borderRadius: '50%' }} title="Gol"><Award size={16} /></button>
-                                                <button onClick={() => handleCard('yellow_card', homeTeam.id, player.id)} style={{ padding: '8px', background: 'var(--warning)', color: 'black', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Amarelo"><AlertTriangle size={16} /></button>
-                                                <button onClick={() => handleCard('red_card', homeTeam.id, player.id)} style={{ padding: '8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Vermelho"><ShieldAlert size={16} /></button>
+                                                {(() => {
+                                                    const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
+                                                    if (isRedCarded) {
+                                                        return (
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                <span style={{ color: 'var(--danger)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Expulso</span>
+                                                                <button
+                                                                    onClick={() => handleUndoLastCard(player.id)}
+                                                                    className="btn-outline"
+                                                                    style={{ padding: '6px 12px', fontSize: '0.7rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)' }}
+                                                                >
+                                                                    Anular Vermelho
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return (
+                                                        <>
+                                                            <button onClick={() => handleGol(homeTeam.id, player.id)} className="btn-accent" style={{ padding: '8px', minWidth: 'auto', borderRadius: '50%' }} title="Gol"><Award size={16} /></button>
+                                                            <button
+                                                                onClick={() => handleCard('yellow_card', homeTeam.id, player.id)}
+                                                                style={{ padding: '8px', background: 'var(--warning)', color: 'black', borderRadius: '50%', border: 'none', cursor: 'pointer', position: 'relative' }}
+                                                                title="Cartão Amarelo"
+                                                            >
+                                                                <AlertTriangle size={16} />
+                                                                {yellowCards === 1 && (
+                                                                    <span style={{ position: 'absolute', top: '-4px', right: '-4px', background: 'var(--danger)', color: 'white', fontSize: '10px', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</span>
+                                                                )}
+                                                            </button>
+                                                            <button onClick={() => handleCard('red_card', homeTeam.id, player.id)} style={{ padding: '8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Vermelho"><ShieldAlert size={16} /></button>
+                                                        </>
+                                                    );
+                                                })()}
                                             </>
                                         ) : (
                                             <>
@@ -372,9 +419,39 @@ const MatchControl = () => {
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         {activeTab === 'main' ? (
                                             <>
-                                                <button onClick={() => handleGol(awayTeam.id, player.id)} className="btn-accent" style={{ padding: '8px', minWidth: 'auto', borderRadius: '50%' }} title="Gol"><Award size={16} /></button>
-                                                <button onClick={() => handleCard('yellow_card', awayTeam.id, player.id)} style={{ padding: '8px', background: 'var(--warning)', color: 'black', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Amarelo"><AlertTriangle size={16} /></button>
-                                                <button onClick={() => handleCard('red_card', awayTeam.id, player.id)} style={{ padding: '8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Vermelho"><ShieldAlert size={16} /></button>
+                                                {(() => {
+                                                    const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
+                                                    if (isRedCarded) {
+                                                        return (
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                <span style={{ color: 'var(--danger)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Expulso</span>
+                                                                <button
+                                                                    onClick={() => handleUndoLastCard(player.id)}
+                                                                    className="btn-outline"
+                                                                    style={{ padding: '6px 12px', fontSize: '0.7rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)' }}
+                                                                >
+                                                                    Anular Vermelho
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return (
+                                                        <>
+                                                            <button onClick={() => handleGol(awayTeam.id, player.id)} className="btn-accent" style={{ padding: '8px', minWidth: 'auto', borderRadius: '50%' }} title="Gol"><Award size={16} /></button>
+                                                            <button
+                                                                onClick={() => handleCard('yellow_card', awayTeam.id, player.id)}
+                                                                style={{ padding: '8px', background: 'var(--warning)', color: 'black', borderRadius: '50%', border: 'none', cursor: 'pointer', position: 'relative' }}
+                                                                title="Cartão Amarelo"
+                                                            >
+                                                                <AlertTriangle size={16} />
+                                                                {yellowCards === 1 && (
+                                                                    <span style={{ position: 'absolute', top: '-4px', right: '-4px', background: 'var(--danger)', color: 'white', fontSize: '10px', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</span>
+                                                                )}
+                                                            </button>
+                                                            <button onClick={() => handleCard('red_card', awayTeam.id, player.id)} style={{ padding: '8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Vermelho"><ShieldAlert size={16} /></button>
+                                                        </>
+                                                    );
+                                                })()}
                                             </>
                                         ) : (
                                             <>
