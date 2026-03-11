@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useChampionship } from '../context/ChampionshipContext';
 import type { Team } from '../context/ChampionshipContext';
-import { Shield, Edit, Trash2, BarChart2, X, Save, Plus, Image as ImageIcon } from 'lucide-react';
+import { Shield, Edit, Trash2, BarChart2, X, Save, Plus, Image as ImageIcon, Crown } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const TeamsDashboard = () => {
-    const { league, teams, updateTeam, deleteTeam, addPlayer, removePlayer } = useChampionship();
+    const { league, teams, updateTeam, deleteTeam, addPlayer, toggleCaptain, removePlayer } = useChampionship();
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(teams.length > 0 ? teams[0].id : null);
     const [isEditingTeam, setIsEditingTeam] = useState(false);
     const [editTeamName, setEditTeamName] = useState('');
@@ -268,6 +268,7 @@ const TeamsDashboard = () => {
                                                 <th style={{ padding: '12px' }}>Player</th>
                                                 <th style={{ padding: '12px' }}>Goals</th>
                                                 <th style={{ padding: '12px' }}>Assist</th>
+                                                <th style={{ padding: '12px' }}>Cap.</th>
                                                 <th style={{ padding: '12px' }}>Yel/Red</th>
                                                 <th style={{ padding: '12px' }}>Action</th>
                                             </tr>
@@ -288,10 +289,19 @@ const TeamsDashboard = () => {
                                                     <td style={{ padding: '12px', fontWeight: 700 }}>{player.stats.goals}</td>
                                                     <td style={{ padding: '12px' }}>{player.stats.assists}</td>
                                                     <td style={{ padding: '12px' }}>
+                                                        <button
+                                                            onClick={() => toggleCaptain(selectedTeam.id, player.id)}
+                                                            className={`captain-toggle ${player.isCaptain ? 'active' : ''}`}
+                                                            title={player.isCaptain ? "Remover Capitão" : "Marcar como Capitão"}
+                                                        >
+                                                            <Crown size={18} />
+                                                        </button>
+                                                    </td>
+                                                    <td style={{ padding: '12px' }}>
                                                         <span style={{ color: 'var(--warning)' }}>{player.stats.yellowCards}</span> / <span style={{ color: 'var(--danger)' }}>{player.stats.redCards}</span>
                                                     </td>
                                                     <td style={{ padding: '12px' }}>
-                                                        <button onClick={() => removePlayer(selectedTeam.id, player.id)} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer' }}><X size={16} /></button>
+                                                        <button onClick={() => removePlayer(selectedTeam.id, player.id)} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer' }} title="Remover Jogador"><X size={16} /></button>
                                                     </td>
                                                 </tr>
                                             ))}

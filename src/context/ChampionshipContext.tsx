@@ -1,8 +1,8 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 
-export type Player = { id: string; name: string; number: number; position: string; photo?: string; stats: { goals: number; assists: number; yellowCards: number; redCards: number } };
+export type Player = { id: string; name: string; number: number; position: string; photo?: string; isCaptain?: boolean; stats: { goals: number; assists: number; yellowCards: number; redCards: number } };
 export type Team = { id: string; name: string; logo: string; players: Player[]; stats: { matches: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number } };
 export type MatchEvent = { id: string; type: 'goal' | 'yellow_card' | 'red_card' | 'substitution' | 'foul' | 'penalty_goal' | 'penalty_miss'; teamId: string; playerId: string; minute: number };
 export type Match = {
@@ -40,6 +40,7 @@ interface ChampionshipContextType {
   updateTeam: (teamId: string, teamData: Partial<Team>) => void;
   deleteTeam: (teamId: string) => void;
   addPlayer: (teamId: string, player: Omit<Player, 'id' | 'stats'>) => void;
+  toggleCaptain: (teamId: string, playerId: string) => void;
   removePlayer: (teamId: string, playerId: string) => void;
   createMatch: (homeTeamId: string, awayTeamId: string, youtubeLiveId?: string) => void;
   startMatch: (matchId: string) => void;
@@ -97,6 +98,7 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
             number: p.number,
             position: p.position,
             photo: p.photo || '',
+            isCaptain: p.is_captain || false,
             stats: { goals: 0, assists: 0, yellowCards: 0, redCards: 0 } // Stats calculated from events
           })),
           stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 }
@@ -178,8 +180,41 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
     }]).select().single();
 
     if (data) {
-      setTeams(teams.map(t => t.id === teamId ? { ...t, players: [...t.players, { ...player, id: data.id, stats: { goals: 0, assists: 0, yellowCards: 0, redCards: 0 } }] } : t));
+      setTeams(teams.map(t => t.id === teamId ? { ...t, players: [...t.players, { ...player, id: data.id, isCaptain: player.isCaptain || false, stats: { goals: 0, assists: 0, yellowCards: 0, redCards: 0 } }] } : t));
     }
+  };
+
+  const toggleCaptain = async (teamId: string, playerId: string) => {
+    const team = teams.find(t => t.id === teamId);
+    if (!team) return;
+
+    const player = team.players.find(p => p.id === playerId);
+    if (!player) return;
+
+    const newIsCaptain = !player.isCaptain;
+
+    // Optional: Only one captain per team
+    // if (newIsCaptain) {
+    //   await supabase.from('players').update({ is_captain: false }).eq('team_id', teamId);
+    // }
+
+    setTeams(teams.map(t => {
+      if (t.id !== teamId) return t;
+      return {
+        ...t,
+        players: t.players.map(p => {
+          // If we want only one captain, unmark others
+          if (newIsCaptain && p.id !== playerId) return { ...p, isCaptain: false };
+          if (p.id === playerId) return { ...p, isCaptain: newIsCaptain };
+          return p;
+        })
+      };
+    }));
+
+    if (newIsCaptain) {
+      await supabase.from('players').update({ is_captain: false }).eq('team_id', teamId);
+    }
+    await supabase.from('players').update({ is_captain: newIsCaptain }).eq('id', playerId);
   };
 
   const removePlayer = async (teamId: string, playerId: string) => {
@@ -310,13 +345,68 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
     }).eq('id', matchId);
   };
 
+  const enrichedTeams = useMemo(() => {
+    const updatedTeams = teams.map(team => ({
+      ...team,
+      players: team.players.map(player => ({
+        ...player,
+        stats: { goals: 0, assists: 0, yellowCards: 0, redCards: 0 }
+      })),
+      stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 }
+    }));
+
+    matches.forEach(match => {
+      const homeTeam = updatedTeams.find(t => t.id === match.homeTeamId);
+      const awayTeam = updatedTeams.find(t => t.id === match.awayTeamId);
+
+      if (!homeTeam || !awayTeam) return;
+
+      if (match.status === 'finished') {
+        homeTeam.stats.matches++;
+        awayTeam.stats.matches++;
+        homeTeam.stats.goalsFor += match.homeScore;
+        homeTeam.stats.goalsAgainst += match.awayScore;
+        awayTeam.stats.goalsFor += match.awayScore;
+        awayTeam.stats.goalsAgainst += match.homeScore;
+
+        if (match.homeScore > match.awayScore) {
+          homeTeam.stats.wins++;
+          awayTeam.stats.losses++;
+        } else if (match.homeScore < match.awayScore) {
+          awayTeam.stats.wins++;
+          homeTeam.stats.losses++;
+        } else {
+          homeTeam.stats.draws++;
+          awayTeam.stats.draws++;
+        }
+      }
+
+      match.events.forEach(event => {
+        const team = updatedTeams.find(t => t.id === event.teamId);
+        if (!team) return;
+        const player = team.players.find(p => p.id === event.playerId);
+        if (!player) return;
+
+        if (event.type === 'goal') {
+          player.stats.goals++;
+        } else if (event.type === 'yellow_card') {
+          player.stats.yellowCards++;
+        } else if (event.type === 'red_card') {
+          player.stats.redCards++;
+        }
+      });
+    });
+
+    return updatedTeams;
+  }, [teams, matches]);
+
   if (loading) return <div className="loading-screen">Preparing your championship...</div>;
 
   return (
     <ChampionshipContext.Provider value={{
-      league, teams, matches,
+      league, teams: enrichedTeams, matches,
       updateLeague, addTeam, updateTeam, deleteTeam,
-      addPlayer, removePlayer,
+      addPlayer, toggleCaptain, removePlayer,
       createMatch, startMatch, endMatch, updateTimer, addEvent, removeEvent,
       updateMatch, deleteMatch
     }}>

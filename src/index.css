@@ -32,7 +32,8 @@ body {
   background-attachment: fixed;
   min-height: 100vh;
   overflow-x: hidden;
-  display: flex; /* Ensure body children can stretch */
+  display: flex;
+  /* Ensure body children can stretch */
 }
 
 h1,
@@ -218,7 +219,8 @@ a {
   flex-grow: 1;
   padding: 40px;
   width: 100%;
-  max-width: 1400px; /* Increased for better scale on large screens */
+  max-width: 1400px;
+  /* Increased for better scale on large screens */
   margin: 0 auto;
   min-height: 100vh;
   display: flex;
@@ -435,4 +437,76 @@ a {
   height: 100%;
   opacity: 0;
   cursor: pointer;
+}
+
+/* Action Buttons in Match Control */
+.action-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-btn:hover {
+  transform: scale(1.15) rotate(5deg);
+  filter: brightness(1.2);
+  z-index: 10;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+}
+
+.btn-goal {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 4px 15px var(--accent-glow);
+}
+
+.btn-yellow {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #000;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+
+.btn-red {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 4px 15px var(--danger-glow);
+}
+
+.captain-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.captain-toggle.active {
+  color: #fbbf24;
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8));
+  transform: scale(1.1);
+}
+
+.captain-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  color: #fbbf24;
+  background: var(--bg-dark);
+  border-radius: 50%;
+  padding: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
 }

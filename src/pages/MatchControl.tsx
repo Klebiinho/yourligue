@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useChampionship } from '../context/ChampionshipContext';
-import { Clock, StopCircle, Award, AlertTriangle, ShieldAlert, Settings2, XCircle, Target, Trash2 } from 'lucide-react';
+import { useChampionship, type MatchEvent } from '../context/ChampionshipContext';
+import { Clock, StopCircle, Award, AlertTriangle, ShieldAlert, Settings2, XCircle, Target, Trash2, Crown, Pause, Play } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const MatchControl = () => {
@@ -47,12 +47,16 @@ const MatchControl = () => {
         if (timerRunning && match?.status === 'live') {
             interval = window.setInterval(() => {
                 setLocalSeconds(s => {
-                    let currentPeriodLimit = halfLength;
-                    if (period === '2º Tempo') currentPeriodLimit = halfLength * 2;
-                    if (period === 'Prorrogação') currentPeriodLimit = halfLength * 2 + 30;
-                    if (period === 'Intervalo' || period === 'Pênaltis') currentPeriodLimit = 9999;
+                    let baseLimit = halfLength;
+                    if (period === '2º Tempo') baseLimit = halfLength * 2;
+                    if (period === 'Prorrogação') baseLimit = halfLength * 2 + 30;
 
-                    const limitInSeconds = (currentPeriodLimit + extraTime) * 60;
+                    // Se estiver em Intervalo ou Pênaltis, não para automaticamente
+                    if (period === 'Intervalo' || period === 'Pênaltis') {
+                        return s + 1;
+                    }
+
+                    const limitInSeconds = (baseLimit + extraTime) * 60;
                     if (s >= limitInSeconds) {
                         setTimerRunning(false);
                         return s;
@@ -138,7 +142,7 @@ const MatchControl = () => {
                         <span style={{ margin: '0 20px', color: 'var(--text-muted)', fontSize: '3rem' }}>-</span>
                         <span style={{ color: 'var(--accent)' }}>{match.awayScore}</span>
                     </div>
-                    <div className="timer" style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <div className="timer" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', color: (localSeconds / 60) >= (period === '1º Tempo' ? halfLength : halfLength * 2) ? 'var(--warning)' : 'var(--accent)' }}>
                         {formatTime(localSeconds)}
                         {extraTime > 0 && (
                             <span style={{ fontSize: '1.5rem', color: 'var(--warning)', fontWeight: 600 }}>+{extraTime}</span>
@@ -159,7 +163,23 @@ const MatchControl = () => {
                                 className={timerRunning ? 'btn-outline' : 'btn-accent'}
                                 style={{ borderRadius: '24px' }}
                             >
-                                <Clock size={16} /> {timerRunning ? 'Pausar' : 'Iniciar/Retomar'}
+                                {timerRunning ? <Pause size={16} /> : <Play size={16} />} {timerRunning ? 'Pausar' : 'Iniciar/Retomar'}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    let startTime = 0;
+                                    if (period === '2º Tempo') startTime = halfLength * 60;
+                                    if (period === 'Prorrogação') startTime = (halfLength * 2) * 60;
+                                    if (window.confirm(`Deseja resetar o cronômetro para o início do ${period} (${Math.floor(startTime / 60)}:00)?`)) {
+                                        setLocalSeconds(startTime);
+                                        updateTimer(id!, startTime);
+                                    }
+                                }}
+                                className="btn-outline"
+                                style={{ borderRadius: '24px', fontSize: '0.75rem' }}
+                                title="Resetar para Início do Período"
+                            >
+                                Reiniciar Tempo
                             </button>
                         </div>
                     )}
@@ -205,146 +225,158 @@ const MatchControl = () => {
                 </section>
             )}
 
-            {match.youtubeLiveId && (
-                <section className="glass-panel" style={{ padding: '24px', marginBottom: '40px' }}>
-                    <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
-                        <iframe
-                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                            src={`https://www.youtube.com/embed/${match.youtubeLiveId}?autoplay=1`}
-                            title="YouTube Live Preview"
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                            allowFullScreen>
-                        </iframe>
+            {
+                match.youtubeLiveId && (
+                    <section className="glass-panel" style={{ padding: '24px', marginBottom: '40px' }}>
+                        <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
+                            <iframe
+                                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                                src={`https://www.youtube.com/embed/${match.youtubeLiveId}?autoplay=1`}
+                                title="YouTube Live Preview"
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowFullScreen>
+                            </iframe>
+                        </div>
+                    </section>
+                )
+            }
+
+            {
+                isLive && (
+                    <div className="grid-2">
+                        {/* Home Team Controls */}
+                        <section className="glass-panel" style={{ padding: '24px' }}>
+                            <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
+                                Controles: {homeTeam.name}
+                            </h2>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {homeTeam.players.map(player => (
+                                    <div key={player.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}>
+                                            <div style={{ fontWeight: 800, color: 'var(--text-muted)', width: '24px' }}>{player.number}</div>
+                                            <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {player.name}
+                                                {player.isCaptain && <span title="Capitão"><Crown size={14} className="is-captain-badge" /></span>}
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            {activeTab === 'main' ? (
+                                                <>
+                                                    {(() => {
+                                                        const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
+                                                        if (isRedCarded) {
+                                                            return (
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                    <span style={{ color: 'var(--danger)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Expulso</span>
+                                                                    <button
+                                                                        onClick={() => handleUndoLastCard(player.id)}
+                                                                        className="btn-outline"
+                                                                        style={{ padding: '6px 12px', fontSize: '0.7rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)' }}
+                                                                    >
+                                                                        Anular Vermelho
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return (
+                                                            <>
+                                                                <button onClick={() => handleGol(homeTeam.id, player.id)} className="action-btn btn-goal" title="Gol"><Award size={20} /></button>
+                                                                <button
+                                                                    onClick={() => handleCard('yellow_card', homeTeam.id, player.id)}
+                                                                    className="action-btn btn-yellow"
+                                                                    style={{ position: 'relative' }}
+                                                                    title="Cartão Amarelo"
+                                                                >
+                                                                    <AlertTriangle size={20} />
+                                                                    {yellowCards === 1 && (
+                                                                        <span style={{ position: 'absolute', top: '-4px', right: '-4px', background: 'var(--danger)', color: 'white', fontSize: '10px', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</span>
+                                                                    )}
+                                                                </button>
+                                                                <button onClick={() => handleCard('red_card', homeTeam.id, player.id)} className="action-btn btn-red" title="Cartão Vermelho"><ShieldAlert size={20} /></button>
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button onClick={() => addEvent(id!, { type: 'penalty_goal', teamId: homeTeam.id, playerId: player.id, minute: 120 })} style={{ padding: '8px 12px', background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', borderRadius: '24px', border: '1px solid #22c55e', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600 }} title="Fez o Pênalti"><Target size={14} /> Gol</button>
+                                                    <button onClick={() => addEvent(id!, { type: 'penalty_miss', teamId: homeTeam.id, playerId: player.id, minute: 120 })} style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '24px', border: '1px solid #ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600 }} title="Errou o Pênalti"><XCircle size={14} /> Errou</button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        {/* Away Team Controls */}
+                        <section className="glass-panel" style={{ padding: '24px' }}>
+                            <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)' }}>
+                                Controles: {awayTeam.name}
+                            </h2>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {awayTeam.players.map(player => (
+                                    <div key={player.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}>
+                                            <div style={{ fontWeight: 800, color: 'var(--text-muted)', width: '24px' }}>{player.number}</div>
+                                            <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {player.name}
+                                                {player.isCaptain && <span title="Capitão"><Crown size={14} className="is-captain-badge" /></span>}
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            {activeTab === 'main' ? (
+                                                <>
+                                                    {(() => {
+                                                        const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
+                                                        if (isRedCarded) {
+                                                            return (
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                    <span style={{ color: 'var(--danger)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Expulso</span>
+                                                                    <button
+                                                                        onClick={() => handleUndoLastCard(player.id)}
+                                                                        className="btn-outline"
+                                                                        style={{ padding: '6px 12px', fontSize: '0.7rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)' }}
+                                                                    >
+                                                                        Anular Vermelho
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return (
+                                                            <>
+                                                                <button onClick={() => handleGol(awayTeam.id, player.id)} className="action-btn btn-goal" title="Gol"><Award size={20} /></button>
+                                                                <button
+                                                                    onClick={() => handleCard('yellow_card', awayTeam.id, player.id)}
+                                                                    className="action-btn btn-yellow"
+                                                                    style={{ position: 'relative' }}
+                                                                    title="Cartão Amarelo"
+                                                                >
+                                                                    <AlertTriangle size={20} />
+                                                                    {yellowCards === 1 && (
+                                                                        <span style={{ position: 'absolute', top: '-4px', right: '-4px', background: 'var(--danger)', color: 'white', fontSize: '10px', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</span>
+                                                                    )}
+                                                                </button>
+                                                                <button onClick={() => handleCard('red_card', awayTeam.id, player.id)} className="action-btn btn-red" title="Cartão Vermelho"><ShieldAlert size={20} /></button>
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button onClick={() => addEvent(id!, { type: 'penalty_goal', teamId: awayTeam.id, playerId: player.id, minute: 120 })} style={{ padding: '8px 12px', background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', borderRadius: '24px', border: '1px solid #22c55e', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600 }} title="Fez o Pênalti"><Target size={14} /> Gol</button>
+                                                    <button onClick={() => addEvent(id!, { type: 'penalty_miss', teamId: awayTeam.id, playerId: player.id, minute: 120 })} style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '24px', border: '1px solid #ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600 }} title="Errou o Pênalti"><XCircle size={14} /> Errou</button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
                     </div>
-                </section>
-            )}
-
-            {isLive && (
-                <div className="grid-2">
-                    {/* Home Team Controls */}
-                    <section className="glass-panel" style={{ padding: '24px' }}>
-                        <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
-                            Controles: {homeTeam.name}
-                        </h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {homeTeam.players.map(player => (
-                                <div key={player.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <div style={{ fontWeight: 800, color: 'var(--text-muted)', width: '24px' }}>{player.number}</div>
-                                        <div style={{ fontWeight: 600 }}>{player.name}</div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        {activeTab === 'main' ? (
-                                            <>
-                                                {(() => {
-                                                    const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
-                                                    if (isRedCarded) {
-                                                        return (
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                <span style={{ color: 'var(--danger)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Expulso</span>
-                                                                <button
-                                                                    onClick={() => handleUndoLastCard(player.id)}
-                                                                    className="btn-outline"
-                                                                    style={{ padding: '6px 12px', fontSize: '0.7rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)' }}
-                                                                >
-                                                                    Anular Vermelho
-                                                                </button>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    return (
-                                                        <>
-                                                            <button onClick={() => handleGol(homeTeam.id, player.id)} className="btn-accent" style={{ padding: '8px', minWidth: 'auto', borderRadius: '50%' }} title="Gol"><Award size={16} /></button>
-                                                            <button
-                                                                onClick={() => handleCard('yellow_card', homeTeam.id, player.id)}
-                                                                style={{ padding: '8px', background: 'var(--warning)', color: 'black', borderRadius: '50%', border: 'none', cursor: 'pointer', position: 'relative' }}
-                                                                title="Cartão Amarelo"
-                                                            >
-                                                                <AlertTriangle size={16} />
-                                                                {yellowCards === 1 && (
-                                                                    <span style={{ position: 'absolute', top: '-4px', right: '-4px', background: 'var(--danger)', color: 'white', fontSize: '10px', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</span>
-                                                                )}
-                                                            </button>
-                                                            <button onClick={() => handleCard('red_card', homeTeam.id, player.id)} style={{ padding: '8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Vermelho"><ShieldAlert size={16} /></button>
-                                                        </>
-                                                    );
-                                                })()}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <button onClick={() => addEvent(id!, { type: 'penalty_goal', teamId: homeTeam.id, playerId: player.id, minute: 120 })} style={{ padding: '8px 12px', background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', borderRadius: '24px', border: '1px solid #22c55e', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600 }} title="Fez o Pênalti"><Target size={14} /> Gol</button>
-                                                <button onClick={() => addEvent(id!, { type: 'penalty_miss', teamId: homeTeam.id, playerId: player.id, minute: 120 })} style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '24px', border: '1px solid #ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600 }} title="Errou o Pênalti"><XCircle size={14} /> Errou</button>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* Away Team Controls */}
-                    <section className="glass-panel" style={{ padding: '24px' }}>
-                        <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)' }}>
-                            Controles: {awayTeam.name}
-                        </h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {awayTeam.players.map(player => (
-                                <div key={player.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <div style={{ fontWeight: 800, color: 'var(--text-muted)', width: '24px' }}>{player.number}</div>
-                                        <div style={{ fontWeight: 600 }}>{player.name}</div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        {activeTab === 'main' ? (
-                                            <>
-                                                {(() => {
-                                                    const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
-                                                    if (isRedCarded) {
-                                                        return (
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                <span style={{ color: 'var(--danger)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Expulso</span>
-                                                                <button
-                                                                    onClick={() => handleUndoLastCard(player.id)}
-                                                                    className="btn-outline"
-                                                                    style={{ padding: '6px 12px', fontSize: '0.7rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)' }}
-                                                                >
-                                                                    Anular Vermelho
-                                                                </button>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    return (
-                                                        <>
-                                                            <button onClick={() => handleGol(awayTeam.id, player.id)} className="btn-accent" style={{ padding: '8px', minWidth: 'auto', borderRadius: '50%' }} title="Gol"><Award size={16} /></button>
-                                                            <button
-                                                                onClick={() => handleCard('yellow_card', awayTeam.id, player.id)}
-                                                                style={{ padding: '8px', background: 'var(--warning)', color: 'black', borderRadius: '50%', border: 'none', cursor: 'pointer', position: 'relative' }}
-                                                                title="Cartão Amarelo"
-                                                            >
-                                                                <AlertTriangle size={16} />
-                                                                {yellowCards === 1 && (
-                                                                    <span style={{ position: 'absolute', top: '-4px', right: '-4px', background: 'var(--danger)', color: 'white', fontSize: '10px', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</span>
-                                                                )}
-                                                            </button>
-                                                            <button onClick={() => handleCard('red_card', awayTeam.id, player.id)} style={{ padding: '8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Vermelho"><ShieldAlert size={16} /></button>
-                                                        </>
-                                                    );
-                                                })()}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <button onClick={() => addEvent(id!, { type: 'penalty_goal', teamId: awayTeam.id, playerId: player.id, minute: 120 })} style={{ padding: '8px 12px', background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', borderRadius: '24px', border: '1px solid #22c55e', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600 }} title="Fez o Pênalti"><Target size={14} /> Gol</button>
-                                                <button onClick={() => addEvent(id!, { type: 'penalty_miss', teamId: awayTeam.id, playerId: player.id, minute: 120 })} style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '24px', border: '1px solid #ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600 }} title="Errou o Pênalti"><XCircle size={14} /> Errou</button>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                </div>
-            )}
+                )
+            }
 
             {/* Linha do Tempo da Partida */}
             <section className="glass-panel" style={{ padding: '24px', marginTop: '24px' }}>
@@ -355,7 +387,7 @@ const MatchControl = () => {
                     <p style={{ color: 'var(--text-muted)' }}>Nenhum evento ainda.</p>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {match.events.slice().reverse().map(event => {
+                        {match.events.slice().reverse().map((event: MatchEvent) => {
                             const team = event.teamId === homeTeam.id ? homeTeam : awayTeam;
                             const player = team.players.find(p => p.id === event.playerId);
 

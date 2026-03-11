@@ -14,7 +14,11 @@ const Dashboard = () => {
 
     const allPlayers = teams.flatMap(t => t.players.map(p => ({ ...p, team: t })));
     const topScorer = allPlayers.length > 0 ? [...allPlayers].sort((a, b) => b.stats.goals - a.stats.goals)[0] : null;
-    const bestDefenseTeam = teams.length > 0 ? [...teams].sort((a, b) => a.stats.goalsAgainst - b.stats.goalsAgainst)[0] : null;
+
+    // Melhor defesa: apenas times que já jogaram pelo menos uma partida
+    const teamsWithGames = teams.filter(t => t.stats.matches > 0);
+    const bestDefenseTeam = teamsWithGames.length > 0 ? [...teamsWithGames].sort((a, b) => a.stats.goalsAgainst - b.stats.goalsAgainst)[0] : null;
+
     const mostCardsPlayer = allPlayers.length > 0 ? [...allPlayers].sort((a, b) => (b.stats.yellowCards + b.stats.redCards * 2) - (a.stats.yellowCards + a.stats.redCards * 2))[0] : null;
 
     const handleStartMatch = (id: string, status: string) => {

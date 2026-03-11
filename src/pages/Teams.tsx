@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useChampionship } from '../context/ChampionshipContext';
-import { Users, PlusCircle, Shield, UserPlus, Image as ImageIcon } from 'lucide-react';
+import { Users, PlusCircle, Shield, UserPlus, Image as ImageIcon, Crown } from 'lucide-react';
 
 const Teams = () => {
-    const { league, teams, addTeam, addPlayer } = useChampionship();
+    const { league, teams, addTeam, addPlayer, toggleCaptain } = useChampionship();
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLogo, setNewTeamLogo] = useState('');
     const [selectedTeam, setSelectedTeam] = useState<string | null>(teams.length > 0 ? teams[0].id : null);
@@ -187,6 +187,16 @@ const Teams = () => {
                             {currentTeam.players.map(player => (
                                 <div key={player.id} className="player-card" style={{ padding: '16px', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', position: 'relative', overflow: 'hidden' }}>
                                     <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '3rem', fontWeight: 900, color: 'rgba(255,255,255,0.05)', lineHeight: 1, zIndex: 0 }}>{player.number}</div>
+                                    <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 10 }}>
+                                        <button
+                                            onClick={() => toggleCaptain(currentTeam.id, player.id)}
+                                            className={`captain-toggle ${player.isCaptain ? 'active' : ''}`}
+                                            title={player.isCaptain ? "Remover Capitão" : "Marcar como Capitão"}
+                                            style={{ background: 'transparent', border: 'none', padding: '4px' }}
+                                        >
+                                            <Crown size={20} />
+                                        </button>
+                                    </div>
                                     <div style={{ zIndex: 1, marginBottom: '8px' }}>
                                         {renderImage(player.photo, 64, player.name.charAt(0))}
                                     </div>
