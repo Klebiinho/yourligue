@@ -21,7 +21,14 @@ export type Match = {
   extraTime?: number;
   period?: string;
 };
-export type League = { name: string; maxTeams: number; logo: string };
+export type League = {
+  name: string;
+  maxTeams: number;
+  logo: string;
+  pointsForWin: number;
+  pointsForDraw: number;
+  pointsForLoss: number;
+};
 
 interface ChampionshipContextType {
   league: League;
@@ -44,7 +51,14 @@ interface ChampionshipContextType {
 const ChampionshipContext = createContext<ChampionshipContextType | undefined>(undefined);
 
 export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
-  const [league, setLeague] = useState<League>({ name: 'My League', maxTeams: 12, logo: '' });
+  const [league, setLeague] = useState<League>({
+    name: 'My League',
+    maxTeams: 12,
+    logo: '',
+    pointsForWin: 3,
+    pointsForDraw: 1,
+    pointsForLoss: 0
+  });
   const [teams, setTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +70,14 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
 
       // 1. Fetch League
       const { data: leagueData } = await supabase.from('league_settings').select('*').single();
-      if (leagueData) setLeague({ name: leagueData.name, maxTeams: leagueData.max_teams, logo: leagueData.logo || '' });
+      if (leagueData) setLeague({
+        name: leagueData.name,
+        maxTeams: leagueData.max_teams,
+        logo: leagueData.logo || '',
+        pointsForWin: leagueData.points_for_win ?? 3,
+        pointsForDraw: leagueData.points_for_draw ?? 1,
+        pointsForLoss: leagueData.points_for_loss ?? 0
+      });
 
       // 2. Fetch Teams and Players
       const { data: teamsData } = await supabase.from('teams').select('*, players(*)');
@@ -116,7 +137,10 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
     await supabase.from('league_settings').update({
       name: leagueData.name,
       max_teams: leagueData.maxTeams,
-      logo: leagueData.logo
+      logo: leagueData.logo,
+      points_for_win: leagueData.pointsForWin,
+      points_for_draw: leagueData.pointsForDraw,
+      points_for_loss: leagueData.pointsForLoss
     }).eq('id', 1);
   };
 

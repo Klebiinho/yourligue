@@ -10,6 +10,9 @@ const Settings = () => {
     const [name, setName] = useState(league.name);
     const [logo, setLogo] = useState(league.logo);
     const [maxTeams, setMaxTeams] = useState(league.maxTeams.toString());
+    const [pointsForWin, setPointsForWin] = useState(league.pointsForWin.toString());
+    const [pointsForDraw, setPointsForDraw] = useState(league.pointsForDraw.toString());
+    const [pointsForLoss, setPointsForLoss] = useState(league.pointsForLoss.toString());
     const [isSaved, setIsSaved] = useState(false);
     const [youtubeClientId, setYoutubeClientId] = useState(import.meta.env.VITE_YOUTUBE_CLIENT_ID || localStorage.getItem('yt_client_id') || '');
     const [isYtAuthenticated, setIsYtAuthenticated] = useState(false);
@@ -42,6 +45,9 @@ const Settings = () => {
             name,
             logo,
             maxTeams: parseInt(maxTeams) || 12,
+            pointsForWin: parseInt(pointsForWin) || 3,
+            pointsForDraw: parseInt(pointsForDraw) || 1,
+            pointsForLoss: parseInt(pointsForLoss) || 0,
         });
         setIsSaved(true);
         localStorage.setItem('yt_client_id', youtubeClientId);
@@ -108,6 +114,37 @@ const Settings = () => {
                             max="64"
                             required
                         />
+                    </div>
+
+                    <h3 style={{ marginTop: '16px', color: 'var(--text-main)' }}>Sistema de Pontuação</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                        <div className="input-group">
+                            <label>Pontos por Vitória</label>
+                            <input
+                                type="number"
+                                value={pointsForWin}
+                                onChange={e => setPointsForWin(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label>Pontos por Empate</label>
+                            <input
+                                type="number"
+                                value={pointsForDraw}
+                                onChange={e => setPointsForDraw(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label>Pontos por Derrota</label>
+                            <input
+                                type="number"
+                                value={pointsForLoss}
+                                onChange={e => setPointsForLoss(e.target.value)}
+                                required
+                            />
+                        </div>
                     </div>
 
                     <button type="submit" className="btn-primary" style={{ marginTop: '16px', justifyContent: 'center', padding: '16px' }}>

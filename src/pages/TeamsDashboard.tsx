@@ -5,7 +5,7 @@ import { Shield, Edit, Trash2, BarChart2, X, Save, Plus, Image as ImageIcon } fr
 import TeamLogo from '../components/TeamLogo';
 
 const TeamsDashboard = () => {
-    const { teams, updateTeam, deleteTeam, addPlayer, removePlayer } = useChampionship();
+    const { league, teams, updateTeam, deleteTeam, addPlayer, removePlayer } = useChampionship();
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(teams.length > 0 ? teams[0].id : null);
     const [isEditingTeam, setIsEditingTeam] = useState(false);
     const [editTeamName, setEditTeamName] = useState('');
@@ -182,6 +182,10 @@ const TeamsDashboard = () => {
                                 <div className="glass-panel" style={{ padding: '20px', textAlign: 'center', borderBottom: '3px solid var(--danger)' }}>
                                     <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '4px' }}>Derrotas</div>
                                     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--danger)' }}>{selectedTeam.stats.losses}</div>
+                                </div>
+                                <div className="glass-panel" style={{ gridColumn: '1 / -1', padding: '20px', textAlign: 'center', background: 'var(--primary-glow)', border: 'none' }}>
+                                    <div style={{ color: 'white', fontSize: '0.875rem', marginBottom: '4px' }}>Pontuação Total</div>
+                                    <div style={{ fontSize: '2rem', fontWeight: 800, color: 'white' }}>{selectedTeam.stats.wins * league.pointsForWin + selectedTeam.stats.draws * league.pointsForDraw + selectedTeam.stats.losses * league.pointsForLoss} pts</div>
                                 </div>
                             </section>
 

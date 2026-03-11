@@ -68,13 +68,13 @@ const Dashboard = () => {
                             <p style={{ color: 'var(--text-muted)' }}>Nenhum time registrado.</p>
                         ) : (
                             [...teams]
-                                .sort((a, b) => (b.stats.wins * 3 + b.stats.draws) - (a.stats.wins * 3 + a.stats.draws))
+                                .sort((a, b) => (b.stats.wins * league.pointsForWin + b.stats.draws * league.pointsForDraw + b.stats.losses * league.pointsForLoss) - (a.stats.wins * league.pointsForWin + a.stats.draws * league.pointsForDraw + a.stats.losses * league.pointsForLoss))
                                 .map((team, index) => (
                                     <div key={team.id} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '12px', borderRadius: '12px', background: index === 0 ? 'var(--primary-glow)' : 'transparent', border: '1px solid var(--glass-border)' }}>
                                         <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>{index + 1}</div>
                                         <TeamLogo src={team.logo} size={32} />
                                         <div style={{ flex: 1, fontWeight: 600 }}>{team.name}</div>
-                                        <div style={{ fontWeight: 'bold', color: 'var(--accent)' }}>{team.stats.wins * 3 + team.stats.draws} pts</div>
+                                        <div style={{ fontWeight: 'bold', color: 'var(--accent)' }}>{team.stats.wins * league.pointsForWin + team.stats.draws * league.pointsForDraw + team.stats.losses * league.pointsForLoss} pts</div>
                                     </div>
                                 ))
                         )}
