@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useChampionship } from '../context/ChampionshipContext';
-import { Clock, StopCircle, Award, AlertTriangle, ShieldAlert, Video, Copy, ExternalLink, RefreshCw, PlusCircle, LogIn } from 'lucide-react';
+import { Clock, StopCircle, Award, AlertTriangle, ShieldAlert, Video, Copy, ExternalLink, RefreshCw, PlusCircle, LogIn, Settings2 } from 'lucide-react';
 import { YouTubeService } from '../services/youtube';
 import TeamLogo from '../components/TeamLogo';
 
@@ -31,6 +31,14 @@ const MatchControl = () => {
 
     const [timerRunning, setTimerRunning] = useState(match?.status === 'live');
     const [localSeconds, setLocalSeconds] = useState(match?.timer || 0);
+    const [halfLength, setHalfLength] = useState(match?.halfLength || 45);
+    const [extraTime, setExtraTime] = useState(match?.extraTime || 0);
+    const [period, setPeriod] = useState(match?.period || '1º Tempo');
+
+    const handleSaveTimeSettings = () => {
+        updateMatch(id!, { halfLength, extraTime, period });
+        alert('Configurações de tempo salvas!');
+    };
 
     useEffect(() => {
         let interval: number;
@@ -138,14 +146,23 @@ const MatchControl = () => {
                     <div className="team-name">{homeTeam.name}</div>
                 </div>
 
-                <div className="timer-block">
+                <div className="timer-block" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: '8px', fontWeight: 600, letterSpacing: '2px', textTransform: 'uppercase' }}>
+                        {period}
+                    </div>
                     <div className="score">
                         <span style={{ color: 'var(--primary)' }}>{match.homeScore}</span>
                         <span style={{ margin: '0 20px', color: 'var(--text-muted)', fontSize: '3rem' }}>-</span>
                         <span style={{ color: 'var(--accent)' }}>{match.awayScore}</span>
                     </div>
-                    <div className="timer">
+                    <div className="timer" style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
                         {formatTime(localSeconds)}
+                        {extraTime > 0 && (
+                            <span style={{ fontSize: '1.5rem', color: 'var(--warning)', fontWeight: 600 }}>+{extraTime}</span>
+                        )}
+                    </div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '16px' }}>
+                        Tempo regulamentar: {halfLength} min
                     </div>
                     {isLive && (
                         <div className="match-controls">
@@ -165,6 +182,40 @@ const MatchControl = () => {
                     <div className="team-name">{awayTeam.name}</div>
                 </div>
             </div>
+
+            {/* Time Settings Panel */}
+            {isLive && (
+                <section className="glass-panel" style={{ padding: '24px', marginBottom: '40px' }}>
+                    <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Settings2 size={20} className="text-gradient" /> Configurações de Tempo
+                    </h2>
+                    <div className="grid-4" style={{ gap: '16px', alignItems: 'end' }}>
+                        <div className="input-group">
+                            <label>Período</label>
+                            <select value={period} onChange={(e) => setPeriod(e.target.value)}>
+                                <option value="1º Tempo">1º Tempo</option>
+                                <option value="2º Tempo">2º Tempo</option>
+                                <option value="Prorrogação">Prorrogação</option>
+                                <option value="Intervalo">Intervalo</option>
+                                <option value="Pênaltis">Pênaltis</option>
+                            </select>
+                        </div>
+                        <div className="input-group">
+                            <label>Duração do Tempo (min)</label>
+                            <input type="number" value={halfLength} onChange={(e) => setHalfLength(parseInt(e.target.value) || 0)} min="0" />
+                        </div>
+                        <div className="input-group">
+                            <label>Acréscimos (min)</label>
+                            <input type="number" value={extraTime} onChange={(e) => setExtraTime(parseInt(e.target.value) || 0)} min="0" />
+                        </div>
+                        <div className="input-group">
+                            <button className="btn-primary" onClick={handleSaveTimeSettings} style={{ padding: '12px' }}>
+                                Aplicar Alterações
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {/* YouTube Live Real-Time Integration */}
             <section className="glass-panel" style={{ padding: '24px', marginBottom: '40px', borderLeft: '4px solid #ff0000' }}>

@@ -17,6 +17,9 @@ export type Match = {
   youtubeLiveId?: string;
   youtubeStreamKey?: string;
   isStreaming?: boolean;
+  halfLength?: number;
+  extraTime?: number;
+  period?: string;
 };
 export type League = { name: string; maxTeams: number; logo: string };
 
@@ -88,6 +91,9 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
           timer: m.timer,
           youtubeLiveId: m.youtube_live_id,
           youtubeStreamKey: m.youtube_stream_key,
+          halfLength: m.half_length,
+          extraTime: m.extra_time,
+          period: m.period,
           events: m.match_events.map((e: any) => ({
             id: e.id,
             type: e.type,
@@ -169,7 +175,10 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
         status: 'scheduled',
         events: [],
         timer: 0,
-        youtubeLiveId
+        youtubeLiveId,
+        halfLength: 45,
+        extraTime: 0,
+        period: '1º Tempo'
       }]);
     }
   };
@@ -228,7 +237,10 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
     await supabase.from('matches').update({
       youtube_live_id: data.youtubeLiveId,
       youtube_stream_key: data.youtubeStreamKey,
-      status: data.status
+      status: data.status,
+      half_length: data.halfLength,
+      extra_time: data.extraTime,
+      period: data.period
     }).eq('id', matchId);
   };
 
