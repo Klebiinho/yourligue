@@ -16,24 +16,24 @@ const Dashboard = () => {
                 {league.logo && <TeamLogo src={league.logo} size={80} />}
                 <div>
                     <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>{league.name}</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Real-time statistics for your football championship.</p>
+                    <p style={{ color: 'var(--text-muted)' }}>Estatísticas em tempo real para o seu campeonato.</p>
                 </div>
             </header>
 
             <div className="grid-4" style={{ marginBottom: '40px' }}>
-                <StatCard title="Total Teams" value={`${teams.length} / ${league.maxTeams}`} icon={<Trophy color="var(--primary)" />} />
-                <StatCard title="Registered Players" value={totalPlayers} icon={<Users color="var(--accent)" />} />
-                <StatCard title="Live Matches" value={liveMatches} icon={<Activity color="var(--danger)" />} />
-                <StatCard title="Completed Matches" value={finishedMatches} icon={<Target color="var(--warning)" />} />
+                <StatCard title="Total de Times" value={`${teams.length} / ${league.maxTeams}`} icon={<Trophy color="var(--primary)" />} />
+                <StatCard title="Jogadores Registrados" value={totalPlayers} icon={<Users color="var(--accent)" />} />
+                <StatCard title="Partidas ao Vivo" value={liveMatches} icon={<Activity color="var(--danger)" />} />
+                <StatCard title="Partidas Concluídas" value={finishedMatches} icon={<Target color="var(--warning)" />} />
             </div>
 
             <div className="grid-2">
                 <section className="glass-panel" style={{ padding: '24px' }}>
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Activity size={20} className="text-gradient" /> Live & Upcoming Matches
+                        <Activity size={20} className="text-gradient" /> Partidas ao Vivo e Próximas
                     </h2>
                     {matches.length === 0 ? (
-                        <p style={{ color: 'var(--text-muted)' }}>No matches scheduled yet.</p>
+                        <p style={{ color: 'var(--text-muted)' }}>Nenhuma partida agendada ainda.</p>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {matches.slice(0, 5).map(match => {
@@ -61,11 +61,11 @@ const Dashboard = () => {
 
                 <section className="glass-panel" style={{ padding: '24px' }}>
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Trophy size={20} className="text-gradient-accent" /> Team Standings
+                        <Trophy size={20} className="text-gradient-accent" /> Classificação dos Times
                     </h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {teams.length === 0 ? (
-                            <p style={{ color: 'var(--text-muted)' }}>No teams registered.</p>
+                            <p style={{ color: 'var(--text-muted)' }}>Nenhum time registrado.</p>
                         ) : (
                             [...teams]
                                 .sort((a, b) => (b.stats.wins * 3 + b.stats.draws) - (a.stats.wins * 3 + a.stats.draws))

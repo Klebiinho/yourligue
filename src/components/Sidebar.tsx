@@ -14,16 +14,16 @@ const Sidebar = () => {
 
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} style={navLinkStyle}>
-                    <LayoutDashboard size={20} /> Dashboard
+                    <LayoutDashboard size={20} /> Visão Geral
                 </NavLink>
                 <NavLink to="/teams" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} style={navLinkStyle}>
-                    <Users size={20} /> Register Teams
+                    <Users size={20} /> Register Times
                 </NavLink>
                 <NavLink to="/teams-dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} style={navLinkStyle}>
-                    <BarChart2 size={20} /> Team Dashboard
+                    <BarChart2 size={20} /> Team Visão Geral
                 </NavLink>
                 <NavLink to="/matches" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} style={navLinkStyle}>
-                    <Swords size={20} /> Matches Control
+                    <Swords size={20} /> Partidas Control
                 </NavLink>
             </nav>
 

@@ -11,7 +11,7 @@ const Settings = () => {
     const [logo, setLogo] = useState(league.logo);
     const [maxTeams, setMaxTeams] = useState(league.maxTeams.toString());
     const [isSaved, setIsSaved] = useState(false);
-    const [youtubeClientId, setYoutubeClientId] = useState(localStorage.getItem('yt_client_id') || '');
+    const [youtubeClientId, setYoutubeClientId] = useState(import.meta.env.VITE_YOUTUBE_CLIENT_ID || localStorage.getItem('yt_client_id') || '');
     const [isYtAuthenticated, setIsYtAuthenticated] = useState(false);
 
     useEffect(() => {
@@ -73,7 +73,7 @@ const Settings = () => {
 
                 <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div className="input-group">
-                        <label>League Name</label>
+                        <label>Nome da Liga</label>
                         <input
                             type="text"
                             value={name}
@@ -83,11 +83,11 @@ const Settings = () => {
                     </div>
 
                     <div className="input-group">
-                        <label>League Logo</label>
+                        <label>Logo da Liga</label>
                         <div className="file-upload-wrapper">
                             <div className="file-upload-custom">
                                 <ImageIcon size={20} />
-                                <span>{logo ? 'Change League Logo' : 'Upload League Logo'}</span>
+                                <span>{logo ? 'Change Logo da Liga' : 'Upload Logo da Liga'}</span>
                             </div>
                             <input
                                 type="file"
@@ -99,7 +99,7 @@ const Settings = () => {
                     </div>
 
                     <div className="input-group">
-                        <label>Max Amount of Teams</label>
+                        <label>Quantidade Máxima de Times</label>
                         <input
                             type="number"
                             value={maxTeams}
@@ -111,7 +111,7 @@ const Settings = () => {
                     </div>
 
                     <button type="submit" className="btn-primary" style={{ marginTop: '16px', justifyContent: 'center', padding: '16px' }}>
-                        <Save size={20} /> {isSaved ? 'Saved!' : 'Save Settings'}
+                        <Save size={20} /> {isSaved ? 'Salvo!' : 'Salvar Configurações'}
                     </button>
                 </form>
             </section>
@@ -119,23 +119,23 @@ const Settings = () => {
             <section className="glass-panel" style={{ padding: '24px', maxWidth: '600px', marginTop: '24px', borderLeft: '4px solid #ff0000' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h2 style={{ color: '#ff0000', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                        <Video size={24} /> YouTube Channel Connection
+                        <Video size={24} /> Conexão com Youtube
                     </h2>
                     {isYtAuthenticated && (
                         <span style={{ color: '#22c55e', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem', fontWeight: 600 }}>
-                            <CheckCircle size={16} /> Connected
+                            <CheckCircle size={16} /> Conectado
                         </span>
                     )}
                 </div>
 
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '24px' }}>
-                    Connect your YouTube account to create and manage live broadcasts directly from the match panel.
+                    Conecte sua conta do YouTube para criar lives diretamente do painel de partidas.
                 </p>
 
                 {!youtubeClientId ? (
                     <div style={{ padding: '20px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', textAlign: 'center' }}>
-                        <p style={{ marginBottom: '16px', fontSize: '0.925rem' }}>First, configure your API credentials below.</p>
-                        <a href="#yt-config" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Go to Configuration</a>
+                        <p style={{ marginBottom: '16px', fontSize: '0.925rem' }}>Primeiro, configure suas credenciais de API abaixo.</p>
+                        <a href="#yt-config" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Ir para Configuração</a>
                     </div>
                 ) : (
                     <div style={{ display: 'flex', gap: '12px' }}>
@@ -145,7 +145,7 @@ const Settings = () => {
                                 className="btn-primary"
                                 style={{ background: '#ff0000', flex: 1, justifyContent: 'center', padding: '14px' }}
                             >
-                                <LogIn size={20} /> Sign in with Google
+                                <LogIn size={20} /> Entrar com Google
                             </button>
                         ) : (
                             <button
@@ -153,7 +153,7 @@ const Settings = () => {
                                 className="btn-outline"
                                 style={{ flex: 1, justifyContent: 'center', padding: '14px' }}
                             >
-                                <LogOut size={20} /> Disconnect Account
+                                <LogOut size={20} /> Desconectar Conta
                             </button>
                         )}
                     </div>
@@ -161,13 +161,13 @@ const Settings = () => {
 
                 <div id="yt-config" style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--glass-border)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <h3 style={{ fontSize: '1rem', margin: 0 }}>Developer Configuration</h3>
+                        <h3 style={{ fontSize: '1rem', margin: 0 }}>Configuração de Desenvolvedor</h3>
                         <a href="https://console.cloud.google.com/" target="_blank" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '4px' }}>
                             Google Cloud Console <ExternalLink size={12} />
                         </a>
                     </div>
                     <div className="input-group">
-                        <label>Google Oauth Client ID</label>
+                        <label>ID do Cliente Google OAuth</label>
                         <input
                             type="password"
                             value={youtubeClientId}
@@ -175,7 +175,7 @@ const Settings = () => {
                             placeholder="your-id.apps.googleusercontent.com"
                         />
                         <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '8px' }}>
-                            * Required for the "Sign in with Google" button to work. Use your App's Client ID.
+                            * Required for the "Entrar com Google" button to work. Use your App's Client ID.
                         </p>
                     </div>
                 </div>

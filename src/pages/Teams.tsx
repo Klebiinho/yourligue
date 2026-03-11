@@ -78,7 +78,7 @@ const Teams = () => {
             <div className="grid-2">
                 <section className="glass-panel" style={{ padding: '24px' }}>
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Shield size={20} className="text-gradient" /> Register Team
+                        <Shield size={20} className="text-gradient" /> Registrar Time
                     </h2>
                     <form onSubmit={handleAddTeam} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
                         <div className="input-group" style={{ marginBottom: 0 }}>
@@ -86,7 +86,7 @@ const Teams = () => {
                             <input type="text" placeholder="Team Name" value={newTeamName} onChange={e => setNewTeamName(e.target.value)} required />
                         </div>
                         <div className="input-group" style={{ marginBottom: 0 }}>
-                            <label>Team Logo</label>
+                            <label>Escudo do Time</label>
                             <div className="file-upload-wrapper">
                                 <div className="file-upload-custom">
                                     <ImageIcon size={20} />

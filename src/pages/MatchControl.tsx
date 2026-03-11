@@ -15,7 +15,7 @@ const MatchControl = () => {
 
     useEffect(() => {
         const yt = YouTubeService.getInstance();
-        const clientId = localStorage.getItem('yt_client_id');
+        const clientId = import.meta.env.VITE_YOUTUBE_CLIENT_ID || localStorage.getItem('yt_client_id');
         if (clientId) {
             yt.init(clientId).then(() => {
                 yt.subscribeAuth((token) => {
@@ -64,7 +64,7 @@ const MatchControl = () => {
         navigate('/');
     };
 
-    const handleGoal = (teamId: string, playerId: string) => {
+    const handleGol = (teamId: string, playerId: string) => {
         addEvent(id!, { type: 'goal', teamId, playerId, minute: currentMinute });
     };
 
@@ -75,9 +75,9 @@ const MatchControl = () => {
     const isLive = match.status === 'live';
 
     const handleCreateYouTubeLive = async () => {
-        const clientId = localStorage.getItem('yt_client_id');
+        const clientId = import.meta.env.VITE_YOUTUBE_CLIENT_ID || localStorage.getItem('yt_client_id');
         if (!clientId) {
-            setYtError('Please configure your Google Client ID in Settings first.');
+            setYtError('Por favor, configure o Client ID do Google em Configurações primeiro.');
             return;
         }
 
@@ -88,7 +88,7 @@ const MatchControl = () => {
             await yt.init(clientId);
 
             if (!yt.getIsAuthenticated()) {
-                setYtError('You must be signed in to YouTube to create a live.');
+                setYtError('Você deve estar logado no YouTube para criar uma live.');
                 setIsCreatingLive(false);
                 return;
             }
@@ -122,12 +122,12 @@ const MatchControl = () => {
                 <div>
                     <h1 style={{ fontSize: '2rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: isLive ? 'var(--accent)' : 'var(--text-muted)', boxShadow: isLive ? '0 0 10px var(--accent-glow)' : 'none' }}></span>
-                        {isLive ? 'Live Match Control' : 'Match Details'}
+                        {isLive ? 'Controle da Partida ao Vivo' : 'Detalhes da Partida'}
                     </h1>
                 </div>
                 {isLive && (
                     <button className="btn-danger" onClick={handleEndMatch}>
-                        <StopCircle size={20} /> End Match
+                        <StopCircle size={20} /> Encerrar Partida
                     </button>
                 )}
             </header>
@@ -154,7 +154,7 @@ const MatchControl = () => {
                                 className={timerRunning ? 'btn-outline' : 'btn-accent'}
                                 style={{ borderRadius: '24px' }}
                             >
-                                <Clock size={16} /> {timerRunning ? 'Pause' : 'Start/Resume'}
+                                <Clock size={16} /> {timerRunning ? 'Pausar' : 'Iniciar/Retomar'}
                             </button>
                         </div>
                     )}
@@ -170,7 +170,7 @@ const MatchControl = () => {
             <section className="glass-panel" style={{ padding: '24px', marginBottom: '40px', borderLeft: '4px solid #ff0000' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                     <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ff0000', margin: 0 }}>
-                        <Video size={24} /> YouTube Live Control
+                        <Video size={24} /> Controle do YouTube Live
                     </h2>
                     {!match.youtubeLiveId && (
                         <div style={{ display: 'flex', gap: '12px' }}>
@@ -180,7 +180,7 @@ const MatchControl = () => {
                                     style={{ background: '#ff0000' }}
                                     onClick={() => YouTubeService.getInstance().logIn()}
                                 >
-                                    <LogIn size={20} /> Sign in to Generate
+                                    <LogIn size={20} /> Entrar para Gerar
                                 </button>
                             ) : (
                                 <button
@@ -190,7 +190,7 @@ const MatchControl = () => {
                                     disabled={isCreatingLive}
                                 >
                                     {isCreatingLive ? <RefreshCw className="animate-spin" size={20} /> : <PlusCircle size={20} />}
-                                    {isCreatingLive ? 'Creating Live...' : 'Generate Instant Live'}
+                                    {isCreatingLive ? 'Criando Live...' : 'Gerar Live Instantânea'}
                                 </button>
                             )}
                         </div>
@@ -217,14 +217,14 @@ const MatchControl = () => {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             <div style={{ padding: '16px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px' }}>
-                                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Stream URL</div>
+                                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>URL do Stream</div>
                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                     <code style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px', flex: 1, fontSize: '0.8125rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>rtmp://a.rtmp.youtube.com/live2</code>
                                     <button onClick={() => copyToClipboard('rtmp://a.rtmp.youtube.com/live2')} style={{ color: 'var(--text-muted)' }}><Copy size={16} /></button>
                                 </div>
                             </div>
                             <div style={{ padding: '16px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Stream Key (OBS / Camera)</div>
+                                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Chave do Stream (OBS / Câmera)</div>
                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                     <input
                                         type="password"
@@ -242,7 +242,7 @@ const MatchControl = () => {
                                     className="btn-outline"
                                     style={{ flex: 1, justifyContent: 'center' }}
                                 >
-                                    <ExternalLink size={16} /> Open Studio
+                                    <ExternalLink size={16} /> Abrir Studio
                                 </a>
                             </div>
                         </div>
@@ -250,7 +250,7 @@ const MatchControl = () => {
                 ) : (
                     <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                         <Video size={48} style={{ opacity: 0.1, marginBottom: '16px' }} />
-                        <p>Generate a live broadcast for this match with one click.</p>
+                        <p>Gere uma transmissão ao vivo para esta partida com um clique.</p>
                     </div>
                 )}
             </section>
@@ -260,7 +260,7 @@ const MatchControl = () => {
                     {/* Home Team Controls */}
                     <section className="glass-panel" style={{ padding: '24px' }}>
                         <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
-                            Controls: {homeTeam.name}
+                            Controles: {homeTeam.name}
                         </h2>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: '12px' }}>
                             {homeTeam.players.map(player => (
@@ -270,20 +270,20 @@ const MatchControl = () => {
                                         <div style={{ fontWeight: 600 }}>{player.name}</div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button onClick={() => handleGoal(homeTeam.id, player.id)} className="btn-accent" style={{ padding: '8px', minWidth: 'auto', borderRadius: '50%' }} title="Goal"><Award size={16} /></button>
-                                        <button onClick={() => handleCard('yellow_card', homeTeam.id, player.id)} style={{ padding: '8px', background: 'var(--warning)', color: 'black', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Yellow Card"><AlertTriangle size={16} /></button>
-                                        <button onClick={() => handleCard('red_card', homeTeam.id, player.id)} style={{ padding: '8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Red Card"><ShieldAlert size={16} /></button>
+                                        <button onClick={() => handleGol(homeTeam.id, player.id)} className="btn-accent" style={{ padding: '8px', minWidth: 'auto', borderRadius: '50%' }} title="Gol"><Award size={16} /></button>
+                                        <button onClick={() => handleCard('yellow_card', homeTeam.id, player.id)} style={{ padding: '8px', background: 'var(--warning)', color: 'black', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Amarelo"><AlertTriangle size={16} /></button>
+                                        <button onClick={() => handleCard('red_card', homeTeam.id, player.id)} style={{ padding: '8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Vermelho"><ShieldAlert size={16} /></button>
                                     </div>
                                 </div>
                             ))}
-                            {homeTeam.players.length === 0 && <p style={{ color: 'var(--text-muted)' }}>No players registered.</p>}
+                            {homeTeam.players.length === 0 && <p style={{ color: 'var(--text-muted)' }}>Nenhum jogador registrado.</p>}
                         </div>
                     </section>
 
                     {/* Away Team Controls */}
                     <section className="glass-panel" style={{ padding: '24px' }}>
                         <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)' }}>
-                            Controls: {awayTeam.name}
+                            Controles: {awayTeam.name}
                         </h2>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: '12px' }}>
                             {awayTeam.players.map(player => (
@@ -293,25 +293,25 @@ const MatchControl = () => {
                                         <div style={{ fontWeight: 600 }}>{player.name}</div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button onClick={() => handleGoal(awayTeam.id, player.id)} className="btn-accent" style={{ padding: '8px', minWidth: 'auto', borderRadius: '50%' }} title="Goal"><Award size={16} /></button>
-                                        <button onClick={() => handleCard('yellow_card', awayTeam.id, player.id)} style={{ padding: '8px', background: 'var(--warning)', color: 'black', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Yellow Card"><AlertTriangle size={16} /></button>
-                                        <button onClick={() => handleCard('red_card', awayTeam.id, player.id)} style={{ padding: '8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Red Card"><ShieldAlert size={16} /></button>
+                                        <button onClick={() => handleGol(awayTeam.id, player.id)} className="btn-accent" style={{ padding: '8px', minWidth: 'auto', borderRadius: '50%' }} title="Gol"><Award size={16} /></button>
+                                        <button onClick={() => handleCard('yellow_card', awayTeam.id, player.id)} style={{ padding: '8px', background: 'var(--warning)', color: 'black', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Amarelo"><AlertTriangle size={16} /></button>
+                                        <button onClick={() => handleCard('red_card', awayTeam.id, player.id)} style={{ padding: '8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Vermelho"><ShieldAlert size={16} /></button>
                                     </div>
                                 </div>
                             ))}
-                            {awayTeam.players.length === 0 && <p style={{ color: 'var(--text-muted)' }}>No players registered.</p>}
+                            {awayTeam.players.length === 0 && <p style={{ color: 'var(--text-muted)' }}>Nenhum jogador registrado.</p>}
                         </div>
                     </section>
                 </div>
             )}
 
-            {/* Match Timeline */}
+            {/* Linha do Tempo da Partida */}
             <section className="glass-panel" style={{ padding: '24px', marginTop: '24px' }}>
                 <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Clock size={20} className="text-gradient" /> Match Timeline
+                    <Clock size={20} className="text-gradient" /> Linha do Tempo da Partida
                 </h2>
                 {match.events.length === 0 ? (
-                    <p style={{ color: 'var(--text-muted)' }}>No events yet.</p>
+                    <p style={{ color: 'var(--text-muted)' }}>Nenhum evento ainda.</p>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {match.events.slice().reverse().map(event => {

@@ -49,23 +49,23 @@ const Matches = () => {
                     </h2>
                     <form onSubmit={handleCreateMatch} className="grid-2" style={{ gap: '16px', marginBottom: '24px' }}>
                         <div className="input-group">
-                            <label>Home Team</label>
+                            <label>Time Mandante</label>
                             <select value={homeTeamId} onChange={e => setHomeTeamId(e.target.value)}>
                                 {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </select>
                         </div>
                         <div className="input-group">
-                            <label>Away Team</label>
+                            <label>Time Visitante</label>
                             <select value={awayTeamId} onChange={e => setAwayTeamId(e.target.value)}>
                                 {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </select>
                         </div>
                         <div className="input-group" style={{ gridColumn: '1 / -1' }}>
-                            <label>YouTube Live Video URL or ID (Optional)</label>
+                            <label>URL ou ID do Youtube Live (Opcional)</label>
                             <input type="text" placeholder="e.g. https://www.youtube.com/watch?v=..." value={youtubeLiveId} onChange={e => setYoutubeLiveId(e.target.value)} />
                         </div>
                         <button type="submit" className="btn-primary" style={{ gridColumn: '1 / -1', justifyContent: 'center', padding: '16px', fontSize: '1.125rem' }}>
-                            <Swords size={24} /> Create Match
+                            <Swords size={24} /> Criar Partida
                         </button>
                     </form>
                 </section>
@@ -89,11 +89,11 @@ const Matches = () => {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <TeamLogo src={homeTeam?.logo} size={40} />
-                                                <span style={{ fontSize: '1.25rem', color: 'var(--text-muted)', fontWeight: 800 }}>vs</span>
+                                                <span style={{ fontSize: '1.25rem', color: 'var(--text-muted)', fontWeight: 800 }}>x</span>
                                                 <TeamLogo src={awayTeam?.logo} size={40} />
                                             </div>
                                             <div>
-                                                <div style={{ fontWeight: 600 }}>{homeTeam?.name} <span style={{ color: 'var(--text-muted)' }}>vs</span> {awayTeam?.name}</div>
+                                                <div style={{ fontWeight: 600 }}>{homeTeam?.name} <span style={{ color: 'var(--text-muted)' }}>x</span> {awayTeam?.name}</div>
                                                 <div style={{ fontSize: '0.875rem', color: isLive ? 'var(--accent)' : 'var(--text-muted)' }}>
                                                     {isLive ? 'LIVE' : isFinished ? 'FINISHED' : 'SCHEDULED'}
                                                 </div>
@@ -105,7 +105,7 @@ const Matches = () => {
                                             className={isLive ? 'btn-danger' : isFinished ? 'btn-outline' : 'btn-accent'}
                                             style={{ padding: '8px 16px', borderRadius: '24px' }}
                                         >
-                                            {isLive ? 'Manage Live Match' : isFinished ? <span><CheckCircle size={16} /> View Stats</span> : <span><Play size={16} /> Start Match</span>}
+                                            {isLive ? 'Gerenciar Partida Ao Vivo' : isFinished ? <span><CheckCircle size={16} /> View Stats</span> : <span><Play size={16} /> Iniciar Partida</span>}
                                         </button>
                                     </div>
                                 );

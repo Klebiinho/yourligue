@@ -1,5 +1,6 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
 
 export type Player = { id: string; name: string; number: number; position: string; photo?: string; stats: { goals: number; assists: number; yellowCards: number; redCards: number } };
 export type Team = { id: string; name: string; logo: string; players: Player[]; stats: { matches: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number } };
@@ -41,74 +42,197 @@ const ChampionshipContext = createContext<ChampionshipContextType | undefined>(u
 
 export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
   const [league, setLeague] = useState<League>({ name: 'My League', maxTeams: 12, logo: '' });
-  const [teams, setTeams] = useState<Team[]>([
-    { id: 't1', name: 'Thunder FC', logo: 'https://images.unsplash.com/photo-1599839619722-39751411ea63?w=150&h=150&fit=crop', players: [{ id: 'p1', name: 'John Doe', number: 10, position: 'Forward', stats: { goals: 0, assists: 0, yellowCards: 0, redCards: 0 } }], stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 } },
-    { id: 't2', name: 'Lions City', logo: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=150&h=150&fit=crop', players: [{ id: 'p2', name: 'Mike Smith', number: 7, position: 'Midfielder', stats: { goals: 0, assists: 0, yellowCards: 0, redCards: 0 } }], stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 } }
-  ]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const updateLeague = (leagueData: Partial<League>) => {
-    setLeague({ ...league, ...leagueData });
+  // Load Initial Data
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+
+      // 1. Fetch League
+      const { data: leagueData } = await supabase.from('league_settings').select('*').single();
+      if (leagueData) setLeague({ name: leagueData.name, maxTeams: leagueData.max_teams, logo: leagueData.logo || '' });
+
+      // 2. Fetch Teams and Players
+      const { data: teamsData } = await supabase.from('teams').select('*, players(*)');
+      if (teamsData) {
+        const formattedTeams: Team[] = teamsData.map(t => ({
+          id: t.id,
+          name: t.name,
+          logo: t.logo || '',
+          players: t.players.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            number: p.number,
+            position: p.position,
+            photo: p.photo || '',
+            stats: { goals: 0, assists: 0, yellowCards: 0, redCards: 0 } // Stats calculated from events
+          })),
+          stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 }
+        }));
+        setTeams(formattedTeams);
+      }
+
+      // 3. Fetch Matches and Events
+      const { data: matchesData } = await supabase.from('matches').select('*, match_events(*)');
+      if (matchesData) {
+        const formattedMatches: Match[] = matchesData.map(m => ({
+          id: m.id,
+          homeTeamId: m.home_team_id,
+          awayTeamId: m.away_team_id,
+          homeScore: m.home_score,
+          awayScore: m.away_score,
+          status: m.status as any,
+          timer: m.timer,
+          youtubeLiveId: m.youtube_live_id,
+          youtubeStreamKey: m.youtube_stream_key,
+          events: m.match_events.map((e: any) => ({
+            id: e.id,
+            type: e.type,
+            teamId: e.team_id,
+            playerId: e.player_id,
+            minute: e.minute
+          }))
+        }));
+        setMatches(formattedMatches);
+      }
+
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
+
+  const updateLeague = async (leagueData: Partial<League>) => {
+    setLeague(prev => ({ ...prev, ...leagueData }));
+    await supabase.from('league_settings').update({
+      name: leagueData.name,
+      max_teams: leagueData.maxTeams,
+      logo: leagueData.logo
+    }).eq('id', 1);
   };
 
-  const addTeam = (team: Omit<Team, 'id' | 'players' | 'stats'>) => {
-    setTeams([...teams, { ...team, id: Date.now().toString(), players: [], stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 } }]);
+  const addTeam = async (team: Omit<Team, 'id' | 'players' | 'stats'>) => {
+    const { data } = await supabase.from('teams').insert([{ name: team.name, logo: team.logo }]).select().single();
+    if (data) {
+      setTeams([...teams, { ...team, id: data.id, players: [], stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 } }]);
+    }
   };
 
-  const updateTeam = (teamId: string, teamData: Partial<Team>) => {
+  const updateTeam = async (teamId: string, teamData: Partial<Team>) => {
     setTeams(teams.map(t => t.id === teamId ? { ...t, ...teamData } : t));
+    await supabase.from('teams').update({ name: teamData.name, logo: teamData.logo }).eq('id', teamId);
   };
 
-  const deleteTeam = (teamId: string) => {
+  const deleteTeam = async (teamId: string) => {
     setTeams(teams.filter(t => t.id !== teamId));
     setMatches(matches.filter(m => m.homeTeamId !== teamId && m.awayTeamId !== teamId));
+    await supabase.from('teams').delete().eq('id', teamId);
   };
 
-  const addPlayer = (teamId: string, player: Omit<Player, 'id' | 'stats'>) => {
-    setTeams(teams.map(t => t.id === teamId ? { ...t, players: [...t.players, { ...player, id: Date.now().toString(), stats: { goals: 0, assists: 0, yellowCards: 0, redCards: 0 } }] } : t));
+  const addPlayer = async (teamId: string, player: Omit<Player, 'id' | 'stats'>) => {
+    const { data } = await supabase.from('players').insert([{
+      team_id: teamId,
+      name: player.name,
+      number: player.number,
+      position: player.position,
+      photo: player.photo
+    }]).select().single();
+
+    if (data) {
+      setTeams(teams.map(t => t.id === teamId ? { ...t, players: [...t.players, { ...player, id: data.id, stats: { goals: 0, assists: 0, yellowCards: 0, redCards: 0 } }] } : t));
+    }
   };
 
-  const removePlayer = (teamId: string, playerId: string) => {
+  const removePlayer = async (teamId: string, playerId: string) => {
     setTeams(teams.map(t => t.id === teamId ? { ...t, players: t.players.filter(p => p.id !== playerId) } : t));
+    await supabase.from('players').delete().eq('id', playerId);
   };
 
-  const createMatch = (homeTeamId: string, awayTeamId: string, youtubeLiveId?: string) => {
-    setMatches([...matches, { id: Date.now().toString(), homeTeamId, awayTeamId, homeScore: 0, awayScore: 0, status: 'scheduled', events: [], timer: 0, youtubeLiveId }]);
+  const createMatch = async (homeTeamId: string, awayTeamId: string, youtubeLiveId?: string) => {
+    const { data } = await supabase.from('matches').insert([{
+      home_team_id: homeTeamId,
+      away_team_id: awayTeamId,
+      youtube_live_id: youtubeLiveId,
+      status: 'scheduled'
+    }]).select().single();
+
+    if (data) {
+      setMatches([...matches, {
+        id: data.id,
+        homeTeamId,
+        awayTeamId,
+        homeScore: 0,
+        awayScore: 0,
+        status: 'scheduled',
+        events: [],
+        timer: 0,
+        youtubeLiveId
+      }]);
+    }
   };
 
-  const startMatch = (matchId: string) => {
+  const startMatch = async (matchId: string) => {
     setMatches(matches.map(m => m.id === matchId ? { ...m, status: 'live' } : m));
+    await supabase.from('matches').update({ status: 'live' }).eq('id', matchId);
   };
 
-  const endMatch = (matchId: string) => {
+  const endMatch = async (matchId: string) => {
     setMatches(matches.map(m => m.id === matchId ? { ...m, status: 'finished' } : m));
+    await supabase.from('matches').update({ status: 'finished' }).eq('id', matchId);
   };
 
   const updateTimer = (matchId: string, time: number) => {
     setMatches(matches.map(m => m.id === matchId ? { ...m, timer: time } : m));
+    // We don't necessarily need to persist every second to DB for performance, 
+    // maybe only on specific intervals or status changes.
+    if (time % 30 === 0) {
+      supabase.from('matches').update({ timer: time }).eq('id', matchId).then();
+    }
   };
 
-  const addEvent = (matchId: string, event: Omit<MatchEvent, 'id'>) => {
-    setMatches(matches.map(m => {
-      if (m.id !== matchId) return m;
-      let newHome = m.homeScore;
-      let newAway = m.awayScore;
-      if (event.type === 'goal') {
-        if (m.homeTeamId === event.teamId) newHome++;
-        if (m.awayTeamId === event.teamId) newAway++;
-      }
-      return {
-        ...m,
-        homeScore: newHome,
-        awayScore: newAway,
-        events: [...m.events, { ...event, id: Date.now().toString() }]
-      };
-    }));
+  const addEvent = async (matchId: string, event: Omit<MatchEvent, 'id'>) => {
+    const { data } = await supabase.from('match_events').insert([{
+      match_id: matchId,
+      team_id: event.teamId,
+      player_id: event.playerId,
+      type: event.type,
+      minute: event.minute
+    }]).select().single();
+
+    if (data) {
+      setMatches(matches.map(m => {
+        if (m.id !== matchId) return m;
+        let newHome = m.homeScore;
+        let newAway = m.awayScore;
+        if (event.type === 'goal') {
+          if (m.homeTeamId === event.teamId) newHome++;
+          if (m.awayTeamId === event.teamId) newAway++;
+          // Sync score to match table
+          supabase.from('matches').update({ home_score: newHome, away_score: newAway }).eq('id', matchId).then();
+        }
+        return {
+          ...m,
+          homeScore: newHome,
+          awayScore: newAway,
+          events: [...m.events, { ...event, id: data.id }]
+        };
+      }));
+    }
   };
 
-  const updateMatch = (matchId: string, data: Partial<Match>) => {
+  const updateMatch = async (matchId: string, data: Partial<Match>) => {
     setMatches(matches.map(m => m.id === matchId ? { ...m, ...data } : m));
+    await supabase.from('matches').update({
+      youtube_live_id: data.youtubeLiveId,
+      youtube_stream_key: data.youtubeStreamKey,
+      status: data.status
+    }).eq('id', matchId);
   };
+
+  if (loading) return <div className="loading-screen">Preparing your championship...</div>;
 
   return (
     <ChampionshipContext.Provider value={{

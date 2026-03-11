@@ -15,7 +15,7 @@ const TeamsDashboard = () => {
     const [newPlayerName, setNewPlayerName] = useState('');
     const [newPlayerNumber, setNewPlayerNumber] = useState('');
     const [newPlayerPhoto, setNewPlayerPhoto] = useState('');
-    const [newPlayerPosition, setNewPlayerPosition] = useState('Forward');
+    const [newPlayerPosição, setNewPlayerPosição] = useState('Atacante');
 
     const selectedTeam = teams.find(t => t.id === selectedTeamId);
 
@@ -33,7 +33,7 @@ const TeamsDashboard = () => {
     };
 
     const handleDeleteTeam = (id: string) => {
-        if (window.confirm('Are you sure you want to delete this team? This will also remove any matches involving this team.')) {
+        if (window.confirm('Tem certeza que deseja excluir este time? This will also remove any matches involving this team.')) {
             deleteTeam(id);
             if (selectedTeamId === id) {
                 setSelectedTeamId(teams.find(t => t.id !== id)?.id || null);
@@ -58,7 +58,7 @@ const TeamsDashboard = () => {
             addPlayer(selectedTeamId, {
                 name: newPlayerName,
                 number: parseInt(newPlayerNumber),
-                position: newPlayerPosition,
+                position: newPlayerPosição,
                 photo: newPlayerPhoto
             });
             setNewPlayerName('');
@@ -157,8 +157,8 @@ const TeamsDashboard = () => {
                                             </>
                                         ) : (
                                             <>
-                                                <button onClick={() => startEditingTeam(selectedTeam)} className="btn-outline" style={{ padding: '10px' }} title="Edit Team"><Edit size={20} /></button>
-                                                <button onClick={() => handleDeleteTeam(selectedTeam.id)} className="btn-danger-outline" style={{ padding: '10px', background: 'transparent', border: '1px solid var(--danger)', color: 'var(--danger)', borderRadius: '8px', cursor: 'pointer' }} title="Delete Team"><Trash2 size={20} /></button>
+                                                <button onClick={() => startEditingTeam(selectedTeam)} className="btn-outline" style={{ padding: '10px' }} title="Editar Time"><Edit size={20} /></button>
+                                                <button onClick={() => handleDeleteTeam(selectedTeam.id)} className="btn-danger-outline" style={{ padding: '10px', background: 'transparent', border: '1px solid var(--danger)', color: 'var(--danger)', borderRadius: '8px', cursor: 'pointer' }} title="Excluir Time"><Trash2 size={20} /></button>
                                             </>
                                         )}
                                     </div>
@@ -168,19 +168,19 @@ const TeamsDashboard = () => {
                             {/* Stats Grid */}
                             <section className="grid-4" style={{ gap: '16px' }}>
                                 <div className="glass-panel" style={{ padding: '20px', textAlign: 'center' }}>
-                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '4px' }}>Matches</div>
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '4px' }}>Partidas</div>
                                     <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{selectedTeam.stats.matches}</div>
                                 </div>
                                 <div className="glass-panel" style={{ padding: '20px', textAlign: 'center', borderBottom: '3px solid #22c55e' }}>
-                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '4px' }}>Wins</div>
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '4px' }}>Vitórias</div>
                                     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#22c55e' }}>{selectedTeam.stats.wins}</div>
                                 </div>
                                 <div className="glass-panel" style={{ padding: '20px', textAlign: 'center', borderBottom: '3px solid var(--accent)' }}>
-                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '4px' }}>Draws</div>
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '4px' }}>Empates</div>
                                     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)' }}>{selectedTeam.stats.draws}</div>
                                 </div>
                                 <div className="glass-panel" style={{ padding: '20px', textAlign: 'center', borderBottom: '3px solid var(--danger)' }}>
-                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '4px' }}>Losses</div>
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '4px' }}>Derrotas</div>
                                     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--danger)' }}>{selectedTeam.stats.losses}</div>
                                 </div>
                             </section>
@@ -189,7 +189,7 @@ const TeamsDashboard = () => {
                             <section className="grid-2" style={{ gap: '16px' }}>
                                 <div className="glass-panel" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
-                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Goals For</div>
+                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Gols Pró</div>
                                         <div style={{ fontSize: '1.75rem', fontWeight: 800 }}>{selectedTeam.stats.goalsFor}</div>
                                     </div>
                                     <div style={{ opacity: 0.2 }}><Shield size={40} /></div>
@@ -216,10 +216,10 @@ const TeamsDashboard = () => {
                                     <h3 style={{ fontSize: '1.25rem' }}>Squad Performance</h3>
                                 </div>
 
-                                {/* Add Player Form */}
+                                {/* Adicionar Jogador Form */}
                                 <form onSubmit={handleAddPlayer} className="grid-2" style={{ gap: '12px', marginBottom: '32px', padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
                                     <div className="input-group" style={{ marginBottom: 0 }}>
-                                        <label>Player Name</label>
+                                        <label>Nome do Jogador</label>
                                         <input type="text" placeholder="Name" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} required />
                                     </div>
                                     <div className="input-group" style={{ marginBottom: 0 }}>
@@ -227,12 +227,12 @@ const TeamsDashboard = () => {
                                         <input type="number" placeholder="Shirt #" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} required />
                                     </div>
                                     <div className="input-group" style={{ marginBottom: 0 }}>
-                                        <label>Position</label>
-                                        <select value={newPlayerPosition} onChange={e => setNewPlayerPosition(e.target.value)}>
-                                            <option>Goalkeeper</option>
-                                            <option>Defender</option>
-                                            <option>Midfielder</option>
-                                            <option>Forward</option>
+                                        <label>Posição</label>
+                                        <select value={newPlayerPosição} onChange={e => setNewPlayerPosição(e.target.value)}>
+                                            <option>Goleiro</option>
+                                            <option>Zagueiro</option>
+                                            <option>Meio-campo</option>
+                                            <option>Atacante</option>
                                         </select>
                                     </div>
                                     <div className="input-group" style={{ marginBottom: 0 }}>
@@ -252,7 +252,7 @@ const TeamsDashboard = () => {
                                         </div>
                                     </div>
                                     <button type="submit" className="btn-primary" style={{ gridColumn: '1 / -1', justifyContent: 'center' }}>
-                                        <Plus size={18} /> Add Player to Squad
+                                        <Plus size={18} /> Adicionar Jogador to Squad
                                     </button>
                                 </form>
 
