@@ -1,220 +1,223 @@
-import React, { useState } from 'react';
-import { useChampionship } from '../context/ChampionshipContext';
-import { Users, PlusCircle, Shield, UserPlus, Image as ImageIcon, Crown } from 'lucide-react';
+import { useState } from 'react';
+import { useLeague } from '../context/LeagueContext';
+import { Shield, UserPlus, Image as ImageIcon, Crown, Trash2, Edit2, Check, X, AlertCircle } from 'lucide-react';
+import TeamLogo from '../components/TeamLogo';
 
 const Teams = () => {
-    const { league, teams, addTeam, addPlayer, toggleCaptain } = useChampionship();
+    const { league, teams, addTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain } = useLeague();
+    const [activeTeamId, setActiveTeamId] = useState<string | null>(teams[0]?.id ?? null);
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLogo, setNewTeamLogo] = useState('');
-    const [selectedTeam, setSelectedTeam] = useState<string | null>(teams.length > 0 ? teams[0].id : null);
-
     const [newPlayerName, setNewPlayerName] = useState('');
     const [newPlayerNumber, setNewPlayerNumber] = useState('');
-    const [newPlayerPos, setNewPlayerPos] = useState('Forward');
+    const [newPlayerPos, setNewPlayerPos] = useState('Atacante');
     const [newPlayerPhoto, setNewPlayerPhoto] = useState('');
+    const [error, setError] = useState('');
+    const [teamError, setTeamError] = useState('');
+    const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
+    const [editName, setEditName] = useState('');
+    const [editNumber, setEditNumber] = useState('');
+    const [editPos, setEditPos] = useState('');
+    const [editPhoto, setEditPhoto] = useState('');
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (value: string) => void) => {
+    const currentTeam = teams.find(t => t.id === activeTeamId);
+
+    const handleFile = (e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) => {
         const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setter(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
+        if (file) { const r = new FileReader(); r.onloadend = () => setter(r.result as string); r.readAsDataURL(file); }
     };
 
-    const handleAddTeam = (e: React.FormEvent) => {
+    const handleAddTeam = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (newTeamName) {
-            addTeam({
-                name: newTeamName,
-                logo: newTeamLogo || 'https://images.unsplash.com/photo-1518605363461-464a8da58356?w=150&h=150&fit=crop' // placeholder if empty
-            });
-            setNewTeamName('');
-            setNewTeamLogo('');
-            // Reset file input
-            const teamLogoInput = document.getElementById('teamLogoInput') as HTMLInputElement;
-            if (teamLogoInput) teamLogoInput.value = '';
-        }
+        if (!newTeamName.trim()) return;
+        setTeamError('');
+        const { error } = await addTeam({ name: newTeamName, logo: newTeamLogo });
+        if (error) { setTeamError(error); return; }
+        setNewTeamName(''); setNewTeamLogo('');
+        const input = document.getElementById('teamLogoInput') as HTMLInputElement;
+        if (input) input.value = '';
+        const added = teams[teams.length - 1];
+        if (added) setActiveTeamId(added.id);
     };
 
-    const handleAddPlayer = (e: React.FormEvent) => {
+    const handleAddPlayer = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (newPlayerName && newPlayerNumber && selectedTeam) {
-            addPlayer(selectedTeam, {
-                name: newPlayerName,
-                number: parseInt(newPlayerNumber),
-                position: newPlayerPos,
-                photo: newPlayerPhoto
-            });
-            setNewPlayerName('');
-            setNewPlayerNumber('');
-            setNewPlayerPhoto('');
-            // Reset file input
-            const playerPhotoInput = document.getElementById('playerPhotoInput') as HTMLInputElement;
-            if (playerPhotoInput) playerPhotoInput.value = '';
-        }
+        if (!newPlayerName || !newPlayerNumber || !activeTeamId) return;
+        setError('');
+        const { error } = await addPlayer(activeTeamId, {
+            name: newPlayerName, number: parseInt(newPlayerNumber),
+            position: newPlayerPos, photo: newPlayerPhoto
+        });
+        if (error) { setError(error); return; }
+        setNewPlayerName(''); setNewPlayerNumber(''); setNewPlayerPhoto('');
+        const inp = document.getElementById('playerPhotoInput') as HTMLInputElement;
+        if (inp) inp.value = '';
     };
 
-    const currentTeam = teams.find(t => t.id === selectedTeam);
+    const startEdit = (p: any) => {
+        setEditingPlayerId(p.id); setEditName(p.name);
+        setEditNumber(String(p.number)); setEditPos(p.position); setEditPhoto(p.photo || '');
+    };
 
-    const renderImage = (src: string | undefined, size: number = 48, defaultIcon: React.ReactNode) => {
-        if (!src) return (
-            <div style={{ width: size, height: size, borderRadius: '50%', background: 'var(--primary-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--primary)' }}>
-                {defaultIcon}
-            </div>
-        );
-        return <img src={src} alt="logo" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)', background: 'white' }} />;
+    const saveEdit = async () => {
+        if (!editingPlayerId || !activeTeamId) return;
+        await updatePlayer(activeTeamId, editingPlayerId, {
+            name: editName, number: parseInt(editNumber), position: editPos, photo: editPhoto
+        });
+        setEditingPlayerId(null);
     };
 
     return (
         <div className="animate-fade-in">
             <header className="mb-40">
                 <h1 className="responsive-title">Times & Jogadores</h1>
-                <p className="responsive-subtitle">Gerencie os times, elencos e jogadores do seu campeonato {league.name}.</p>
+                <p className="responsive-subtitle">Cadastre os times e elencos do campeonato <strong>{league?.name}</strong></p>
             </header>
 
             <div className="grid-2">
+                {/* Cadastrar Time */}
                 <section className="glass-panel p-24">
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Shield size={20} className="text-gradient" /> Registrar Time
+                        <Shield size={20} className="text-gradient" /> Cadastrar Time
                     </h2>
                     <form onSubmit={handleAddTeam} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
                         <div className="input-group" style={{ marginBottom: 0 }}>
-                            <label>Team Name</label>
-                            <input type="text" placeholder="Team Name" value={newTeamName} onChange={e => setNewTeamName(e.target.value)} required />
+                            <label>Nome do Time</label>
+                            <input type="text" placeholder="Ex: Flamengo FC" value={newTeamName} onChange={e => setNewTeamName(e.target.value)} required />
                         </div>
                         <div className="input-group" style={{ marginBottom: 0 }}>
-                            <label>Escudo do Time</label>
+                            <label>Escudo</label>
                             <div className="file-upload-wrapper">
                                 <div className="file-upload-custom">
-                                    <ImageIcon size={20} />
-                                    <span>{newTeamLogo ? 'Change Shield Photo' : 'Upload Team Shield'}</span>
+                                    <ImageIcon size={18} />
+                                    <span>{newTeamLogo ? 'Escudo selecionado ✓' : 'Upload do Escudo'}</span>
                                 </div>
-                                <input
-                                    id="teamLogoInput"
-                                    className="file-input-hidden"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={e => handleFileChange(e, setNewTeamLogo)}
-                                />
+                                <input id="teamLogoInput" className="file-input-hidden" type="file" accept="image/*" onChange={e => handleFile(e, setNewTeamLogo)} />
                             </div>
                         </div>
-                        {newTeamLogo && (
-                            <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                <img src={newTeamLogo} alt="Preview" style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }} />
-                            </div>
-                        )}
-                        <button type="submit" className="btn-primary" style={{ justifyContent: 'center' }}><PlusCircle size={20} /> Add Team</button>
+                        {newTeamLogo && <TeamLogo src={newTeamLogo} size={60} />}
+                        {teamError && <ErrorMsg msg={teamError} />}
+                        <button type="submit" className="btn-primary" style={{ justifyContent: 'center', padding: '12px' }}>
+                            <Shield size={18} /> Cadastrar Time
+                        </button>
                     </form>
 
-                    <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)', marginBottom: '16px' }}>Registered Teams ({teams.length} / {league.maxTeams})</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {/* Lista de Times */}
+                    <h3 style={{ marginBottom: '12px', color: 'var(--text-muted)', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Times Cadastrados ({teams.length}/{league?.maxTeams ?? 16})</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '340px', overflowY: 'auto' }}>
                         {teams.map(team => (
-                            <div
-                                key={team.id}
-                                onClick={() => setSelectedTeam(team.id)}
+                            <div key={team.id} onClick={() => setActiveTeamId(team.id)}
                                 style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px',
-                                    padding: '12px 16px',
-                                    borderRadius: '12px',
-                                    background: selectedTeam === team.id ? 'var(--primary-glow)' : 'rgba(0,0,0,0.2)',
-                                    border: `1px solid ${selectedTeam === team.id ? 'var(--primary)' : 'var(--glass-border)'}`,
-                                    cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '12px', cursor: 'pointer',
+                                    background: activeTeamId === team.id ? 'var(--primary-glow)' : 'rgba(0,0,0,0.2)',
+                                    border: `1px solid ${activeTeamId === team.id ? 'var(--primary)' : 'transparent'}`,
                                     transition: 'all 0.2s'
-                                }}
-                            >
-                                {renderImage(team.logo, 40, <Shield size={20} />)}
-                                <div style={{ fontWeight: 600, flex: 1 }}>{team.name}</div>
-                                <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}><Users size={14} style={{ inlineSize: 'auto', verticalAlign: 'middle', marginRight: '4px' }} /> {team.players.length}</div>
+                                }}>
+                                <TeamLogo src={team.logo} size={38} />
+                                <div style={{ flex: 1, fontWeight: 600 }}>{team.name}</div>
+                                <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{team.players.length} jogadores</div>
                             </div>
                         ))}
                     </div>
                 </section>
 
-                {currentTeam && (
+                {/* Gerenciar Elenco */}
+                {currentTeam ? (
                     <section className="glass-panel p-24">
                         <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <UserPlus size={20} className="text-gradient-accent" /> Squad: {currentTeam.name}
+                            <UserPlus size={20} className="text-gradient-accent" /> Elenco: {currentTeam.name}
                         </h2>
 
-                        <form onSubmit={handleAddPlayer} className="grid-2" style={{ gap: '12px', marginBottom: '24px' }}>
+                        {/* Add Player Form */}
+                        <form onSubmit={handleAddPlayer} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
                             <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label>Player Name</label>
-                                <input type="text" placeholder="Player Name" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} required />
+                                <label>Nome do Jogador</label>
+                                <input type="text" placeholder="Nome completo" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} required />
                             </div>
                             <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label>Shirt Number</label>
-                                <input type="number" placeholder="Shirt Number" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} required />
+                                <label>Nº Camisa</label>
+                                <input type="number" placeholder="Ex: 10" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} required min={1} max={99} />
                             </div>
                             <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label>Position</label>
+                                <label>Posição</label>
                                 <select value={newPlayerPos} onChange={e => setNewPlayerPos(e.target.value)}>
-                                    <option>Goalkeeper</option>
-                                    <option>Defender</option>
-                                    <option>Midfielder</option>
-                                    <option>Forward</option>
+                                    <option>Goleiro</option><option>Zagueiro</option>
+                                    <option>Lateral</option><option>Meio-campo</option>
+                                    <option>Atacante</option>
                                 </select>
                             </div>
                             <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label>Player Photo</label>
+                                <label>Foto</label>
                                 <div className="file-upload-wrapper">
-                                    <div className="file-upload-custom" style={{ borderColor: 'rgba(16, 185, 129, 0.3)', background: 'rgba(16, 185, 129, 0.05)' }}>
-                                        <ImageIcon size={20} style={{ color: 'var(--accent)' }} />
-                                        <span>{newPlayerPhoto ? 'Change Photo' : 'Upload Photo'}</span>
+                                    <div className="file-upload-custom">
+                                        <ImageIcon size={16} />
+                                        <span>{newPlayerPhoto ? 'Foto ✓' : 'Uploar foto'}</span>
                                     </div>
-                                    <input
-                                        id="playerPhotoInput"
-                                        className="file-input-hidden"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={e => handleFileChange(e, setNewPlayerPhoto)}
-                                    />
+                                    <input id="playerPhotoInput" className="file-input-hidden" type="file" accept="image/*" onChange={e => handleFile(e, setNewPlayerPhoto)} />
                                 </div>
                             </div>
-                            {newPlayerPhoto && (
-                                <div style={{ display: 'flex', justifyContent: 'center', gridColumn: '1 / -1' }}>
-                                    <img src={newPlayerPhoto} alt="Preview" style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }} />
-                                </div>
-                            )}
-                            <button type="submit" className="btn-accent" style={{ gridColumn: '1 / -1', justifyContent: 'center' }}><PlusCircle size={20} /> Add Player</button>
+                            {error && <div style={{ gridColumn: '1 / -1' }}><ErrorMsg msg={error} /></div>}
+                            <button type="submit" className="btn-primary" style={{ gridColumn: '1 / -1', justifyContent: 'center', padding: '12px' }}>
+                                <UserPlus size={18} /> Adicionar Jogador
+                            </button>
                         </form>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
-                            {currentTeam.players.map(player => (
-                                <div key={player.id} className="player-card" style={{ padding: '16px', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', position: 'relative', overflow: 'hidden' }}>
-                                    <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '3rem', fontWeight: 900, color: 'rgba(255,255,255,0.05)', lineHeight: 1, zIndex: 0 }}>{player.number}</div>
-                                    <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 10 }}>
-                                        <button
-                                            onClick={() => toggleCaptain(currentTeam.id, player.id)}
-                                            className={`captain-toggle ${player.isCaptain ? 'active' : ''}`}
-                                            title={player.isCaptain ? "Remover Capitão" : "Marcar como Capitão"}
-                                            style={{ background: 'transparent', border: 'none', padding: '4px' }}
-                                        >
-                                            <Crown size={20} />
-                                        </button>
+                        {/* Player List */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {currentTeam.players.length === 0
+                                ? <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>Nenhum jogador cadastrado ainda.</p>
+                                : currentTeam.players.map(player => (
+                                    <div key={player.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)' }}>
+                                        {editingPlayerId === player.id ? (
+                                            <>
+                                                <input value={editName} onChange={e => setEditName(e.target.value)} style={{ flex: 2, background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: '6px', padding: '6px 10px', color: 'white', fontSize: '0.875rem' }} />
+                                                <input type="number" value={editNumber} onChange={e => setEditNumber(e.target.value)} style={{ width: '60px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', borderRadius: '6px', padding: '6px 8px', color: 'white', fontSize: '0.875rem' }} />
+                                                <select value={editPos} onChange={e => setEditPos(e.target.value)} style={{ flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', borderRadius: '6px', padding: '6px 8px', color: 'white', fontSize: '0.875rem' }}>
+                                                    <option>Goleiro</option><option>Zagueiro</option><option>Lateral</option><option>Meio-campo</option><option>Atacante</option>
+                                                </select>
+                                                <button onClick={saveEdit} className="action-icon-btn accent" title="Salvar"><Check size={16} /></button>
+                                                <button onClick={() => setEditingPlayerId(null)} className="action-icon-btn" title="Cancelar"><X size={16} /></button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <TeamLogo src={player.photo} size={36} />
+                                                <div style={{ width: '28px', textAlign: 'center', fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.85rem' }}>#{player.number}</div>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        {player.name}
+                                                        {player.isCaptain && <Crown size={13} style={{ color: '#fbbf24' }} />}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>{player.position}</div>
+                                                </div>
+                                                <div className="action-group">
+                                                    <button onClick={() => toggleCaptain(currentTeam.id, player.id)} className={`action-icon-btn ${player.isCaptain ? 'gold' : ''}`} title={player.isCaptain ? 'Remover capitão' : 'Marcar como capitão'}><Crown size={16} /></button>
+                                                    <button onClick={() => startEdit(player)} className="action-icon-btn" title="Editar"><Edit2 size={16} /></button>
+                                                    <button onClick={() => removePlayer(currentTeam.id, player.id)} className="action-icon-btn danger" title="Remover"><Trash2 size={16} /></button>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
-                                    <div style={{ zIndex: 1, marginBottom: '8px' }}>
-                                        {renderImage(player.photo, 64, player.name.charAt(0))}
-                                    </div>
-                                    <div style={{ textAlign: 'center', zIndex: 1 }}>
-                                        <div style={{ fontWeight: 600 }}>{player.name}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>{player.position}</div>
-                                    </div>
-                                </div>
-                            ))}
-                            {currentTeam.players.length === 0 && (
-                                <p style={{ color: 'var(--text-muted)', gridColumn: '1 / -1' }}>No players registered for this team yet.</p>
-                            )}
+                                ))
+                            }
                         </div>
                     </section>
+                ) : (
+                    <div className="glass-panel p-24" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', minHeight: '300px' }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <Shield size={48} style={{ marginBottom: '12px', opacity: 0.15 }} />
+                            <p>Selecione ou crie um time para gerenciar o elenco</p>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>
     );
 };
+
+const ErrorMsg = ({ msg }: { msg: string }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(239,68,68,0.1)', border: '1px solid var(--danger)', borderRadius: '8px', padding: '10px 14px', color: 'var(--danger)', fontSize: '0.875rem' }}>
+        <AlertCircle size={16} /> {msg}
+    </div>
+);
 
 export default Teams;

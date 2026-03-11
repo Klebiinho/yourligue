@@ -1,35 +1,52 @@
-import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Swords, Trophy, Settings, BarChart2 } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Users, Swords, Trophy, Settings, BarChart2, GitBranch, Trophy as LeagueIcon } from 'lucide-react';
+import { useLeague } from '../context/LeagueContext';
+import TeamLogo from './TeamLogo';
+
+const navItems = [
+    { to: '/', icon: <LayoutDashboard size={22} />, label: 'Dashboard' },
+    { to: '/teams', icon: <Users size={22} />, label: 'Times' },
+    { to: '/teams-dashboard', icon: <BarChart2 size={22} />, label: 'Painel' },
+    { to: '/matches', icon: <Swords size={22} />, label: 'Partidas' },
+    { to: '/standings', icon: <Trophy size={22} />, label: 'Tabela' },
+    { to: '/bracket', icon: <GitBranch size={22} />, label: 'Chaveamento' },
+    { to: '/settings', icon: <Settings size={22} />, label: 'Config.' },
+];
 
 const Sidebar = () => {
+    const { league } = useLeague();
+    const navigate = useNavigate();
+
     return (
         <aside className="sidebar">
-            <div className="sidebar-header">
-                <div style={{ background: 'var(--primary)', padding: '10px', borderRadius: '12px', display: 'flex' }}>
-                    <Trophy size={24} color="white" />
+            {/* Header */}
+            <div className="sidebar-header" onClick={() => navigate('/leagues')} style={{ cursor: 'pointer' }}>
+                <TeamLogo src={league?.logo} size={44} fallbackIcon={<LeagueIcon size={22} color="white" />} />
+                <div style={{ minWidth: 0 }}>
+                    <h2 style={{ fontSize: '1rem', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>
+                        {league?.name ?? 'Liga'}
+                    </h2>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Championship Manager</p>
                 </div>
-                <h2 style={{ fontSize: '1.25rem', color: 'white', fontFamily: 'Outfit' }}>YourLigue</h2>
             </div>
 
+            {/* Nav */}
             <nav className="sidebar-nav">
-                <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                    <LayoutDashboard size={20} /> <span>Visão Geral</span>
-                </NavLink>
-                <NavLink to="/teams" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                    <Users size={20} /> <span>Times</span>
-                </NavLink>
-                <NavLink to="/teams-dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                    <BarChart2 size={20} /> <span>Painel</span>
-                </NavLink>
-                <NavLink to="/matches" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                    <Swords size={20} /> <span>Partidas</span>
-                </NavLink>
+                {navItems.map(({ to, icon, label }) => (
+                    <NavLink key={to} to={to} end={to === '/'}
+                        className={({ isActive }: { isActive: boolean }) => `nav-link${isActive ? ' active' : ''}`}>
+                        {icon}
+                        <span>{label}</span>
+                    </NavLink>
+                ))}
             </nav>
 
+            {/* Footer */}
             <div className="sidebar-footer">
-                <NavLink to="/settings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                    <Settings size={20} /> <span>Ajustes</span>
-                </NavLink>
+                <button onClick={() => navigate('/leagues')} className="nav-link" style={{ width: '100%', border: 'none', cursor: 'pointer' }}>
+                    <LeagueIcon size={20} />
+                    <span>Trocar Liga</span>
+                </button>
             </div>
         </aside>
     );

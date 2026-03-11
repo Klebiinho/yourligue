@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useChampionship, type MatchEvent } from '../context/ChampionshipContext';
+import { useLeague, type MatchEvent } from '../context/LeagueContext';
 import { Clock, StopCircle, Award, AlertTriangle, ShieldAlert, Settings2, XCircle, Target, Trash2, Crown, Pause, Play } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
+
 
 const MatchControl = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { matches, teams, endMatch, addEvent, removeEvent, updateTimer, updateMatch } = useChampionship();
+    const { matches, teams, endMatch, addEvent, removeEvent, updateTimer, updateMatch } = useLeague();
     const [activeTab, setActiveTab] = useState<'main' | 'penalties'>('main');
 
     const match = matches.find(m => m.id === id);

@@ -1,213 +1,200 @@
-import React from 'react';
-import { useChampionship } from '../context/ChampionshipContext';
-import { Users, Trophy, Activity, Target, Award, Shield, AlertTriangle, Trash2, Edit2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useLeague } from '../context/LeagueContext';
+import { Trophy, Users, Activity, Target, Award, Shield, AlertTriangle, Calendar, MapPin, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
 const Dashboard = () => {
-    const { league, teams, matches, deleteMatch, startMatch } = useChampionship();
+    const { league, teams, matches, startMatch } = useLeague();
     const navigate = useNavigate();
 
-    const totalPlayers = teams.reduce((acc, team) => acc + team.players.length, 0);
+    const totalPlayers = teams.reduce((acc, t) => acc + t.players.length, 0);
     const liveMatches = matches.filter(m => m.status === 'live').length;
     const finishedMatches = matches.filter(m => m.status === 'finished').length;
+    const scheduled = matches.filter(m => m.status === 'scheduled').slice(0, 5);
 
     const allPlayers = teams.flatMap(t => t.players.map(p => ({ ...p, team: t })));
     const topScorer = allPlayers.length > 0 ? [...allPlayers].sort((a, b) => b.stats.goals - a.stats.goals)[0] : null;
-
-    // Melhor defesa: apenas times que já jogaram pelo menos uma partida
     const teamsWithGames = teams.filter(t => t.stats.matches > 0);
-    const bestDefenseTeam = teamsWithGames.length > 0 ? [...teamsWithGames].sort((a, b) => a.stats.goalsAgainst - b.stats.goalsAgainst)[0] : null;
+    const bestDefense = teamsWithGames.length > 0 ? [...teamsWithGames].sort((a, b) => a.stats.goalsAgainst - b.stats.goalsAgainst)[0] : null;
+    const mostCards = allPlayers.length > 0 ? [...allPlayers].sort((a, b) => (b.stats.yellowCards + b.stats.redCards * 2) - (a.stats.yellowCards + a.stats.redCards * 2))[0] : null;
 
-    const mostCardsPlayer = allPlayers.length > 0 ? [...allPlayers].sort((a, b) => (b.stats.yellowCards + b.stats.redCards * 2) - (a.stats.yellowCards + a.stats.redCards * 2))[0] : null;
+    const sortedTeams = [...teams].sort((a, b) => {
+        const pts = (t: typeof teams[0]) => t.stats.wins * (league?.pointsForWin ?? 3) + t.stats.draws * (league?.pointsForDraw ?? 1) + t.stats.losses * (league?.pointsForLoss ?? 0);
+        return pts(b) - pts(a);
+    });
 
-    const handleStartMatch = (id: string, status: string) => {
-        if (status === 'scheduled') {
-            startMatch(id);
-        }
+    const handleEnterMatch = (id: string, status: string) => {
+        if (status === 'scheduled') startMatch(id);
         navigate(`/match/${id}`);
     };
 
-    const handleDeleteMatch = (id: string) => {
-        if (window.confirm('Tem certeza que deseja excluir esta partida?')) {
-            deleteMatch(id);
-        }
+    const formatDate = (dt?: string) => {
+        if (!dt) return '';
+        return new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     };
 
     return (
         <div className="animate-fade-in">
             <header className="mb-40" style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                {league.logo && <TeamLogo src={league.logo} size={80} />}
+                {league?.logo && <TeamLogo src={league.logo} size={72} />}
                 <div>
-                    <h1 className="responsive-title">{league.name}</h1>
-                    <p className="responsive-subtitle">Estatísticas em tempo real para o seu campeonato.</p>
+                    <h1 className="responsive-title">{league?.name ?? 'Carregando...'}</h1>
+                    <p className="responsive-subtitle">Visão geral da liga em tempo real</p>
                 </div>
             </header>
 
+            {/* Stats Cards */}
             <div className="grid-4 mb-40">
-                <StatCard title="Total de Times" value={`${teams.length} / ${league.maxTeams}`} icon={<Trophy color="var(--primary)" />} />
+                <StatCard title="Times" value={`${teams.length} / ${league?.maxTeams ?? 16}`} icon={<Trophy color="var(--primary)" />} />
                 <StatCard title="Jogadores" value={totalPlayers} icon={<Users color="var(--accent)" />} />
-                <StatCard title="Ao Vivo" value={liveMatches} icon={<Activity color="var(--danger)" />} />
+                <StatCard title="Ao Vivo" value={liveMatches} icon={<Activity color="var(--danger)" />} accent="danger" />
                 <StatCard title="Concluídas" value={finishedMatches} icon={<Target color="var(--warning)" />} />
             </div>
 
             <div className="grid-2">
+                {/* Partidas */}
                 <section className="glass-panel p-24">
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Activity size={20} className="text-gradient" /> Partidas ao Vivo e Próximas
+                        <Activity size={20} className="text-gradient" /> Próximas & Ao Vivo
                     </h2>
-                    {matches.length === 0 ? (
-                        <p style={{ color: 'var(--text-muted)' }}>Nenhuma partida agendada ainda.</p>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {matches.slice(0, 5).map(match => {
-                                const homeTeam = teams.find(t => t.id === match.homeTeamId);
-                                const awayTeam = teams.find(t => t.id === match.awayTeamId);
+                    {matches.length === 0
+                        ? <p style={{ color: 'var(--text-muted)' }}>Nenhuma partida agendada ainda.</p>
+                        : <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {matches.slice(0, 6).map(match => {
+                                const ht = teams.find(t => t.id === match.homeTeamId);
+                                const at = teams.find(t => t.id === match.awayTeamId);
+                                const isLive = match.status === 'live';
                                 return (
-                                    <div key={match.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <TeamLogo src={homeTeam?.logo} size={32} />
-                                            <span style={{ fontWeight: 600 }}>{homeTeam?.name}</span>
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ fontWeight: 800, fontSize: '1.25rem' }}>
-                                                {match.homeScore} - {match.awayScore}
-                                            </div>
-                                            <div style={{ display: 'flex', gap: '8px' }}>
-                                                {match.status === 'scheduled' && (
-                                                    <button
-                                                        onClick={() => navigate('/matches')}
-                                                        className="btn-outline"
-                                                        style={{ padding: '6px', background: 'transparent', border: '1px solid var(--text-muted)', color: 'var(--text-muted)', borderRadius: '50%', cursor: 'pointer' }}
-                                                        title="Editar Partida"
-                                                    >
-                                                        <Edit2 size={12} />
-                                                    </button>
-                                                )}
-                                                <button
-                                                    onClick={() => handleStartMatch(match.id, match.status)}
-                                                    className={match.status === 'live' ? 'btn-danger' : match.status === 'finished' ? 'btn-outline' : 'btn-accent'}
-                                                    style={{ padding: '6px 12px', fontSize: '0.75rem', borderRadius: '24px' }}
-                                                >
-                                                    {match.status === 'live' ? 'Gerenciar' : match.status === 'finished' ? <span>Ver</span> : <span>Iniciar</span>}
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteMatch(match.id)}
-                                                    className="btn-danger-outline"
-                                                    style={{ padding: '6px', background: 'transparent', border: '1px solid var(--danger)', color: 'var(--danger)', borderRadius: '50%', cursor: 'pointer' }}
-                                                    title="Excluir Partida"
-                                                >
-                                                    <Trash2 size={12} />
-                                                </button>
+                                    <div key={match.id}
+                                        onClick={() => handleEnterMatch(match.id, match.status)}
+                                        style={{
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                            padding: '14px 16px', borderRadius: '12px', cursor: 'pointer',
+                                            background: isLive ? 'rgba(109,40,217,0.15)' : 'rgba(0,0,0,0.2)',
+                                            border: `1px solid ${isLive ? 'var(--primary)' : 'var(--glass-border)'}`,
+                                            transition: 'all 0.2s'
+                                        }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                                            <TeamLogo src={ht?.logo} size={32} />
+                                            <div>
+                                                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{ht?.name} <span style={{ color: 'var(--text-muted)' }}>x</span> {at?.name}</div>
+                                                <div style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)' }}>
+                                                    {match.scheduledAt && <><Calendar size={11} /> {formatDate(match.scheduledAt)}</>}
+                                                    {match.location && <><MapPin size={11} /> {match.location}</>}
+                                                </div>
                                             </div>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '120px', justifyContent: 'flex-start' }}>
-                                            <TeamLogo src={awayTeam?.logo} size={32} />
-                                            <span style={{ fontWeight: 600 }}>{awayTeam?.name}</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            {isLive && <span style={{ background: 'var(--danger)', color: 'white', padding: '2px 8px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 700, animation: 'pulse 2s infinite' }}>AO VIVO</span>}
+                                            {match.status === 'finished' && <span style={{ color: 'var(--text-muted)', fontWeight: 800 }}>{match.homeScore} - {match.awayScore}</span>}
+                                            <TeamLogo src={at?.logo} size={32} />
+                                            <ChevronRight size={14} color="var(--text-muted)" />
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
-                    )}
+                    }
                 </section>
 
+                {/* Destaques */}
                 <section className="glass-panel p-24">
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Award size={20} className="text-gradient" /> Destaques da Copa
-                    </h2>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {topScorer && topScorer.stats.goals > 0 ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                                <div style={{ background: 'var(--primary-glow)', padding: '12px', borderRadius: '50%' }}>
-                                    <Award size={24} color="var(--primary)" />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Artilheiro</div>
-                                    <div style={{ fontWeight: 800, fontSize: '1.125rem' }}>{topScorer.name}</div>
-                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <TeamLogo src={topScorer.team.logo} size={16} /> {topScorer.team.name}
-                                    </div>
-                                </div>
-                                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary)' }}>{topScorer.stats.goals}</div>
-                            </div>
-                        ) : (
-                            <div style={{ padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--glass-border)', color: 'var(--text-muted)' }}>Nenhum gol registrado.</div>
-                        )}
-
-                        {bestDefenseTeam && matches.filter(m => m.status === 'finished').length > 0 ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                                <div style={{ background: 'rgba(34, 197, 94, 0.2)', padding: '12px', borderRadius: '50%' }}>
-                                    <Shield size={24} color="#22c55e" />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Melhor Zaga (Menos gols sofridos)</div>
-                                    <div style={{ fontWeight: 800, fontSize: '1.125rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <TeamLogo src={bestDefenseTeam.logo} size={24} /> {bestDefenseTeam.name}
-                                    </div>
-                                </div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#22c55e' }}>{bestDefenseTeam.stats.goalsAgainst}</div>
-                            </div>
-                        ) : null}
-
-                        {mostCardsPlayer && (mostCardsPlayer.stats.yellowCards > 0 || mostCardsPlayer.stats.redCards > 0) ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                                <div style={{ background: 'rgba(239, 68, 68, 0.2)', padding: '12px', borderRadius: '50%' }}>
-                                    <AlertTriangle size={24} color="var(--danger)" />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Mais Cartões</div>
-                                    <div style={{ fontWeight: 800, fontSize: '1.125rem' }}>{mostCardsPlayer.name}</div>
-                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <TeamLogo src={mostCardsPlayer.team.logo} size={16} /> {mostCardsPlayer.team.name}
-                                    </div>
-                                </div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--danger)' }}>
-                                    {mostCardsPlayer.stats.yellowCards + mostCardsPlayer.stats.redCards}
-                                </div>
-                            </div>
-                        ) : null}
-                    </div>
-                </section>
-
-                <section className="glass-panel p-24">
-                    <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Trophy size={20} className="text-gradient-accent" /> Classificação dos Times
+                        <Award size={20} className="text-gradient" /> Destaques da Liga
                     </h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {teams.length === 0 ? (
-                            <p style={{ color: 'var(--text-muted)' }}>Nenhum time registrado.</p>
-                        ) : (
-                            [...teams]
-                                .sort((a, b) => {
-                                    const scoreA = a.stats.wins * league.pointsForWin + a.stats.draws * league.pointsForDraw + a.stats.losses * league.pointsForLoss;
-                                    const scoreB = b.stats.wins * league.pointsForWin + b.stats.draws * league.pointsForDraw + b.stats.losses * league.pointsForLoss;
-                                    return scoreB - scoreA;
-                                })
-                                .map((team, index) => (
-                                    <div key={team.id} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '12px', borderRadius: '12px', background: index === 0 ? 'var(--primary-glow)' : 'transparent', border: '1px solid var(--glass-border)' }}>
-                                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>{index + 1}</div>
-                                        <TeamLogo src={team.logo} size={32} />
-                                        <div style={{ flex: 1, fontWeight: 600 }}>{team.name}</div>
-                                        <div style={{ fontWeight: 'bold', color: 'var(--accent)' }}>{team.stats.wins * league.pointsForWin + team.stats.draws * league.pointsForDraw + team.stats.losses * league.pointsForLoss} pts</div>
-                                    </div>
-                                ))
-                        )}
+                        {topScorer && topScorer.stats.goals > 0 ? (
+                            <HighlightCard icon={<Award size={22} color="var(--primary)" />} bg="var(--primary-glow)"
+                                label="Artilheiro" name={topScorer.name} team={topScorer.team} value={`${topScorer.stats.goals} gols`} valueColor="var(--primary)" />
+                        ) : <EmptyHighlight label="Nenhum gol registrado ainda." />}
+                        {bestDefense ? (
+                            <HighlightCard icon={<Shield size={22} color="#22c55e" />} bg="rgba(34,197,94,0.15)"
+                                label="Melhor Defesa" name={bestDefense.name} team={bestDefense} value={`${bestDefense.stats.goalsAgainst} sofridos`} valueColor="#22c55e" />
+                        ) : null}
+                        {mostCards && (mostCards.stats.yellowCards > 0 || mostCards.stats.redCards > 0) ? (
+                            <HighlightCard icon={<AlertTriangle size={22} color="var(--danger)" />} bg="rgba(239,68,68,0.15)"
+                                label="Mais Cartões" name={mostCards.name} team={mostCards.team}
+                                value={`🟨 ${mostCards.stats.yellowCards}  🟥 ${mostCards.stats.redCards}`} valueColor="var(--danger)" />
+                        ) : null}
                     </div>
+                </section>
+
+                {/* Classificação */}
+                <section className="glass-panel p-24" style={{ gridColumn: '1 / -1' }}>
+                    <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Trophy size={20} className="text-gradient-accent" /> Classificação
+                    </h2>
+                    {sortedTeams.length === 0 ? <p style={{ color: 'var(--text-muted)' }}>Nenhum time registrado.</p> : (
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                                <thead>
+                                    <tr style={{ color: 'var(--text-muted)', fontSize: '0.8rem', letterSpacing: '0.05em', textTransform: 'uppercase', borderBottom: '1px solid var(--glass-border)' }}>
+                                        {['#', 'Time', 'Pts', 'J', 'V', 'E', 'D', 'GP', 'GC', 'SG'].map(h => (
+                                            <th key={h} style={{ padding: '8px 12px', textAlign: h === 'Time' ? 'left' : 'center', fontWeight: 600 }}>{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {sortedTeams.map((team, i) => {
+                                        const pts = team.stats.wins * (league?.pointsForWin ?? 3) + team.stats.draws * (league?.pointsForDraw ?? 1) + team.stats.losses * (league?.pointsForLoss ?? 0);
+                                        const sg = team.stats.goalsFor - team.stats.goalsAgainst;
+                                        return (
+                                            <tr key={team.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: i === 0 ? 'rgba(109,40,217,0.08)' : 'transparent', transition: 'background 0.2s' }}>
+                                                <td style={{ padding: '12px', textAlign: 'center', fontWeight: 800, color: i === 0 ? 'var(--primary)' : 'var(--text-muted)' }}>{i + 1}</td>
+                                                <td style={{ padding: '12px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                        <TeamLogo src={team.logo} size={28} />
+                                                        <span style={{ fontWeight: 600 }}>{team.name}</span>
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '12px', textAlign: 'center', fontWeight: 800, color: 'var(--accent)' }}>{pts}</td>
+                                                <td style={{ padding: '12px', textAlign: 'center' }}>{team.stats.matches}</td>
+                                                <td style={{ padding: '12px', textAlign: 'center', color: '#22c55e' }}>{team.stats.wins}</td>
+                                                <td style={{ padding: '12px', textAlign: 'center' }}>{team.stats.draws}</td>
+                                                <td style={{ padding: '12px', textAlign: 'center', color: 'var(--danger)' }}>{team.stats.losses}</td>
+                                                <td style={{ padding: '12px', textAlign: 'center' }}>{team.stats.goalsFor}</td>
+                                                <td style={{ padding: '12px', textAlign: 'center' }}>{team.stats.goalsAgainst}</td>
+                                                <td style={{ padding: '12px', textAlign: 'center', color: sg >= 0 ? '#22c55e' : 'var(--danger)', fontWeight: 700 }}>{sg > 0 ? `+${sg}` : sg}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </section>
             </div>
         </div>
     );
 };
 
-const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
-    <div className="glass-panel p-24" style={{ display: 'flex', flexDirection: 'column', gap: '8px', minHeight: 'auto', justifyContent: 'center' }}>
+const StatCard = ({ title, value, icon, accent }: { title: string; value: string | number; icon: React.ReactNode; accent?: string }) => (
+    <div className="glass-panel p-24" style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '120px', justifyContent: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <h3 style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{title}</h3>
-            <div style={{ padding: '8px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '8px' }}>{icon}</div>
+            <h3 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{title}</h3>
+            <div style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>{icon}</div>
         </div>
-        <div style={{ fontSize: '2rem', fontWeight: 800, fontFamily: 'Outfit', marginTop: '4px' }}>{value}</div>
+        <div style={{ fontSize: '2rem', fontWeight: 800, fontFamily: 'Outfit', color: accent === 'danger' && Number(value) > 0 ? 'var(--danger)' : 'inherit' }}>{value}</div>
     </div>
+);
+
+const HighlightCard = ({ icon, bg, label, name, team, value, valueColor }: any) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)' }}>
+        <div style={{ background: bg, padding: '10px', borderRadius: '50%', flexShrink: 0 }}>{icon}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{label}</div>
+            <div style={{ fontWeight: 800, fontSize: '1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+            <div style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)' }}>
+                {team?.logo && <TeamLogo src={team.logo} size={14} />} {team?.name}
+            </div>
+        </div>
+        <div style={{ fontWeight: 800, fontSize: '1.1rem', color: valueColor, flexShrink: 0 }}>{value}</div>
+    </div>
+);
+
+const EmptyHighlight = ({ label }: { label: string }) => (
+    <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{label}</div>
 );
 
 export default Dashboard;
