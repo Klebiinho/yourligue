@@ -28,6 +28,7 @@ export type League = {
   pointsForWin: number;
   pointsForDraw: number;
   pointsForLoss: number;
+  defaultHalfLength: number;
 };
 
 interface ChampionshipContextType {
@@ -57,7 +58,8 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
     logo: '',
     pointsForWin: 3,
     pointsForDraw: 1,
-    pointsForLoss: 0
+    pointsForLoss: 0,
+    defaultHalfLength: 45
   });
   const [teams, setTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -76,7 +78,8 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
         logo: leagueData.logo || '',
         pointsForWin: leagueData.points_for_win ?? 3,
         pointsForDraw: leagueData.points_for_draw ?? 1,
-        pointsForLoss: leagueData.points_for_loss ?? 0
+        pointsForLoss: leagueData.points_for_loss ?? 0,
+        defaultHalfLength: leagueData.default_half_length ?? 45
       });
 
       // 2. Fetch Teams and Players
@@ -140,7 +143,8 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
       logo: leagueData.logo,
       points_for_win: leagueData.pointsForWin,
       points_for_draw: leagueData.pointsForDraw,
-      points_for_loss: leagueData.pointsForLoss
+      points_for_loss: leagueData.pointsForLoss,
+      default_half_length: leagueData.defaultHalfLength
     }).eq('id', 1);
   };
 
@@ -186,7 +190,8 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
       home_team_id: homeTeamId,
       away_team_id: awayTeamId,
       youtube_live_id: youtubeLiveId,
-      status: 'scheduled'
+      status: 'scheduled',
+      half_length: league.defaultHalfLength
     }]).select().single();
 
     if (data) {
@@ -200,7 +205,7 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
         events: [],
         timer: 0,
         youtubeLiveId,
-        halfLength: 45,
+        halfLength: league.defaultHalfLength,
         extraTime: 0,
         period: '1º Tempo'
       }]);

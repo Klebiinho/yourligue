@@ -13,6 +13,7 @@ const Settings = () => {
     const [pointsForWin, setPointsForWin] = useState(league.pointsForWin.toString());
     const [pointsForDraw, setPointsForDraw] = useState(league.pointsForDraw.toString());
     const [pointsForLoss, setPointsForLoss] = useState(league.pointsForLoss.toString());
+    const [defaultHalfLength, setDefaultHalfLength] = useState(league.defaultHalfLength.toString());
     const [isSaved, setIsSaved] = useState(false);
     const [youtubeClientId, setYoutubeClientId] = useState(import.meta.env.VITE_YOUTUBE_CLIENT_ID || localStorage.getItem('yt_client_id') || '');
     const [isYtAuthenticated, setIsYtAuthenticated] = useState(false);
@@ -48,6 +49,7 @@ const Settings = () => {
             pointsForWin: parseInt(pointsForWin) || 3,
             pointsForDraw: parseInt(pointsForDraw) || 1,
             pointsForLoss: parseInt(pointsForLoss) || 0,
+            defaultHalfLength: parseInt(defaultHalfLength) || 45,
         });
         setIsSaved(true);
         localStorage.setItem('yt_client_id', youtubeClientId);
@@ -147,6 +149,17 @@ const Settings = () => {
                         </div>
                     </div>
 
+                    <h3 style={{ marginTop: '16px', color: 'var(--text-main)' }}>Tempo de Partida</h3>
+                    <div className="input-group">
+                        <label>Duração Padrão de cada Tempo (min)</label>
+                        <input
+                            type="number"
+                            value={defaultHalfLength}
+                            onChange={e => setDefaultHalfLength(e.target.value)}
+                            required
+                        />
+                    </div>
+
                     <button type="submit" className="btn-primary" style={{ marginTop: '16px', justifyContent: 'center', padding: '16px' }}>
                         <Save size={20} /> {isSaved ? 'Salvo!' : 'Salvar Configurações'}
                     </button>
@@ -217,7 +230,7 @@ const Settings = () => {
                     </div>
                 </div>
             </section>
-        </div>
+        </div >
     );
 };
 
