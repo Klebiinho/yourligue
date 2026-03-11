@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 
 export type Player = { id: string; name: string; number: number; position: string; photo?: string; stats: { goals: number; assists: number; yellowCards: number; redCards: number } };
 export type Team = { id: string; name: string; logo: string; players: Player[]; stats: { matches: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number } };
-export type MatchEvent = { id: string; type: 'goal' | 'yellow_card' | 'red_card' | 'substitution' | 'foul'; teamId: string; playerId: string; minute: number };
+export type MatchEvent = { id: string; type: 'goal' | 'yellow_card' | 'red_card' | 'substitution' | 'foul' | 'penalty_goal' | 'penalty_miss'; teamId: string; playerId: string; minute: number };
 export type Match = {
   id: string;
   homeTeamId: string;
@@ -47,6 +47,7 @@ interface ChampionshipContextType {
   updateTimer: (matchId: string, time: number) => void;
   addEvent: (matchId: string, event: Omit<MatchEvent, 'id'>) => void;
   updateMatch: (matchId: string, data: Partial<Match>) => void;
+  deleteMatch: (matchId: string) => void;
 }
 
 const ChampionshipContext = createContext<ChampionshipContextType | undefined>(undefined);
@@ -222,6 +223,11 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
     await supabase.from('matches').update({ status: 'finished' }).eq('id', matchId);
   };
 
+  const deleteMatch = async (matchId: string) => {
+    setMatches(matches.filter(m => m.id !== matchId));
+    await supabase.from('matches').delete().eq('id', matchId);
+  };
+
   const updateTimer = (matchId: string, time: number) => {
     setMatches(matches.map(m => m.id === matchId ? { ...m, timer: time } : m));
     // We don't necessarily need to persist every second to DB for performance, 
@@ -281,7 +287,7 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
       updateLeague, addTeam, updateTeam, deleteTeam,
       addPlayer, removePlayer,
       createMatch, startMatch, endMatch, updateTimer, addEvent,
-      updateMatch
+      updateMatch, deleteMatch
     }}>
       {children}
     </ChampionshipContext.Provider>

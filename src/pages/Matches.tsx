@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useChampionship } from '../context/ChampionshipContext';
-import { Swords, PlusCircle, Play, CheckCircle } from 'lucide-react';
+import { Swords, PlusCircle, Play, CheckCircle, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
 const Matches = () => {
-    const { teams, matches, createMatch, startMatch } = useChampionship();
+    const { teams, matches, createMatch, startMatch, deleteMatch } = useChampionship();
     const [homeTeamId, setHomeTeamId] = useState(teams[0]?.id || '');
     const [awayTeamId, setAwayTeamId] = useState(teams[1]?.id || '');
     const [youtubeLiveId, setYoutubeLiveId] = useState('');
@@ -33,6 +33,12 @@ const Matches = () => {
             startMatch(id);
         }
         navigate(`/match/${id}`);
+    };
+
+    const handleDeleteMatch = (id: string) => {
+        if (window.confirm('Tem certeza que deseja excluir esta partida?')) {
+            deleteMatch(id);
+        }
     };
 
     return (
@@ -100,13 +106,23 @@ const Matches = () => {
                                             </div>
                                         </div>
 
-                                        <button
-                                            onClick={() => handleStartMatch(match.id, match.status)}
-                                            className={isLive ? 'btn-danger' : isFinished ? 'btn-outline' : 'btn-accent'}
-                                            style={{ padding: '8px 16px', borderRadius: '24px' }}
-                                        >
-                                            {isLive ? 'Gerenciar Partida Ao Vivo' : isFinished ? <span><CheckCircle size={16} /> View Stats</span> : <span><Play size={16} /> Iniciar Partida</span>}
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button
+                                                onClick={() => handleStartMatch(match.id, match.status)}
+                                                className={isLive ? 'btn-danger' : isFinished ? 'btn-outline' : 'btn-accent'}
+                                                style={{ padding: '8px 16px', borderRadius: '24px' }}
+                                            >
+                                                {isLive ? 'Gerenciar' : isFinished ? <span><CheckCircle size={16} /> Ver</span> : <span><Play size={16} /> Iniciar</span>}
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteMatch(match.id)}
+                                                className="btn-danger-outline"
+                                                style={{ padding: '8px', background: 'transparent', border: '1px solid var(--danger)', color: 'var(--danger)', borderRadius: '50%', cursor: 'pointer' }}
+                                                title="Excluir Partida"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </div>
                                 );
                             })}

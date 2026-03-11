@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useChampionship } from '../context/ChampionshipContext';
-import { Clock, StopCircle, Award, AlertTriangle, ShieldAlert, Video, Copy, ExternalLink, RefreshCw, PlusCircle, LogIn, Settings2 } from 'lucide-react';
+import { Clock, StopCircle, Award, AlertTriangle, ShieldAlert, Video, Copy, ExternalLink, RefreshCw, PlusCircle, LogIn, Settings2, XCircle, Target } from 'lucide-react';
 import { YouTubeService } from '../services/youtube';
 import TeamLogo from '../components/TeamLogo';
 
@@ -12,6 +12,7 @@ const MatchControl = () => {
     const [isCreatingLive, setIsCreatingLive] = useState(false);
     const [ytError, setYtError] = useState<string | null>(null);
     const [isYtAuthenticated, setIsYtAuthenticated] = useState(false);
+    const [activeTab, setActiveTab] = useState<'main' | 'penalties'>('main');
 
     useEffect(() => {
         const yt = YouTubeService.getInstance();
@@ -58,6 +59,9 @@ const MatchControl = () => {
 
     if (!match || !homeTeam || !awayTeam) return <div>Match not found</div>;
 
+    const homePenaltyGoals = match.events.filter(e => e.type === 'penalty_goal' && e.teamId === homeTeam.id).length;
+    const awayPenaltyGoals = match.events.filter(e => e.type === 'penalty_goal' && e.teamId === awayTeam.id).length;
+    const isPenaltyMode = activeTab === 'penalties' || match.events.some(e => e.type === 'penalty_goal' || e.type === 'penalty_miss');
     const formatTime = (totalSeconds: number) => {
         const mins = Math.floor(totalSeconds / 60);
         const secs = totalSeconds % 60;
@@ -133,11 +137,19 @@ const MatchControl = () => {
                         {isLive ? 'Controle da Partida ao Vivo' : 'Detalhes da Partida'}
                     </h1>
                 </div>
-                {isLive && (
-                    <button className="btn-danger" onClick={handleEndMatch}>
-                        <StopCircle size={20} /> Encerrar Partida
-                    </button>
-                )}
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    {isLive && (
+                        <>
+                            <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '24px', padding: '4px' }}>
+                                <button className={activeTab === 'main' ? 'btn-primary' : ''} onClick={() => setActiveTab('main')} style={{ padding: '8px 16px', borderRadius: '20px', background: activeTab === 'main' ? 'var(--primary)' : 'transparent', color: activeTab === 'main' ? 'black' : 'white', border: 'none', fontWeight: 600 }}>Tempo Normal</button>
+                                <button className={activeTab === 'penalties' ? 'btn-primary' : ''} onClick={() => setActiveTab('penalties')} style={{ padding: '8px 16px', borderRadius: '20px', background: activeTab === 'penalties' ? 'var(--primary)' : 'transparent', color: activeTab === 'penalties' ? 'black' : 'white', border: 'none', fontWeight: 600 }}>Pênaltis</button>
+                            </div>
+                            <button className="btn-danger" onClick={handleEndMatch}>
+                                <StopCircle size={20} /> Encerrar
+                            </button>
+                        </>
+                    )}
+                </div>
             </header>
 
             <div className="scoreboard" style={{ marginBottom: '40px' }}>
@@ -161,6 +173,11 @@ const MatchControl = () => {
                             <span style={{ fontSize: '1.5rem', color: 'var(--warning)', fontWeight: 600 }}>+{extraTime}</span>
                         )}
                     </div>
+                    {isPenaltyMode && (
+                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--warning)', marginTop: '8px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Target size={20} /> Pênaltis: {homePenaltyGoals} - {awayPenaltyGoals}
+                        </div>
+                    )}
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '16px' }}>
                         Tempo regulamentar: {halfLength} min
                     </div>
@@ -321,9 +338,18 @@ const MatchControl = () => {
                                         <div style={{ fontWeight: 600 }}>{player.name}</div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button onClick={() => handleGol(homeTeam.id, player.id)} className="btn-accent" style={{ padding: '8px', minWidth: 'auto', borderRadius: '50%' }} title="Gol"><Award size={16} /></button>
-                                        <button onClick={() => handleCard('yellow_card', homeTeam.id, player.id)} style={{ padding: '8px', background: 'var(--warning)', color: 'black', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Amarelo"><AlertTriangle size={16} /></button>
-                                        <button onClick={() => handleCard('red_card', homeTeam.id, player.id)} style={{ padding: '8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Vermelho"><ShieldAlert size={16} /></button>
+                                        {activeTab === 'main' ? (
+                                            <>
+                                                <button onClick={() => handleGol(homeTeam.id, player.id)} className="btn-accent" style={{ padding: '8px', minWidth: 'auto', borderRadius: '50%' }} title="Gol"><Award size={16} /></button>
+                                                <button onClick={() => handleCard('yellow_card', homeTeam.id, player.id)} style={{ padding: '8px', background: 'var(--warning)', color: 'black', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Amarelo"><AlertTriangle size={16} /></button>
+                                                <button onClick={() => handleCard('red_card', homeTeam.id, player.id)} style={{ padding: '8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Vermelho"><ShieldAlert size={16} /></button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button onClick={() => addEvent(id!, { type: 'penalty_goal', teamId: homeTeam.id, playerId: player.id, minute: 120 })} style={{ padding: '8px 12px', background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', borderRadius: '24px', border: '1px solid #22c55e', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600 }} title="Fez o Pênalti"><Target size={14} /> Gol</button>
+                                                <button onClick={() => addEvent(id!, { type: 'penalty_miss', teamId: homeTeam.id, playerId: player.id, minute: 120 })} style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '24px', border: '1px solid #ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600 }} title="Errou o Pênalti"><XCircle size={14} /> Errou</button>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -344,9 +370,18 @@ const MatchControl = () => {
                                         <div style={{ fontWeight: 600 }}>{player.name}</div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button onClick={() => handleGol(awayTeam.id, player.id)} className="btn-accent" style={{ padding: '8px', minWidth: 'auto', borderRadius: '50%' }} title="Gol"><Award size={16} /></button>
-                                        <button onClick={() => handleCard('yellow_card', awayTeam.id, player.id)} style={{ padding: '8px', background: 'var(--warning)', color: 'black', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Amarelo"><AlertTriangle size={16} /></button>
-                                        <button onClick={() => handleCard('red_card', awayTeam.id, player.id)} style={{ padding: '8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Vermelho"><ShieldAlert size={16} /></button>
+                                        {activeTab === 'main' ? (
+                                            <>
+                                                <button onClick={() => handleGol(awayTeam.id, player.id)} className="btn-accent" style={{ padding: '8px', minWidth: 'auto', borderRadius: '50%' }} title="Gol"><Award size={16} /></button>
+                                                <button onClick={() => handleCard('yellow_card', awayTeam.id, player.id)} style={{ padding: '8px', background: 'var(--warning)', color: 'black', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Amarelo"><AlertTriangle size={16} /></button>
+                                                <button onClick={() => handleCard('red_card', awayTeam.id, player.id)} style={{ padding: '8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }} title="Cartão Vermelho"><ShieldAlert size={16} /></button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button onClick={() => addEvent(id!, { type: 'penalty_goal', teamId: awayTeam.id, playerId: player.id, minute: 120 })} style={{ padding: '8px 12px', background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', borderRadius: '24px', border: '1px solid #22c55e', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600 }} title="Fez o Pênalti"><Target size={14} /> Gol</button>
+                                                <button onClick={() => addEvent(id!, { type: 'penalty_miss', teamId: awayTeam.id, playerId: player.id, minute: 120 })} style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '24px', border: '1px solid #ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600 }} title="Errou o Pênalti"><XCircle size={14} /> Errou</button>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             ))}
