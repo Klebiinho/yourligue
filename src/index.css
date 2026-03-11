@@ -450,6 +450,18 @@ a {
   gap: 24px;
 }
 
+.teams-dashboard-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) 2fr;
+  gap: 24px;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .app-container {
@@ -507,6 +519,11 @@ a {
   .timer-block {
     order: -1;
     margin-bottom: 0;
+  }
+
+  .teams-dashboard-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .grid-2,

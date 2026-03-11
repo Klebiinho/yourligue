@@ -72,16 +72,16 @@ const TeamsDashboard = () => {
 
     return (
         <div className="animate-fade-in">
-            <header style={{ marginBottom: '40px' }}>
-                <h1 style={{ fontSize: '2.5rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <header className="mb-40">
+                <h1 className="responsive-title" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                     <BarChart2 size={32} /> Painel das Equipes e Estatísticas
                 </h1>
-                <p style={{ color: 'var(--text-muted)' }}>Gerenciamento avançado e análise de desempenho dos seus elencos.</p>
+                <p className="responsive-subtitle">Gerenciamento avançado e análise de desempenho dos seus elencos.</p>
             </header>
 
-            <div className="grid-2" style={{ gridTemplateColumns: 'minmax(300px, 1fr) 2fr' }}>
+            <div className="teams-dashboard-layout">
                 {/* Left: Team Selection List */}
-                <aside className="glass-panel" style={{ padding: '24px', position: 'sticky', top: '24px', alignSelf: 'start' }}>
+                <aside className="glass-panel p-24" style={{ position: 'sticky', top: '24px', alignSelf: 'start' }}>
                     <h2 style={{ marginBottom: '20px', fontSize: '1.25rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
                         Times Registrados
                     </h2>
@@ -116,7 +116,7 @@ const TeamsDashboard = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                             {/* Team Header Card */}
                             <section className="glass-panel" style={{ padding: '32px', position: 'relative' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
                                     <div style={{ position: 'relative' }}>
                                         <TeamLogo src={isEditingTeam ? editTeamLogo : selectedTeam.logo} size={100} />
                                         {isEditingTeam && (
@@ -139,12 +139,12 @@ const TeamsDashboard = () => {
                                                 type="text"
                                                 value={editTeamName}
                                                 onChange={(e) => setEditTeamName(e.target.value)}
-                                                style={{ fontSize: '2rem', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: '8px', padding: '4px 12px', width: '100%', color: 'white' }}
+                                                style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: '8px', padding: '4px 12px', width: '100%', color: 'white' }}
                                             />
                                         ) : (
-                                            <h2 style={{ fontSize: '2.5rem', fontWeight: 800 }}>{selectedTeam.name}</h2>
+                                            <h2 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', fontWeight: 800 }}>{selectedTeam.name}</h2>
                                         )}
-                                        <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
+                                        <div style={{ display: 'flex', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
                                             <div style={{ background: 'var(--glass-border)', padding: '4px 12px', borderRadius: '16px', fontSize: '0.875rem' }}>ID: {selectedTeam.id}</div>
                                             <div style={{ color: 'var(--text-muted)' }}>{selectedTeam.players.length} jogadores registrados</div>
                                         </div>
@@ -215,7 +215,7 @@ const TeamsDashboard = () => {
                             </section>
 
                             {/* Squad Table */}
-                            <section className="glass-panel" style={{ padding: '24px' }}>
+                            <section className="glass-panel p-24">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                                     <h3 style={{ fontSize: '1.25rem' }}>Squad Performance</h3>
                                 </div>
