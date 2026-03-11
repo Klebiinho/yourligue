@@ -36,15 +36,15 @@ const Dashboard = () => {
 
     return (
         <div className="animate-fade-in">
-            <header style={{ marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <header className="mb-40" style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
                 {league.logo && <TeamLogo src={league.logo} size={80} />}
                 <div>
-                    <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>{league.name}</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Estatísticas em tempo real para o seu campeonato.</p>
+                    <h1 className="responsive-title">{league.name}</h1>
+                    <p className="responsive-subtitle">Estatísticas em tempo real para o seu campeonato.</p>
                 </div>
             </header>
 
-            <div className="grid-4" style={{ marginBottom: '40px' }}>
+            <div className="grid-4 mb-40">
                 <StatCard title="Total de Times" value={`${teams.length} / ${league.maxTeams}`} icon={<Trophy color="var(--primary)" />} />
                 <StatCard title="Jogadores" value={totalPlayers} icon={<Users color="var(--accent)" />} />
                 <StatCard title="Ao Vivo" value={liveMatches} icon={<Activity color="var(--danger)" />} />
@@ -52,7 +52,7 @@ const Dashboard = () => {
             </div>
 
             <div className="grid-2">
-                <section className="glass-panel" style={{ padding: '24px' }}>
+                <section className="glass-panel p-24">
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Activity size={20} className="text-gradient" /> Partidas ao Vivo e Próximas
                     </h2>
@@ -112,7 +112,7 @@ const Dashboard = () => {
                     )}
                 </section>
 
-                <section className="glass-panel" style={{ padding: '24px' }}>
+                <section className="glass-panel p-24">
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Award size={20} className="text-gradient" /> Destaques da Copa
                     </h2>
@@ -170,7 +170,7 @@ const Dashboard = () => {
                     </div>
                 </section>
 
-                <section className="glass-panel" style={{ padding: '24px' }}>
+                <section className="glass-panel p-24">
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Trophy size={20} className="text-gradient-accent" /> Classificação dos Times
                     </h2>
@@ -201,7 +201,7 @@ const Dashboard = () => {
 };
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
-    <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '8px', minHeight: '140px', justifyContent: 'center' }}>
+    <div className="glass-panel p-24" style={{ display: 'flex', flexDirection: 'column', gap: '8px', minHeight: 'auto', justifyContent: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <h3 style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{title}</h3>
             <div style={{ padding: '8px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '8px' }}>{icon}</div>

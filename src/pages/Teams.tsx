@@ -70,13 +70,13 @@ const Teams = () => {
 
     return (
         <div className="animate-fade-in">
-            <header style={{ marginBottom: '40px' }}>
-                <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Teams & Players</h1>
-                <p style={{ color: 'var(--text-muted)' }}>Manage your {league.name} teams, squads, and players.</p>
+            <header className="mb-40">
+                <h1 className="responsive-title">Times & Jogadores</h1>
+                <p className="responsive-subtitle">Gerencie os times, elencos e jogadores do seu campeonato {league.name}.</p>
             </header>
 
             <div className="grid-2">
-                <section className="glass-panel" style={{ padding: '24px' }}>
+                <section className="glass-panel p-24">
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Shield size={20} className="text-gradient" /> Registrar Time
                     </h2>
@@ -136,7 +136,7 @@ const Teams = () => {
                 </section>
 
                 {currentTeam && (
-                    <section className="glass-panel" style={{ padding: '24px' }}>
+                    <section className="glass-panel p-24">
                         <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <UserPlus size={20} className="text-gradient-accent" /> Squad: {currentTeam.name}
                         </h2>

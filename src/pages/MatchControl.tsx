@@ -107,9 +107,9 @@ const MatchControl = () => {
         <div className="animate-fade-in">
             <header style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    <h1 style={{ fontSize: '2rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <h1 className="responsive-title">
                         <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: isLive ? 'var(--accent)' : 'var(--text-muted)', boxShadow: isLive ? '0 0 10px var(--accent-glow)' : 'none' }}></span>
-                        {isLive ? 'Controle da Partida ao Vivo' : 'Detalhes da Partida'}
+                        {isLive ? 'Controle ao Vivo' : 'Detalhes da Partida'}
                     </h1>
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
@@ -127,7 +127,7 @@ const MatchControl = () => {
                 </div>
             </header>
 
-            <div className="scoreboard" style={{ marginBottom: '40px' }}>
+            <div className="scoreboard mb-40">
                 <div className="team-score-block">
                     <TeamLogo src={homeTeam.logo} size={80} />
                     <div className="team-name">{homeTeam.name}</div>
@@ -193,7 +193,7 @@ const MatchControl = () => {
 
             {/* Time Settings Panel */}
             {isLive && (
-                <section className="glass-panel" style={{ padding: '24px', marginBottom: '40px' }}>
+                <section className="glass-panel p-24 mb-40">
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Settings2 size={20} className="text-gradient" /> Configurações de Tempo
                     </h2>
@@ -227,7 +227,7 @@ const MatchControl = () => {
 
             {
                 match.youtubeLiveId && (
-                    <section className="glass-panel" style={{ padding: '24px', marginBottom: '40px' }}>
+                    <section className="glass-panel p-24 mb-40">
                         <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
                             <iframe
                                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
@@ -246,7 +246,7 @@ const MatchControl = () => {
                 isLive && (
                     <div className="grid-2">
                         {/* Home Team Controls */}
-                        <section className="glass-panel" style={{ padding: '24px' }}>
+                        <section className="glass-panel p-24">
                             <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
                                 Controles: {homeTeam.name}
                             </h2>
@@ -311,7 +311,7 @@ const MatchControl = () => {
                         </section>
 
                         {/* Away Team Controls */}
-                        <section className="glass-panel" style={{ padding: '24px' }}>
+                        <section className="glass-panel p-24">
                             <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)' }}>
                                 Controles: {awayTeam.name}
                             </h2>

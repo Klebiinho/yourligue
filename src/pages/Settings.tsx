@@ -42,22 +42,22 @@ const Settings = () => {
 
     return (
         <div className="animate-fade-in">
-            <header style={{ marginBottom: '40px' }}>
-                <h1 style={{ fontSize: '2.5rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <header className="mb-40">
+                <h1 className="responsive-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <SettingsIcon size={32} /> Configurações
                 </h1>
-                <p style={{ color: 'var(--text-muted)' }}>Configure as definições da sua Liga/Campeonato.</p>
+                <p className="responsive-subtitle">Configure as definições da sua Liga/Campeonato.</p>
             </header>
 
-            <section className="glass-panel" style={{ padding: '24px', maxWidth: '600px' }}>
+            <section className="glass-panel p-24" style={{ maxWidth: '800px' }}>
                 <h2 style={{ marginBottom: '24px', color: 'var(--primary)' }}>Configuração da Liga</h2>
 
-                <div style={{ display: 'flex', gap: '24px', alignItems: 'center', marginBottom: '32px' }}>
+                <div style={{ display: 'flex', gap: '24px', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap' }}>
                     <div>
                         <div style={{ marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Logo Atual</div>
                         <TeamLogo src={logo} size={100} />
                     </div>
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: '200px' }}>
                         <p style={{ color: 'var(--text-main)', fontWeight: 600 }}>Atualize a identidade visual da liga.</p>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '4px' }}>Envie uma foto diretamente do seu dispositivo.</p>
                     </div>
@@ -103,9 +103,9 @@ const Settings = () => {
                     </div>
 
                     <h3 style={{ marginTop: '16px', color: 'var(--text-main)' }}>Sistema de Pontuação</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+                    <div className="grid-3" style={{ gap: '16px' }}>
                         <div className="input-group" style={{ marginBottom: 0 }}>
-                            <label>Pontos por Vitória</label>
+                            <label>Vitória</label>
                             <input
                                 type="number"
                                 value={pointsForWin}
@@ -114,7 +114,7 @@ const Settings = () => {
                             />
                         </div>
                         <div className="input-group" style={{ marginBottom: 0 }}>
-                            <label>Pontos por Empate</label>
+                            <label>Empate</label>
                             <input
                                 type="number"
                                 value={pointsForDraw}
@@ -123,7 +123,7 @@ const Settings = () => {
                             />
                         </div>
                         <div className="input-group" style={{ marginBottom: 0 }}>
-                            <label>Pontos por Derrota</label>
+                            <label>Derrota</label>
                             <input
                                 type="number"
                                 value={pointsForLoss}

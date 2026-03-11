@@ -63,13 +63,13 @@ const Matches = () => {
 
     return (
         <div className="animate-fade-in">
-            <header style={{ marginBottom: '40px' }}>
-                <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Gestão de Partidas</h1>
-                <p style={{ color: 'var(--text-muted)' }}>Crie e gerencie partidas em tempo real.</p>
+            <header className="mb-40">
+                <h1 className="responsive-title">Gestão de Partidas</h1>
+                <p className="responsive-subtitle">Crie e gerencie partidas em tempo real.</p>
             </header>
 
             <div className="grid-2">
-                <section className="glass-panel" style={{ padding: '24px' }}>
+                <section className="glass-panel p-24">
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <PlusCircle size={20} className="text-gradient" /> {editingMatchId ? 'Editar Partida' : 'Agendar Partida'}
                     </h2>
@@ -103,7 +103,7 @@ const Matches = () => {
                     </form>
                 </section>
 
-                <section className="glass-panel" style={{ padding: '24px' }}>
+                <section className="glass-panel p-24">
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Swords size={20} className="text-gradient-accent" /> Calendário de Jogos
                     </h2>
