@@ -1,31 +1,51 @@
 import React, { useState } from 'react';
 import { useChampionship } from '../context/ChampionshipContext';
-import { Swords, PlusCircle, Play, CheckCircle, Trash2 } from 'lucide-react';
+import { Swords, PlusCircle, Play, CheckCircle, Trash2, Edit2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
 const Matches = () => {
-    const { teams, matches, createMatch, startMatch, deleteMatch } = useChampionship();
+    const { teams, matches, createMatch, startMatch, deleteMatch, updateMatch } = useChampionship();
     const [homeTeamId, setHomeTeamId] = useState(teams[0]?.id || '');
     const [awayTeamId, setAwayTeamId] = useState(teams[1]?.id || '');
     const [youtubeLiveId, setYoutubeLiveId] = useState('');
+    const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
     const navigate = useNavigate();
 
     const handleCreateMatch = (e: React.FormEvent) => {
         e.preventDefault();
         if (homeTeamId && awayTeamId && homeTeamId !== awayTeamId) {
-            // Extract Video ID if user pasted full URL
             let videoId = youtubeLiveId;
             try {
                 if (videoId.includes('youtube.com') || videoId.includes('youtu.be')) {
                     const url = new URL(videoId);
                     videoId = url.searchParams.get('v') || url.pathname.slice(1) || videoId;
                 }
-            } catch (e) { }
+            } catch (err) { }
 
-            createMatch(homeTeamId, awayTeamId, videoId);
+            if (editingMatchId) {
+                updateMatch(editingMatchId, { homeTeamId, awayTeamId, youtubeLiveId: videoId });
+                setEditingMatchId(null);
+            } else {
+                createMatch(homeTeamId, awayTeamId, videoId);
+            }
             setYoutubeLiveId('');
         }
+    };
+
+    const handleEditClick = (match: any) => {
+        setEditingMatchId(match.id);
+        setHomeTeamId(match.homeTeamId);
+        setAwayTeamId(match.awayTeamId);
+        setYoutubeLiveId(match.youtubeLiveId || '');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const cancelEdit = () => {
+        setEditingMatchId(null);
+        setYoutubeLiveId('');
+        setHomeTeamId(teams[0]?.id || '');
+        setAwayTeamId(teams[1]?.id || '');
     };
 
     const handleStartMatch = (id: string, status: string) => {
@@ -44,14 +64,14 @@ const Matches = () => {
     return (
         <div className="animate-fade-in">
             <header style={{ marginBottom: '40px' }}>
-                <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Matches Control</h1>
-                <p style={{ color: 'var(--text-muted)' }}>Create and manage real-time matches.</p>
+                <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Gestão de Partidas</h1>
+                <p style={{ color: 'var(--text-muted)' }}>Crie e gerencie partidas em tempo real.</p>
             </header>
 
             <div className="grid-2">
                 <section className="glass-panel" style={{ padding: '24px' }}>
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <PlusCircle size={20} className="text-gradient" /> Schedule Match
+                        <PlusCircle size={20} className="text-gradient" /> {editingMatchId ? 'Editar Partida' : 'Agendar Partida'}
                     </h2>
                     <form onSubmit={handleCreateMatch} className="grid-2" style={{ gap: '16px', marginBottom: '24px' }}>
                         <div className="input-group">
@@ -70,18 +90,25 @@ const Matches = () => {
                             <label>URL ou ID do Youtube Live (Opcional)</label>
                             <input type="text" placeholder="e.g. https://www.youtube.com/watch?v=..." value={youtubeLiveId} onChange={e => setYoutubeLiveId(e.target.value)} />
                         </div>
-                        <button type="submit" className="btn-primary" style={{ gridColumn: '1 / -1', justifyContent: 'center', padding: '16px', fontSize: '1.125rem' }}>
-                            <Swords size={24} /> Criar Partida
-                        </button>
+                        <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px' }}>
+                            <button type="submit" className="btn-primary" style={{ flex: 1, justifyContent: 'center', padding: '16px', fontSize: '1.125rem' }}>
+                                <Swords size={24} /> {editingMatchId ? 'Salvar Alterações' : 'Criar Partida'}
+                            </button>
+                            {editingMatchId && (
+                                <button type="button" onClick={cancelEdit} className="btn-outline" style={{ padding: '16px' }}>
+                                    Cancelar
+                                </button>
+                            )}
+                        </div>
                     </form>
                 </section>
 
                 <section className="glass-panel" style={{ padding: '24px' }}>
                     <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Swords size={20} className="text-gradient-accent" /> Match Schedule
+                        <Swords size={20} className="text-gradient-accent" /> Calendário de Jogos
                     </h2>
                     {matches.length === 0 ? (
-                        <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>No matches scheduled. Create one to get started.</p>
+                        <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Nenhuma partida agendada. Crie uma para começar.</p>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {matches.map(match => {
@@ -100,13 +127,23 @@ const Matches = () => {
                                             </div>
                                             <div>
                                                 <div style={{ fontWeight: 600 }}>{homeTeam?.name} <span style={{ color: 'var(--text-muted)' }}>x</span> {awayTeam?.name}</div>
-                                                <div style={{ fontSize: '0.875rem', color: isLive ? 'var(--accent)' : 'var(--text-muted)' }}>
-                                                    {isLive ? 'LIVE' : isFinished ? 'FINISHED' : 'SCHEDULED'}
+                                                <div style={{ fontSize: '0.875rem', color: isLive ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 600 }}>
+                                                    {isLive ? 'AO VIVO' : isFinished ? 'CONCLUÍDA' : 'AGENDADA'}
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div style={{ display: 'flex', gap: '8px' }}>
+                                            {match.status === 'scheduled' && (
+                                                <button
+                                                    onClick={() => handleEditClick(match)}
+                                                    className="btn-outline"
+                                                    style={{ padding: '8px', background: 'transparent', border: '1px solid var(--text-muted)', color: 'var(--text-muted)', borderRadius: '50%', cursor: 'pointer' }}
+                                                    title="Editar Partida"
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => handleStartMatch(match.id, match.status)}
                                                 className={isLive ? 'btn-danger' : isFinished ? 'btn-outline' : 'btn-accent'}

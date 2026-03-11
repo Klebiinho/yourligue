@@ -1,6 +1,6 @@
 import React from 'react';
 import { useChampionship } from '../context/ChampionshipContext';
-import { Users, Trophy, Activity, Target, Award, Shield, AlertTriangle, Trash2 } from 'lucide-react';
+import { Users, Trophy, Activity, Target, Award, Shield, AlertTriangle, Trash2, Edit2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
@@ -70,6 +70,16 @@ const Dashboard = () => {
                                                 {match.homeScore} - {match.awayScore}
                                             </div>
                                             <div style={{ display: 'flex', gap: '8px' }}>
+                                                {match.status === 'scheduled' && (
+                                                    <button
+                                                        onClick={() => navigate('/matches')}
+                                                        className="btn-outline"
+                                                        style={{ padding: '6px', background: 'transparent', border: '1px solid var(--text-muted)', color: 'var(--text-muted)', borderRadius: '50%', cursor: 'pointer' }}
+                                                        title="Editar Partida"
+                                                    >
+                                                        <Edit2 size={12} />
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => handleStartMatch(match.id, match.status)}
                                                     className={match.status === 'live' ? 'btn-danger' : match.status === 'finished' ? 'btn-outline' : 'btn-accent'}

@@ -47,7 +47,12 @@ const MatchControl = () => {
         if (timerRunning && match?.status === 'live') {
             interval = window.setInterval(() => {
                 setLocalSeconds(s => {
-                    const limitInSeconds = (halfLength + extraTime) * 60;
+                    let currentPeriodLimit = halfLength;
+                    if (period === '2º Tempo') currentPeriodLimit = halfLength * 2;
+                    if (period === 'Prorrogação') currentPeriodLimit = halfLength * 2 + 30;
+                    if (period === 'Intervalo' || period === 'Pênaltis') currentPeriodLimit = 9999;
+
+                    const limitInSeconds = (currentPeriodLimit + extraTime) * 60;
                     if (s >= limitInSeconds) {
                         setTimerRunning(false);
                         return s;
@@ -57,7 +62,7 @@ const MatchControl = () => {
             }, 1000);
         }
         return () => clearInterval(interval);
-    }, [timerRunning, match?.status, halfLength, extraTime]);
+    }, [timerRunning, match?.status, halfLength, extraTime, period]);
 
     useEffect(() => {
         if (match?.status === 'live' && localSeconds % 5 === 0) {
