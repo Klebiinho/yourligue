@@ -42,9 +42,9 @@ const Dashboard = () => {
 
             <div className="grid-4" style={{ marginBottom: '40px' }}>
                 <StatCard title="Total de Times" value={`${teams.length} / ${league.maxTeams}`} icon={<Trophy color="var(--primary)" />} />
-                <StatCard title="Jogadores Registrados" value={totalPlayers} icon={<Users color="var(--accent)" />} />
-                <StatCard title="Partidas ao Vivo" value={liveMatches} icon={<Activity color="var(--danger)" />} />
-                <StatCard title="Partidas Concluídas" value={finishedMatches} icon={<Target color="var(--warning)" />} />
+                <StatCard title="Jogadores" value={totalPlayers} icon={<Users color="var(--accent)" />} />
+                <StatCard title="Ao Vivo" value={liveMatches} icon={<Activity color="var(--danger)" />} />
+                <StatCard title="Concluídas" value={finishedMatches} icon={<Target color="var(--warning)" />} />
             </div>
 
             <div className="grid-2">
@@ -165,7 +165,11 @@ const Dashboard = () => {
                             <p style={{ color: 'var(--text-muted)' }}>Nenhum time registrado.</p>
                         ) : (
                             [...teams]
-                                .sort((a, b) => (b.stats.wins * league.pointsForWin + b.stats.draws * league.pointsForDraw + b.stats.losses * league.pointsForLoss) - (a.stats.wins * league.pointsForWin + a.stats.draws * league.pointsForDraw + a.stats.losses * league.pointsForLoss))
+                                .sort((a, b) => {
+                                    const scoreA = a.stats.wins * league.pointsForWin + a.stats.draws * league.pointsForDraw + a.stats.losses * league.pointsForLoss;
+                                    const scoreB = b.stats.wins * league.pointsForWin + b.stats.draws * league.pointsForDraw + b.stats.losses * league.pointsForLoss;
+                                    return scoreB - scoreA;
+                                })
                                 .map((team, index) => (
                                     <div key={team.id} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '12px', borderRadius: '12px', background: index === 0 ? 'var(--primary-glow)' : 'transparent', border: '1px solid var(--glass-border)' }}>
                                         <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>{index + 1}</div>
@@ -183,12 +187,12 @@ const Dashboard = () => {
 };
 
 const StatCard = ({ title, value, icon }: { title: string, value: string | number, icon: React.ReactNode }) => (
-    <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '8px', minHeight: '140px', justifyContent: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 500 }}>{title}</h3>
+            <h3 style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{title}</h3>
             <div style={{ padding: '8px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '8px' }}>{icon}</div>
         </div>
-        <div style={{ fontSize: '2.5rem', fontWeight: 800, fontFamily: 'Outfit' }}>{value}</div>
+        <div style={{ fontSize: '2rem', fontWeight: 800, fontFamily: 'Outfit', marginTop: '4px' }}>{value}</div>
     </div>
 );
 

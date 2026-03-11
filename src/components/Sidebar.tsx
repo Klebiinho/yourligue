@@ -9,7 +9,7 @@ const Sidebar = () => {
                 <div style={{ background: 'var(--primary)', padding: '10px', borderRadius: '12px', display: 'flex' }}>
                     <Trophy size={24} color="white" />
                 </div>
-                <h2 style={{ fontSize: '1.25rem', color: 'white', fontFamily: 'Outfit' }}>ChampFlow</h2>
+                <h2 style={{ fontSize: '1.25rem', color: 'white', fontFamily: 'Outfit' }}>YourLigue</h2>
             </div>
 
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -17,19 +17,19 @@ const Sidebar = () => {
                     <LayoutDashboard size={20} /> Visão Geral
                 </NavLink>
                 <NavLink to="/teams" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} style={navLinkStyle}>
-                    <Users size={20} /> Register Times
+                    <Users size={20} /> Registrar Times
                 </NavLink>
                 <NavLink to="/teams-dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} style={navLinkStyle}>
-                    <BarChart2 size={20} /> Team Visão Geral
+                    <BarChart2 size={20} /> Painel das Equipes
                 </NavLink>
                 <NavLink to="/matches" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} style={navLinkStyle}>
-                    <Swords size={20} /> Partidas Control
+                    <Swords size={20} /> Gerenciar Partidas
                 </NavLink>
             </nav>
 
             <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid var(--glass-border)' }}>
                 <NavLink to="/settings" style={navLinkStyle}>
-                    <Settings size={20} /> Settings
+                    <Settings size={20} /> Configurações
                 </NavLink>
             </div>
 

@@ -74,16 +74,16 @@ const TeamsDashboard = () => {
         <div className="animate-fade-in">
             <header style={{ marginBottom: '40px' }}>
                 <h1 style={{ fontSize: '2.5rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <BarChart2 size={32} /> Teams Dashboard & Stats
+                    <BarChart2 size={32} /> Painel das Equipes e Estatísticas
                 </h1>
-                <p style={{ color: 'var(--text-muted)' }}>Advanced management and analytics for your squads.</p>
+                <p style={{ color: 'var(--text-muted)' }}>Gerenciamento avançado e análise de desempenho dos seus elencos.</p>
             </header>
 
             <div className="grid-2" style={{ gridTemplateColumns: 'minmax(300px, 1fr) 2fr' }}>
                 {/* Left: Team Selection List */}
-                <aside className="glass-panel" style={{ padding: '24px' }}>
+                <aside className="glass-panel" style={{ padding: '24px', position: 'sticky', top: '24px', alignSelf: 'start' }}>
                     <h2 style={{ marginBottom: '20px', fontSize: '1.25rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
-                        Registered Teams
+                        Times Registrados
                     </h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {teams.map(team => (
@@ -103,8 +103,8 @@ const TeamsDashboard = () => {
                                 }}
                             >
                                 <TeamLogo src={team.logo} size={40} />
-                                <div style={{ flex: 1, fontWeight: 600 }}>{team.name}</div>
-                                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{team.players.length} Players</div>
+                                <div style={{ flex: 1, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team.name}</div>
+                                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{team.players.length} Atletas</div>
                             </div>
                         ))}
                     </div>
@@ -146,7 +146,7 @@ const TeamsDashboard = () => {
                                         )}
                                         <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
                                             <div style={{ background: 'var(--glass-border)', padding: '4px 12px', borderRadius: '16px', fontSize: '0.875rem' }}>ID: {selectedTeam.id}</div>
-                                            <div style={{ color: 'var(--text-muted)' }}>{selectedTeam.players.length} players registered</div>
+                                            <div style={{ color: 'var(--text-muted)' }}>{selectedTeam.players.length} jogadores registrados</div>
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '12px' }}>
@@ -198,7 +198,7 @@ const TeamsDashboard = () => {
                                     </div>
                                     <div style={{ opacity: 0.2 }}><Shield size={40} /></div>
                                     <div style={{ textAlign: 'right' }}>
-                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Against</div>
+                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Gols Sofridos</div>
                                         <div style={{ fontSize: '1.75rem', fontWeight: 800 }}>{selectedTeam.stats.goalsAgainst}</div>
                                     </div>
                                 </div>
@@ -303,7 +303,7 @@ const TeamsDashboard = () => {
                     ) : (
                         <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
                             <Shield size={64} style={{ marginBottom: '20px', opacity: 0.1 }} />
-                            <h3>No teams selected or found.</h3>
+                            <h3>Nenhum time selecionado ou encontrado.</h3>
                         </div>
                     )}
                 </main>
