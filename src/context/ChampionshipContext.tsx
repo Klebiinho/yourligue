@@ -46,6 +46,7 @@ interface ChampionshipContextType {
   endMatch: (matchId: string) => void;
   updateTimer: (matchId: string, time: number) => void;
   addEvent: (matchId: string, event: Omit<MatchEvent, 'id'>) => void;
+  removeEvent: (matchId: string, eventId: string) => void;
   updateMatch: (matchId: string, data: Partial<Match>) => void;
   deleteMatch: (matchId: string) => void;
 }
@@ -267,6 +268,36 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const removeEvent = async (matchId: string, eventId: string) => {
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return;
+
+    const event = match.events.find(e => e.id === eventId);
+    if (!event) return;
+
+    setMatches(matches.map(m => {
+      if (m.id !== matchId) return m;
+
+      let newHome = m.homeScore;
+      let newAway = m.awayScore;
+
+      if (event.type === 'goal') {
+        if (m.homeTeamId === event.teamId) newHome = Math.max(0, newHome - 1);
+        if (m.awayTeamId === event.teamId) newAway = Math.max(0, newAway - 1);
+        supabase.from('matches').update({ home_score: newHome, away_score: newAway }).eq('id', matchId).then();
+      }
+
+      return {
+        ...m,
+        homeScore: newHome,
+        awayScore: newAway,
+        events: m.events.filter(e => e.id !== eventId)
+      };
+    }));
+
+    await supabase.from('match_events').delete().eq('id', eventId);
+  };
+
   const updateMatch = async (matchId: string, data: Partial<Match>) => {
     setMatches(matches.map(m => m.id === matchId ? { ...m, ...data } : m));
     await supabase.from('matches').update({
@@ -286,7 +317,7 @@ export const ChampionshipProvider = ({ children }: { children: ReactNode }) => {
       league, teams, matches,
       updateLeague, addTeam, updateTeam, deleteTeam,
       addPlayer, removePlayer,
-      createMatch, startMatch, endMatch, updateTimer, addEvent,
+      createMatch, startMatch, endMatch, updateTimer, addEvent, removeEvent,
       updateMatch, deleteMatch
     }}>
       {children}

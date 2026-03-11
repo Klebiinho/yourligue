@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useChampionship } from '../context/ChampionshipContext';
-import { Clock, StopCircle, Award, AlertTriangle, ShieldAlert, Video, Copy, ExternalLink, RefreshCw, PlusCircle, LogIn, Settings2, XCircle, Target } from 'lucide-react';
+import { Clock, StopCircle, Award, AlertTriangle, ShieldAlert, Video, Copy, ExternalLink, RefreshCw, PlusCircle, LogIn, Settings2, XCircle, Target, Trash2 } from 'lucide-react';
 import { YouTubeService } from '../services/youtube';
 import TeamLogo from '../components/TeamLogo';
 
 const MatchControl = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { matches, teams, endMatch, addEvent, updateTimer, updateMatch, league } = useChampionship();
+    const { matches, teams, endMatch, addEvent, removeEvent, updateTimer, updateMatch, league } = useChampionship();
     const [isCreatingLive, setIsCreatingLive] = useState(false);
     const [ytError, setYtError] = useState<string | null>(null);
     const [isYtAuthenticated, setIsYtAuthenticated] = useState(false);
@@ -419,8 +419,25 @@ const MatchControl = () => {
                                         <TeamLogo src={team.logo} size={32} />
                                         <span style={{ fontWeight: 600 }}>{player?.name} ({player?.number})</span>
                                     </div>
-                                    <div style={{ marginLeft: 'auto', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
-                                        {event.type.replace('_', ' ')}
+                                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{ color: 'var(--text-muted)', textTransform: 'capitalize', fontSize: '0.875rem' }}>
+                                            {event.type.replace('_', ' ')}
+                                        </div>
+                                        {isLive && (
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm('Deseja realmente apagar esta ação?')) {
+                                                        removeEvent(match.id, event.id);
+                                                    }
+                                                }}
+                                                style={{ padding: '6px', background: 'transparent', border: 'none', color: 'rgba(239, 68, 68, 0.4)', cursor: 'pointer', transition: 'color 0.2s', borderRadius: '50%' }}
+                                                onMouseOver={(e) => (e.currentTarget.style.color = '#ef4444')}
+                                                onMouseOut={(e) => (e.currentTarget.style.color = 'rgba(239, 68, 68, 0.4)')}
+                                                title="Apagar Ação"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             );
