@@ -119,8 +119,8 @@ const Settings = () => {
                     </div>
 
                     <h3 style={{ marginTop: '16px', color: 'var(--text-main)' }}>Sistema de Pontuação</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                        <div className="input-group">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+                        <div className="input-group" style={{ marginBottom: 0 }}>
                             <label>Pontos por Vitória</label>
                             <input
                                 type="number"
@@ -129,7 +129,7 @@ const Settings = () => {
                                 required
                             />
                         </div>
-                        <div className="input-group">
+                        <div className="input-group" style={{ marginBottom: 0 }}>
                             <label>Pontos por Empate</label>
                             <input
                                 type="number"
@@ -138,7 +138,7 @@ const Settings = () => {
                                 required
                             />
                         </div>
-                        <div className="input-group">
+                        <div className="input-group" style={{ marginBottom: 0 }}>
                             <label>Pontos por Derrota</label>
                             <input
                                 type="number"

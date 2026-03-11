@@ -62,11 +62,18 @@ const MatchControl = () => {
         let interval: number;
         if (timerRunning && match?.status === 'live') {
             interval = window.setInterval(() => {
-                setLocalSeconds(s => s + 1);
+                setLocalSeconds(s => {
+                    const limitInSeconds = (halfLength + extraTime) * 60;
+                    if (s >= limitInSeconds) {
+                        setTimerRunning(false);
+                        return s;
+                    }
+                    return s + 1;
+                });
             }, 1000);
         }
         return () => clearInterval(interval);
-    }, [timerRunning, match?.status]);
+    }, [timerRunning, match?.status, halfLength, extraTime]);
 
     useEffect(() => {
         if (match?.status === 'live' && localSeconds % 5 === 0) {
