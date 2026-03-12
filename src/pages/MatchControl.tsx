@@ -96,6 +96,7 @@ const MatchControl = () => {
         }
     };
 
+
     return (
         <div className="animate-fade-in">
             {/* Back Button */}

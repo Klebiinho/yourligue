@@ -84,8 +84,8 @@ const LeagueSelector = () => {
                             <div key={l.id}
                                 onClick={() => { if (editingId !== l.id) { selectLeague(l.id); navigate('/'); } }}
                                 className={`group p-5 rounded-2xl border transition-all duration-500 flex items-center gap-5 cursor-pointer relative overflow-hidden backdrop-blur-xl ${league?.id === l.id
-                                        ? 'bg-primary/10 border-primary/30 shadow-[0_8px_30px_rgba(109,40,217,0.15)] ring-1 ring-primary/20'
-                                        : 'bg-white/3 border-white/5 hover:bg-white/6 hover:border-white/10'
+                                    ? 'bg-primary/10 border-primary/30 shadow-[0_8px_30px_rgba(109,40,217,0.15)] ring-1 ring-primary/20'
+                                    : 'bg-white/3 border-white/5 hover:bg-white/6 hover:border-white/10'
                                     }`}>
                                 {league?.id === l.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
 
@@ -151,7 +151,8 @@ const LeagueSelector = () => {
                             setLoading(true);
                             const res = await createLeague({
                                 name: newName, logo: '', maxTeams: 16,
-                                pointsForWin: 3, pointsForDraw: 1, pointsForLoss: 0, defaultHalfLength: 45
+                                pointsForWin: 3, pointsForDraw: 1, pointsForLoss: 0,
+                                defaultHalfLength: 45, playersPerTeam: 5, reserveLimitPerTeam: 5
                             });
                             if (!res.error) {
                                 setNewName(''); setShowCreate(false); navigate('/');

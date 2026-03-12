@@ -11,8 +11,17 @@ const TeamsDashboard = () => {
     const [isAddingPlayer, setIsAddingPlayer] = useState(false);
     const [isEditingPlayer, setIsEditingPlayer] = useState<string | null>(null);
 
+    interface FormPlayer {
+        name: string;
+        number: number;
+        position: string;
+        isCaptain: boolean;
+        isReserve: boolean;
+        photo: string;
+    }
+
     const [formTeam, setFormTeam] = useState({ name: '', logo: '' });
-    const [formPlayer, setFormPlayer] = useState({ name: '', number: 0, position: 'Goleiro', isCaptain: false, photo: '' });
+    const [formPlayer, setFormPlayer] = useState<FormPlayer>({ name: '', number: 0, position: 'Goleiro', isCaptain: false, isReserve: false, photo: '' });
 
     const selectedTeam = teams.find(t => t.id === selectedTeamId);
 
@@ -328,4 +337,3 @@ const TeamsDashboard = () => {
 };
 
 export default TeamsDashboard;
-```
