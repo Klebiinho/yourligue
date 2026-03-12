@@ -43,112 +43,137 @@ const AuthPage = () => {
     const handleGoogle = async () => {
         setGoogleLoading(true);
         await signInWithGoogle();
-        // Page will redirect, so no need to reset state
     };
 
     return (
-        <div className="auth-container" style={{
-            minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'var(--bg-dark)', padding: '24px', width: '100%',
-            backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(109, 40, 217, 0.2), transparent 30%), radial-gradient(circle at 80% 30%, rgba(16, 185, 129, 0.15), transparent 30%)'
-        }}>
-            <div className="auth-card" style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '24px', animation: 'fadeIn 0.5s ease' }}>
+        <div className="min-h-screen w-full flex items-center justify-center bg-bg-dark p-6 md:p-12 relative overflow-hidden">
+            {/* Background Decorative Blobs */}
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/15 rounded-full blur-[120px] pointer-events-none" />
 
-                {/* Logo */}
-                <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-                    <div style={{ display: 'inline-flex', background: 'linear-gradient(135deg, #6d28d9, #4c1d95)', padding: '16px', borderRadius: '20px', marginBottom: '16px', boxShadow: '0 8px 32px var(--primary-glow)' }}>
-                        <Trophy size={40} color="white" />
+            <div className="w-full max-w-[420px] flex flex-col gap-8 animate-fade-in relative z-10">
+                {/* Logo Section */}
+                <div className="text-center">
+                    <div className="inline-flex bg-gradient-to-br from-primary to-[#4c1d95] p-5 rounded-3xl mb-5 shadow-[0_12px_40px_rgba(109,40,217,0.4)]">
+                        <Trophy size={40} className="text-white" />
                     </div>
-                    <h1 style={{ fontSize: 'clamp(1.4rem, 6vw, 1.8rem)', fontFamily: 'Outfit', fontWeight: 800, marginBottom: '4px' }}>
+                    <h1 className="text-3xl md:text-4xl font-outfit font-extrabold mb-2 tracking-tight">
                         Championship Manager
                     </h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Gerencie seu campeonato com estilo</p>
+                    <p className="text-slate-400 text-sm md:text-base font-medium">Gerencie seu campeonato com estilo</p>
                 </div>
 
-                {/* Card */}
-                <div className="glass-panel" style={{ padding: 'clamp(20px, 5vw, 32px)' }}>
-
+                {/* Main Card */}
+                <div className="glass-panel p-8 md:p-10">
                     {/* Google Button */}
-                    <button onClick={handleGoogle} disabled={googleLoading}
-                        style={{
-                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
-                            padding: '13px 20px', borderRadius: '12px', border: '1px solid var(--glass-border)',
-                            background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', fontWeight: 600, fontSize: '0.95rem',
-                            cursor: 'pointer', transition: 'all 0.2s', marginBottom: '20px',
-                            opacity: googleLoading ? 0.7 : 1
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}>
+                    <button
+                        onClick={handleGoogle}
+                        disabled={googleLoading}
+                        className="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white font-semibold transition-all duration-300 mb-6 disabled:opacity-50"
+                    >
                         <GoogleIcon />
                         {googleLoading ? 'Redirecionando...' : 'Continuar com Google'}
                     </button>
 
                     {/* Divider */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                        <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }} />
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 500 }}>ou continue com email</span>
-                        <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }} />
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="flex-1 h-[1px] bg-white/10" />
+                        <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">ou continue com email</span>
+                        <div className="flex-1 h-[1px] bg-white/10" />
                     </div>
 
-                    {/* Tabs — Login / Register */}
-                    <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '4px', marginBottom: '24px' }}>
+                    {/* Tabs */}
+                    <div className="flex bg-black/40 rounded-xl p-1 mb-6">
                         {(['login', 'register'] as const).map(m => (
-                            <button key={m} onClick={() => { setMode(m); setError(''); setSuccess(''); }}
-                                style={{
-                                    flex: 1, padding: '10px', borderRadius: '10px', fontWeight: 600, fontSize: '0.875rem',
-                                    background: mode === m ? 'var(--primary)' : 'transparent',
-                                    color: mode === m ? 'white' : 'var(--text-muted)',
-                                    transition: 'all 0.2s', cursor: 'pointer',
-                                    boxShadow: mode === m ? '0 4px 12px var(--primary-glow)' : 'none'
-                                }}>
+                            <button
+                                key={m}
+                                onClick={() => { setMode(m); setError(''); setSuccess(''); }}
+                                className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all duration-300 ${mode === m
+                                        ? 'bg-primary text-white shadow-[0_4px_12px_rgba(109,40,217,0.4)]'
+                                        : 'text-slate-400 hover:text-slate-200'
+                                    }`}
+                            >
                                 {m === 'login' ? 'Entrar' : 'Criar Conta'}
                             </button>
                         ))}
                     </div>
 
-                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         {mode === 'register' && (
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><User size={13} /> Nome</label>
-                                <input type="text" placeholder="Seu nome completo" value={name} onChange={e => setName(e.target.value)} required />
+                            <div className="flex flex-col gap-2">
+                                <label className="text-xs font-semibold text-slate-400 flex items-center gap-2 ml-1">
+                                    <User size={13} /> Nome
+                                </label>
+                                <input
+                                    className="bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                                    type="text"
+                                    placeholder="Seu nome completo"
+                                    value={name}
+                                    onChange={e => setName(e.target.value)}
+                                    required
+                                />
                             </div>
                         )}
-                        <div className="input-group" style={{ marginBottom: 0 }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Mail size={13} /> Email</label>
-                            <input type="email" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-semibold text-slate-400 flex items-center gap-2 ml-1">
+                                <Mail size={13} /> Email
+                            </label>
+                            <input
+                                className="bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                                type="email"
+                                placeholder="seu@email.com"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                required
+                            />
                         </div>
-                        <div className="input-group" style={{ marginBottom: 0 }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Lock size={13} /> Senha</label>
-                            <div style={{ position: 'relative' }}>
-                                <input type={showPassword ? 'text' : 'password'} placeholder="Mínimo 6 caracteres"
-                                    value={password} onChange={e => setPassword(e.target.value)} required
-                                    style={{ paddingRight: '44px', width: '100%' }} />
-                                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', padding: 0 }}>
-                                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-semibold text-slate-400 flex items-center gap-2 ml-1">
+                                <Lock size={13} /> Senha
+                            </label>
+                            <div className="relative">
+                                <input
+                                    className="bg-black/30 border border-white/10 rounded-xl pl-4 pr-12 py-3 w-full text-white placeholder:text-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                                    type={showPassword ? 'text' : 'password'}
+                                    placeholder="Mínimo 6 caracteres"
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
                         </div>
 
                         {error && (
-                            <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid var(--danger)', borderRadius: '10px', padding: '12px 14px', color: 'var(--danger)', fontSize: '0.875rem', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                                ⚠️ {error}
+                            <div className="bg-danger/10 border border-danger/20 rounded-xl p-3.5 text-danger text-sm font-medium flex items-start gap-2.5 animate-fade-in">
+                                <span className="text-base leading-none">⚠️</span>
+                                {error}
                             </div>
                         )}
                         {success && (
-                            <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid var(--accent)', borderRadius: '10px', padding: '12px 14px', color: 'var(--accent)', fontSize: '0.875rem' }}>
-                                ✅ {success}
+                            <div className="bg-accent/10 border border-accent/20 rounded-xl p-3.5 text-accent text-sm font-medium flex items-start gap-2.5 animate-fade-in">
+                                <span className="text-base leading-none">✅</span>
+                                {success}
                             </div>
                         )}
 
-                        <button type="submit" className="btn-primary" disabled={loading}
-                            style={{ justifyContent: 'center', padding: '14px', fontSize: '1rem', marginTop: '4px', opacity: loading ? 0.7 : 1 }}>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="bg-primary hover:brightness-110 text-white font-bold py-4 rounded-xl shadow-[0_8px_20px_rgba(109,40,217,0.3)] transition-all active:scale-[0.98] disabled:opacity-70 mt-2 text-lg"
+                        >
                             {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar Conta'}
                         </button>
                     </form>
                 </div>
 
-                <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                <p className="text-center text-slate-500 text-xs font-medium">
                     Championship Manager © 2026 · Todos os direitos reservados
                 </p>
             </div>

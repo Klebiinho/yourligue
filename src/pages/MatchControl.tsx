@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play } from 'lucide-react';
-
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, Youtube } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const MatchControl = () => {
     const { matchId } = useParams<{ matchId: string }>();
     const navigate = useNavigate();
     const { matches, teams, endMatch, addEvent, removeEvent, updateTimer, updateMatch } = useLeague();
-
 
     const match = matches.find((m: Match) => m.id === matchId);
     const homeTeam = teams.find((t: Team) => t.id === match?.homeTeamId);
@@ -26,22 +24,18 @@ const MatchControl = () => {
         const yellowCards = playerEvents.filter((e: MatchEvent) => e.type === 'yellow_card').length;
         const hasDirectRed = playerEvents.some((e: MatchEvent) => e.type === 'red_card');
         const isRedCarded = hasDirectRed || yellowCards >= 2;
-
         return { isRedCarded, yellowCards, hasDirectRed };
     };
 
     const handleUndoLastCard = (playerId: string) => {
         const playerEvents = match?.events.filter((e: MatchEvent) => e.playerId === playerId) || [];
         const lastCardEvent = [...playerEvents].reverse().find((e: MatchEvent) => e.type === 'yellow_card' || e.type === 'red_card');
-        if (lastCardEvent && matchId) {
-            removeEvent(matchId, lastCardEvent.id);
-        }
+        if (lastCardEvent && matchId) removeEvent(matchId, lastCardEvent.id);
     };
 
     const handleSaveTimeSettings = () => {
         if (matchId) {
             updateMatch(matchId, { halfLength, extraTime, period });
-            alert('Configurações de tempo salvas!');
         }
     };
 
@@ -53,16 +47,9 @@ const MatchControl = () => {
                     let baseLimit = halfLength;
                     if (period === '2º Tempo') baseLimit = halfLength * 2;
                     if (period === 'Prorrogação') baseLimit = halfLength * 2 + 30;
-
-                    if (period === 'Intervalo' || period === 'Pênaltis') {
-                        return s + 1;
-                    }
-
+                    if (period === 'Intervalo' || period === 'Pênaltis') return s + 1;
                     const limitInSeconds = (baseLimit + extraTime) * 60;
-                    if (s >= limitInSeconds) {
-                        setTimerRunning(false);
-                        return s;
-                    }
+                    if (s >= limitInSeconds) { setTimerRunning(false); return s; }
                     return s + 1;
                 });
             }, 1000);
@@ -77,8 +64,10 @@ const MatchControl = () => {
     }, [localSeconds, matchId, match?.status, updateTimer]);
 
     if (!match || !homeTeam || !awayTeam) return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: 'var(--text-muted)' }}>
-            Partida não encontrada...
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500 gap-4 opacity-75">
+            <AlertCircle size={48} strokeWidth={1} />
+            <p className="font-outfit font-black uppercase tracking-widest text-xs">Partida não encontrada</p>
+            <button onClick={() => navigate('/')} className="text-primary font-bold hover:underline">Voltar ao Início</button>
         </div>
     );
 
@@ -91,124 +80,123 @@ const MatchControl = () => {
     const currentMinute = Math.floor(localSeconds / 60) + 1;
 
     const handleEndMatch = () => {
-        if (matchId) {
+        if (matchId && window.confirm('Deseja realmente finalizar a partida?')) {
             setTimerRunning(false);
             endMatch(matchId);
             navigate('/');
         }
     };
 
-    const handleGol = (teamId: string, playerId: string) => {
-        if (matchId) addEvent(matchId, { type: 'goal', teamId, playerId, minute: currentMinute });
-    };
-
-    const handleAssist = (teamId: string, playerId: string) => {
-        if (matchId) addEvent(matchId, { type: 'assist', teamId, playerId, minute: currentMinute });
-    };
-
-    const handleGolContra = (teamId: string, playerId: string) => {
-        if (matchId) addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute });
-    };
-
-    const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => {
-        if (matchId) addEvent(matchId, { type, teamId, playerId, minute: currentMinute });
-    };
-
+    const handleGol = (teamId: string, playerId: string) => { if (matchId) addEvent(matchId, { type: 'goal', teamId, playerId, minute: currentMinute }); };
+    const handleAssist = (teamId: string, playerId: string) => { if (matchId) addEvent(matchId, { type: 'assist', teamId, playerId, minute: currentMinute }); };
+    const handleGolContra = (teamId: string, playerId: string) => { if (matchId) addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); };
+    const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { if (matchId) addEvent(matchId, { type, teamId, playerId, minute: currentMinute }); };
 
     return (
-        <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
-            {/* Header: Placar e Tempo */}
-            <div className="glass-panel" style={{ padding: '20px', marginBottom: '24px', position: 'sticky', top: '0', zIndex: 100, backdropFilter: 'blur(20px)' }}>
-                {/* Score row */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                    {/* Home team */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, justifyContent: 'flex-end', minWidth: '80px' }}>
-                        <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontWeight: 800, fontSize: 'clamp(0.85rem, 3vw, 1.2rem)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }}>{homeTeam.name}</div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>MANDANTE</div>
+        <div className="animate-fade-in pb-24 md:pb-8 p-4 md:p-0">
+            {/* Scoreboard Header - Sticky with Glass Background */}
+            <div className="glass-panel sticky top-1 z-40 p-5 md:p-8 mb-8 shadow-2xl overflow-hidden">
+                <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none">
+                    <Youtube size={120} strokeWidth={1} className="text-danger" />
+                </div>
+
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                    {/* Home Team */}
+                    <div className="flex items-center gap-4 flex-1 justify-end w-full md:w-auto">
+                        <div className="text-right hidden sm:block">
+                            <h2 className="text-lg md:text-2xl font-black text-white font-outfit uppercase truncate max-w-[140px] leading-tight">{homeTeam.name}</h2>
+                            <span className="text-[0.6rem] font-black text-primary tracking-widest uppercase">Mandante</span>
                         </div>
-                        <TeamLogo src={homeTeam.logo} size={48} />
+                        <TeamLogo src={homeTeam.logo} size={64} />
                     </div>
 
-                    {/* Placar central */}
-                    <div style={{ padding: '0 16px', textAlign: 'center', flexShrink: 0 }}>
-                        <div style={{ fontSize: 'clamp(1.8rem, 6vw, 3rem)', fontWeight: 900, fontFamily: 'Outfit', letterSpacing: '4px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <span style={{ color: 'var(--primary)' }}>{match.homeScore}</span>
-                            <span style={{ color: 'var(--text-muted)', fontSize: '1.5rem' }}>X</span>
-                            <span style={{ color: 'var(--accent)' }}>{match.awayScore}</span>
+                    {/* Central Score & Timer */}
+                    <div className="flex flex-col items-center gap-1 md:gap-2 px-6">
+                        <div className="flex items-center gap-6 font-outfit font-black text-4xl md:text-7xl">
+                            <span className="text-primary drop-shadow-[0_0_20px_rgba(109,40,217,0.4)] transition-all transform hover:scale-110">{match.homeScore}</span>
+                            <span className="text-slate-700 font-bold select-none text-2xl md:text-4xl">X</span>
+                            <span className="text-accent drop-shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all transform hover:scale-110">{match.awayScore}</span>
                         </div>
-                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 12px', borderRadius: '100px', display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
-                            <Clock size={14} color="var(--primary)" />
-                            <span style={{ fontWeight: 800, fontSize: 'clamp(0.85rem, 2.5vw, 1.1rem)', fontFamily: 'monospace' }}>{formatTime(localSeconds)}</span>
+                        <div className="bg-black/40 px-5 py-2 rounded-2xl flex items-center gap-3 border border-white/5 shadow-inner">
+                            <div className={`w-2 h-2 rounded-full ${timerRunning ? 'bg-danger animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-slate-600'}`} />
+                            <span className="font-mono text-xl md:text-2xl font-black text-white tracking-[0.1em]">{formatTime(localSeconds)}</span>
                         </div>
-                        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: '4px', textTransform: 'uppercase' }}>
-                            {period} {extraTime > 0 && `(+${extraTime}')`}
+                        <div className="flex flex-col items-center">
+                            <span className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em]">{period} {extraTime > 0 && <span className="text-danger">+{extraTime}'</span>}</span>
                         </div>
                     </div>
 
-                    {/* Away team */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '80px' }}>
-                        <TeamLogo src={awayTeam.logo} size={48} />
-                        <div>
-                            <div style={{ fontWeight: 800, fontSize: 'clamp(0.85rem, 3vw, 1.2rem)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }}>{awayTeam.name}</div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>VISITANTE</div>
+                    {/* Away Team */}
+                    <div className="flex items-center gap-4 flex-1 justify-start w-full md:w-auto">
+                        <TeamLogo src={awayTeam.logo} size={64} />
+                        <div className="text-left hidden sm:block">
+                            <h2 className="text-lg md:text-2xl font-black text-white font-outfit uppercase truncate max-w-[140px] leading-tight">{awayTeam.name}</h2>
+                            <span className="text-[0.6rem] font-black text-slate-500 tracking-widest uppercase">Visitante</span>
                         </div>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                    <button onClick={() => setTimerRunning(!timerRunning)} className={`btn-${timerRunning ? 'outline' : 'primary'}`} style={{ minWidth: '120px', justifyContent: 'center', padding: '10px 20px' }}>
-                        {timerRunning ? <><Pause size={16} /> Pausar</> : <><Play size={16} /> Iniciar</>}
+                {/* Control Actions Row */}
+                <div className="flex items-center justify-center gap-3 mt-8 border-t border-white/5 pt-6">
+                    <button onClick={() => setTimerRunning(!timerRunning)}
+                        className={`px-8 py-3.5 rounded-xl font-black text-[0.75rem] uppercase tracking-[0.15em] transition-all flex items-center gap-3 shadow-lg active:scale-95 ${timerRunning ? 'bg-white/5 border border-white/10 text-slate-400 hover:text-white' : 'bg-primary text-white shadow-primary/30 hover:brightness-110'
+                            }`}>
+                        {timerRunning ? <><Pause size={18} strokeWidth={3} /> Pausar Cronômetro</> : <><Play size={18} fill="currentColor" /> Iniciar Partida</>}
                     </button>
-                    <button onClick={handleEndMatch} className="btn-danger" style={{ minWidth: '120px', justifyContent: 'center', padding: '10px 20px' }}>
-                        <StopCircle size={16} /> Finalizar
+                    <button onClick={handleEndMatch}
+                        className="px-8 py-3.5 rounded-xl bg-danger/10 border border-danger/20 text-danger font-black text-[0.75rem] uppercase tracking-[0.15em] hover:bg-danger hover:text-white transition-all shadow-lg active:scale-95 flex items-center gap-3">
+                        <StopCircle size={18} strokeWidth={3} /> Finalizar Partida
                     </button>
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-                {/* Abas de Equipes */}
-                {[homeTeam, awayTeam].map((team) => (
-                    <section key={team.id} className="glass-panel p-24">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
-                            <TeamLogo src={team.logo} size={36} />
-                            <h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{team.name}</h2>
-                            <div style={{ marginLeft: 'auto', background: 'var(--primary-glow)', padding: '4px 10px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 800 }}>
-                                {team.id === homeTeam.id ? match.homeScore : match.awayScore}
+            {/* Event Input Area */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8 items-start">
+                {/* Team Controls */}
+                {[homeTeam, awayTeam].map((team, idx) => (
+                    <section key={team.id} className="xl:col-span-12 2xl:col-span-4 glass-panel p-6 md:p-8">
+                        <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-5">
+                            <TeamLogo src={team.logo} size={48} />
+                            <div>
+                                <h2 className="text-[1.15rem] font-black text-white font-outfit uppercase tracking-wider">{team.name}</h2>
+                                <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.2em]">{idx === 0 ? 'Gestão Mandante' : 'Gestão Visitante'}</span>
+                            </div>
+                            <div className={`ml-auto px-4 py-1.5 rounded-xl font-black font-outfit text-xl ${idx === 0 ? 'bg-primary/20 text-primary' : 'bg-accent/20 text-accent'}`}>
+                                {idx === 0 ? match.homeScore : match.awayScore}
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div className="flex flex-col gap-3 max-h-[700px] overflow-y-auto pr-1 no-scrollbar">
                             {team.players.map((player: Player) => {
                                 const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
                                 return (
-                                    <div key={player.id} style={{
-                                        display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '12px',
-                                        background: isRedCarded ? 'rgba(239, 68, 68, 0.05)' : 'rgba(0,0,0,0.2)',
-                                        border: `1px solid ${isRedCarded ? 'rgba(239, 68, 68, 0.2)' : 'var(--glass-border)'}`,
-                                        opacity: isRedCarded ? 0.6 : 1
-                                    }}>
-                                        <div style={{ position: 'relative' }}>
-                                            <TeamLogo src={player.photo} size={40} />
-                                            {player.isCaptain && <Crown size={14} style={{ position: 'absolute', top: -4, right: -4, color: '#fbbf24' }} />}
+                                    <div key={player.id} className={`flex items-center gap-3 p-4 rounded-2xl border transition-all duration-300 ${isRedCarded ? 'bg-danger/10 border-danger/20 opacity-60' : 'bg-white/3 border-white/5'}`}>
+                                        <div className="relative flex-none">
+                                            <TeamLogo src={player.photo} size={44} />
+                                            {player.isCaptain && <Crown size={14} className="absolute -top-1 -right-1 text-warning fill-warning/20 shadow-lg" />}
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>#{player.number} {player.name}</div>
-                                            <div style={{ display: 'flex', gap: '4px', marginTop: '2px' }}>
-                                                {Array.from({ length: yellowCards }).map((_, i) => <div key={i} style={{ width: '8px', height: '12px', background: '#fbbf24', borderRadius: '2px' }} />)}
-                                                {isRedCarded && <div style={{ width: '8px', height: '12px', background: '#ef4444', borderRadius: '2px' }} />}
+
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-black text-white text-sm truncate font-outfit uppercase tracking-wide leading-tight">#{player.number} {player.name}</h4>
+                                            <div className="flex items-center gap-2 mt-1.5 h-4">
+                                                {Array.from({ length: yellowCards }).map((_, i) => <div key={i} className="w-2.5 h-4 bg-warning rounded-[2px] shadow-sm transform rotate-6 border border-black/10" />)}
+                                                {isRedCarded && <div className="w-2.5 h-4 bg-danger rounded-[2px] shadow-sm transform -rotate-12 border border-black/10" />}
+                                                {(!pStatus.isRedCarded && pStatus.yellowCards === 0) && <span className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest">Sem punição</span>}
                                             </div>
                                         </div>
 
-                                        <div className="action-group" style={{ opacity: isRedCarded ? 0.3 : 1, pointerEvents: isRedCarded ? 'none' : 'auto' }}>
-                                            <button onClick={() => handleGol(team.id, player.id)} className="action-icon-btn accent" title="Gol"><Target size={16} /></button>
-                                            <button onClick={() => handleAssist(team.id, player.id)} className="action-icon-btn" style={{ color: '#fbbf24' }} title="Assistência"><Award size={16} /></button>
-                                            <button onClick={() => handleGolContra(team.id, player.id)} className="action-icon-btn danger" title="Gol Contra"><XCircle size={16} /></button>
-                                            <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="action-icon-btn" style={{ color: '#fbbf24' }} title="Amarelo">🟨</button>
-                                            <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="action-icon-btn danger" title="Vermelho">🟥</button>
+                                        <div className={`flex items-center gap-1.5 transition-all ${isRedCarded ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
+                                            <button onClick={() => handleGol(team.id, player.id)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-accent/20 text-accent hover:bg-accent hover:text-white transition-all shadow-lg active:scale-90" title="Gol"><Target size={16} /></button>
+                                            <button onClick={() => handleAssist(team.id, player.id)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-warning/20 text-warning hover:bg-warning hover:text-white transition-all shadow-lg active:scale-90" title="Assistência"><Award size={16} /></button>
+                                            <button onClick={() => handleGolContra(team.id, player.id)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all shadow-lg active:scale-90" title="Gol Contra"><XCircle size={16} /></button>
+                                            <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/5 text-warning border border-warning/20 hover:bg-warning hover:text-white transition-all shadow-lg active:scale-90" title="Cartão Amarelo">🟨</button>
+                                            <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/5 text-danger border border-danger/20 hover:bg-danger hover:text-white transition-all shadow-lg active:scale-90" title="Cartão Vermelho">🟥</button>
                                         </div>
+
                                         {(isRedCarded || yellowCards > 0) && (
-                                            <button onClick={() => handleUndoLastCard(player.id)} className="action-icon-btn" title="Desfazer cartão"><Trash2 size={14} /></button>
+                                            <button onClick={() => handleUndoLastCard(player.id)} className="ml-1 p-2 rounded-xl bg-white/5 text-slate-500 hover:text-white transition-all" title="Desfazer cartão">
+                                                <Trash2 size={16} />
+                                            </button>
                                         )}
                                     </div>
                                 );
@@ -217,51 +205,76 @@ const MatchControl = () => {
                     </section>
                 ))}
 
-                {/* Histórico e Configurações */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    <section className="glass-panel p-24">
-                        <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Settings2 size={18} className="text-gradient" /> Controle de Tempo
+                {/* Match Log & Settings */}
+                <div className="xl:col-span-12 2xl:col-span-4 space-y-6 md:space-y-8 h-full flex flex-col">
+                    <section className="glass-panel p-6 md:p-8">
+                        <h3 className="text-xl font-black text-white font-outfit uppercase tracking-widest mb-8 flex items-center gap-3">
+                            <Settings2 size={20} className="text-primary" /> Painel Técnico
                         </h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label>Período</label>
-                                <select value={period} onChange={e => setPeriod(e.target.value)}>
-                                    <option>1º Tempo</option><option>Intervalo</option>
-                                    <option>2º Tempo</option><option>Prorrogação</option>
-                                    <option>Pênaltis</option><option>Fim</option>
+                        <div className="grid grid-cols-2 gap-5 mb-8">
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Etapa Atual</label>
+                                <select value={period} onChange={e => setPeriod(e.target.value)}
+                                    className="bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none transition-all font-bold appearance-none cursor-pointer">
+                                    <option className="bg-bg-dark">1º Tempo</option><option className="bg-bg-dark">Intervalo</option>
+                                    <option className="bg-bg-dark">2º Tempo</option><option className="bg-bg-dark">Prorrogação</option>
+                                    <option className="bg-bg-dark">Pênaltis</option><option className="bg-bg-dark">Fim de Jogo</option>
                                 </select>
                             </div>
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label>Duração (min)</label>
-                                <input type="number" value={halfLength} onChange={e => setHalfLength(parseInt(e.target.value))} />
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Duração (min)</label>
+                                <input type="number" value={halfLength} onChange={e => setHalfLength(parseInt(e.target.value))}
+                                    className="bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none transition-all font-bold" />
                             </div>
-                            <div className="input-group" style={{ marginBottom: 0, gridColumn: 'span 2' }}>
-                                <label>Acréscimos (min)</label>
-                                <input type="number" value={extraTime} onChange={e => setExtraTime(parseInt(e.target.value))} />
+                            <div className="flex flex-col gap-2 col-span-2">
+                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Acréscimos (minutos)</label>
+                                <input type="number" value={extraTime} onChange={e => setExtraTime(parseInt(e.target.value))}
+                                    className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-4 text-white focus:border-primary outline-none transition-all font-black text-center text-xl" />
                             </div>
                         </div>
-                        <button onClick={handleSaveTimeSettings} className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                            Salvar Alterações
+                        <button onClick={handleSaveTimeSettings} className="w-full bg-white/5 border border-white/10 text-white font-black py-4 rounded-xl uppercase tracking-widest text-[0.7rem] hover:bg-white/10 active:scale-[0.98] transition-all shadow-lg flex items-center justify-center gap-3">
+                            <Clock size={16} strokeWidth={3} /> Atualizar Cronograma
                         </button>
                     </section>
 
-                    <section className="glass-panel p-24" style={{ flex: 1 }}>
-                        <h3 style={{ marginBottom: '16px', fontSize: '1rem' }}>Súmula da Partida</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto' }}>
-                            {[...match.events].reverse().map((event) => {
-                                const p = [...homeTeam.players, ...awayTeam.players].find(pl => pl.id === event.playerId);
-                                return (
-                                    <div key={event.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: 'rgba(0,0,0,0.2)', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
-                                        <div style={{ width: '32px', fontWeight: 800, color: 'var(--primary)' }}>{event.minute}'</div>
-                                        <div style={{ flex: 1, fontSize: '0.85rem' }}>
-                                            <span style={{ fontWeight: 700 }}>{p?.name}</span>
-                                            <span style={{ color: 'var(--text-muted)' }}> ({event.type === 'goal' ? 'Gol' : event.type === 'yellow_card' ? 'Cartão Amarelo' : 'Evento'})</span>
+                    <section className="glass-panel p-6 md:p-8 flex-1 flex flex-col">
+                        <h3 className="text-xl font-black text-white font-outfit uppercase tracking-widest mb-8 flex items-center gap-3">
+                            <History size={20} className="text-accent" /> Súmula Realtime
+                        </h3>
+                        <div className="flex-1 overflow-y-auto pr-2 no-scrollbar space-y-4 max-h-[850px]">
+                            {match.events.length === 0 ? (
+                                <div className="text-center py-20 opacity-30 flex flex-col items-center gap-4">
+                                    <History size={48} strokeWidth={1} />
+                                    <span className="text-[0.65rem] font-black uppercase tracking-[0.2em]">Aguardando eventos...</span>
+                                </div>
+                            ) : (
+                                [...match.events].reverse().map((event) => {
+                                    const p = [...homeTeam.players, ...awayTeam.players].find(pl => pl.id === event.playerId);
+                                    const eventColor = event.type === 'goal' || event.type === 'penalty_goal' ? 'text-accent' : event.type === 'own_goal' ? 'text-danger' : 'text-warning';
+                                    return (
+                                        <div key={event.id} className="group p-4 rounded-2xl bg-white/3 border border-white/5 flex items-center gap-4 hover:bg-white/5 transition-all animate-slide-left">
+                                            <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-black/40 font-black font-outfit text-primary shadow-inner">
+                                                {event.minute}'
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-outfit font-black text-white uppercase truncate text-sm">{p?.name}</span>
+                                                    <span className={`text-[0.6rem] font-black uppercase tracking-tighter shadow-sm ${eventColor}`}>
+                                                        {{ goal: 'GOL!', penalty_goal: 'PÊNALTI!', own_goal: 'GOL CONTRA!', yellow_card: 'CARTÃO AMARELO', red_card: 'CARTÃO VERMELHO', assist: 'ASSISTÊNCIA' }[event.type as string] || 'EVENTO'}
+                                                    </span>
+                                                </div>
+                                                <p className="text-[0.55rem] font-bold text-slate-600 uppercase tracking-widest mt-1">
+                                                    ID: {event.id.slice(0, 8)} • TIME: {teams.find(t => t.id === event.teamId)?.name}
+                                                </p>
+                                            </div>
+                                            <button onClick={() => removeEvent(matchId!, event.id)}
+                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all opacity-0 group-hover:opacity-100">
+                                                <XCircle size={14} />
+                                            </button>
                                         </div>
-                                        <button onClick={() => removeEvent(matchId!, event.id)} className="action-icon-btn danger" style={{ width: '28px', height: '28px' }}><XCircle size={14} /></button>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })
+                            )}
                         </div>
                     </section>
                 </div>

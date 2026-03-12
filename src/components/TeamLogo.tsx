@@ -8,17 +8,37 @@ interface TeamLogoProps {
 }
 
 const TeamLogo = ({ src, size = 48, fallbackText, fallbackIcon }: TeamLogoProps) => {
+    const sizeStyle = { width: size, height: size };
+
     if (!src || src.length < 4) return (
-        <div style={{ width: size, height: size, borderRadius: '50%', background: 'var(--primary-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--primary)', flexShrink: 0 }}>
-            {fallbackIcon ?? (fallbackText ? <span style={{ fontSize: size * 0.4 }}>{fallbackText}</span> : <Shield size={size / 2} />)}
+        <div
+            style={sizeStyle}
+            className="rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center flex-none shadow-lg shadow-primary/5 transition-transform hover:scale-105 duration-300"
+        >
+            {fallbackIcon ?? (fallbackText ? <span className="font-outfit font-black uppercase text-primary" style={{ fontSize: size * 0.4 }}>{fallbackText.slice(0, 2)}</span> : <Shield size={size / 2} className="text-primary/60" strokeWidth={2.5} />)}
         </div>
     );
 
     if (src.length < 10 && !src.startsWith('http')) {
-        return <div style={{ fontSize: `${size / 2}px`, width: size, height: size, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', flexShrink: 0 }}>{src}</div>;
+        return (
+            <div
+                style={sizeStyle}
+                className="rounded-full bg-white/5 border border-white/10 flex items-center justify-center flex-none uppercase font-black font-outfit text-white shadow-xl backdrop-blur-sm"
+                style={{ ...sizeStyle, fontSize: `${size / 2.2}px` }}
+            >
+                {src}
+            </div>
+        );
     }
 
-    return <img src={src} alt="logo" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--glass-border)', flexShrink: 0, backgroundColor: 'rgba(255,255,255,0.05)' }} />;
+    return (
+        <img
+            src={src}
+            alt="logo"
+            style={sizeStyle}
+            className="rounded-full border border-white/10 object-cover flex-none bg-white/5 shadow-2xl transition-all hover:border-primary/50 hover:scale-105 duration-500 ring-2 ring-transparent hover:ring-primary/20"
+        />
+    );
 };
 
 export default TeamLogo;

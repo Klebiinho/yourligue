@@ -1,199 +1,154 @@
 import { useLeague } from '../context/LeagueContext';
-import { Trophy, Users, Activity, Target, Award, Shield, AlertTriangle, Calendar, MapPin, ChevronRight } from 'lucide-react';
-
+import { Trophy, Users, Swords, Calendar, MapPin, ChevronRight, TrendingUp, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
 const Dashboard = () => {
-    const { league, teams, matches, startMatch } = useLeague();
+    const { league, teams, matches, loading } = useLeague();
     const navigate = useNavigate();
 
-    const totalPlayers = teams.reduce((acc, t) => acc + t.players.length, 0);
-    const liveMatches = matches.filter(m => m.status === 'live').length;
-    const finishedMatches = matches.filter(m => m.status === 'finished').length;
+    if (loading) return (
+        <div className="flex items-center justify-center min-h-[400px]">
+            <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+    );
 
-    const allPlayers = teams.flatMap(t => t.players.map(p => ({ ...p, team: t })));
-    const topScorer = allPlayers.length > 0 ? [...allPlayers].sort((a, b) => b.stats.goals - a.stats.goals)[0] : null;
-    const teamsWithGames = teams.filter(t => t.stats.matches > 0);
-    const bestDefense = teamsWithGames.length > 0 ? [...teamsWithGames].sort((a, b) => a.stats.goalsAgainst - b.stats.goalsAgainst)[0] : null;
-    const mostCards = allPlayers.length > 0 ? [...allPlayers].sort((a, b) => (b.stats.yellowCards + b.stats.redCards * 2) - (a.stats.yellowCards + a.stats.redCards * 2))[0] : null;
+    const liveMatches = matches.filter(m => m.status === 'live');
+    const upcomingMatches = matches.filter(m => m.status === 'scheduled').slice(0, 5);
+    const totalGoals = teams.reduce((acc, t) => acc + (t.stats?.goalsFor || 0), 0);
 
-    const sortedTeams = [...teams].sort((a, b) => {
-        const pts = (t: typeof teams[0]) => t.stats.wins * (league?.pointsForWin ?? 3) + t.stats.draws * (league?.pointsForDraw ?? 1) + t.stats.losses * (league?.pointsForLoss ?? 0);
-        return pts(b) - pts(a);
-    });
+    const stats = [
+        { label: 'Times', value: teams.length, icon: <Users size={22} />, color: 'text-primary' },
+        { label: 'Partidas', value: matches.length, icon: <Swords size={22} />, color: 'text-accent' },
+        { label: 'Gols Marcados', value: totalGoals, icon: <TrendingUp size={22} />, color: 'text-warning' },
+        { label: 'Ao Vivo', value: liveMatches.length, icon: <Star size={22} />, color: 'text-danger' },
+    ];
 
-    const handleEnterMatch = (id: string, status: string) => {
-        if (status === 'scheduled') startMatch(id);
+    const formatDate = (dt?: string) => dt ? new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+
+    const handleEnterMatch = (id: string) => {
         navigate(`/match/${id}`);
     };
 
-    const formatDate = (dt?: string) => {
-        if (!dt) return '';
-        return new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-    };
+    const sortedTeams = [...teams].sort((a, b) => {
+        const ptsA = (a.stats?.wins || 0) * (league?.pointsForWin || 3) + (a.stats?.draws || 0) * (league?.pointsForDraw || 1);
+        const ptsB = (b.stats?.wins || 0) * (league?.pointsForWin || 3) + (b.stats?.draws || 0) * (league?.pointsForDraw || 1);
+        return ptsB - ptsA;
+    });
 
     return (
-        <div className="animate-fade-in">
-            <header className="mb-40" style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                {league?.logo && <TeamLogo src={league.logo} size={72} />}
-                <div>
-                    <h1 className="responsive-title">{league?.name ?? 'Carregando...'}</h1>
-                    <p className="responsive-subtitle">Visão geral da liga em tempo real</p>
-                </div>
+        <div className="animate-fade-in pb-24 md:pb-8 p-4 md:p-0">
+            <header className="mb-8 md:mb-12">
+                <h1 className="text-3xl md:text-5xl font-outfit font-extrabold tracking-tight mb-2">
+                    Olá, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#a855f7]">Bem-vindo!</span>
+                </h1>
+                <p className="text-slate-400 font-medium md:text-lg">Dashboard da liga {league?.name}</p>
             </header>
 
-            {/* Stats Cards - responsive grid */}
-            <div className="grid-4 mb-40">
-                <StatCard title="Times" value={`${teams.length} / ${league?.maxTeams ?? 16}`} icon={<Trophy color="var(--primary)" />} />
-                <StatCard title="Jogadores" value={totalPlayers} icon={<Users color="var(--accent)" />} />
-                <StatCard title="Ao Vivo" value={liveMatches} icon={<Activity color="var(--danger)" />} accent="danger" />
-                <StatCard title="Concluídas" value={finishedMatches} icon={<Target color="var(--warning)" />} />
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
+                {stats.map((stat, i) => (
+                    <div key={i} className="glass-panel p-5 md:p-6 flex flex-col gap-3 group hover:scale-[1.02] transition-transform duration-300">
+                        <div className={`w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
+                            {stat.icon}
+                        </div>
+                        <div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wider">{stat.label}</p>
+                            <p className="text-2xl md:text-3xl font-extrabold text-white font-outfit mt-1">{stat.value}</p>
+                        </div>
+                    </div>
+                ))}
             </div>
 
-            <div className="grid-2">
-                {/* Partidas */}
-                <section className="glass-panel p-24">
-                    <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Activity size={20} className="text-gradient" /> Próximas & Ao Vivo
-                    </h2>
-                    {matches.length === 0
-                        ? <p style={{ color: 'var(--text-muted)' }}>Nenhuma partida agendada ainda.</p>
-                        : <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {matches.slice(0, 6).map(match => {
-                                const ht = teams.find(t => t.id === match.homeTeamId);
-                                const at = teams.find(t => t.id === match.awayTeamId);
-                                const isLive = match.status === 'live';
-                                return (
-                                    <div key={match.id}
-                                        onClick={() => handleEnterMatch(match.id, match.status)}
-                                        style={{
-                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                            padding: '14px 16px', borderRadius: '12px', cursor: 'pointer',
-                                            background: isLive ? 'rgba(109,40,217,0.15)' : 'rgba(0,0,0,0.2)',
-                                            border: `1px solid ${isLive ? 'var(--primary)' : 'var(--glass-border)'}`,
-                                            transition: 'all 0.2s', flexWrap: 'wrap', gap: '10px'
-                                        }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 180px', minWidth: 0 }}>
-                                            <TeamLogo src={ht?.logo} size={32} />
-                                            <div style={{ minWidth: 0, flex: 1 }}>
-                                                <div style={{ fontWeight: 600, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ht?.name} <span style={{ color: 'var(--text-muted)' }}>x</span> {at?.name}</div>
-                                                <div style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
-                                                    {match.scheduledAt && <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}><Calendar size={11} /> {formatDate(match.scheduledAt)}</span>}
-                                                    {match.location && <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}><MapPin size={11} /> {match.location}</span>}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+                {/* Live & Upcoming Matches */}
+                <div className="lg:col-span-2 space-y-6">
+                    <section className="glass-panel p-6 md:p-8">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold flex items-center gap-3">
+                                <Swords size={22} className="text-primary" />
+                                Partidas Recentes
+                            </h2>
+                            <button onClick={() => navigate('/matches')} className="text-primary text-sm font-bold hover:underline">Ver todas</button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {[...liveMatches, ...upcomingMatches].length === 0 ? (
+                                <p className="text-slate-500 text-center py-8 font-medium">Nenhuma partida agendada.</p>
+                            ) : (
+                                [...liveMatches, ...upcomingMatches].map(match => {
+                                    const ht = teams.find(t => t.id === match.homeTeamId);
+                                    const at = teams.find(t => t.id === match.awayTeamId);
+                                    const isLive = match.status === 'live';
+                                    return (
+                                        <div key={match.id}
+                                            onClick={() => handleEnterMatch(match.id)}
+                                            className={`flex flex-col sm:flex-row justify-between items-center p-4 md:p-5 rounded-2xl cursor-pointer transition-all duration-300 gap-4 border ${isLive
+                                                    ? 'bg-primary/10 border-primary/30 shadow-[0_4px_20px_rgba(109,40,217,0.1)]'
+                                                    : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                                }`}>
+                                            <div className="flex items-center gap-4 flex-1 w-full min-w-0">
+                                                <TeamLogo src={ht?.logo} size={40} />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-bold text-sm md:text-base truncate">
+                                                        {ht?.name} <span className="text-slate-500 mx-1">vs</span> {at?.name}
+                                                    </div>
+                                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-slate-500 font-medium text-[0.7rem] md:text-xs">
+                                                        {match.scheduledAt && <span className="flex items-center gap-1.5"><Calendar size={12} /> {formatDate(match.scheduledAt)}</span>}
+                                                        {match.location && <span className="flex items-center gap-1.5"><MapPin size={12} /> {match.location}</span>}
+                                                    </div>
                                                 </div>
                                             </div>
+                                            <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto mt-2 sm:mt-0 border-t sm:border-t-0 border-white/5 pt-3 sm:pt-0">
+                                                <div className="flex items-center gap-3">
+                                                    {isLive && (
+                                                        <span className="bg-danger text-white px-2.5 py-1 rounded-lg text-[0.65rem] font-black uppercase tracking-widest animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.4)]">
+                                                            AO VIVO
+                                                        </span>
+                                                    )}
+                                                    <TeamLogo src={at?.logo} size={40} />
+                                                </div>
+                                                <ChevronRight size={18} className="text-slate-600 ml-2" />
+                                            </div>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'flex-end', flex: '1 0 auto' }}>
-                                            {isLive && <span style={{ background: 'var(--danger)', color: 'white', padding: '2px 8px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 700, animation: 'pulse 2s infinite' }}>AO VIVO</span>}
-                                            {match.status === 'finished' && <span style={{ color: 'var(--text-muted)', fontWeight: 800 }}>{match.homeScore} - {match.awayScore}</span>}
-                                            <TeamLogo src={at?.logo} size={32} />
-                                            <ChevronRight size={14} color="var(--text-muted)" />
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })
+                            )}
                         </div>
-                    }
-                </section>
+                    </section>
+                </div>
 
-                {/* Destaques */}
-                <section className="glass-panel p-24">
-                    <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Award size={20} className="text-gradient" /> Destaques da Liga
-                    </h2>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {topScorer && topScorer.stats.goals > 0 ? (
-                            <HighlightCard icon={<Award size={22} color="var(--primary)" />} bg="var(--primary-glow)"
-                                label="Artilheiro" name={topScorer.name} team={topScorer.team} value={`${topScorer.stats.goals} gols`} valueColor="var(--primary)" />
-                        ) : <EmptyHighlight label="Nenhum gol registrado ainda." />}
-                        {bestDefense ? (
-                            <HighlightCard icon={<Shield size={22} color="#22c55e" />} bg="rgba(34,197,94,0.15)"
-                                label="Melhor Defesa" name={bestDefense.name} team={bestDefense} value={`${bestDefense.stats.goalsAgainst} sofridos`} valueColor="#22c55e" />
-                        ) : null}
-                        {mostCards && (mostCards.stats.yellowCards > 0 || mostCards.stats.redCards > 0) ? (
-                            <HighlightCard icon={<AlertTriangle size={22} color="var(--danger)" />} bg="rgba(239,68,68,0.15)"
-                                label="Mais Cartões" name={mostCards.name} team={mostCards.team}
-                                value={`🟨 ${mostCards.stats.yellowCards}  🟥 ${mostCards.stats.redCards}`} valueColor="var(--danger)" />
-                        ) : null}
-                    </div>
-                </section>
-
-                {/* Classificação */}
-                <section className="glass-panel p-24" style={{ gridColumn: '1 / -1' }}>
-                    <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Trophy size={20} className="text-gradient-accent" /> Classificação
-                    </h2>
-                    {sortedTeams.length === 0 ? <p style={{ color: 'var(--text-muted)' }}>Nenhum time registrado.</p> : (
-                        <div className="table-responsive">
-                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '560px' }}>
-                                <thead>
-                                    <tr style={{ color: 'var(--text-muted)', fontSize: '0.8rem', letterSpacing: '0.05em', textTransform: 'uppercase', borderBottom: '1px solid var(--glass-border)' }}>
-                                        {['#', 'Time', 'Pts', 'J', 'V', 'E', 'D', 'GP', 'GC', 'SG'].map(h => (
-                                            <th key={h} style={{ padding: '8px 12px', textAlign: h === 'Time' ? 'left' : 'center', fontWeight: 600 }}>{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {sortedTeams.map((team, i) => {
-                                        const pts = team.stats.wins * (league?.pointsForWin ?? 3) + team.stats.draws * (league?.pointsForDraw ?? 1) + team.stats.losses * (league?.pointsForLoss ?? 0);
-                                        const sg = team.stats.goalsFor - team.stats.goalsAgainst;
-                                        return (
-                                            <tr key={team.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: i === 0 ? 'rgba(109,40,217,0.08)' : 'transparent', transition: 'background 0.2s' }}>
-                                                <td style={{ padding: '12px', textAlign: 'center', fontWeight: 800, color: i === 0 ? 'var(--primary)' : 'var(--text-muted)' }}>{i + 1}</td>
-                                                <td style={{ padding: '12px' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                        <TeamLogo src={team.logo} size={28} />
-                                                        <span style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{team.name}</span>
-                                                    </div>
-                                                </td>
-                                                <td style={{ padding: '12px', textAlign: 'center', fontWeight: 800, color: 'var(--accent)' }}>{pts}</td>
-                                                <td style={{ padding: '12px', textAlign: 'center' }}>{team.stats.matches}</td>
-                                                <td style={{ padding: '12px', textAlign: 'center', color: '#22c55e' }}>{team.stats.wins}</td>
-                                                <td style={{ padding: '12px', textAlign: 'center' }}>{team.stats.draws}</td>
-                                                <td style={{ padding: '12px', textAlign: 'center', color: 'var(--danger)' }}>{team.stats.losses}</td>
-                                                <td style={{ padding: '12px', textAlign: 'center' }}>{team.stats.goalsFor}</td>
-                                                <td style={{ padding: '12px', textAlign: 'center' }}>{team.stats.goalsAgainst}</td>
-                                                <td style={{ padding: '12px', textAlign: 'center', color: sg >= 0 ? '#22c55e' : 'var(--danger)', fontWeight: 700 }}>{sg > 0 ? `+${sg}` : sg}</td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                {/* Classification Mini Table */}
+                <div className="space-y-6">
+                    <section className="glass-panel p-6 md:p-8">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold flex items-center gap-3">
+                                <Trophy size={22} className="text-accent" />
+                                Liderança
+                            </h2>
+                            <button onClick={() => navigate('/standings')} className="text-accent text-sm font-bold hover:underline">Ver Tabela</button>
                         </div>
-                    )}
-                </section>
+
+                        <div className="space-y-4">
+                            {sortedTeams.slice(0, 5).map((team, i) => (
+                                <div key={team.id} className="flex items-center gap-4 p-3.5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group">
+                                    <span className={`w-7 h-7 flex items-center justify-center rounded-lg font-black text-xs ${i === 0 ? 'bg-warning/20 text-warning' : 'bg-white/10 text-slate-400'
+                                        }`}>
+                                        {i + 1}
+                                    </span>
+                                    <TeamLogo src={team.logo} size={32} />
+                                    <span className="font-bold flex-1 truncate text-sm">{team.name}</span>
+                                    <span className="font-black text-primary group-hover:scale-110 transition-transform">
+                                        {(team.stats?.wins || 0) * (league?.pointsForWin || 3) + (team.stats?.draws || 0) * (league?.pointsForDraw || 1)} PTS
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                </div>
             </div>
         </div>
     );
 };
-
-const StatCard = ({ title, value, icon, accent }: { title: string; value: string | number; icon: React.ReactNode; accent?: string }) => (
-    <div className="glass-panel p-24" style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '120px', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <h3 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{title}</h3>
-            <div style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>{icon}</div>
-        </div>
-        <div style={{ fontSize: '2rem', fontWeight: 800, fontFamily: 'Outfit', color: accent === 'danger' && Number(value) > 0 ? 'var(--danger)' : 'inherit' }}>{value}</div>
-    </div>
-);
-
-const HighlightCard = ({ icon, bg, label, name, team, value, valueColor }: any) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)' }}>
-        <div style={{ background: bg, padding: '10px', borderRadius: '50%', flexShrink: 0 }}>{icon}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{label}</div>
-            <div style={{ fontWeight: 800, fontSize: '1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
-            <div style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)' }}>
-                {team?.logo && <TeamLogo src={team.logo} size={14} />} {team?.name}
-            </div>
-        </div>
-        <div style={{ fontWeight: 800, fontSize: '1.1rem', color: valueColor, flexShrink: 0 }}>{value}</div>
-    </div>
-);
-
-const EmptyHighlight = ({ label }: { label: string }) => (
-    <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{label}</div>
-);
 
 export default Dashboard;

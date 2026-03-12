@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, Plus, Trash2, LogOut, Edit2, Check, X, RefreshCw } from 'lucide-react';
+import { Trophy, Plus, Trash2, LogOut, Edit2, Check, X, RefreshCw, User, Settings2 } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const LeagueSelector = () => {
@@ -16,20 +16,18 @@ const LeagueSelector = () => {
     const navigate = useNavigate();
 
     const handleDelete = async (id: string) => {
-        if (window.confirm('Tem certeza? Todos os dados desta liga serão excluídos.')) {
+        if (window.confirm('Tem certeza? Todos os dados desta liga serão excluídos permanentemente.')) {
             await deleteLeague(id);
         }
     };
 
-    const startEditing = (l: typeof leagues[0]) => {
+    const startEditing = (l: any) => {
         setEditingId(l.id); setEditName(l.name);
     };
 
     const saveEdit = async () => {
         if (editingId && editName.trim()) {
-            // Select the league being edited so updateLeague targets it correctly
             selectLeague(editingId);
-            // Give state time to update, then call update
             setTimeout(async () => {
                 await updateLeague({ name: editName });
             }, 50);
@@ -38,77 +36,104 @@ const LeagueSelector = () => {
     };
 
     return (
-        <div style={{
-            minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'var(--bg-dark)', padding: '16px',
-            backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(109, 40, 217, 0.2), transparent 30%), radial-gradient(circle at 80% 30%, rgba(16, 185, 129, 0.15), transparent 30%)'
-        }}>
-            <div style={{ width: '100%', maxWidth: '600px', animation: 'fadeIn 0.5s ease', padding: '0 4px' }}>
-                {/* Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px', flexWrap: 'wrap', gap: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                        <div style={{ background: 'var(--primary)', padding: '12px', borderRadius: '16px', boxShadow: '0 4px 20px var(--primary-glow)', display: 'flex', flexShrink: 0 }}>
-                            <Trophy size={24} color="white" />
+        <div className="min-h-screen bg-bg-dark flex items-center justify-center p-4 md:p-8 overflow-hidden relative">
+            {/* Animated Background Blobs */}
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full animate-pulse" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/15 blur-[120px] rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
+
+            <div className="w-full max-w-2xl animate-fade-in relative z-10">
+                {/* Header Card */}
+                <div className="glass-panel p-6 md:p-8 mb-6 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xl">
+                    <div className="flex items-center gap-5">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-[#a855f7] flex items-center justify-center shadow-[0_8px_25px_rgba(109,40,217,0.4)] transform hover:rotate-6 transition-transform">
+                            <Trophy size={32} className="text-white" />
                         </div>
-                        <div>
-                            <h1 style={{ fontSize: 'clamp(1.4rem, 5vw, 1.75rem)', fontFamily: 'Outfit', fontWeight: 800 }}>Suas Ligas</h1>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.825rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>Olá, {user?.user_metadata?.name || user?.email}</p>
+                        <div className="text-center sm:text-left">
+                            <h1 className="text-2xl md:text-3xl font-outfit font-black text-white uppercase tracking-tight leading-none mb-1">Suas Ligas</h1>
+                            <div className="flex items-center gap-2 text-slate-500 font-bold text-[0.65rem] uppercase tracking-widest justify-center sm:justify-start">
+                                <User size={12} className="text-primary" />
+                                <span className="truncate max-w-[150px]">{user?.user_metadata?.name || user?.email}</span>
+                            </div>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={loadLeagues} className="btn-outline" style={{ padding: '9px 14px', display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.85rem' }}>
-                            <RefreshCw size={15} /> Recarregar
+
+                    <div className="flex items-center gap-2">
+                        <button onClick={loadLeagues} className="p-3 rounded-xl bg-white/3 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95" title="Recarregar">
+                            <RefreshCw size={18} />
                         </button>
-                        <button onClick={signOut} className="btn-outline" style={{ padding: '9px 14px', display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.85rem' }}>
-                            <LogOut size={15} /> Sair
+                        <button onClick={signOut} className="p-3 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger hover:text-white transition-all active:scale-95 flex items-center gap-2 font-black text-[0.65rem] uppercase tracking-widest px-5">
+                            <LogOut size={16} /> <span className="hidden sm:inline">Sair</span>
                         </button>
                     </div>
                 </div>
 
                 {/* League List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+                <div className="space-y-4 mb-8">
                     {leagues.length === 0 ? (
-                        <div className="glass-panel" style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                            <Trophy size={48} style={{ marginBottom: '16px', opacity: 0.2 }} />
-                            <h3 style={{ marginBottom: '8px' }}>Nenhuma liga criada ainda</h3>
-                            <p style={{ fontSize: '0.875rem' }}>Crie sua primeira liga abaixo!</p>
+                        <div className="glass-panel py-20 px-10 text-center space-y-6">
+                            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                                <Trophy size={40} className="text-slate-700" strokeWidth={1} />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Nenhuma liga encontrada</h3>
+                                <p className="text-slate-500 font-medium text-sm">Comece sua jornada criando uma liga agora mesmo!</p>
+                            </div>
                         </div>
                     ) : (
                         leagues.map(l => (
                             <div key={l.id}
                                 onClick={() => { if (editingId !== l.id) { selectLeague(l.id); navigate('/'); } }}
-                                style={{
-                                    padding: '18px 20px', borderRadius: '14px', cursor: 'pointer',
-                                    background: league?.id === l.id ? 'rgba(109, 40, 217, 0.2)' : 'rgba(28, 28, 36, 0.6)',
-                                    border: `1px solid ${league?.id === l.id ? 'var(--primary)' : 'var(--glass-border)'}`,
-                                    display: 'flex', alignItems: 'center', gap: '14px',
-                                    transition: 'all 0.2s', backdropFilter: 'blur(12px)',
-                                    boxShadow: league?.id === l.id ? '0 4px 20px var(--primary-glow)' : 'none'
-                                }}>
-                                <TeamLogo src={l.logo} size={44} />
+                                className={`group p-5 rounded-2xl border transition-all duration-500 flex items-center gap-5 cursor-pointer relative overflow-hidden backdrop-blur-xl ${league?.id === l.id
+                                        ? 'bg-primary/10 border-primary/30 shadow-[0_8px_30px_rgba(109,40,217,0.15)] ring-1 ring-primary/20'
+                                        : 'bg-white/3 border-white/5 hover:bg-white/6 hover:border-white/10'
+                                    }`}>
+                                {league?.id === l.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
+
+                                <div className="relative flex-none">
+                                    <TeamLogo src={l.logo} size={56} />
+                                    {league?.id === l.id && (
+                                        <div className="absolute -bottom-1 -right-1 bg-primary text-white w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-bg-dark animate-bounce">
+                                            <Check size={12} strokeWidth={4} />
+                                        </div>
+                                    )}
+                                </div>
+
                                 {editingId === l.id ? (
-                                    <input value={editName} onChange={e => setEditName(e.target.value)}
-                                        autoFocus onClick={e => e.stopPropagation()}
-                                        style={{ flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '1rem', outline: 'none', minWidth: 0 }} />
+                                    <div className="flex-1 flex gap-2" onClick={e => e.stopPropagation()}>
+                                        <input
+                                            value={editName} onChange={e => setEditName(e.target.value)}
+                                            autoFocus className="flex-1 bg-black/40 border border-primary/50 rounded-xl px-4 py-3 text-white font-bold outline-none ring-2 ring-primary/20"
+                                        />
+                                        <button onClick={saveEdit} className="p-3 bg-accent text-white rounded-xl shadow-lg hover:brightness-110 active:scale-95 transition-all outline-none">
+                                            <Check size={20} strokeWidth={3} />
+                                        </button>
+                                        <button onClick={() => setEditingId(null)} className="p-3 border border-white/10 text-slate-500 rounded-xl hover:bg-white/5 transition-all outline-none">
+                                            <X size={20} strokeWidth={3} />
+                                        </button>
+                                    </div>
                                 ) : (
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontWeight: 700, fontSize: '1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.name}</div>
-                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Clique para entrar</div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-0.5">
+                                            <span className="font-outfit font-black text-white text-lg uppercase tracking-wide truncate max-w-[250px] leading-tight transition-transform group-hover:translate-x-1 duration-300">
+                                                {l.name}
+                                            </span>
+                                            {league?.id === l.id && <span className="bg-primary/20 text-primary text-[0.55rem] font-black px-2 py-0.5 rounded tracking-widest leading-none border border-primary/20">ATIVA</span>}
+                                        </div>
+                                        <div className="flex items-center gap-2 text-[0.6rem] font-bold text-slate-500 uppercase tracking-widest group-hover:text-primary transition-colors">
+                                            Clique para gerenciar <Settings2 size={10} strokeWidth={3} />
+                                        </div>
                                     </div>
                                 )}
-                                {league?.id === l.id && editingId !== l.id && (
-                                    <div style={{ background: 'var(--primary)', padding: '4px 10px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 700, flexShrink: 0 }}>ATIVA</div>
-                                )}
-                                <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                                    {editingId === l.id ? (
+
+                                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                                    {editingId !== l.id && (
                                         <>
-                                            <button onClick={saveEdit} style={{ background: 'rgba(16,185,129,0.2)', border: '1px solid var(--accent)', color: 'var(--accent)', padding: '6px', borderRadius: '8px', cursor: 'pointer', display: 'flex' }}><Check size={16} /></button>
-                                            <button onClick={() => setEditingId(null)} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-muted)', padding: '6px', borderRadius: '8px', cursor: 'pointer', display: 'flex' }}><X size={16} /></button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button onClick={(e) => { e.stopPropagation(); startEditing(l); }} className="action-icon-btn" title="Editar nome"><Edit2 size={15} /></button>
-                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(l.id); }} className="action-icon-btn danger" title="Excluir liga"><Trash2 size={15} /></button>
+                                            <button onClick={() => startEditing(l)} className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all outline-none" title="Editar">
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button onClick={() => handleDelete(l.id)} className="p-3 rounded-xl bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all outline-none" title="Excluir">
+                                                <Trash2 size={16} />
+                                            </button>
                                         </>
                                     )}
                                 </div>
@@ -117,39 +142,49 @@ const LeagueSelector = () => {
                     )}
                 </div>
 
-                {/* Create League */}
-                {showCreate ? (
-                    <form onSubmit={async (e) => {
-                        e.preventDefault();
-                        if (!newName.trim()) return;
-                        setLoading(true);
-                        const res = await createLeague({
-                            name: newName, logo: '', maxTeams: 16,
-                            pointsForWin: 3, pointsForDraw: 1, pointsForLoss: 0, defaultHalfLength: 45
-                        });
-                        if (!res.error) {
-                            setNewName(''); setShowCreate(false); navigate('/');
-                        }
-                        setLoading(false);
-                    }} className="glass-panel" style={{ padding: 'clamp(16px, 4vw, 24px)', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                        <input type="text" placeholder="Nome da liga (ex: Copa dos Campeões)" value={newName}
-                            onChange={e => setNewName(e.target.value)} autoFocus required
-                            style={{ flex: '1 1 200px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '12px 16px', color: 'white', fontSize: '1rem', outline: 'none' }} />
-                        <div style={{ display: 'flex', gap: '8px', flex: '1 1 auto' }}>
-                            <button type="submit" className="btn-primary" disabled={loading} style={{ flex: 1, padding: '12px 20px', whiteSpace: 'nowrap', justifyContent: 'center' }}>
-                                {loading ? '...' : 'Criar'}
-                            </button>
-                            <button type="button" onClick={() => setShowCreate(false)} className="btn-outline" style={{ padding: '12px 16px', flexShrink: 0 }}>
-                                <X size={18} />
-                            </button>
-                        </div>
-                    </form>
-                ) : (
-                    <button onClick={() => setShowCreate(true)} className="btn-primary"
-                        style={{ width: '100%', justifyContent: 'center', padding: '16px', fontSize: '1rem', gap: '10px' }}>
-                        <Plus size={20} /> Nova Liga
-                    </button>
-                )}
+                {/* Footer Action Area */}
+                <div className="space-y-4">
+                    {showCreate ? (
+                        <form onSubmit={async (e) => {
+                            e.preventDefault();
+                            if (!newName.trim()) return;
+                            setLoading(true);
+                            const res = await createLeague({
+                                name: newName, logo: '', maxTeams: 16,
+                                pointsForWin: 3, pointsForDraw: 1, pointsForLoss: 0, defaultHalfLength: 45
+                            });
+                            if (!res.error) {
+                                setNewName(''); setShowCreate(false); navigate('/');
+                            }
+                            setLoading(false);
+                        }} className="glass-panel p-6 animate-slide-up border-t-2 border-t-accent shadow-[0_20px_50px_rgba(0,0,0,0.4)] relative">
+                            <div className="flex flex-col gap-4">
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Crie sua nova liga</label>
+                                    <div className="flex gap-2">
+                                        <input type="text" placeholder="Ex: Premier League 2026" value={newName}
+                                            onChange={e => setNewName(e.target.value)} autoFocus required
+                                            className="flex-1 bg-black/40 border border-white/10 rounded-xl px-5 py-4 text-white font-bold text-lg outline-none focus:border-accent transition-all placeholder:text-slate-700"
+                                        />
+                                        <button type="submit" disabled={loading} className="px-8 bg-accent text-white font-black rounded-xl shadow-lg hover:brightness-110 active:scale-95 transition-all text-[0.7rem] uppercase tracking-widest disabled:opacity-50">
+                                            {loading ? '...' : 'Criar Liga'}
+                                        </button>
+                                        <button type="button" onClick={() => setShowCreate(false)} className="p-4 border border-white/5 text-slate-500 rounded-xl hover:bg-white/5 transition-all outline-none">
+                                            <X size={20} strokeWidth={3} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    ) : (
+                        <button onClick={() => setShowCreate(true)}
+                            className="w-full h-16 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center gap-4 text-white hover:bg-primary hover:border-primary hover:shadow-[0_8px_25px_rgba(109,40,217,0.3)] transition-all group active:scale-[0.99] group overflow-hidden relative">
+                            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <Plus size={24} strokeWidth={3} className="text-slate-500 group-hover:text-white transition-colors relative z-10" />
+                            <span className="font-outfit font-black uppercase text-sm tracking-[0.2em] text-slate-400 group-hover:text-white transition-colors relative z-10">Fundar Nova Liga</span>
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );

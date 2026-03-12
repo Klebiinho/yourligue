@@ -1,281 +1,276 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Crown, Edit2, Trash2, Check, X, Image as ImageIcon } from 'lucide-react';
+import { Users, MoreVertical, Trash2, Edit2, PlusCircle, Star, Target, Shield, AlertTriangle, ChevronRight, TrendingUp } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const TeamsDashboard = () => {
-    const { league, teams, updateTeam, deleteTeam, updatePlayer, removePlayer, toggleCaptain } = useLeague();
-    const [selectedTeamId, setSelectedTeamId] = useState<string | null>(teams[0]?.id ?? null);
-    const [editingTeam, setEditingTeam] = useState(false);
-    const [editTeamName, setEditTeamName] = useState('');
-    const [editTeamLogo, setEditTeamLogo] = useState('');
-    const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
-    const [editName, setEditName] = useState('');
-    const [editNumber, setEditNumber] = useState('');
-    const [editPos, setEditPos] = useState('');
-    const [editPhoto, setEditPhoto] = useState('');
+    const { teams, addTeam, updateTeam, deleteTeam, addPlayer, updatePlayer, removePlayer, toggleCaptain } = useLeague();
+    const [selectedTeamId, setSelectedTeamId] = useState<string | null>(teams[0]?.id || null);
+    const [isAddingTeam, setIsAddingTeam] = useState(false);
+    const [isEditingTeam, setIsEditingTeam] = useState<string | null>(null);
+    const [isAddingPlayer, setIsAddingPlayer] = useState(false);
+    const [isEditingPlayer, setIsEditingPlayer] = useState<string | null>(null);
+
+    const [formTeam, setFormTeam] = useState({ name: '', logo: '' });
+    const [formPlayer, setFormPlayer] = useState({ name: '', number: 0, position: 'Goleiro', isCaptain: false });
 
     const selectedTeam = teams.find(t => t.id === selectedTeamId);
 
-    const handleFile = (e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) => {
-        const file = e.target.files?.[0];
-        if (file) { const r = new FileReader(); r.onloadend = () => setter(r.result as string); r.readAsDataURL(file); }
-    };
-
-    const startEditTeam = (t: typeof teams[0]) => {
-        setEditTeamName(t.name); setEditTeamLogo(t.logo); setEditingTeam(true);
-    };
-
-    const saveTeam = async () => {
-        if (selectedTeamId) await updateTeam(selectedTeamId, { name: editTeamName, logo: editTeamLogo });
-        setEditingTeam(false);
-    };
-
-    const handleDeleteTeam = async (id: string) => {
-        if (window.confirm('Excluir este time e todos os seus dados?')) {
-            await deleteTeam(id);
-            setSelectedTeamId(teams.find(t => t.id !== id)?.id ?? null);
+    const handleTeamSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (isEditingTeam) {
+            await updateTeam(isEditingTeam, formTeam);
+            setIsEditingTeam(null);
+        } else {
+            const { error } = await addTeam(formTeam);
+            if (error) { alert(error); return; }
+            setIsAddingTeam(false);
         }
+        setFormTeam({ name: '', logo: '' });
     };
 
-    const startEditPlayer = (p: any) => {
-        setEditingPlayerId(p.id); setEditName(p.name);
-        setEditNumber(String(p.number)); setEditPos(p.position); setEditPhoto(p.photo || '');
-    };
-
-    const savePlayer = async () => {
-        if (editingPlayerId && selectedTeamId) {
-            await updatePlayer(selectedTeamId, editingPlayerId, { name: editName, number: parseInt(editNumber), position: editPos, photo: editPhoto });
+    const handlePlayerSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedTeamId) return;
+        if (isEditingPlayer) {
+            await updatePlayer(selectedTeamId, isEditingPlayer, formPlayer);
+            setIsEditingPlayer(null);
+        } else {
+            const { error } = await addPlayer(selectedTeamId, formPlayer);
+            if (error) { alert(error); return; }
+            setIsAddingPlayer(false);
         }
-        setEditingPlayerId(null);
+        setFormPlayer({ name: '', number: 0, position: 'Goleiro', isCaptain: false });
     };
-
-    const allPlayers = teams.flatMap(t => t.players.map(p => ({ ...p, team: t })));
-    const topScorers = [...allPlayers].sort((a, b) => b.stats.goals - a.stats.goals).slice(0, 10);
 
     return (
-        <div className="animate-fade-in">
-            <header className="mb-40">
-                <h1 className="responsive-title">Painel das Equipes</h1>
-                <p className="responsive-subtitle">Gerencie os elencos e veja as estatísticas — {league?.name}</p>
+        <div className="animate-fade-in pb-24 md:pb-8 p-4 md:p-0">
+            <header className="mb-8 md:mb-12">
+                <h1 className="text-3xl md:text-5xl font-outfit font-extrabold tracking-tight mb-2 uppercase">Gestão de Times</h1>
+                <p className="text-slate-400 font-medium md:text-lg">Controle elencos, estatísticas e identidades visuais</p>
             </header>
 
-            <div className="teams-dashboard-layout">
-                {/* Team List */}
-                <aside className="glass-panel p-24" style={{ alignSelf: 'start' }}>
-                    <h2 style={{ marginBottom: '16px', fontSize: '1.1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>Times Cadastrados</h2>
-                    {teams.length === 0
-                        ? <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Nenhum time ainda.</p>
-                        : <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {teams.map(t => (
-                                <div key={t.id} onClick={() => { setSelectedTeamId(t.id); setEditingTeam(false); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s', background: selectedTeamId === t.id ? 'var(--primary-glow)' : 'rgba(0,0,0,0.2)', border: `1px solid ${selectedTeamId === t.id ? 'var(--primary)' : 'transparent'}` }}>
-                                    <TeamLogo src={t.logo} size={36} />
-                                    <div style={{ flex: 1, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem' }}>{t.name}</div>
-                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{t.players.length}</span>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
+                {/* Team Selector / List */}
+                <section className="lg:col-span-12 xl:col-span-4 glass-panel p-6 md:p-8 flex flex-col h-full overflow-hidden">
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-xl font-bold flex items-center gap-3 font-outfit uppercase tracking-wider">
+                            <Users size={22} className="text-primary" /> Clubes
+                        </h2>
+                        <button onClick={() => { setIsAddingTeam(!isAddingTeam); setIsEditingTeam(null); }}
+                            className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-lg active:scale-95">
+                            <PlusCircle size={22} />
+                        </button>
+                    </div>
+
+                    {isAddingTeam || isEditingTeam ? (
+                        <div className="bg-black/20 p-5 rounded-2xl border border-white/5 mb-6 animate-slide-up">
+                            <form onSubmit={handleTeamSubmit} className="flex flex-col gap-4">
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Nome do Time</label>
+                                    <input className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none transition-all placeholder:text-slate-600"
+                                        placeholder="Ex: Flamengo" value={formTeam.name} onChange={e => setFormTeam({ ...formTeam, name: e.target.value })} required />
                                 </div>
-                            ))}
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Logo URL (Opcional)</label>
+                                    <input className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none transition-all placeholder:text-slate-600"
+                                        placeholder="https://..." value={formTeam.logo} onChange={e => setFormTeam({ ...formTeam, logo: e.target.value })} />
+                                </div>
+                                <div className="flex flex-col sm:flex-row gap-3 mt-2">
+                                    <button type="submit" className="flex-1 bg-primary text-white font-black py-3 rounded-xl uppercase tracking-widest text-xs shadow-lg hover:brightness-110 active:scale-95 transition-all">
+                                        {isEditingTeam ? 'Salvar' : 'Confirmar'}
+                                    </button>
+                                    <button type="button" onClick={() => { setIsAddingTeam(false); setIsEditingTeam(null); }} className="flex-1 border border-white/10 text-slate-400 font-black py-3 rounded-xl uppercase tracking-widest text-xs hover:bg-white/5 transition-all">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                    }
-                </aside>
+                    ) : null}
 
-                {/* Main Content */}
-                <main style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    {selectedTeam ? (
+                    <div className="flex flex-col gap-3 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
+                        {teams.length === 0 ? (
+                            <p className="text-slate-500 text-center py-12 font-medium opacity-50 font-outfit uppercase text-xs tracking-widest">Nenhum time cadastrado.</p>
+                        ) : (
+                            teams.map(team => (
+                                <div key={team.id} onClick={() => setSelectedTeamId(team.id)}
+                                    className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all duration-300 border ${selectedTeamId === team.id
+                                            ? 'bg-primary/10 border-primary/30 shadow-[0_4px_24px_rgba(109,40,217,0.1)]'
+                                            : 'bg-white/3 border-white/5 hover:bg-white/5'
+                                        }`}>
+                                    <TeamLogo src={team.logo} size={44} />
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-black text-white truncate font-outfit uppercase tracking-wide leading-tight">{team.name}</h3>
+                                        <p className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest mt-1">{team.players.length} Atletas</p>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <button onClick={(e) => { e.stopPropagation(); setIsEditingTeam(team.id); setFormTeam({ name: team.name, logo: team.logo }); }}
+                                            className="p-2.5 rounded-xl text-slate-500 hover:text-white hover:bg-white/5 transition-all outline-none">
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button onClick={(e) => { e.stopPropagation(); if (window.confirm('Excluir time?')) deleteTeam(team.id); }}
+                                            className="p-2.5 rounded-xl text-danger/50 hover:text-danger hover:bg-danger/10 transition-all outline-none">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </section>
+
+                {/* Team Details & Players */}
+                <section className="lg:col-span-12 xl:col-span-8 space-y-6 md:space-y-8">
+                    {!selectedTeam ? (
+                        <div className="glass-panel p-20 flex flex-col items-center justify-center text-center opacity-50 gap-5">
+                            <TrendingUp size={64} strokeWidth={1} />
+                            <p className="font-outfit uppercase font-black text-xs tracking-[0.2em] text-slate-500">Selecione um clube para gerenciar atletas</p>
+                        </div>
+                    ) : (
                         <>
-                            {/* Team Header */}
-                            <section className="glass-panel p-24">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                    <div style={{ position: 'relative', flexShrink: 0 }}>
-                                        <TeamLogo src={editingTeam ? editTeamLogo : selectedTeam.logo} size={90} />
-                                        {editingTeam && (
-                                            <div className="file-upload-wrapper" style={{ position: 'absolute', inset: 0, borderRadius: '50%' }}>
-                                                <div className="file-upload-custom" style={{ width: '100%', height: '100%', borderRadius: '50%', padding: 0, opacity: 0.8, background: 'rgba(0,0,0,0.5)', border: 'none', fontSize: '0' }}>
-                                                    <ImageIcon size={22} color="white" />
-                                                </div>
-                                                <input type="file" accept="image/*" className="file-input-hidden" onChange={e => handleFile(e, setEditTeamLogo)} />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div style={{ flex: '1 1 200px', textAlign: 'center' }}>
-                                        {editingTeam
-                                            ? <input value={editTeamName} onChange={e => setEditTeamName(e.target.value)} style={{ fontSize: 'clamp(1.25rem,4vw,1.75rem)', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: '8px', padding: '6px 12px', color: 'white', width: '100%' }} />
-                                            : <h2 style={{ fontSize: 'clamp(1.25rem,4vw,1.75rem)', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedTeam.name}</h2>}
-                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '4px' }}>{selectedTeam.players.length} jogadores · {selectedTeam.stats.matches} partidas</p>
-                                    </div>
-                                    <div className="action-group" style={{ justifyContent: 'center', width: '100%' }}>
-                                        {editingTeam ? (
-                                            <>
-                                                <button onClick={saveTeam} className="action-icon-btn accent" title="Salvar"><Check size={18} /></button>
-                                                <button onClick={() => setEditingTeam(false)} className="action-icon-btn" title="Cancelar"><X size={18} /></button>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <button onClick={() => startEditTeam(selectedTeam)} className="action-icon-btn" title="Editar"><Edit2 size={18} /></button>
-                                                <button onClick={() => handleDeleteTeam(selectedTeam.id)} className="action-icon-btn danger" title="Excluir"><Trash2 size={18} /></button>
-                                            </>
-                                        )}
-                                    </div>
+                            {/* Team Header Summary */}
+                            <div className="glass-panel p-6 md:p-10 flex flex-col md:flex-row items-center gap-6 md:gap-10 border-b-4 border-b-primary shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
+                                <div className="relative group">
+                                    <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/30 transition-all" />
+                                    <TeamLogo src={selectedTeam.logo} size={120} />
                                 </div>
-
-                                {/* Stats */}
-                                <div className="grid-4" style={{ marginTop: '20px' }}>
-                                    {[
-                                        { label: 'Partidas', val: selectedTeam.stats.matches, color: 'var(--text-main)' },
-                                        { label: 'Vitórias', val: selectedTeam.stats.wins, color: '#22c55e' },
-                                        { label: 'Empates', val: selectedTeam.stats.draws, color: 'var(--warning)' },
-                                        { label: 'Derrotas', val: selectedTeam.stats.losses, color: 'var(--danger)' },
-                                    ].map(s => (
-                                        <div key={s.label} style={{ textAlign: 'center', padding: '14px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
-                                            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: s.color }}>{s.val}</div>
+                                <div className="text-center md:text-left flex-1 min-w-0">
+                                    <h2 className="text-4xl md:text-6xl font-black text-white font-outfit uppercase tracking-tight mb-2 truncate leading-tight">{selectedTeam.name}</h2>
+                                    <div className="flex flex-wrap justify-center md:justify-start gap-3 md:gap-6 mt-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest font-inter">Pontos</span>
+                                            <span className="text-2xl font-black text-white font-outfit">{(selectedTeam.stats?.wins || 0) * 3 + (selectedTeam.stats?.draws || 0)}</span>
                                         </div>
-                                    ))}
+                                        <div className="w-px h-10 bg-white/10 hidden sm:block self-center" />
+                                        <div className="flex flex-col">
+                                            <span className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest font-inter">Gols Pró</span>
+                                            <span className="text-2xl font-black text-accent font-outfit">{selectedTeam.stats?.goalsFor || 0}</span>
+                                        </div>
+                                        <div className="w-px h-10 bg-white/10 hidden sm:block self-center" />
+                                        <div className="flex flex-col">
+                                            <span className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest font-inter">Jogadores</span>
+                                            <span className="text-2xl font-black text-primary font-outfit">{selectedTeam.players.length}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Player Addition Form */}
+                            <div className="glass-panel p-6 md:p-8">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h2 className="text-xl font-bold flex items-center gap-3 font-outfit uppercase tracking-wider">
+                                        <Star size={22} className="text-warning fill-warning/20" /> Elenco Atual
+                                    </h2>
+                                    <button onClick={() => { setIsAddingPlayer(!isAddingPlayer); setIsEditingPlayer(null); }}
+                                        className="px-6 py-2.5 rounded-xl bg-accent text-white font-black text-[0.65rem] uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2 shadow-lg active:scale-95">
+                                        <PlusCircle size={14} strokeWidth={3} /> Adicionar Atleta
+                                    </button>
                                 </div>
 
-                                {/* Points */}
-                                <div style={{ marginTop: '12px', textAlign: 'center', padding: '14px', background: 'var(--primary-glow)', borderRadius: '12px', border: '1px solid rgba(109,40,217,0.5)' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem' }}>Pontuação Total: </span>
-                                    <span style={{ fontWeight: 900, fontSize: '1.5rem', color: 'white' }}>
-                                        {selectedTeam.stats.wins * (league?.pointsForWin ?? 3) + selectedTeam.stats.draws * (league?.pointsForDraw ?? 1) + selectedTeam.stats.losses * (league?.pointsForLoss ?? 0)} pts
-                                    </span>
-                                </div>
-                            </section>
+                                {isAddingPlayer || isEditingPlayer ? (
+                                    <div className="bg-black/20 p-6 rounded-2xl border border-white/5 mb-8 animate-slide-up">
+                                        <form onSubmit={handlePlayerSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-end">
+                                            <div className="flex flex-col gap-2">
+                                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Nome</label>
+                                                <input className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-accent outline-none transition-all placeholder:text-slate-600 font-bold"
+                                                    placeholder="Ex: Neymar Jr" value={formPlayer.name} onChange={e => setFormPlayer({ ...formPlayer, name: e.target.value })} required />
+                                            </div>
+                                            <div className="flex flex-col gap-2">
+                                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Camisa</label>
+                                                <input type="number" className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-accent outline-none transition-all font-bold"
+                                                    value={formPlayer.number} onChange={e => setFormPlayer({ ...formPlayer, number: parseInt(e.target.value) })} required />
+                                            </div>
+                                            <div className="flex flex-col gap-2">
+                                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Posição</label>
+                                                <select className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-accent outline-none transition-all font-bold appearance-none cursor-pointer"
+                                                    value={formPlayer.position} onChange={e => setFormPlayer({ ...formPlayer, position: e.target.value })}>
+                                                    {['Goleiro', 'Zagueiro', 'Lateral', 'Meia', 'Atacante'].map(p => <option key={p} value={p} className="bg-bg-dark">{p}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button type="submit" className="flex-1 bg-accent text-white font-black py-3 rounded-xl uppercase tracking-widest text-[0.65rem] shadow-lg hover:brightness-110 active:scale-95 transition-all">
+                                                    Salvar
+                                                </button>
+                                                <button type="button" onClick={() => { setIsAddingPlayer(false); setIsEditingPlayer(null); }} className="px-5 border border-white/10 text-slate-400 font-black py-3 rounded-xl uppercase tracking-widest text-[0.65rem] hover:bg-white/5 transition-all">
+                                                    X
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                ) : null}
 
-                            {/* Player Table */}
-                            <section className="glass-panel p-24">
-                                <h3 style={{ marginBottom: '20px', fontSize: '1.1rem' }}>Desempenho do Elenco</h3>
-                                <div className="table-responsive">
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '580px' }}>
-                                        <thead>
-                                            <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                                <th style={{ padding: '10px 12px', textAlign: 'center' }}>#</th>
-                                                <th style={{ padding: '10px 12px', textAlign: 'left' }}>Jogador</th>
-                                                <th style={{ padding: '10px 12px', textAlign: 'center' }}>Gols</th>
-                                                <th style={{ padding: '10px 12px', textAlign: 'center' }}>Assist</th>
-                                                <th style={{ padding: '10px 12px', textAlign: 'center' }}>Cap.</th>
-                                                <th style={{ padding: '10px 12px', textAlign: 'center' }}>🟨/🟥</th>
-                                                <th style={{ padding: '10px 12px', textAlign: 'center' }}>Action</th>
+                                <div className="overflow-x-auto no-scrollbar -mx-2">
+                                    <table className="w-full border-separate border-spacing-y-3">
+                                        <thead className="text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.2em] font-outfit">
+                                            <tr>
+                                                <th className="px-5 py-2 text-left">Nº / NOME</th>
+                                                <th className="px-5 py-2 text-center">POSIÇÃO</th>
+                                                <th className="px-5 py-2 text-center">GOLS</th>
+                                                <th className="px-5 py-2 text-center">CARTÕES</th>
+                                                <th className="px-5 py-2 text-right">AÇÕES</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            {selectedTeam.players.map(p => (
-                                                <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                                    {editingPlayerId === p.id ? (
-                                                        <>
-                                                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                                                <input type="number" value={editNumber} onChange={e => setEditNumber(e.target.value)} style={{ width: '52px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', borderRadius: '6px', padding: '4px 8px', color: 'white', textAlign: 'center' }} />
-                                                            </td>
-                                                            <td style={{ padding: '10px 12px' }}>
-                                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                                    <input value={editName} onChange={e => setEditName(e.target.value)} style={{ flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: '6px', padding: '6px 10px', color: 'white', fontSize: '0.875rem' }} />
-                                                                    <select value={editPos} onChange={e => setEditPos(e.target.value)} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', borderRadius: '6px', padding: '6px 8px', color: 'white', fontSize: '0.8rem' }}>
-                                                                        <option>Goleiro</option><option>Zagueiro</option><option>Lateral</option><option>Meio-campo</option><option>Atacante</option>
-                                                                    </select>
+                                        <tbody className="text-sm">
+                                            {selectedTeam.players.length === 0 ? (
+                                                <tr><td colSpan={5} className="text-center py-12 text-slate-600 font-medium uppercase text-[0.65rem] tracking-widest">Inicie o recrutamento de atletas.</td></tr>
+                                            ) : (
+                                                selectedTeam.players.sort((a, b) => a.number - b.number).map(p => (
+                                                    <tr key={p.id} className="group bg-white/3 hover:bg-white/5 transition-all duration-300 rounded-2xl">
+                                                        <td className="px-5 py-4 first:rounded-l-2xl">
+                                                            <div className="flex items-center gap-4 min-w-[140px]">
+                                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black font-outfit border-2 ${p.isCaptain ? 'border-warning bg-warning/20 text-warning' : 'border-white/10 bg-white/5 text-slate-300'}`}>
+                                                                    {p.number}
                                                                 </div>
-                                                            </td>
-                                                            <td colSpan={3}></td>
-                                                            <td></td>
-                                                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                                                <div className="action-group" style={{ justifyContent: 'center' }}>
-                                                                    <button onClick={savePlayer} className="action-icon-btn accent"><Check size={15} /></button>
-                                                                    <button onClick={() => setEditingPlayerId(null)} className="action-icon-btn"><X size={15} /></button>
-                                                                </div>
-                                                            </td>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.85rem' }}>#{p.number}</td>
-                                                            <td style={{ padding: '10px 12px' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                                                                    <TeamLogo src={p.photo} size={30} />
-                                                                    <div style={{ minWidth: 0, flex: 1 }}>
-                                                                        <div style={{ fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                            {p.name} {p.isCaptain && <Crown size={12} style={{ color: '#fbbf24', flexShrink: 0 }} />}
-                                                                        </div>
-                                                                        <div style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>{p.position}</div>
+                                                                <div className="flex flex-col min-w-0">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="font-black text-white truncate max-w-[120px] font-outfit uppercase tracking-wide">{p.name}</span>
+                                                                        {p.isCaptain && <span className="text-[0.55rem] font-black bg-warning text-black px-1.5 rounded uppercase leading-tight py-0.5 tracking-tighter">CAP</span>}
                                                                     </div>
+                                                                    <button onClick={() => toggleCaptain(selectedTeam.id, p.id)}
+                                                                        className="text-[0.6rem] font-black text-slate-500 hover:text-warning uppercase text-left transition-colors tracking-widest">
+                                                                        {p.isCaptain ? 'Remover braçadeira' : 'Nomear Capitão ★'}
+                                                                    </button>
                                                                 </div>
-                                                            </td>
-                                                            <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700 }}>{p.stats.goals}</td>
-                                                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>{p.stats.assists}</td>
-                                                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                                                <button onClick={() => toggleCaptain(selectedTeam.id, p.id)} className={`captain-toggle ${p.isCaptain ? 'active' : ''}`} title={p.isCaptain ? 'Remover capitão' : 'Definir capitão'}>
-                                                                    <Crown size={17} />
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-5 py-4 text-center">
+                                                            <span className="text-[0.65rem] font-black bg-white/5 px-2.5 py-1.5 rounded-lg text-slate-400 border border-white/5 uppercase tracking-widest">{p.position}</span>
+                                                        </td>
+                                                        <td className="px-5 py-4 text-center">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <Target size={14} className="text-accent" />
+                                                                <span className="font-black text-white font-outfit text-lg">{p.stats?.goals || 0}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-5 py-4 text-center">
+                                                            <div className="flex items-center justify-center gap-3">
+                                                                {p.stats?.yellowCards > 0 && <span className="bg-warning w-3.5 h-4.5 rounded-[2px] shadow-lg flex items-center justify-center text-[0.6rem] font-black text-black leading-none">{p.stats.yellowCards}</span>}
+                                                                {p.stats?.redCards > 0 && <span className="bg-danger w-3.5 h-4.5 rounded-[2px] shadow-lg flex items-center justify-center text-[0.6rem] font-black text-white leading-none">{p.stats.redCards}</span>}
+                                                                {(!p.stats?.yellowCards && !p.stats?.redCards) && <span className="text-slate-700 italic text-[0.65rem]">Limpo</span>}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-5 py-4 text-right last:rounded-r-2xl">
+                                                            <div className="flex items-center justify-end gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <button onClick={() => { setIsEditingPlayer(p.id); setFormPlayer({ name: p.name, number: p.number, position: p.position, isCaptain: p.isCaptain || false }); }}
+                                                                    className="p-2.5 rounded-xl text-slate-500 hover:text-white hover:bg-white/5 transition-all">
+                                                                    <Edit2 size={16} />
                                                                 </button>
-                                                            </td>
-                                                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                                                <span style={{ color: 'var(--warning)', fontWeight: 700 }}>{p.stats.yellowCards}</span>
-                                                                <span style={{ color: 'var(--text-muted)', margin: '0 4px' }}>/</span>
-                                                                <span style={{ color: 'var(--danger)', fontWeight: 700 }}>{p.stats.redCards}</span>
-                                                            </td>
-                                                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                                                <div className="action-group" style={{ justifyContent: 'center' }}>
-                                                                    <button onClick={() => startEditPlayer(p)} className="action-icon-btn" title="Editar"><Edit2 size={15} /></button>
-                                                                    <button onClick={() => removePlayer(selectedTeam.id, p.id)} className="action-icon-btn danger" title="Remover"><Trash2 size={15} /></button>
-                                                                </div>
-                                                            </td>
-                                                        </>
-                                                    )}
-                                                </tr>
-                                            ))}
+                                                                <button onClick={() => { if (window.confirm('Excluir jogador?')) removePlayer(selectedTeam.id, p.id); }}
+                                                                    className="p-2.5 rounded-xl text-danger/50 hover:text-danger hover:bg-danger/10 transition-all">
+                                                                    <Trash2 size={16} />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
-                            </section>
-                        </>
-                    ) : (
-                        <div className="glass-panel p-24" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '80px 24px' }}>
-                            <h3>Selecione um time para ver os detalhes</h3>
-                        </div>
-                    )}
-
-                    {/* Top Scorers */}
-                    {topScorers.some(p => p.stats.goals > 0) && (
-                        <section className="glass-panel p-24">
-                            <h3 style={{ marginBottom: '16px', fontSize: '1.1rem' }}>🏅 Artilheiros da Liga</h3>
-                            <div className="table-responsive">
-                                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '480px' }}>
-                                    <thead>
-                                        <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase' }}>
-                                            <th style={{ padding: '8px 12px', textAlign: 'center' }}>#</th>
-                                            <th style={{ padding: '8px 12px', textAlign: 'left' }}>Player</th>
-                                            <th style={{ padding: '8px 12px', textAlign: 'left' }}>Time</th>
-                                            <th style={{ padding: '8px 12px', textAlign: 'center' }}>Goals</th>
-                                            <th style={{ padding: '8px 12px', textAlign: 'center' }}>Assist</th>
-                                            <th style={{ padding: '8px 12px', textAlign: 'center' }}>Yel/Red</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {topScorers.filter(p => p.stats.goals > 0).map((p, i) => (
-                                            <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                                <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 800, color: i === 0 ? 'var(--warning)' : 'var(--text-muted)' }}>{i + 1}</td>
-                                                <td style={{ padding: '10px 12px' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                                                        <TeamLogo src={p.photo} size={28} />
-                                                        <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                                                        {p.isCaptain && <Crown size={12} style={{ color: '#fbbf24', flexShrink: 0 }} />}
-                                                    </div>
-                                                </td>
-                                                <td style={{ padding: '10px 12px' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                        <TeamLogo src={p.team.logo} size={20} />
-                                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{p.team.name}</span>
-                                                    </div>
-                                                </td>
-                                                <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 800, color: 'var(--primary)', fontSize: '1.1rem' }}>{p.stats.goals}</td>
-                                                <td style={{ padding: '10px 12px', textAlign: 'center' }}>{p.stats.assists}</td>
-                                                <td style={{ padding: '10px 12px', textAlign: 'center', fontSize: '0.9rem' }}>
-                                                    <span style={{ color: 'var(--warning)' }}>{p.stats.yellowCards}</span> / <span style={{ color: 'var(--danger)' }}>{p.stats.redCards}</span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
                             </div>
-                        </section>
+                        </>
                     )}
-                </main>
+                </section>
             </div>
         </div>
     );

@@ -1,5 +1,5 @@
 import { useLeague } from '../context/LeagueContext';
-import { Trophy, Shield } from 'lucide-react';
+import { Trophy, Shield, Info, Medal } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const Standings = () => {
@@ -18,74 +18,81 @@ const Standings = () => {
     const totalFinished = matches.filter(m => m.status === 'finished').length;
 
     return (
-        <div className="animate-fade-in">
-            <header className="mb-40">
-                <h1 className="responsive-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Trophy size={30} className="text-gradient" /> Tabela da Liga
+        <div className="animate-fade-in pb-24 md:pb-8 p-4 md:p-0">
+            <header className="mb-8 md:mb-12">
+                <h1 className="text-3xl md:text-5xl font-outfit font-extrabold tracking-tight mb-2 uppercase flex items-center gap-4">
+                    <Trophy size={42} className="text-warning drop-shadow-[0_0_15px_rgba(234,179,8,0.4)]" strokeWidth={2.5} />
+                    Tabela da Liga
                 </h1>
-                <p className="responsive-subtitle">{totalFinished} partidas disputadas — {league?.name}</p>
+                <p className="text-slate-400 font-medium md:text-lg flex items-center gap-2">
+                    <Medal size={18} className="text-primary" />
+                    {totalFinished} partidas concluídas no total
+                </p>
             </header>
 
-            <section className="glass-panel p-24">
+            <section className="glass-panel overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
                 {sortedTeams.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-                        <Trophy size={60} style={{ opacity: 0.1, marginBottom: '16px' }} />
-                        <h3>Nenhum time cadastrado ainda</h3>
+                    <div className="flex flex-col items-center justify-center py-24 text-slate-500 gap-6 opacity-50">
+                        <Trophy size={80} strokeWidth={1} />
+                        <h3 className="text-xl font-outfit font-black uppercase tracking-widest">Nenhum time cadastrado</h3>
                     </div>
                 ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '640px' }}>
+                    <div className="overflow-x-auto no-scrollbar">
+                        <table className="w-full border-collapse">
                             <thead>
-                                <tr style={{ borderBottom: '2px solid var(--primary)', color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                    <th style={{ padding: '12px 8px', textAlign: 'center', width: '40px' }}>#</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Time</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'center' }}>Pts</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'center' }}>J</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'center' }}>V</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'center' }}>E</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'center' }}>D</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'center' }}>GP</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'center' }}>GC</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'center' }}>SG</th>
+                                <tr className="bg-white/5 text-[0.65rem] font-black text-slate-400 uppercase tracking-widest border-b border-white/5">
+                                    <th className="px-6 py-5 text-center w-16">Pos</th>
+                                    <th className="px-6 py-5 text-left">Clube / Time</th>
+                                    <th className="px-4 py-5 text-center font-outfit text-white">Pts</th>
+                                    <th className="px-4 py-5 text-center">PJ</th>
+                                    <th className="px-4 py-5 text-center text-accent">V</th>
+                                    <th className="px-4 py-5 text-center">E</th>
+                                    <th className="px-4 py-5 text-center text-danger">D</th>
+                                    <th className="px-4 py-5 text-center hidden sm:table-cell">GP</th>
+                                    <th className="px-4 py-5 text-center hidden sm:table-cell">GC</th>
+                                    <th className="px-4 py-5 text-center">SG</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-white/5">
                                 {sortedTeams.map((team, i) => {
                                     const pts = team.stats.wins * (league?.pointsForWin ?? 3) + team.stats.draws * (league?.pointsForDraw ?? 1) + team.stats.losses * (league?.pointsForLoss ?? 0);
                                     const sg = team.stats.goalsFor - team.stats.goalsAgainst;
                                     const isTop = i === 0 && pts > 0;
-                                    const isZone = i >= sortedTeams.length - 3;
+                                    const isZone = i >= sortedTeams.length - 3 && sortedTeams.length > 4;
 
                                     return (
-                                        <tr key={team.id} style={{
-                                            borderBottom: '1px solid rgba(255,255,255,0.04)',
-                                            background: isTop ? 'rgba(109,40,217,0.1)' : isZone ? 'rgba(239,68,68,0.05)' : 'transparent',
-                                            transition: 'background 0.2s'
-                                        }}>
-                                            <td style={{ padding: '14px 8px', textAlign: 'center' }}>
-                                                <div style={{
-                                                    width: '28px', height: '28px', borderRadius: '50%', margin: '0 auto',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    background: isTop ? 'var(--primary-glow)' : 'rgba(255,255,255,0.06)',
-                                                    fontWeight: 800, fontSize: '0.875rem',
-                                                    color: isTop ? 'var(--primary)' : 'var(--text-muted)'
-                                                }}>{i + 1}</div>
-                                            </td>
-                                            <td style={{ padding: '14px 8px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                    <TeamLogo src={team.logo} size={32} />
-                                                    <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{team.name}</span>
-                                                    {isTop && <Shield size={14} style={{ color: 'var(--primary)', flexShrink: 0 }} />}
+                                        <tr key={team.id} className={`group hover:bg-white/5 transition-all duration-300 ${isTop ? 'bg-primary/5' : isZone ? 'bg-danger/5' : ''}`}>
+                                            <td className="px-6 py-5 text-center">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black font-outfit text-sm transition-transform group-hover:scale-110 ${isTop ? 'bg-primary text-white shadow-lg shadow-primary/20' :
+                                                        i < 3 ? 'bg-white/10 text-white' : 'text-slate-500 font-bold'
+                                                    }`}>
+                                                    {i + 1}
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '14px 8px', textAlign: 'center', fontWeight: 900, fontSize: '1.1rem', color: 'var(--accent)' }}>{pts}</td>
-                                            <td style={{ padding: '14px 8px', textAlign: 'center' }}>{team.stats.matches}</td>
-                                            <td style={{ padding: '14px 8px', textAlign: 'center', color: '#22c55e', fontWeight: 700 }}>{team.stats.wins}</td>
-                                            <td style={{ padding: '14px 8px', textAlign: 'center' }}>{team.stats.draws}</td>
-                                            <td style={{ padding: '14px 8px', textAlign: 'center', color: 'var(--danger)' }}>{team.stats.losses}</td>
-                                            <td style={{ padding: '14px 8px', textAlign: 'center' }}>{team.stats.goalsFor}</td>
-                                            <td style={{ padding: '14px 8px', textAlign: 'center' }}>{team.stats.goalsAgainst}</td>
-                                            <td style={{ padding: '14px 8px', textAlign: 'center', fontWeight: 700, color: sg > 0 ? '#22c55e' : sg < 0 ? 'var(--danger)' : 'var(--text-muted)' }}>
+                                            <td className="px-6 py-5">
+                                                <div className="flex items-center gap-4 min-w-[200px]">
+                                                    <div className="relative">
+                                                        <TeamLogo src={team.logo} size={40} />
+                                                        {isTop && (
+                                                            <div className="absolute -top-1 -right-1 bg-warning text-black w-4 h-4 rounded-full flex items-center justify-center animate-bounce">
+                                                                <Trophy size={10} strokeWidth={4} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <span className="font-outfit font-black text-white uppercase tracking-wide truncate max-w-[180px] text-base">
+                                                        {team.name}
+                                                    </span>
+                                                    {isTop && i === 0 && <Shield size={16} className="text-primary fill-primary/10 hidden sm:block" />}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-5 text-center font-black font-outfit text-xl text-primary">{pts}</td>
+                                            <td className="px-4 py-5 text-center font-bold text-slate-300">{team.stats.matches}</td>
+                                            <td className="px-4 py-5 text-center font-bold text-accent">{team.stats.wins}</td>
+                                            <td className="px-4 py-5 text-center font-bold text-slate-400">{team.stats.draws}</td>
+                                            <td className="px-4 py-5 text-center font-bold text-danger">{team.stats.losses}</td>
+                                            <td className="px-4 py-5 text-center text-slate-500 hidden sm:table-cell">{team.stats.goalsFor}</td>
+                                            <td className="px-4 py-5 text-center text-slate-500 hidden sm:table-cell">{team.stats.goalsAgainst}</td>
+                                            <td className={`px-4 py-5 text-center font-black font-outfit ${sg > 0 ? 'text-accent' : sg < 0 ? 'text-danger' : 'text-slate-500'}`}>
                                                 {sg > 0 ? `+${sg}` : sg}
                                             </td>
                                         </tr>
@@ -93,10 +100,22 @@ const Standings = () => {
                                 })}
                             </tbody>
                         </table>
-                        {/* Legend */}
-                        <div style={{ display: 'flex', gap: '20px', marginTop: '16px', fontSize: '0.8rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', background: 'rgba(109,40,217,0.3)', borderRadius: '3px' }}></span> Líder</span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', background: 'rgba(239,68,68,0.15)', borderRadius: '3px' }}></span> Zona de rebaixamento</span>
+                    </div>
+                )}
+
+                {sortedTeams.length > 0 && (
+                    <div className="bg-black/40 px-6 py-5 border-t border-white/5 flex flex-wrap gap-x-8 gap-y-3">
+                        <div className="flex items-center gap-2.5 text-[0.65rem] font-black text-slate-500 uppercase tracking-widest">
+                            <div className="w-3 h-3 bg-primary/20 rounded border border-primary/30" />
+                            <span>Qualificação / Campeão</span>
+                        </div>
+                        <div className="flex items-center gap-2.5 text-[0.65rem] font-black text-slate-500 uppercase tracking-widest">
+                            <div className="w-3 h-3 bg-danger/20 rounded border border-danger/30" />
+                            <span>Risco de Queda</span>
+                        </div>
+                        <div className="flex items-center gap-2.5 text-[0.65rem] font-black text-slate-400 uppercase tracking-widest ml-auto italic">
+                            <Info size={12} className="text-primary" />
+                            Critérios: PTS &gt; SG &gt; GP
                         </div>
                     </div>
                 )}
