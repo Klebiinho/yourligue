@@ -14,7 +14,9 @@ const Dashboard = () => {
     );
 
     const liveMatches = matches.filter(m => m.status === 'live');
-    const upcomingMatches = matches.filter(m => m.status === 'scheduled').slice(0, 5);
+    const upcomingMatches = matches.filter(m => m.status === 'scheduled')
+        .sort((a, b) => new Date(a.scheduledAt || 0).getTime() - new Date(b.scheduledAt || 0).getTime())
+        .slice(0, 5);
     const totalGoals = teams.reduce((acc, t) => acc + (t.stats?.goalsFor || 0), 0);
 
     const stats = [
@@ -31,6 +33,10 @@ const Dashboard = () => {
         const pts = (t: typeof teams[0]) => (t.stats?.wins || 0) * (league?.pointsForWin || 3) + (t.stats?.draws || 0) * (league?.pointsForDraw || 1);
         return pts(b) - pts(a);
     });
+
+    const allPlayers = teams.flatMap(t => t.players.map(p => ({ ...p, team: t })));
+    const topScorers = [...allPlayers].sort((a, b) => (b.stats?.goals || 0) - (a.stats?.goals || 0)).filter(p => (p.stats?.goals || 0) > 0).slice(0, 5);
+
 
     return (
         <div className="animate-fade-in space-y-6 md:space-y-8">
@@ -145,45 +151,90 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* ── CLASSIFICAÇÃO ──────────────────────────────────────── */}
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-xs sm:text-sm font-black font-outfit uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                            <Trophy size={14} className="text-warning" />
-                            Classificação
-                        </h2>
-                        <button onClick={() => navigate('/standings')} className="flex items-center gap-1 text-accent text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
-                            Tabela <ArrowRight size={12} />
-                        </button>
+                {/* ── COLUNA DIREITA ─────────────────────────────────────────── */}
+                <div className="space-y-5 md:space-y-6">
+                    {/* ── CLASSIFICAÇÃO ──────────────────────────────────────── */}
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xs sm:text-sm font-black font-outfit uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                <Trophy size={14} className="text-warning" />
+                                Classificação
+                            </h2>
+                            <button onClick={() => navigate('/standings')} className="flex items-center gap-1 text-accent text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
+                                Tabela <ArrowRight size={12} />
+                            </button>
+                        </div>
+
+                        <div className="glass-panel divide-y divide-white/[0.04] overflow-hidden">
+                            {sortedTeams.length === 0 ? (
+                                <div className="py-10 sm:py-14 text-center opacity-25">
+                                    <Trophy size={32} strokeWidth={1} className="mx-auto mb-2" />
+                                    <p className="text-[0.6rem] font-black uppercase tracking-widest">Sem times</p>
+                                </div>
+                            ) : (
+                                sortedTeams.slice(0, 5).map((team, i) => {
+                                    const pts = (team.stats?.wins || 0) * (league?.pointsForWin || 3) + (team.stats?.draws || 0) * (league?.pointsForDraw || 1);
+                                    return (
+                                        <div key={team.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-white/[0.03] transition-colors">
+                                            {/* Position badge */}
+                                            <span className={`w-6 h-6 flex items-center justify-center rounded-md font-black text-[0.6rem] font-outfit flex-none ${i === 0 ? 'bg-warning/20 text-warning' :
+                                                i < 3 ? 'bg-white/10 text-slate-300' : 'text-slate-600'
+                                                }`}>
+                                                {i + 1}
+                                            </span>
+                                            <TeamLogo src={team.logo} size={26} />
+                                            <span className="font-bold flex-1 truncate text-[0.7rem] sm:text-sm">{team.name}</span>
+                                            <div className="flex flex-col items-end flex-none">
+                                                <span className="font-black text-primary text-sm sm:text-base font-outfit leading-none">{pts}</span>
+                                                <span className="text-[0.5rem] text-slate-700 font-black uppercase">pts</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
                     </div>
 
-                    <div className="glass-panel divide-y divide-white/[0.04] overflow-hidden">
-                        {sortedTeams.length === 0 ? (
-                            <div className="py-10 sm:py-14 text-center opacity-25">
-                                <Trophy size={32} strokeWidth={1} className="mx-auto mb-2" />
-                                <p className="text-[0.6rem] font-black uppercase tracking-widest">Sem times</p>
-                            </div>
-                        ) : (
-                            sortedTeams.slice(0, 6).map((team, i) => {
-                                const pts = (team.stats?.wins || 0) * (league?.pointsForWin || 3) + (team.stats?.draws || 0) * (league?.pointsForDraw || 1);
-                                return (
-                                    <div key={team.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-white/[0.03] transition-colors">
-                                        {/* Position badge */}
-                                        <span className={`w-6 h-6 flex items-center justify-center rounded-md font-black text-[0.6rem] font-outfit flex-none ${i === 0 ? 'bg-warning/20 text-warning' :
-                                                i < 3 ? 'bg-white/10 text-slate-300' : 'text-slate-600'
-                                            }`}>
+                    {/* ── DESTAQUES DA LIGA ───────────────────────────────────── */}
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xs sm:text-sm font-black font-outfit uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                <Star size={14} className="text-warning" />
+                                Destaques da Liga
+                            </h2>
+                        </div>
+
+                        <div className="glass-panel divide-y divide-white/[0.04] overflow-hidden">
+                            {topScorers.length === 0 ? (
+                                <div className="py-8 sm:py-10 text-center opacity-25">
+                                    <Star size={24} strokeWidth={1} className="mx-auto mb-2" />
+                                    <p className="text-[0.6rem] font-black uppercase tracking-widest">Sem artilheiros</p>
+                                </div>
+                            ) : (
+                                topScorers.map((player, i) => (
+                                    <div key={player.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-white/[0.03] transition-colors">
+                                        <span className={`w-5 h-5 flex items-center justify-center rounded-md font-black text-[0.55rem] font-outfit flex-none ${i === 0 ? 'bg-warning/20 text-warning' : 'text-slate-500'}`}>
                                             {i + 1}
                                         </span>
-                                        <TeamLogo src={team.logo} size={26} />
-                                        <span className="font-bold flex-1 truncate text-[0.7rem] sm:text-sm">{team.name}</span>
+                                        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden flex-none">
+                                            {player.photo ? (
+                                                <img src={player.photo} className="w-full h-full object-cover" alt={player.name} />
+                                            ) : (
+                                                <span className="font-black text-[0.6rem] text-slate-400">{player.number}</span>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0 flex flex-col">
+                                            <span className="font-bold truncate text-[0.65rem] sm:text-xs text-white">{player.name}</span>
+                                            <span className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest truncate">{player.team.name}</span>
+                                        </div>
                                         <div className="flex flex-col items-end flex-none">
-                                            <span className="font-black text-primary text-sm sm:text-base font-outfit leading-none">{pts}</span>
-                                            <span className="text-[0.5rem] text-slate-700 font-black uppercase">pts</span>
+                                            <span className="font-black text-accent text-sm sm:text-base font-outfit leading-none">{player.stats?.goals || 0}</span>
+                                            <span className="text-[0.45rem] text-slate-500 font-black uppercase">Gols</span>
                                         </div>
                                     </div>
-                                );
-                            })
-                        )}
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -192,3 +243,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

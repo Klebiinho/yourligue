@@ -12,9 +12,18 @@ const TeamsDashboard = () => {
     const [isEditingPlayer, setIsEditingPlayer] = useState<string | null>(null);
 
     const [formTeam, setFormTeam] = useState({ name: '', logo: '' });
-    const [formPlayer, setFormPlayer] = useState({ name: '', number: 0, position: 'Goleiro', isCaptain: false });
+    const [formPlayer, setFormPlayer] = useState({ name: '', number: 0, position: 'Goleiro', isCaptain: false, photo: '' });
 
     const selectedTeam = teams.find(t => t.id === selectedTeamId);
+
+    const handleFile = (e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const r = new FileReader();
+            r.onloadend = () => setter(r.result as string);
+            r.readAsDataURL(file);
+        }
+    };
 
     const handleTeamSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,7 +49,7 @@ const TeamsDashboard = () => {
             if (error) { alert(error); return; }
             setIsAddingPlayer(false);
         }
-        setFormPlayer({ name: '', number: 0, position: 'Goleiro', isCaptain: false });
+        setFormPlayer({ name: '', number: 0, position: 'Goleiro', isCaptain: false, photo: '' });
     };
 
     return (
@@ -73,9 +82,13 @@ const TeamsDashboard = () => {
                                         placeholder="Ex: Flamengo" value={formTeam.name} onChange={e => setFormTeam({ ...formTeam, name: e.target.value })} required />
                                 </div>
                                 <div>
-                                    <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest">Logo URL</label>
-                                    <input className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:border-primary outline-none mt-1 placeholder:text-slate-700"
-                                        placeholder="https://..." value={formTeam.logo} onChange={e => setFormTeam({ ...formTeam, logo: e.target.value })} />
+                                    <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest">Logo / Escudo</label>
+                                    <label className="flex items-center justify-center gap-2 w-full h-[42px] mt-1 bg-white/5 border border-dashed border-white/10 rounded-xl cursor-pointer hover:bg-white/[0.08] hover:border-primary/40 transition-all font-bold text-slate-500 hover:text-white">
+                                        <span className="text-[0.65rem] uppercase tracking-widest leading-none">
+                                            {formTeam.logo ? '✓ Arquivo Selecionado' : 'Fazer Upload'}
+                                        </span>
+                                        <input type="file" accept="image/*" onChange={e => handleFile(e, (v) => setFormTeam({ ...formTeam, logo: v }))} className="hidden" />
+                                    </label>
                                 </div>
                                 <div className="flex gap-2 pt-1">
                                     <button type="submit" className="flex-1 bg-primary text-white font-black py-2.5 rounded-xl uppercase tracking-widest text-[0.62rem] shadow-lg hover:brightness-110 active:scale-95 transition-all">
@@ -196,6 +209,15 @@ const TeamsDashboard = () => {
                                                         {['Goleiro', 'Zagueiro', 'Lateral', 'Meia', 'Atacante'].map(p => <option key={p} value={p} className="bg-[#07070a]">{p}</option>)}
                                                     </select>
                                                 </div>
+                                                <div className="col-span-2 sm:col-span-4 mt-1">
+                                                    <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Foto do Jogador</label>
+                                                    <label className="flex items-center justify-center gap-2 w-full h-[42px] mt-1 bg-white/5 border border-dashed border-white/10 rounded-xl cursor-pointer hover:bg-white/[0.08] hover:border-accent/40 transition-all font-bold text-slate-500 hover:text-white">
+                                                        <span className="text-[0.65rem] uppercase tracking-widest leading-none flex items-center gap-2">
+                                                            {formPlayer.photo ? '✓ Foto Selecionada' : 'Fazer Upload da Foto'}
+                                                        </span>
+                                                        <input type="file" accept="image/*" onChange={e => handleFile(e, (v) => setFormPlayer({ ...formPlayer, photo: v }))} className="hidden" />
+                                                    </label>
+                                                </div>
                                             </div>
                                             <div className="flex gap-2">
                                                 <button type="submit" className="flex-1 bg-accent text-white font-black py-2.5 rounded-xl uppercase tracking-widest text-[0.62rem] hover:brightness-110 active:scale-95 transition-all">
@@ -262,7 +284,7 @@ const TeamsDashboard = () => {
                                                                     title="Capitão">
                                                                     <Star size={13} strokeWidth={2} />
                                                                 </button>
-                                                                <button onClick={() => { setIsEditingPlayer(p.id); setFormPlayer({ name: p.name, number: p.number, position: p.position, isCaptain: p.isCaptain || false }); setIsAddingPlayer(true); }}
+                                                                <button onClick={() => { setIsEditingPlayer(p.id); setFormPlayer({ name: p.name, number: p.number, position: p.position, isCaptain: p.isCaptain || false, photo: p.photo || '' }); setIsAddingPlayer(true); }}
                                                                     className="p-1.5 rounded-lg text-slate-600 hover:text-white hover:bg-white/5 transition-all">
                                                                     <Edit2 size={13} />
                                                                 </button>
