@@ -164,7 +164,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
     };
 
-    const loadPublicLeague = async (id: string) => {
+    const loadPublicLeague = useCallback(async (id: string) => {
         setLoading(true);
         setIsPublicView(true);
         const { data } = await supabase.from('leagues').select('*').eq('id', id).single();
@@ -179,7 +179,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             setLeague(lg);
         }
         setLoading(false);
-    };
+    }, []);
 
     // ── Load league data (teams, matches, brackets) ────────────
     const loadLeagueData = useCallback(async (leagueId: string) => {
