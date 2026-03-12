@@ -18,6 +18,7 @@ export type Team = {
     id: string;
     name: string;
     logo: string;
+    group_name?: string;
     players: Player[];
     stats: { matches: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number };
 };
@@ -84,6 +85,7 @@ interface LeagueContextType {
     updateLeague: (data: Partial<League>) => Promise<void>;
     deleteLeague: (id: string) => Promise<void>;
     selectLeague: (id: string) => void;
+    generateGroups: (teamsPerGroup: number) => Promise<void>;
 
     // Team actions
     addTeam: (team: { name: string; logo: string }) => Promise<{ error: string | null }>;
@@ -109,6 +111,8 @@ interface LeagueContextType {
     // Bracket actions
     generateBracket: () => Promise<void>;
     updateBracket: (bracketId: string, data: Partial<BracketMatch>) => Promise<void>;
+
+    loadLeagues: () => Promise<void>;
 }
 
 const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
@@ -186,6 +190,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
                 return {
                     id: t.id, name: t.name, logo: t.logo || '',
+                    group_name: t.group_name || '',
                     players: (t.players || []).map((p: any) => ({
                         id: p.id, name: p.name, number: p.number, position: p.position,
                         photo: p.photo || '', isCaptain: p.is_captain || false,
@@ -491,15 +496,31 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         setBrackets(prev => prev.map(b => b.id === bracketId ? { ...b, ...data } : b));
     };
 
+    const generateGroups = async (teamsPerGroup: number) => {
+        if (!league || teams.length === 0) return;
+
+        const shuffled = [...teams].sort(() => Math.random() - 0.5);
+        const groupLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+        const updates = shuffled.map((team, index) => {
+            const groupIndex = Math.floor(index / teamsPerGroup);
+            const groupName = groupLetters[groupIndex] || `Grupo ${groupIndex + 1}`;
+            return supabase.from('teams').update({ group_name: groupName }).eq('id', team.id);
+        });
+
+        await Promise.all(updates);
+        loadLeagueData(league.id);
+    };
+
     return (
         <LeagueContext.Provider value={{
             league, leagues, teams, matches, brackets, loading, dataLoading,
-            createLeague, updateLeague, deleteLeague, selectLeague,
+            createLeague, updateLeague, deleteLeague, selectLeague, generateGroups,
             addTeam, updateTeam, deleteTeam,
             addPlayer, updatePlayer, removePlayer, toggleCaptain,
             createMatch, updateMatch, deleteMatch, startMatch, endMatch, updateTimer,
             addEvent, removeEvent,
-            generateBracket, updateBracket
+            generateBracket, updateBracket, loadLeagues
         }}>
             {children}
         </LeagueContext.Provider>

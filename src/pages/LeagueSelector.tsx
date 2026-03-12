@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, Plus, Trash2, LogOut, Edit2, Check, X } from 'lucide-react';
+import { Trophy, Plus, Trash2, LogOut, Edit2, Check, X, RefreshCw } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const LeagueSelector = () => {
-    const { leagues, league, createLeague, deleteLeague, selectLeague, updateLeague } = useLeague();
+    const { leagues, league, createLeague, deleteLeague, selectLeague, updateLeague, loadLeagues } = useLeague();
     const { user, signOut } = useAuth();
     const [showCreate, setShowCreate] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -55,9 +55,14 @@ const LeagueSelector = () => {
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.825rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>Olá, {user?.user_metadata?.name || user?.email}</p>
                         </div>
                     </div>
-                    <button onClick={signOut} className="btn-outline" style={{ padding: '9px 14px', display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.85rem' }}>
-                        <LogOut size={15} /> Sair
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={loadLeagues} className="btn-outline" style={{ padding: '9px 14px', display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.85rem' }}>
+                            <RefreshCw size={15} /> Recarregar
+                        </button>
+                        <button onClick={signOut} className="btn-outline" style={{ padding: '9px 14px', display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.85rem' }}>
+                            <LogOut size={15} /> Sair
+                        </button>
+                    </div>
                 </div>
 
                 {/* League List */}
