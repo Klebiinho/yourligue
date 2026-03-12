@@ -85,8 +85,8 @@ const TeamsDashboard = () => {
                         <>
                             {/* Team Header */}
                             <section className="glass-panel p-24">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                                    <div style={{ position: 'relative' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                    <div style={{ position: 'relative', flexShrink: 0 }}>
                                         <TeamLogo src={editingTeam ? editTeamLogo : selectedTeam.logo} size={90} />
                                         {editingTeam && (
                                             <div className="file-upload-wrapper" style={{ position: 'absolute', inset: 0, borderRadius: '50%' }}>
@@ -97,13 +97,13 @@ const TeamsDashboard = () => {
                                             </div>
                                         )}
                                     </div>
-                                    <div style={{ flex: 1, minWidth: '200px' }}>
+                                    <div style={{ flex: '1 1 200px', textAlign: 'center' }}>
                                         {editingTeam
                                             ? <input value={editTeamName} onChange={e => setEditTeamName(e.target.value)} style={{ fontSize: 'clamp(1.25rem,4vw,1.75rem)', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: '8px', padding: '6px 12px', color: 'white', width: '100%' }} />
-                                            : <h2 style={{ fontSize: 'clamp(1.25rem,4vw,1.75rem)', fontWeight: 800 }}>{selectedTeam.name}</h2>}
+                                            : <h2 style={{ fontSize: 'clamp(1.25rem,4vw,1.75rem)', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedTeam.name}</h2>}
                                         <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '4px' }}>{selectedTeam.players.length} jogadores · {selectedTeam.stats.matches} partidas</p>
                                     </div>
-                                    <div className="action-group">
+                                    <div className="action-group" style={{ justifyContent: 'center', width: '100%' }}>
                                         {editingTeam ? (
                                             <>
                                                 <button onClick={saveTeam} className="action-icon-btn accent" title="Salvar"><Check size={18} /></button>
@@ -187,11 +187,11 @@ const TeamsDashboard = () => {
                                                         <>
                                                             <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.85rem' }}>#{p.number}</td>
                                                             <td style={{ padding: '10px 12px' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                                                                     <TeamLogo src={p.photo} size={30} />
-                                                                    <div>
-                                                                        <div style={{ fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                            {p.name} {p.isCaptain && <Crown size={12} style={{ color: '#fbbf24' }} />}
+                                                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                                                        <div style={{ fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                            {p.name} {p.isCaptain && <Crown size={12} style={{ color: '#fbbf24', flexShrink: 0 }} />}
                                                                         </div>
                                                                         <div style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>{p.position}</div>
                                                                     </div>
@@ -251,10 +251,10 @@ const TeamsDashboard = () => {
                                             <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                                                 <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 800, color: i === 0 ? 'var(--warning)' : 'var(--text-muted)' }}>{i + 1}</td>
                                                 <td style={{ padding: '10px 12px' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                                                         <TeamLogo src={p.photo} size={28} />
-                                                        <span style={{ fontWeight: 600 }}>{p.name}</span>
-                                                        {p.isCaptain && <Crown size={12} style={{ color: '#fbbf24' }} />}
+                                                        <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                                                        {p.isCaptain && <Crown size={12} style={{ color: '#fbbf24', flexShrink: 0 }} />}
                                                     </div>
                                                 </td>
                                                 <td style={{ padding: '10px 12px' }}>

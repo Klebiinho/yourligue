@@ -72,19 +72,19 @@ const Dashboard = () => {
                                             padding: '14px 16px', borderRadius: '12px', cursor: 'pointer',
                                             background: isLive ? 'rgba(109,40,217,0.15)' : 'rgba(0,0,0,0.2)',
                                             border: `1px solid ${isLive ? 'var(--primary)' : 'var(--glass-border)'}`,
-                                            transition: 'all 0.2s'
+                                            transition: 'all 0.2s', flexWrap: 'wrap', gap: '10px'
                                         }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 180px', minWidth: 0 }}>
                                             <TeamLogo src={ht?.logo} size={32} />
-                                            <div>
-                                                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{ht?.name} <span style={{ color: 'var(--text-muted)' }}>x</span> {at?.name}</div>
-                                                <div style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)' }}>
-                                                    {match.scheduledAt && <><Calendar size={11} /> {formatDate(match.scheduledAt)}</>}
-                                                    {match.location && <><MapPin size={11} /> {match.location}</>}
+                                            <div style={{ minWidth: 0, flex: 1 }}>
+                                                <div style={{ fontWeight: 600, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ht?.name} <span style={{ color: 'var(--text-muted)' }}>x</span> {at?.name}</div>
+                                                <div style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
+                                                    {match.scheduledAt && <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}><Calendar size={11} /> {formatDate(match.scheduledAt)}</span>}
+                                                    {match.location && <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}><MapPin size={11} /> {match.location}</span>}
                                                 </div>
                                             </div>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'flex-end', flex: '1 0 auto' }}>
                                             {isLive && <span style={{ background: 'var(--danger)', color: 'white', padding: '2px 8px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 700, animation: 'pulse 2s infinite' }}>AO VIVO</span>}
                                             {match.status === 'finished' && <span style={{ color: 'var(--text-muted)', fontWeight: 800 }}>{match.homeScore} - {match.awayScore}</span>}
                                             <TeamLogo src={at?.logo} size={32} />
