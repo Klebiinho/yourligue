@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
 const Matches = () => {
-    const { teams, matches, createMatch, startMatch, deleteMatch, updateMatch } = useLeague();
+    const { teams, matches, createMatch, startMatch, deleteMatch, updateMatch, isPublicView } = useLeague();
     const navigate = useNavigate();
     const [homeTeamId, setHomeTeamId] = useState(teams[0]?.id || '');
     const [awayTeamId, setAwayTeamId] = useState(teams[1]?.id || '');
@@ -79,14 +79,16 @@ const Matches = () => {
             <header className="mb-6 md:mb-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl sm:text-3xl md:text-5xl font-outfit font-extrabold tracking-tight mb-1 uppercase">Partidas</h1>
-                    <p className="text-slate-400 text-sm md:text-base">Agende, inicie e controle as partidas da liga</p>
+                    <p className="text-slate-400 text-sm md:text-base">{isPublicView ? 'Veja o cronograma e resultados da liga' : 'Agende, inicie e controle as partidas da liga'}</p>
                 </div>
-                <button
-                    onClick={() => { setFormOpen(!formOpen); setEditingMatchId(null); resetForm(); }}
-                    className="flex items-center gap-2 bg-primary text-white font-black py-3 px-6 rounded-2xl shadow-[0_8px_25px_rgba(109,40,217,0.35)] hover:brightness-110 active:scale-95 transition-all text-xs uppercase tracking-widest flex-none"
-                >
-                    <PlusCircle size={16} strokeWidth={3} /> Nova Partida
-                </button>
+                {!isPublicView && (
+                    <button
+                        onClick={() => { setFormOpen(!formOpen); setEditingMatchId(null); resetForm(); }}
+                        className="flex items-center gap-2 bg-primary text-white font-black py-3 px-6 rounded-2xl shadow-[0_8px_25px_rgba(109,40,217,0.35)] hover:brightness-110 active:scale-95 transition-all text-xs uppercase tracking-widest flex-none"
+                    >
+                        <PlusCircle size={16} strokeWidth={3} /> Nova Partida
+                    </button>
+                )}
             </header>
 
             {/* Create/Edit Form – Collapsible */}
@@ -237,7 +239,7 @@ const Matches = () => {
 
                                     {/* Buttons */}
                                     <div className="flex items-center gap-1.5">
-                                        {match.status === 'scheduled' && (
+                                        {!isPublicView && match.status === 'scheduled' && (
                                             <button onClick={() => handleEdit(match)} className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-slate-500 hover:text-white hover:bg-white/10 transition-all">
                                                 <Edit2 size={14} />
                                             </button>
@@ -248,11 +250,13 @@ const Matches = () => {
                                                     'bg-primary text-white shadow-[0_4px_15px_rgba(109,40,217,0.3)] hover:brightness-110'
                                                 }`}>
                                             <Play size={12} fill="currentColor" />
-                                            {isLive ? 'Gerenciar' : isFinished ? 'Ver' : 'Iniciar'}
+                                            {isPublicView ? 'Ver Detalhes' : (isLive ? 'Gerenciar' : isFinished ? 'Ver' : 'Iniciar')}
                                         </button>
-                                        <button onClick={() => handleDelete(match.id)} className="p-2.5 rounded-xl bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all border border-danger/10">
-                                            <Trash2 size={14} />
-                                        </button>
+                                        {!isPublicView && (
+                                            <button onClick={() => handleDelete(match.id)} className="p-2.5 rounded-xl bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all border border-danger/10">
+                                                <Trash2 size={14} />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                                 {/* Location tag */}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Shield, UserPlus, Image as ImageIcon, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus } from 'lucide-react';
+import { Shield, UserPlus, Image as ImageIcon, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, TrendingUp } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const Teams = () => {
@@ -12,6 +12,7 @@ const Teams = () => {
     const [newPlayerNumber, setNewPlayerNumber] = useState('');
     const [newPlayerPos, setNewPlayerPos] = useState('Atacante');
     const [newPlayerPhoto, setNewPlayerPhoto] = useState('');
+    const [newPlayerIsReserve, setNewPlayerIsReserve] = useState(false);
     const [error, setError] = useState('');
     const [teamError, setTeamError] = useState('');
     const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
@@ -19,6 +20,7 @@ const Teams = () => {
     const [editNumber, setEditNumber] = useState('');
     const [editPos, setEditPos] = useState('');
     const [editPhoto, setEditPhoto] = useState('');
+    const [editIsReserve, setEditIsReserve] = useState(false);
 
     const currentTeam = teams.find(t => t.id === activeTeamId);
 
@@ -44,21 +46,23 @@ const Teams = () => {
         setError('');
         const { error } = await addPlayer(activeTeamId, {
             name: newPlayerName, number: parseInt(newPlayerNumber),
-            position: newPlayerPos, photo: newPlayerPhoto
+            position: newPlayerPos, photo: newPlayerPhoto, isReserve: newPlayerIsReserve
         });
         if (error) { setError(error); return; }
-        setNewPlayerName(''); setNewPlayerNumber(''); setNewPlayerPhoto('');
+        setNewPlayerName(''); setNewPlayerNumber(''); setNewPlayerPhoto(''); setNewPlayerIsReserve(false);
     };
 
     const startEdit = (p: any) => {
         setEditingPlayerId(p.id); setEditName(p.name);
         setEditNumber(String(p.number)); setEditPos(p.position); setEditPhoto(p.photo || '');
+        setEditIsReserve(p.isReserve || false);
     };
 
     const saveEdit = async () => {
         if (!editingPlayerId || !activeTeamId) return;
         await updatePlayer(activeTeamId, editingPlayerId, {
-            name: editName, number: parseInt(editNumber), position: editPos, photo: editPhoto
+            name: editName, number: parseInt(editNumber), position: editPos, photo: editPhoto,
+            isReserve: editIsReserve
         });
         setEditingPlayerId(null);
     };
@@ -214,9 +218,24 @@ const Teams = () => {
 
                                     {error && <ErrorMsg msg={error} />}
 
-                                    <button type="submit" className="w-full bg-accent text-white font-black py-3 rounded-xl shadow-lg hover:brightness-110 active:scale-[0.99] transition-all uppercase tracking-widest text-[0.65rem] flex items-center justify-center gap-2">
-                                        <UserPlus size={15} strokeWidth={3} /> Confirmar Inscrição
-                                    </button>
+                                    <div className="flex flex-wrap items-end gap-3 px-1">
+                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                            <div onClick={() => setNewPlayerIsReserve(!newPlayerIsReserve)}
+                                                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${newPlayerIsReserve ? 'bg-warning/20 border-warning text-warning' : 'bg-white/5 border-white/10 text-slate-500'}`}>
+                                                <TrendingUp size={18} className={newPlayerIsReserve ? '' : 'opacity-50'} />
+                                            </div>
+                                            <div className="flex flex-col" onClick={() => setNewPlayerIsReserve(!newPlayerIsReserve)}>
+                                                <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Status</span>
+                                                <span className={`text-[0.7rem] font-black uppercase tracking-widest ${newPlayerIsReserve ? 'text-warning' : 'text-slate-400'}`}>
+                                                    {newPlayerIsReserve ? 'Reserva' : 'Titular'}
+                                                </span>
+                                            </div>
+                                        </label>
+
+                                        <button type="submit" className="flex-1 min-w-[150px] bg-accent text-white font-black h-[42px] rounded-xl shadow-lg hover:brightness-110 active:scale-[0.99] transition-all uppercase tracking-widest text-[0.65rem] flex items-center justify-center gap-2">
+                                            <UserPlus size={15} strokeWidth={3} /> Confirmar Inscrição
+                                        </button>
+                                    </div>
                                 </form>
                             </div>
 
@@ -245,6 +264,10 @@ const Teams = () => {
                                                                 placeholder="Nome" />
                                                             <input type="number" value={editNumber} onChange={e => setEditNumber(e.target.value)}
                                                                 className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm font-black text-center outline-none" />
+                                                            <div onClick={() => setEditIsReserve(!editIsReserve)}
+                                                                className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-all ${editIsReserve ? 'bg-warning/20 border-warning text-warning' : 'bg-white/5 border-white/10 text-slate-500'}`}>
+                                                                <span className="text-[0.65rem] font-black uppercase">{editIsReserve ? 'Reserva' : 'Titular'}</span>
+                                                            </div>
                                                             <select value={editPos} onChange={e => setEditPos(e.target.value)}
                                                                 className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs font-bold outline-none h-[42px] appearance-none">
                                                                 <option>Goleiro</option><option>Zagueiro</option><option>Lateral</option>
@@ -279,9 +302,14 @@ const Teams = () => {
                                                                 </span>
                                                                 <h4 className="font-outfit font-black text-white uppercase text-xs sm:text-sm tracking-wide truncate">{player.name}</h4>
                                                             </div>
-                                                            <span className="text-[0.55rem] font-black text-accent uppercase tracking-widest bg-accent/10 px-1.5 py-0.5 rounded border border-accent/20">
-                                                                {player.position}
-                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`text-[0.55rem] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${player.isReserve ? 'text-warning bg-warning/10 border-warning/20' : 'text-accent bg-accent/10 border-accent/20'}`}>
+                                                                    {player.isReserve ? 'Reserva' : 'Titular'}
+                                                                </span>
+                                                                <span className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+                                                                    {player.position}
+                                                                </span>
+                                                            </div>
                                                         </div>
 
                                                         {/* Actions: always visible on mobile, hover on desktop */}

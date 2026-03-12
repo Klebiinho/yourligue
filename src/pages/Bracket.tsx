@@ -4,7 +4,7 @@ import { Shuffle, Shield, Trophy, LayoutGrid, Network, Info, ChevronRight, Check
 import TeamLogo from '../components/TeamLogo';
 
 const Bracket = () => {
-    const { teams, brackets, generateBracket, updateBracket, generateGroups } = useLeague();
+    const { teams, brackets, generateBracket, updateBracket, generateGroups, isPublicView } = useLeague();
     const [mode, setMode] = useState<'bracket' | 'groups'>('bracket');
     const [generating, setGenerating] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -49,8 +49,8 @@ const Bracket = () => {
 
         return (
             <div className={`relative group mb-8 last:mb-0 transition-all duration-300 ${b.status === 'finished' ? 'opacity-90' : 'opacity-100 hover:scale-[1.02]'}`}>
-                <div onClick={() => { setEditingId(b.id); setEditHome(String(b.homeScore)); setEditAway(String(b.awayScore)); }}
-                    className={`w-64 bg-white/3 border ${b.status === 'finished' ? 'border-primary/30 shadow-lg shadow-primary/10' : 'border-white/5 shadow-xl'} rounded-2xl overflow-hidden cursor-pointer backdrop-blur-md`}>
+                <div onClick={() => { if (!isPublicView) { setEditingId(b.id); setEditHome(String(b.homeScore)); setEditAway(String(b.awayScore)); } }}
+                    className={`w-64 bg-white/3 border ${b.status === 'finished' ? 'border-primary/30 shadow-lg shadow-primary/10' : 'border-white/5 shadow-xl'} rounded-2xl overflow-hidden ${isPublicView ? 'cursor-default' : 'cursor-pointer'} backdrop-blur-md`}>
 
                     <div className={`flex items-center gap-3 p-3 transition-colors ${b.status === 'finished' && b.homeScore > b.awayScore ? 'bg-primary/20 text-white' : 'hover:bg-white/5'}`}>
                         <TeamLogo src={ht?.logo} size={28} />
@@ -170,13 +170,15 @@ const Bracket = () => {
                             </h1>
                             <p className="text-slate-400 font-medium md:text-lg flex items-center justify-center md:justify-start gap-2">
                                 <Info size={18} className="text-primary" />
-                                Chaveamento gerado automaticamente via algoritmo de torneioss
+                                {isPublicView ? 'Acompanhe a fase eliminatória da competição' : 'Chaveamento gerado automaticamente via algoritmo de torneioss'}
                             </p>
                         </div>
-                        <button onClick={handleGenerateBracket} disabled={generating}
-                            className="px-10 py-4 bg-primary text-white font-black rounded-2xl shadow-[0_10px_30px_rgba(109,40,217,0.3)] hover:brightness-110 active:scale-95 transition-all uppercase tracking-[0.15em] text-xs flex items-center gap-4">
-                            <Shuffle size={20} className={generating ? 'animate-spin' : ''} /> {generating ? 'Gerando...' : 'Sortear Chaveamento'}
-                        </button>
+                        {!isPublicView && (
+                            <button onClick={handleGenerateBracket} disabled={generating}
+                                className="px-10 py-4 bg-primary text-white font-black rounded-2xl shadow-[0_10px_30px_rgba(109,40,217,0.3)] hover:brightness-110 active:scale-95 transition-all uppercase tracking-[0.15em] text-xs flex items-center gap-4">
+                                <Shuffle size={20} className={generating ? 'animate-spin' : ''} /> {generating ? 'Gerando...' : 'Sortear Chaveamento'}
+                            </button>
+                        )}
                     </header>
 
                     <div className="glass-panel p-0 md:p-10 overflow-hidden relative shadow-[0_20px_60px_rgba(0,0,0,0.5)] bg-slate-900/40">
@@ -200,19 +202,21 @@ const Bracket = () => {
                                 <LayoutGrid size={42} className="text-accent" />
                                 Fase de Grupos
                             </h1>
-                            <p className="text-slate-400 font-medium md:text-lg">Sorteio equilibrado de equipes divididas em potes.</p>
+                            <p className="text-slate-400 font-medium md:text-lg">{isPublicView ? 'Acompanhe a divisão e classificação dos grupos' : 'Sorteio equilibrado de equipes divididas em potes.'}</p>
                         </div>
-                        <div className="flex items-center gap-4 bg-black/40 p-4 rounded-3xl border border-white/5 shadow-2xl">
-                            <div className="flex flex-col gap-1.5 px-4 h-[60px] justify-center">
-                                <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest pl-1">Equipes / Grupo</span>
-                                <input type="number" min="2" max="10" value={teamsPerGroup} onChange={e => setTeamsPerGroup(parseInt(e.target.value))}
-                                    className="w-full bg-transparent border-none text-white font-black font-outfit text-2xl outline-none focus:text-accent transition-colors" />
+                        {!isPublicView && (
+                            <div className="flex items-center gap-4 bg-black/40 p-4 rounded-3xl border border-white/5 shadow-2xl">
+                                <div className="flex flex-col gap-1.5 px-4 h-[60px] justify-center">
+                                    <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest pl-1">Equipes / Grupo</span>
+                                    <input type="number" min="2" max="10" value={teamsPerGroup} onChange={e => setTeamsPerGroup(parseInt(e.target.value))}
+                                        className="w-full bg-transparent border-none text-white font-black font-outfit text-2xl outline-none focus:text-accent transition-colors" />
+                                </div>
+                                <button onClick={handleGenerateGroups} disabled={generating}
+                                    className="h-[60px] px-8 bg-accent text-white font-black rounded-2xl shadow-lg hover:brightness-110 active:scale-95 transition-all uppercase tracking-widest text-xs flex items-center gap-3">
+                                    <Shuffle size={18} className={generating ? 'animate-spin' : ''} /> {generating ? 'Sorteando...' : 'Sorteio Realtime'}
+                                </button>
                             </div>
-                            <button onClick={handleGenerateGroups} disabled={generating}
-                                className="h-[60px] px-8 bg-accent text-white font-black rounded-2xl shadow-lg hover:brightness-110 active:scale-95 transition-all uppercase tracking-widest text-xs flex items-center gap-3">
-                                <Shuffle size={18} className={generating ? 'animate-spin' : ''} /> {generating ? 'Sorteando...' : 'Sorteio Realtime'}
-                            </button>
-                        </div>
+                        )}
                     </header>
 
                     {sortedGroupNames.length === 0 ? (

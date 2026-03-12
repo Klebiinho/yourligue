@@ -22,6 +22,9 @@ const Sidebar = () => {
     const navigate = useNavigate();
     const [moreOpen, setMoreOpen] = useState(false);
 
+    // Prefix paths if in public view
+    const getLink = (to: string) => isPublicView ? `/view/${league?.id}${to === '/' ? '' : to}` : to;
+
     // Filter nav items based on public view
     const filteredNavItems = isPublicView
         ? navItems.filter(item => ['/', '/matches', '/standings', '/bracket'].includes(item.to))
@@ -62,11 +65,11 @@ const Sidebar = () => {
 
                                 {/* Secondary nav items in grid */}
                                 <div className="grid grid-cols-3 divide-x divide-y divide-white/[0.05]">
-                                    {secondaryItems.map(({ to, icon: Icon, label }) => (
+                                    {secondaryItems.map((item) => (
                                         <NavLink
-                                            key={to}
-                                            to={to}
-                                            end={to === '/'}
+                                            key={item.to}
+                                            to={getLink(item.to)}
+                                            end={item.to === '/'}
                                             onClick={() => setMoreOpen(false)}
                                             className={({ isActive }) =>
                                                 `flex flex-col items-center justify-center gap-2 py-5 transition-all ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-white/[0.04] hover:text-slate-200'}`
@@ -74,8 +77,8 @@ const Sidebar = () => {
                                         >
                                             {({ isActive }) => (
                                                 <>
-                                                    <Icon size={22} strokeWidth={isActive ? 2.5 : 1.75} />
-                                                    <span className="text-[0.6rem] font-black uppercase tracking-wider leading-none">{label}</span>
+                                                    <item.icon size={22} strokeWidth={isActive ? 2.5 : 1.75} />
+                                                    <span className="text-[0.6rem] font-black uppercase tracking-wider leading-none">{item.label}</span>
                                                 </>
                                             )}
                                         </NavLink>
@@ -90,11 +93,11 @@ const Sidebar = () => {
                 <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#07070a]/95 backdrop-blur-2xl border-t border-white/[0.06] shadow-[0_-8px_40px_rgba(0,0,0,0.5)]">
                     <div className="flex items-stretch justify-around h-[64px] px-1">
                         {/* 4 primary items */}
-                        {primaryItems.map(({ to, icon: Icon, shortLabel }) => (
+                        {primaryItems.map((item) => (
                             <NavLink
-                                key={to}
-                                to={to}
-                                end={to === '/'}
+                                key={item.to}
+                                to={getLink(item.to)}
+                                end={item.to === '/'}
                                 className={({ isActive }) =>
                                     `flex flex-col items-center justify-center gap-1 flex-1 px-1 transition-all duration-200 relative ${isActive ? 'text-primary' : 'text-slate-600 active:text-slate-300'}`
                                 }
@@ -104,10 +107,10 @@ const Sidebar = () => {
                                         {/* Active indicator line */}
                                         {isActive && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-primary rounded-full" />}
                                         <div className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200 ${isActive ? 'bg-primary/15' : ''}`}>
-                                            <Icon size={19} strokeWidth={isActive ? 2.5 : 1.75} />
+                                            <item.icon size={19} strokeWidth={isActive ? 2.5 : 1.75} />
                                         </div>
                                         <span className={`text-[0.5rem] font-black uppercase tracking-[0.06em] leading-none ${isActive ? 'text-primary' : 'text-slate-600'}`}>
-                                            {shortLabel}
+                                            {item.shortLabel}
                                         </span>
                                     </>
                                 )}

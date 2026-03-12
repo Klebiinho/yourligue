@@ -45,11 +45,11 @@ const PublicLayout = () => (
     <main className="md:pl-64 min-h-screen">
       <div className="p-4 md:p-8 lg:p-10 pb-24 md:pb-10 max-w-[1600px] mx-auto w-full">
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/matches" element={<Matches />} />
-          <Route path="/standings" element={<Standings />} />
-          <Route path="/bracket" element={<Bracket />} />
-          <Route path="*" element={<Navigate to={`/view/${window.location.pathname.split('/')[2]}`} replace />} />
+          <Route index element={<Dashboard />} />
+          <Route path="matches" element={<Matches />} />
+          <Route path="standings" element={<Standings />} />
+          <Route path="bracket" element={<Bracket />} />
+          <Route path="*" element={<Navigate to="." replace />} />
         </Routes>
       </div>
     </main>

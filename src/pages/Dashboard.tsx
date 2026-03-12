@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
 const Dashboard = () => {
-    const { league, teams, matches, loading } = useLeague();
+    const { league, teams, matches, loading, isPublicView } = useLeague();
     const navigate = useNavigate();
 
     if (loading) return (
@@ -37,9 +37,10 @@ const Dashboard = () => {
 
     const allPlayers = teams.flatMap(t => t.players.map(p => ({ ...p, team: t })));
     const topScorers = [...allPlayers].sort((a, b) => (b.stats?.goals || 0) - (a.stats?.goals || 0)).filter(p => (p.stats?.goals || 0) > 0).slice(0, 5);
+    const topAssisters = [...allPlayers].sort((a, b) => (b.stats?.assists || 0) - (a.stats?.assists || 0)).filter(p => (p.stats?.assists || 0) > 0).slice(0, 5);
 
     const [activeTab, setActiveTab] = useState<'matches' | 'standings' | 'scorers'>('matches');
-    const [showTopScorersModal, setShowTopScorersModal] = useState(false);
+    const [showTopRankModal, setShowTopRankModal] = useState<{ open: boolean, type: 'goals' | 'assists' }>({ open: false, type: 'goals' });
 
     return (
         <div className="animate-fade-in space-y-6 md:space-y-8 pb-10">
@@ -48,7 +49,7 @@ const Dashboard = () => {
                 <div className="flex items-start justify-between gap-3">
                     <div>
                         <h1 className="text-xl sm:text-2xl md:text-4xl font-outfit font-extrabold tracking-tight leading-tight">
-                            Bem-vindo 👋
+                            {isPublicView ? 'Acompanhe a Liga 👋' : 'Bem-vindo 👋'}
                         </h1>
                         <p className="text-slate-500 mt-0.5 text-xs sm:text-sm">
                             <span className="text-white font-bold">{league?.name}</span>
@@ -63,6 +64,18 @@ const Dashboard = () => {
                                 {liveMatches.length} Ao Vivo
                             </span>
                         </div>
+                    )}
+                    {!isPublicView && league && (
+                        <button
+                            onClick={() => {
+                                const url = `${window.location.origin}/view/${league.id}`;
+                                navigator.clipboard.writeText(url);
+                                alert('Link da visão de telespectador copiado!');
+                            }}
+                            className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all text-[0.6rem] font-black uppercase tracking-widest flex-none self-start mt-1"
+                        >
+                            <ArrowRight size={12} className="rotate-[-45deg]" /> Compartilhar
+                        </button>
                     )}
                 </div>
             </header>
@@ -107,9 +120,11 @@ const Dashboard = () => {
                             <Zap size={16} className="text-primary" />
                             Próximas & Ao Vivo
                         </h2>
-                        <button onClick={() => navigate('/matches')} className="flex items-center gap-1 text-primary text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
-                            Ver todas <ArrowRight size={12} />
-                        </button>
+                        {!isPublicView && (
+                            <button onClick={() => navigate('/matches')} className="flex items-center gap-1 text-primary text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
+                                Ver todas <ArrowRight size={12} />
+                            </button>
+                        )}
                     </div>
 
                     <div className="glass-panel divide-y divide-white/[0.04] overflow-hidden">
@@ -184,9 +199,11 @@ const Dashboard = () => {
                                 <Trophy size={16} className="text-warning" />
                                 Classificação
                             </h2>
-                            <button onClick={() => navigate('/standings')} className="flex items-center gap-1 text-accent text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
-                                Tabela <ArrowRight size={12} />
-                            </button>
+                            {!isPublicView && (
+                                <button onClick={() => navigate('/standings')} className="flex items-center gap-1 text-accent text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
+                                    Tabela <ArrowRight size={12} />
+                                </button>
+                            )}
                         </div>
 
                         <div className="glass-panel divide-y divide-white/[0.04] overflow-hidden">
@@ -220,99 +237,167 @@ const Dashboard = () => {
                     </div>
 
                     {/* ── DESTAQUES DA LIGA ───────────────────────────────────── */}
-                    <div className={`${activeTab === 'scorers' || activeTab === 'matches' ? 'block' : 'hidden md:block'} space-y-4`}>
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-sm font-black font-outfit uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                <Star size={16} className="text-warning" />
-                                Destaques da Liga
-                            </h2>
-                            <button onClick={() => setShowTopScorersModal(true)} className="flex items-center gap-1 text-warning text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
-                                Ver Rank <ArrowRight size={12} />
-                            </button>
+                    <div className={`${activeTab === 'scorers' || activeTab === 'matches' ? 'block' : 'hidden md:block'} space-y-6`}>
+                        {/* Top Scorers */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-sm font-black font-outfit uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                                    <Star size={16} className="text-warning fill-warning/20" />
+                                    Artilheiros
+                                </h2>
+                                <button onClick={() => setShowTopRankModal({ open: true, type: 'goals' })} className="flex items-center gap-1 text-warning text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
+                                    Rank Completo <ArrowRight size={12} />
+                                </button>
+                            </div>
+
+                            <div className="glass-panel divide-y divide-white/[0.04] overflow-hidden cursor-pointer group/card" onClick={() => setShowTopRankModal({ open: true, type: 'goals' })}>
+                                {topScorers.length === 0 ? (
+                                    <div className="py-8 sm:py-10 text-center opacity-25">
+                                        <Star size={24} strokeWidth={1} className="mx-auto mb-2" />
+                                        <p className="text-[0.6rem] font-black uppercase tracking-widest">Sem artilheiros</p>
+                                    </div>
+                                ) : (
+                                    topScorers.map((player, i) => (
+                                        <div key={player.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-white/[0.05] transition-colors group">
+                                            <span className={`w-5 h-5 flex items-center justify-center rounded-md font-black text-[0.55rem] font-outfit flex-none ${i === 0 ? 'bg-warning/20 text-warning' : 'text-slate-500'}`}>
+                                                {i + 1}
+                                            </span>
+                                            <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden flex-none">
+                                                {player.photo ? (
+                                                    <img src={player.photo} className="w-full h-full object-cover" alt={player.name} />
+                                                ) : (
+                                                    <span className="font-black text-[0.6rem] text-slate-400">{player.number}</span>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0 flex flex-col">
+                                                <span className="font-bold truncate text-[0.65rem] sm:text-xs text-white group-hover:text-warning transition-colors">{player.name}</span>
+                                                <span className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest truncate leading-tight">{player.team.name}</span>
+                                            </div>
+                                            <div className="flex flex-col items-end flex-none min-w-[32px]">
+                                                <span className="font-black text-accent text-sm sm:text-base font-outfit leading-none">{player.stats?.goals || 0}</span>
+                                                <span className="text-[0.45rem] text-slate-500 font-black uppercase">Gols</span>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
 
-                        <div className="glass-panel divide-y divide-white/[0.04] overflow-hidden">
-                            {topScorers.length === 0 ? (
-                                <div className="py-8 sm:py-10 text-center opacity-25">
-                                    <Star size={24} strokeWidth={1} className="mx-auto mb-2" />
-                                    <p className="text-[0.6rem] font-black uppercase tracking-widest">Sem artilheiros</p>
-                                </div>
-                            ) : (
-                                topScorers.map((player, i) => (
-                                    <div key={player.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-white/[0.03] transition-colors">
-                                        <span className={`w-5 h-5 flex items-center justify-center rounded-md font-black text-[0.55rem] font-outfit flex-none ${i === 0 ? 'bg-warning/20 text-warning' : 'text-slate-500'}`}>
-                                            {i + 1}
-                                        </span>
-                                        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden flex-none">
-                                            {player.photo ? (
-                                                <img src={player.photo} className="w-full h-full object-cover" alt={player.name} />
-                                            ) : (
-                                                <span className="font-black text-[0.6rem] text-slate-400">{player.number}</span>
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0 flex flex-col">
-                                            <span className="font-bold truncate text-[0.65rem] sm:text-xs text-white">{player.name}</span>
-                                            <span className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest truncate leading-tight">{player.team.name}</span>
-                                        </div>
-                                        <div className="flex flex-col items-end flex-none min-w-[32px]">
-                                            <span className="font-black text-accent text-sm sm:text-base font-outfit leading-none">{player.stats?.goals || 0}</span>
-                                            <span className="text-[0.45rem] text-slate-500 font-black uppercase">Gols</span>
-                                        </div>
+                        {/* Top Assisters */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-sm font-black font-outfit uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                                    <Zap size={16} className="text-primary fill-primary/20" />
+                                    Garçons (Assis.)
+                                </h2>
+                                <button onClick={() => setShowTopRankModal({ open: true, type: 'assists' })} className="flex items-center gap-1 text-primary text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
+                                    Rank Completo <ArrowRight size={12} />
+                                </button>
+                            </div>
+
+                            <div className="glass-panel divide-y divide-white/[0.04] overflow-hidden cursor-pointer group/card" onClick={() => setShowTopRankModal({ open: true, type: 'assists' })}>
+                                {topAssisters.length === 0 ? (
+                                    <div className="py-8 sm:py-10 text-center opacity-25">
+                                        <Zap size={24} strokeWidth={1} className="mx-auto mb-2" />
+                                        <p className="text-[0.6rem] font-black uppercase tracking-widest">Sem assistências</p>
                                     </div>
-                                ))
-                            )}
+                                ) : (
+                                    topAssisters.map((player, i) => (
+                                        <div key={player.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-white/[0.05] transition-colors group">
+                                            <span className={`w-5 h-5 flex items-center justify-center rounded-md font-black text-[0.55rem] font-outfit flex-none ${i === 0 ? 'bg-primary/20 text-primary' : 'text-slate-500'}`}>
+                                                {i + 1}
+                                            </span>
+                                            <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden flex-none">
+                                                {player.photo ? (
+                                                    <img src={player.photo} className="w-full h-full object-cover" alt={player.name} />
+                                                ) : (
+                                                    <span className="font-black text-[0.6rem] text-slate-400">{player.number}</span>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0 flex flex-col">
+                                                <span className="font-bold truncate text-[0.65rem] sm:text-xs text-white group-hover:text-primary transition-colors">{player.name}</span>
+                                                <span className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest truncate leading-tight">{player.team.name}</span>
+                                            </div>
+                                            <div className="flex flex-col items-end flex-none min-w-[32px]">
+                                                <span className="font-black text-primary text-sm sm:text-base font-outfit leading-none">{player.stats?.assists || 0}</span>
+                                                <span className="text-[0.45rem] text-slate-500 font-black uppercase">Assis.</span>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* ── TOP SCORERS MODAL ────────────────────────────────────── */}
-            {showTopScorersModal && (
+            {/* ── RANKING MODAL (Goals or Assists) ───────────────────── */}
+            {showTopRankModal.open && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowTopScorersModal(false)} />
-                    <div className="relative glass-panel w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col animate-scale-in">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-fade-in" onClick={() => setShowTopRankModal({ ...showTopRankModal, open: false })} />
+                    <div className="relative glass-panel w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col animate-scale-in shadow-[0_30px_100px_rgba(0,0,0,0.8)] border-white/10">
                         <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center text-warning shadow-lg shadow-warning/10">
-                                    <Star size={20} className="fill-warning/20" />
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${showTopRankModal.type === 'goals' ? 'bg-warning/20 text-warning' : 'bg-primary/20 text-primary'}`}>
+                                    {showTopRankModal.type === 'goals' ? <Star size={24} className="fill-warning/20" /> : <Zap size={24} className="fill-primary/20" />}
                                 </div>
                                 <div>
-                                    <h3 className="font-outfit font-black text-white uppercase tracking-tight text-xl">Ranking de Artilharia</h3>
-                                    <p className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Gols marcados nesta liga</p>
+                                    <h3 className="font-outfit font-black text-white uppercase tracking-tight text-xl">
+                                        {showTopRankModal.type === 'goals' ? 'Artilharia da Liga' : 'Maiores Garçons'}
+                                    </h3>
+                                    <p className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Dados atualizados em tempo real</p>
                                 </div>
                             </div>
-                            <button onClick={() => setShowTopScorersModal(false)} className="p-2 text-slate-500 hover:text-white transition-colors">
-                                <Star size={24} className="rotate-45" /> {/* Close icon substitute or use Star as placeholder */}
+                            <button onClick={() => setShowTopRankModal({ ...showTopRankModal, open: false })} className="p-2.5 rounded-xl bg-white/5 text-slate-500 hover:text-white hover:bg-white/10 transition-all">
+                                <XCircle size={24} />
                             </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 no-scrollbar">
-                            {[...allPlayers].sort((a, b) => (b.stats?.goals || 0) - (a.stats?.goals || 0))
-                                .filter(p => (p.stats?.goals || 0) > 0)
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 no-scrollbar pb-10">
+                            {[...allPlayers].sort((a, b) => {
+                                if (showTopRankModal.type === 'goals') return (b.stats?.goals || 0) - (a.stats?.goals || 0);
+                                return (b.stats?.assists || 0) - (a.stats?.assists || 0);
+                            })
+                                .filter(p => showTopRankModal.type === 'goals' ? (p.stats?.goals || 0) > 0 : (p.stats?.assists || 0) > 0)
                                 .map((player, i) => (
-                                    <div key={player.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] transition-all group">
-                                        <span className={`w-8 h-8 flex items-center justify-center rounded-xl font-black font-outfit text-sm ${i === 0 ? 'bg-warning text-black shadow-lg shadow-warning/20' :
+                                    <div key={player.id} className="flex items-center gap-4 p-4 rounded-3xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] transition-all group">
+                                        <div className={`w-10 h-10 flex items-center justify-center rounded-2xl font-black font-outfit text-base ${i === 0 ? (showTopRankModal.type === 'goals' ? 'bg-warning text-black shadow-lg shadow-warning/20' : 'bg-primary text-white shadow-lg shadow-primary/20') :
                                             i === 1 ? 'bg-slate-300 text-black' :
-                                                i === 2 ? 'bg-orange-400 text-black' : 'text-slate-600'}`}>
+                                                i === 2 ? 'bg-orange-400 text-black' : 'text-slate-600 border border-white/5'}`}>
                                             {i + 1}
-                                        </span>
-                                        <div className="relative flex-none">
-                                            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-primary/50 transition-colors bg-white/5">
-                                                {player.photo ? <img src={player.photo} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold">#</div>}
+                                        </div>
+                                        <div className="relative">
+                                            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                                                {player.photo ? (
+                                                    <img src={player.photo} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" alt={player.name} />
+                                                ) : (
+                                                    <span className="font-black text-xl text-slate-700">{player.number}</span>
+                                                )}
                                             </div>
-                                            <div className="absolute -bottom-1 -right-1">
-                                                <TeamLogo src={player.team.logo} size={22} />
-                                            </div>
+                                            <TeamLogo src={player.team.logo} size={20} className="absolute -bottom-1 -right-1 shadow-lg border border-black/40" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="font-black text-white font-outfit uppercase tracking-wide text-sm truncate">{player.name}</h4>
-                                            <p className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">{player.team.name}</p>
+                                            <h4 className="font-outfit font-black text-white text-base truncate leading-tight uppercase group-hover:text-primary transition-colors">{player.name}</h4>
+                                            <span className="text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.15em]">{player.team.name}</span>
                                         </div>
-                                        <div className="flex flex-col items-end">
-                                            <span className="text-2xl font-black text-accent font-outfit tabular-nums">{player.stats?.goals || 0}</span>
-                                            <span className="text-[0.45rem] font-black text-slate-600 uppercase">Gols</span>
+                                        <div className="text-right">
+                                            <div className="flex items-center gap-1.5 justify-end">
+                                                <span className={`text-2xl font-black font-outfit ${showTopRankModal.type === 'goals' ? 'text-accent' : 'text-primary'}`}>
+                                                    {showTopRankModal.type === 'goals' ? player.stats?.goals : player.stats?.assists}
+                                                </span>
+                                                {showTopRankModal.type === 'goals' ? <Star size={14} className="text-warning fill-warning" /> : <Zap size={14} className="text-primary fill-primary" />}
+                                            </div>
+                                            <span className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest leading-none">
+                                                {showTopRankModal.type === 'goals' ? 'Gols' : 'Assis.'}
+                                            </span>
                                         </div>
                                     </div>
-                                ))}
+                                ))
+                            }
+                            {[...allPlayers].filter(p => showTopRankModal.type === 'goals' ? (p.stats?.goals || 0) > 0 : (p.stats?.assists || 0) > 0).length === 0 && (
+                                <div className="text-center py-20 opacity-30">
+                                    <p className="font-black uppercase tracking-widest text-sm">Nenhum dado registrado</p>
+                                </div>
+                            )}
                         </div>
                         <div className="p-4 bg-black/40 border-t border-white/5 text-center">
                             <p className="text-[0.55rem] font-black text-slate-600 uppercase tracking-[0.2em] italic">Estatísticas atualizadas em tempo real</p>
