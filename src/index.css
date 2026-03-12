@@ -34,8 +34,12 @@ body {
   background-attachment: fixed;
   min-height: 100vh;
   overflow-x: hidden;
-  display: flex;
   line-height: 1.5;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
 }
 
 img {
@@ -904,13 +908,27 @@ a {
 
   .grid-2,
   .grid-3,
+  .grid-3 {
+    gap: 12px;
+  }
+
   .grid-4 {
     gap: 12px;
   }
 
   .score span:nth-child(2) {
-    margin: 0 8px !important;
-    font-size: 2rem !important;
+    margin: 0 10px;
+    font-size: 1.5rem;
+  }
+
+  /* Login / Auth adjustments */
+  .auth-container {
+    padding: 16px !important;
+  }
+
+  .auth-card {
+    padding: 24px 16px !important;
+    gap: 16px !important;
   }
 
   .file-upload-custom span {

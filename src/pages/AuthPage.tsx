@@ -47,22 +47,22 @@ const AuthPage = () => {
     };
 
     return (
-        <div style={{
+        <div className="auth-container" style={{
             minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'var(--bg-dark)', padding: '16px',
+            background: 'var(--bg-dark)', padding: '24px', width: '100%',
             backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(109, 40, 217, 0.2), transparent 30%), radial-gradient(circle at 80% 30%, rgba(16, 185, 129, 0.15), transparent 30%)'
         }}>
-            <div style={{ width: '100%', maxWidth: '440px', display: 'flex', flexDirection: 'column', gap: '28px', animation: 'fadeIn 0.5s ease' }}>
+            <div className="auth-card" style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '24px', animation: 'fadeIn 0.5s ease' }}>
 
                 {/* Logo */}
-                <div style={{ textAlign: 'center' }}>
-                    <div style={{ display: 'inline-flex', background: 'linear-gradient(135deg, #6d28d9, #4c1d95)', padding: '18px', borderRadius: '22px', marginBottom: '20px', boxShadow: '0 12px 40px var(--primary-glow)' }}>
-                        <Trophy size={44} color="white" />
+                <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'inline-flex', background: 'linear-gradient(135deg, #6d28d9, #4c1d95)', padding: '16px', borderRadius: '20px', marginBottom: '16px', boxShadow: '0 8px 32px var(--primary-glow)' }}>
+                        <Trophy size={40} color="white" />
                     </div>
-                    <h1 style={{ fontSize: 'clamp(1.5rem, 6vw, 2rem)', fontFamily: 'Outfit', fontWeight: 800, marginBottom: '6px' }}>
+                    <h1 style={{ fontSize: 'clamp(1.4rem, 6vw, 1.8rem)', fontFamily: 'Outfit', fontWeight: 800, marginBottom: '4px' }}>
                         Championship Manager
                     </h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Gerencie seu campeonato com estilo</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Gerencie seu campeonato com estilo</p>
                 </div>
 
                 {/* Card */}
