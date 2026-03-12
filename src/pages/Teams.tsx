@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Shield, UserPlus, Image as ImageIcon, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Search } from 'lucide-react';
+import { Shield, UserPlus, Image as ImageIcon, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Search, Plus } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const Teams = () => {
@@ -126,8 +126,8 @@ const Teams = () => {
                                 {teams.map(team => (
                                     <div key={team.id} onClick={() => setActiveTeamId(team.id)}
                                         className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all duration-300 border ${activeTeamId === team.id
-                                                ? 'bg-primary/10 border-primary/30 shadow-lg'
-                                                : 'bg-white/3 border-white/5 hover:bg-white/5'
+                                            ? 'bg-primary/10 border-primary/30 shadow-lg'
+                                            : 'bg-white/3 border-white/5 hover:bg-white/5'
                                             }`}>
                                         <TeamLogo src={team.logo} size={44} />
                                         <div className="flex-1 min-w-0">

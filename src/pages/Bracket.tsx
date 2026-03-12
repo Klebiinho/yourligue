@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Shuffle, Shield, Trophy, LayoutGrid, Network, Info, ChevronRight, Check, X } from 'lucide-react';
+import { Shuffle, Shield, Trophy, LayoutGrid, Network, Info, ChevronRight, Check, X, Users } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const Bracket = () => {

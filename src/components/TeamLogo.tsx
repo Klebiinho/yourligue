@@ -22,7 +22,6 @@ const TeamLogo = ({ src, size = 48, fallbackText, fallbackIcon }: TeamLogoProps)
     if (src.length < 10 && !src.startsWith('http')) {
         return (
             <div
-                style={sizeStyle}
                 className="rounded-full bg-white/5 border border-white/10 flex items-center justify-center flex-none uppercase font-black font-outfit text-white shadow-xl backdrop-blur-sm"
                 style={{ ...sizeStyle, fontSize: `${size / 2.2}px` }}
             >
