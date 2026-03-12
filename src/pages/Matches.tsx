@@ -33,8 +33,9 @@ const Matches = () => {
             await updateMatch(editingMatchId, { homeTeamId, awayTeamId, scheduledAt, location, youtubeLiveId: videoId });
             setEditingMatchId(null);
         } else {
-            const { error: err } = await createMatch({ homeTeamId, awayTeamId, scheduledAt, location, youtubeLiveId: videoId });
+            const { error: err, matchId } = await createMatch({ homeTeamId, awayTeamId, scheduledAt, location, youtubeLiveId: videoId });
             if (err) { setError(err); return; }
+            if (matchId) navigate(`/match/${matchId}`);
         }
         resetForm();
         setFormOpen(false);

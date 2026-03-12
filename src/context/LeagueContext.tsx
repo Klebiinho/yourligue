@@ -11,6 +11,7 @@ export type Player = {
     position: string;
     photo?: string;
     isCaptain?: boolean;
+    isReserve?: boolean;
     stats: { goals: number; assists: number; ownGoals: number; yellowCards: number; redCards: number };
 };
 
@@ -28,6 +29,7 @@ export type MatchEvent = {
     type: 'goal' | 'assist' | 'yellow_card' | 'red_card' | 'substitution' | 'foul' | 'penalty_goal' | 'penalty_miss' | 'own_goal';
     teamId: string;
     playerId: string;
+    playerOutId?: string; // For substitutions
     minute: number;
 };
 
@@ -68,6 +70,8 @@ export type League = {
     pointsForDraw: number;
     pointsForLoss: number;
     defaultHalfLength: number;
+    playersPerTeam: number;
+    reserveLimitPerTeam: number;
 };
 
 // ─── Context Type ────────────────────────────────────────────
@@ -99,7 +103,7 @@ interface LeagueContextType {
     toggleCaptain: (teamId: string, playerId: string) => Promise<void>;
 
     // Match actions
-    createMatch: (data: { homeTeamId: string; awayTeamId: string; scheduledAt?: string; location?: string; youtubeLiveId?: string }) => Promise<{ error: string | null }>;
+    createMatch: (data: { homeTeamId: string; awayTeamId: string; scheduledAt?: string; location?: string; youtubeLiveId?: string }) => Promise<{ error: string | null; matchId?: string }>;
     updateMatch: (matchId: string, data: Partial<Match>) => Promise<void>;
     deleteMatch: (matchId: string) => Promise<void>;
     startMatch: (matchId: string) => Promise<void>;
@@ -145,7 +149,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             const mapped: League[] = data.map(l => ({
                 id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
                 pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
-                pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length
+                pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
+                playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5
             }));
             setLeagues(mapped);
             if (mapped.length > 0 && !league) {
@@ -165,7 +170,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             const lg: League = {
                 id: data.id, name: data.name, logo: data.logo || '', maxTeams: data.max_teams,
                 pointsForWin: data.points_for_win, pointsForDraw: data.points_for_draw,
-                pointsForLoss: data.points_for_loss, defaultHalfLength: data.default_half_length
+                pointsForLoss: data.points_for_loss, defaultHalfLength: data.default_half_length,
+                playersPerTeam: data.players_per_team || 5, reserveLimitPerTeam: data.reserve_limit_per_team || 5
             };
             setLeague(lg);
         }
@@ -212,6 +218,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     players: (t.players || []).map((p: any) => ({
                         id: p.id, name: p.name, number: p.number, position: p.position,
                         photo: p.photo || '', isCaptain: p.is_captain || false,
+                        isReserve: p.is_reserve || false,
                         stats: {
                             goals: allEvents.filter((e: any) => e.player_id === p.id && (e.type === 'goal' || e.type === 'penalty_goal')).length,
                             assists: allEvents.filter((e: any) => e.player_id === p.id && e.type === 'assist').length,
@@ -235,7 +242,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 extraTime: m.extra_time, period: m.period,
                 scheduledAt: m.scheduled_at, location: m.location,
                 events: (m.match_events || []).map((e: any) => ({
-                    id: e.id, type: e.type, teamId: e.team_id, playerId: e.player_id, minute: e.minute
+                    id: e.id, type: e.type, teamId: e.team_id, playerId: e.player_id,
+                    playerOutId: e.player_out_id, minute: e.minute
                 }))
             }));
             setMatches(mapped);
@@ -263,7 +271,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         const { data: row, error } = await supabase.from('leagues').insert({
             user_id: user!.id, name: data.name, logo: data.logo, max_teams: data.maxTeams,
             points_for_win: data.pointsForWin, points_for_draw: data.pointsForDraw,
-            points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength
+            points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
+            players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam
         }).select().single();
         if (error) {
             console.error('Error creating league:', error);
@@ -271,7 +280,12 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             return { error: error.message };
         }
         if (row) {
-            const lg: League = { id: row.id, name: row.name, logo: row.logo || '', maxTeams: row.max_teams, pointsForWin: row.points_for_win, pointsForDraw: row.points_for_draw, pointsForLoss: row.points_for_loss, defaultHalfLength: row.default_half_length };
+            const lg: League = {
+                id: row.id, name: row.name, logo: row.logo || '', maxTeams: row.max_teams,
+                pointsForWin: row.points_for_win, pointsForDraw: row.points_for_draw,
+                pointsForLoss: row.points_for_loss, defaultHalfLength: row.default_half_length,
+                playersPerTeam: row.players_per_team || 5, reserveLimitPerTeam: row.reserve_limit_per_team || 5
+            };
             setLeagues(prev => [...prev, lg]);
             setLeague(lg);
             return { error: null };
@@ -284,7 +298,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         await supabase.from('leagues').update({
             name: data.name, logo: data.logo, max_teams: data.maxTeams,
             points_for_win: data.pointsForWin, points_for_draw: data.pointsForDraw,
-            points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength
+            points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
+            players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam
         }).eq('id', league.id);
         const updated = { ...league, ...data };
         setLeague(updated);
@@ -333,11 +348,16 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
         const { data, error } = await supabase.from('players').insert({
             team_id: teamId, name: player.name, number: player.number,
-            position: player.position, photo: player.photo || '', is_captain: player.isCaptain || false
+            position: player.position, photo: player.photo || '',
+            is_captain: player.isCaptain || false, is_reserve: player.isReserve || false
         }).select().single();
         if (error) return { error: error.message };
         if (data) {
-            const np: Player = { id: data.id, name: data.name, number: data.number, position: data.position, photo: data.photo || '', isCaptain: data.is_captain, stats: { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0 } };
+            const np: Player = {
+                id: data.id, name: data.name, number: data.number, position: data.position,
+                photo: data.photo || '', isCaptain: data.is_captain, isReserve: data.is_reserve,
+                stats: { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0 }
+            };
             setTeams(prev => prev.map(t => t.id === teamId ? { ...t, players: [...t.players, np] } : t));
         }
         return { error: null };
@@ -346,7 +366,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const updatePlayer = async (teamId: string, playerId: string, data: Partial<Player>) => {
         await supabase.from('players').update({
             name: data.name, number: data.number, position: data.position,
-            photo: data.photo, is_captain: data.isCaptain
+            photo: data.photo, is_captain: data.isCaptain, is_reserve: data.isReserve
         }).eq('id', playerId);
         setTeams(prev => prev.map(t => t.id === teamId
             ? { ...t, players: t.players.map(p => p.id === playerId ? { ...p, ...data } : p) }
@@ -388,8 +408,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         if (row) {
             const nm: Match = { id: row.id, homeTeamId: row.home_team_id, awayTeamId: row.away_team_id, homeScore: 0, awayScore: 0, status: 'scheduled', events: [], timer: 0, youtubeLiveId: row.youtube_live_id, halfLength: row.half_length, extraTime: 0, period: '1º Tempo', scheduledAt: row.scheduled_at, location: row.location };
             setMatches(prev => [...prev, nm]);
+            return { error: null, matchId: row.id };
         }
-        return { error: null };
+        return { error: 'Unknown error' };
     };
 
     const updateMatch = async (matchId: string, data: Partial<Match>) => {
@@ -413,10 +434,14 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const addEvent = async (matchId: string, event: Omit<MatchEvent, 'id'>) => {
         const { data } = await supabase.from('match_events').insert({
-            match_id: matchId, type: event.type, team_id: event.teamId, player_id: event.playerId, minute: event.minute
+            match_id: matchId, type: event.type, team_id: event.teamId,
+            player_id: event.playerId, player_out_id: event.playerOutId, minute: event.minute
         }).select().single();
         if (!data) return;
-        const ne: MatchEvent = { id: data.id, type: data.type, teamId: data.team_id, playerId: data.player_id, minute: data.minute };
+        const ne: MatchEvent = {
+            id: data.id, type: data.type, teamId: data.team_id,
+            playerId: data.player_id, playerOutId: data.player_out_id, minute: data.minute
+        };
 
         setMatches(prev => prev.map(m => {
             if (m.id !== matchId) return m;

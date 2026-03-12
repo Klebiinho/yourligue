@@ -49,7 +49,7 @@ const TeamsDashboard = () => {
             if (error) { alert(error); return; }
             setIsAddingPlayer(false);
         }
-        setFormPlayer({ name: '', number: 0, position: 'Goleiro', isCaptain: false, photo: '' });
+        setFormPlayer({ name: '', number: 0, position: 'Goleiro', isCaptain: false, isReserve: false, photo: '' });
     };
 
     return (
@@ -219,6 +219,24 @@ const TeamsDashboard = () => {
                                                     </label>
                                                 </div>
                                             </div>
+                                            {/* Additional Options */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
+                                                <div className="flex items-center gap-3 bg-black/20 p-4 rounded-xl border border-white/5">
+                                                    <input type="checkbox" id="isReserve"
+                                                        checked={formPlayer.isReserve}
+                                                        onChange={e => setFormPlayer({ ...formPlayer, isReserve: e.target.checked })}
+                                                        className="w-5 h-5 accent-accent" />
+                                                    <label htmlFor="isReserve" className="text-xs font-black text-slate-400 uppercase tracking-widest cursor-pointer">Reserva</label>
+                                                </div>
+                                                <div className="flex items-center gap-3 bg-black/20 p-4 rounded-xl border border-white/5">
+                                                    <input type="checkbox" id="isCaptain"
+                                                        checked={formPlayer.isCaptain}
+                                                        onChange={e => setFormPlayer({ ...formPlayer, isCaptain: e.target.checked })}
+                                                        className="w-5 h-5 accent-primary" />
+                                                    <label htmlFor="isCaptain" className="text-xs font-black text-slate-400 uppercase tracking-widest cursor-pointer">Capitão</label>
+                                                </div>
+                                            </div>
+
                                             <div className="flex gap-2">
                                                 <button type="submit" className="flex-1 bg-accent text-white font-black py-2.5 rounded-xl uppercase tracking-widest text-[0.62rem] hover:brightness-110 active:scale-95 transition-all">
                                                     {isEditingPlayer ? 'Salvar' : 'Adicionar'}
@@ -284,7 +302,7 @@ const TeamsDashboard = () => {
                                                                     title="Capitão">
                                                                     <Star size={13} strokeWidth={2} />
                                                                 </button>
-                                                                <button onClick={() => { setIsEditingPlayer(p.id); setFormPlayer({ name: p.name, number: p.number, position: p.position, isCaptain: p.isCaptain || false, photo: p.photo || '' }); setIsAddingPlayer(true); }}
+                                                                <button onClick={() => { setIsEditingPlayer(p.id); setFormPlayer({ name: p.name, number: p.number, position: p.position, isCaptain: p.isCaptain || false, isReserve: p.isReserve || false, photo: p.photo || '' }); setIsAddingPlayer(true); }}
                                                                     className="p-1.5 rounded-lg text-slate-600 hover:text-white hover:bg-white/5 transition-all">
                                                                     <Edit2 size={13} />
                                                                 </button>
@@ -310,3 +328,4 @@ const TeamsDashboard = () => {
 };
 
 export default TeamsDashboard;
+```

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Users } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const MatchControl = () => {
@@ -18,6 +18,7 @@ const MatchControl = () => {
     const [halfLength, setHalfLength] = useState(match?.halfLength || 45);
     const [extraTime, setExtraTime] = useState(match?.extraTime || 0);
     const [period, setPeriod] = useState(match?.period || '1º Tempo');
+    const [submittingPlayer, setSubmittingPlayer] = useState<{ teamId: string, playerOutId: string } | null>(null);
 
     const getPlayerStatus = (playerId: string) => {
         const playerEvents = match?.events.filter((e: MatchEvent) => e.playerId === playerId) || [];
@@ -88,6 +89,12 @@ const MatchControl = () => {
     const handleAssist = (teamId: string, playerId: string) => { if (matchId) addEvent(matchId, { type: 'assist', teamId, playerId, minute: currentMinute }); };
     const handleGolContra = (teamId: string, playerId: string) => { if (matchId) addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); };
     const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { if (matchId) addEvent(matchId, { type, teamId, playerId, minute: currentMinute }); };
+    const handleSubstitution = (teamId: string, playerInId: string, playerOutId: string) => {
+        if (matchId) {
+            addEvent(matchId, { type: 'substitution', teamId, playerId: playerInId, playerOutId, minute: currentMinute });
+            setSubmittingPlayer(null);
+        }
+    };
 
     return (
         <div className="animate-fade-in">
@@ -160,13 +167,17 @@ const MatchControl = () => {
                         </div>
 
                         <div className="space-y-2 max-h-[500px] md:max-h-[600px] overflow-y-auto pr-1 no-scrollbar">
-                            {team.players.length === 0 ? (
-                                <p className="text-center text-slate-600 text-[0.65rem] uppercase tracking-widest py-10 font-black">Sem jogadores cadastrados</p>
+                            <h3 className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Titulares</h3>
+                            {team.players.filter(p => !p.isReserve).length === 0 ? (
+                                <p className="text-center text-slate-600 text-[0.65rem] uppercase tracking-widest py-4 font-black">Nenhum titular</p>
                             ) : (
-                                team.players.map((player: Player) => {
+                                team.players.filter(p => !p.isReserve).map((player: Player) => {
                                     const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
+                                    // Check if substituted out
+                                    const isSubbedOut = match.events.some(e => e.type === 'substitution' && e.playerOutId === player.id);
+
                                     return (
-                                        <div key={player.id} className={`flex items-center gap-2 p-3 rounded-xl border transition-all duration-300 ${isRedCarded ? 'bg-danger/5 border-danger/15 opacity-50' : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05]'
+                                        <div key={player.id} className={`flex items-center gap-2 p-3 rounded-xl border transition-all duration-300 ${isRedCarded || isSubbedOut ? 'bg-danger/5 border-danger/15 opacity-50' : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05]'
                                             }`}>
                                             <div className="relative flex-none">
                                                 <TeamLogo src={player.photo} size={36} />
@@ -181,23 +192,60 @@ const MatchControl = () => {
                                                         <div key={i} className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm" />
                                                     ))}
                                                     {isRedCarded && <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm" />}
+                                                    {isSubbedOut && <span className="text-[0.5rem] text-danger font-black uppercase tracking-tighter">SAIU</span>}
                                                 </div>
                                             </div>
                                             {/* Action Buttons */}
                                             <div className="flex items-center gap-1">
-                                                <div className={`flex items-center gap-1 transition-all ${isRedCarded ? 'opacity-20 pointer-events-none' : ''}`}>
-                                                    <button onClick={() => handleGol(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90" title="Gol"><Target size={14} /></button>
-                                                    <button onClick={() => handleAssist(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90" title="Assistência"><Award size={14} /></button>
-                                                    <button onClick={() => handleGolContra(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90" title="Gol Contra"><XCircle size={14} /></button>
-                                                    <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs" title="Amarelo">🟨</button>
-                                                    <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs" title="Vermelho">🟥</button>
-                                                </div>
+                                                {!isSubbedOut && (
+                                                    <div className={`flex items-center gap-1 transition-all ${isRedCarded ? 'opacity-20 pointer-events-none' : ''}`}>
+                                                        <button onClick={() => handleGol(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90" title="Gol"><Target size={14} /></button>
+                                                        <button onClick={() => handleAssist(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90" title="Assistência"><Award size={14} /></button>
+                                                        <button onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary hover:text-white transition-all active:scale-90" title="Substituir"><ArrowLeftRight size={14} /></button>
+                                                        <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs" title="Amarelo">🟨</button>
+                                                        <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs" title="Vermelho">🟥</button>
+                                                    </div>
+                                                )}
                                                 {(isRedCarded || yellowCards > 0) && (
                                                     <button onClick={() => handleUndoLastCard(player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/10 text-warning hover:bg-warning hover:text-black transition-all shadow-md" title="Anular Cartão">
                                                         <Trash2 size={12} />
                                                     </button>
                                                 )}
                                             </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+
+                            <h3 className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest mt-6 mb-2 px-1">Reservas</h3>
+                            {team.players.filter(p => p.isReserve).length === 0 ? (
+                                <p className="text-center text-slate-600 text-[0.65rem] uppercase tracking-widest py-4 font-black">Nenhum reserva</p>
+                            ) : (
+                                team.players.filter(p => p.isReserve).map((player: Player) => {
+                                    const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
+                                    const isSubbedIn = match.events.some(e => e.type === 'substitution' && e.playerId === player.id);
+
+                                    return (
+                                        <div key={player.id} className={`flex items-center gap-2 p-3 rounded-xl border transition-all duration-300 ${isSubbedIn ? 'bg-accent/5 border-accent/15' : 'bg-white/[0.02] border-white/[0.04] opacity-75'}`}>
+                                            <div className="relative flex-none">
+                                                <TeamLogo src={player.photo} size={36} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-black text-white text-[0.7rem] truncate font-outfit uppercase leading-tight">
+                                                    #{player.number} {player.name}
+                                                </h4>
+                                                <div className="flex items-center gap-1 mt-1 h-3.5">
+                                                    {isSubbedIn && <span className="text-[0.5rem] text-accent font-black uppercase tracking-tighter">ENTROU</span>}
+                                                    {isRedCarded && <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm" />}
+                                                </div>
+                                            </div>
+                                            {isSubbedIn && !isRedCarded && (
+                                                <div className="flex items-center gap-1">
+                                                    <button onClick={() => handleGol(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90" title="Gol"><Target size={14} /></button>
+                                                    <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs" title="Amarelo">🟨</button>
+                                                    <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs" title="Vermelho">🟥</button>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })
@@ -263,18 +311,23 @@ const MatchControl = () => {
                                         assist: 'text-warning',
                                         yellow_card: 'text-warning',
                                         red_card: 'text-danger',
+                                        substitution: 'text-primary',
                                     };
                                     const labelMap: Record<string, string> = {
                                         goal: '⚽ Gol', penalty_goal: '⚽ Pênalti', own_goal: '🔴 Gol Contra',
                                         yellow_card: '🟨 Amarelo', red_card: '🟥 Vermelho', assist: '🅰️ Assistência',
+                                        substitution: '🔄 Subst.',
                                     };
+                                    const pOut = event.playerOutId ? [...homeTeam.players, ...awayTeam.players].find(pl => pl.id === event.playerOutId) : null;
                                     return (
                                         <div key={event.id} className="group flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] transition-all">
                                             <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-black/40 font-black font-outfit text-primary text-xs flex-none shadow-inner">
                                                 {event.minute}'
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <span className="font-outfit font-black text-white uppercase truncate text-xs block">{p?.name ?? '—'}</span>
+                                                <span className="font-outfit font-black text-white uppercase truncate text-xs block">
+                                                    {event.type === 'substitution' ? `${p?.name ?? '—'} ↔️ ${pOut?.name ?? '—'}` : (p?.name ?? '—')}
+                                                </span>
                                                 <span className={`text-[0.6rem] font-black uppercase tracking-tight ${colorMap[event.type] || 'text-slate-500'}`}>
                                                     {labelMap[event.type] || event.type}
                                                 </span>
@@ -291,6 +344,54 @@ const MatchControl = () => {
                     </section>
                 </div>
             </div>
+
+            {/* Substitution Modal */}
+            {submittingPlayer && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+                    <div className="glass-panel w-full max-w-md p-6 md:p-8 border-primary/20 border shadow-[0_0_50px_rgba(109,40,217,0.2)]">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-lg font-black font-outfit uppercase tracking-widest flex items-center gap-3 text-white">
+                                <ArrowLeftRight size={20} className="text-primary" /> Substituição
+                            </h2>
+                            <button onClick={() => setSubmittingPlayer(null)} className="p-2 rounded-lg bg-white/5 text-slate-400 hover:text-white">
+                                <XCircle size={20} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="p-4 rounded-xl bg-danger/10 border border-danger/20">
+                                <span className="text-[0.6rem] font-black text-danger uppercase tracking-widest block mb-1">Efetuar Saída de:</span>
+                                <div className="flex items-center gap-3">
+                                    <TeamLogo src={[...homeTeam.players, ...awayTeam.players].find(p => p.id === submittingPlayer.playerOutId)?.photo} size={32} />
+                                    <span className="font-bold text-white uppercase">{[...homeTeam.players, ...awayTeam.players].find(p => p.id === submittingPlayer.playerOutId)?.name}</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-2">Selecione quem entra:</span>
+                                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
+                                    {(submittingPlayer.teamId === homeTeam.id ? homeTeam : awayTeam).players
+                                        .filter(p => p.isReserve && !match.events.some(e => e.type === 'substitution' && e.playerId === p.id))
+                                        .map(reserve => (
+                                            <button key={reserve.id} onClick={() => handleSubstitution(submittingPlayer.teamId, reserve.id, submittingPlayer.playerOutId)}
+                                                className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] hover:bg-accent/20 hover:border-accent/40 transition-all text-left">
+                                                <TeamLogo src={reserve.photo} size={32} />
+                                                <div className="flex-1">
+                                                    <span className="font-black text-white text-xs uppercase block">#{reserve.number} {reserve.name}</span>
+                                                    <span className="text-[0.6rem] font-black text-accent uppercase tracking-widest">Disponível</span>
+                                                </div>
+                                            </button>
+                                        ))
+                                    }
+                                    {(submittingPlayer.teamId === homeTeam.id ? homeTeam : awayTeam).players.filter(p => p.isReserve && !match.events.some(e => e.type === 'substitution' && e.playerId === p.id)).length === 0 && (
+                                        <p className="text-center py-6 text-slate-600 text-[0.65rem] uppercase font-black uppercase tracking-widest italic">Nenhum reserva disponível</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

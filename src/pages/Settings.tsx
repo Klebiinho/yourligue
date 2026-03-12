@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
-import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,6 +16,8 @@ const Settings = () => {
     const [pointsForDraw, setPointsForDraw] = useState(String(league?.pointsForDraw ?? 1));
     const [pointsForLoss, setPointsForLoss] = useState(String(league?.pointsForLoss ?? 0));
     const [halfLength, setHalfLength] = useState(String(league?.defaultHalfLength ?? 45));
+    const [playersPerTeam, setPlayersPerTeam] = useState(String(league?.playersPerTeam ?? 5));
+    const [reserveLimit, setReserveLimit] = useState(String(league?.reserveLimitPerTeam ?? 5));
     const [saved, setSaved] = useState(false);
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,7 +32,9 @@ const Settings = () => {
             pointsForWin: parseInt(pointsForWin) || 3,
             pointsForDraw: parseInt(pointsForDraw) || 1,
             pointsForLoss: parseInt(pointsForLoss) || 0,
-            defaultHalfLength: parseInt(halfLength) || 45
+            defaultHalfLength: parseInt(halfLength) || 45,
+            playersPerTeam: parseInt(playersPerTeam) || 5,
+            reserveLimitPerTeam: parseInt(reserveLimit) || 5
         });
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
@@ -114,6 +118,28 @@ const Settings = () => {
                                 <div className="relative">
                                     <Clock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-accent" />
                                     <input type="number" value={halfLength} onChange={e => setHalfLength(e.target.value)} required min={1} max={90}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-accent transition-colors h-14"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Squad Size Configs */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-2">
+                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Jogadores Titulares (por time)</label>
+                                <div className="relative">
+                                    <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" />
+                                    <input type="number" value={playersPerTeam} onChange={e => setPlayersPerTeam(e.target.value)} min={1} max={11} required
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-primary transition-colors h-14"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Limite de Reservas (por time)</label>
+                                <div className="relative">
+                                    <Users size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-accent" />
+                                    <input type="number" value={reserveLimit} onChange={e => setReserveLimit(e.target.value)} required min={0} max={20}
                                         className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-accent transition-colors h-14"
                                     />
                                 </div>
