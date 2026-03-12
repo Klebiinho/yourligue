@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Swords, Trophy, Settings, BarChart2, GitBranch, ArrowLeftRight, Grid3x3, X } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, Trophy, Settings, BarChart2, GitBranch, ArrowLeftRight, Grid3x3, X, Signal } from 'lucide-react';
 import { useLeague } from '../context/LeagueContext';
 import TeamLogo from './TeamLogo';
 
@@ -9,6 +9,7 @@ const navItems = [
     { to: '/teams', icon: Users, label: 'Times', shortLabel: 'Times' },
     { to: '/teams-dashboard', icon: BarChart2, label: 'Painel', shortLabel: 'Painel' },
     { to: '/matches', icon: Swords, label: 'Partidas', shortLabel: 'Partidas' },
+    { to: '/live', icon: Signal, label: 'Ao Vivo', shortLabel: 'Ao Vivo' },
     { to: '/standings', icon: Trophy, label: 'Tabela', shortLabel: 'Tabela' },
     { to: '/bracket', icon: GitBranch, label: 'Chaveamento', shortLabel: 'Chaveam.' },
     { to: '/settings', icon: Settings, label: 'Config.', shortLabel: 'Config.' },
@@ -27,7 +28,7 @@ const Sidebar = () => {
 
     // Filter nav items based on public view
     const filteredNavItems = isPublicView
-        ? navItems.filter(item => ['/', '/matches', '/standings', '/bracket'].includes(item.to))
+        ? navItems.filter(item => ['/', '/live', '/matches', '/standings', '/bracket'].includes(item.to))
         : navItems;
 
     const primaryItems = filteredNavItems.slice(0, 4);

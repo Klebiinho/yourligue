@@ -48,6 +48,7 @@ export type Match = {
     period?: string;
     scheduledAt?: string;
     location?: string;
+    updatedAt?: string;
 };
 
 export type BracketMatch = {
@@ -243,7 +244,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 status: m.status, timer: m.timer,
                 youtubeLiveId: m.youtube_live_id, halfLength: m.half_length,
                 extraTime: m.extra_time, period: m.period,
-                scheduledAt: m.scheduled_at, location: m.location,
+                scheduledAt: m.scheduled_at, location: m.location, updatedAt: m.updated_at,
                 events: (m.match_events || []).map((e: any) => ({
                     id: e.id, type: e.type, teamId: e.team_id, playerId: e.player_id,
                     playerOutId: e.player_out_id, minute: e.minute

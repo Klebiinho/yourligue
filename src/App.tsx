@@ -13,6 +13,7 @@ import Standings from './pages/Standings.tsx';
 import Bracket from './pages/Bracket.tsx';
 import Settings from './pages/Settings.tsx';
 import MatchControl from './pages/MatchControl.tsx';
+import LiveMatches from './pages/LiveMatches.tsx';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center gap-8 z-[999]">
@@ -47,6 +48,7 @@ const PublicLayout = () => (
         <Routes>
           <Route index element={<Dashboard />} />
           <Route path="matches" element={<Matches />} />
+          <Route path="live" element={<LiveMatches />} />
           <Route path="standings" element={<Standings />} />
           <Route path="bracket" element={<Bracket />} />
           <Route path="*" element={<Navigate to="." replace />} />
@@ -94,6 +96,7 @@ const AppRouter = () => {
             <Route path="/matches" element={<Matches />} />
             <Route path="/standings" element={<Standings />} />
             <Route path="/bracket" element={<Bracket />} />
+            <Route path="/live" element={<LiveMatches />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/match/:matchId" element={<MatchControl />} />
             <Route path="/leagues" element={<LeagueSelector />} />
