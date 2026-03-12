@@ -1,15 +1,11 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Shuffle, Shield } from 'lucide-react';
+import { Shuffle, Shield, Trophy } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
-
-const ROUNDS = ['oitavas', 'quartas', 'semifinal', 'final'] as const;
-const ROUND_LABELS: Record<string, string> = { oitavas: 'Oitavas', quartas: 'Quartas', semifinal: 'Semifinal', final: 'Final' };
 
 const Bracket = () => {
     const { teams, brackets, generateBracket, updateBracket, generateGroups } = useLeague();
     const [mode, setMode] = useState<'bracket' | 'groups'>('bracket');
-    const [filter, setFilter] = useState<string>('all');
     const [generating, setGenerating] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editHome, setEditHome] = useState('');
@@ -36,7 +32,6 @@ const Bracket = () => {
     };
 
     const getTeam = (id?: string) => teams.find(t => t.id === id);
-    const filteredRounds = ROUNDS.filter(r => filter === 'all' || filter === r);
 
     // Group teams by their group_name
     const groups: Record<string, typeof teams> = {};
@@ -48,11 +43,60 @@ const Bracket = () => {
     });
     const sortedGroupNames = Object.keys(groups).sort();
 
+    const MatchNode = ({ b }: { b: any }) => {
+        const ht = getTeam(b.homeTeamId);
+        const at = getTeam(b.awayTeamId);
+        const isEdit = editingId === b.id;
+
+        return (
+            <div className={`bracket-match-node ${b.status === 'finished' ? 'finished' : ''}`} style={{ cursor: 'pointer' }}
+                onClick={() => { setEditingId(b.id); setEditHome(String(b.homeScore)); setEditAway(String(b.awayScore)); }}>
+                <div className={`node-team ${b.status === 'finished' && b.homeScore > b.awayScore ? 'winner' : ''}`}>
+                    <TeamLogo src={ht?.logo} size={20} />
+                    <span>{ht?.name || 'A definir'}</span>
+                    <div className="node-score">{b.status !== 'scheduled' ? b.homeScore : '-'}</div>
+                </div>
+                <div className={`node-team ${b.status === 'finished' && b.awayScore > b.homeScore ? 'winner' : ''}`} style={{ marginTop: '4px' }}>
+                    <TeamLogo src={at?.logo} size={20} />
+                    <span>{at?.name || 'A definir'}</span>
+                    <div className="node-score">{b.status !== 'scheduled' ? b.awayScore : '-'}</div>
+                </div>
+                {isEdit && (
+                    <div className="glass-panel" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, padding: '10px', marginTop: '5px', display: 'flex', gap: '5px' }} onClick={e => e.stopPropagation()}>
+                        <input type="number" value={editHome} onChange={e => setEditHome(e.target.value)} style={{ width: '40px', background: 'black', border: '1px solid var(--primary)', color: 'white' }} />
+                        <input type="number" value={editAway} onChange={e => setEditAway(e.target.value)} style={{ width: '40px', background: 'black', border: '1px solid var(--accent)', color: 'white' }} />
+                        <button onClick={() => saveScore(b)} className="btn-primary" style={{ padding: '4px 8px', fontSize: '0.7rem' }}>Ok</button>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const renderSide = (side: 'left' | 'right') => {
+        const roundsToRender = ['oitavas', 'quartas', 'semifinal'];
+        if (side === 'right') roundsToRender.reverse();
+
+        return roundsToRender.map(r => {
+            const allMatches = brackets.filter(b => b.round === r);
+            if (allMatches.length === 0) return null;
+
+            const half = Math.ceil(allMatches.length / 2);
+            const sideMatches = side === 'left' ? allMatches.slice(0, half) : allMatches.slice(half);
+
+            return (
+                <div key={`${side}-${r}`} className="bracket-column">
+                    <h3 style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'center' }}>{r}</h3>
+                    {sideMatches.map(m => <MatchNode key={m.id} b={m} />)}
+                </div>
+            )
+        });
+    };
+
     return (
         <div className="animate-fade-in">
             {/* Mode Switcher */}
             <div style={{ display: 'flex', gap: '10px', marginBottom: '32px' }}>
-                <button onClick={() => setMode('bracket')} className={mode === 'bracket' ? 'btn-primary' : 'btn-outline'} style={{ flex: 1, padding: '12px' }}>🏆 Mata-Mata</button>
+                <button onClick={() => setMode('bracket')} className={mode === 'bracket' ? 'btn-primary' : 'btn-outline'} style={{ flex: 1, padding: '12px' }}>🏆 Chaveamento Visual</button>
                 <button onClick={() => setMode('groups')} className={mode === 'groups' ? 'btn-primary' : 'btn-outline'} style={{ flex: 1, padding: '12px' }}>📊 Fase de Grupos</button>
             </div>
 
@@ -61,24 +105,14 @@ const Bracket = () => {
                     <header className="mb-40" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                         <div>
                             <h1 className="responsive-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                🏆 Chaveamento (Mata-Mata)
+                                🏆 Chaveamento do Torneio
                             </h1>
-                            <p className="responsive-subtitle">Bracket automático gerado pela classificação</p>
+                            <p className="responsive-subtitle">Organização visual estilo Champions League</p>
                         </div>
                         <button onClick={handleGenerateBracket} className="btn-primary" disabled={generating} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <Shuffle size={18} /> {generating ? 'Gerando...' : 'Gerar Chaveamento'}
                         </button>
                     </header>
-
-                    {/* Filter */}
-                    <div style={{ display: 'flex', gap: '6px', marginBottom: '32px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '6px', flexWrap: 'wrap' }}>
-                        {['all', ...ROUNDS].map(r => (
-                            <button key={r} onClick={() => setFilter(r)}
-                                style={{ flex: '1 1 auto', minWidth: '60px', padding: '8px 6px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, transition: 'all 0.2s', background: filter === r ? 'var(--primary)' : 'transparent', color: filter === r ? 'white' : 'var(--text-muted)' }}>
-                                {r === 'all' ? 'Todos' : ROUND_LABELS[r]}
-                            </button>
-                        ))}
-                    </div>
 
                     {brackets.length === 0 ? (
                         <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -87,59 +121,26 @@ const Bracket = () => {
                             <p>Clique em "Gerar Chaveamento" para criar o bracket automaticamente.</p>
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-                            {filteredRounds.map(round => {
-                                const roundMatches = brackets.filter(b => b.round === round);
-                                if (roundMatches.length === 0) return null;
-                                return (
-                                    <div key={round}>
-                                        <h2 style={{ fontSize: '1.25rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
-                                            {ROUND_LABELS[round]}
-                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 400 }}>({roundMatches.length} jogo{roundMatches.length !== 1 ? 's' : ''})</span>
-                                        </h2>
-                                        <div className={`bracket-grid-${Math.min(roundMatches.length, 4)}`}>
-                                            {roundMatches.map(b => {
-                                                const ht = getTeam(b.homeTeamId);
-                                                const at = getTeam(b.awayTeamId);
-                                                const isEdit = editingId === b.id;
-                                                return (
-                                                    <div key={b.id} className="glass-panel" style={{ padding: '20px', position: 'relative' }}>
-                                                        {/* Home */}
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', borderRadius: '8px', background: b.status === 'finished' && b.homeScore > b.awayScore ? 'rgba(109,40,217,0.15)' : 'rgba(0,0,0,0.2)', marginBottom: '4px' }}>
-                                                            <TeamLogo src={ht?.logo} size={32} />
-                                                            <span style={{ flex: 1, fontWeight: 700, fontSize: '0.95rem' }}>{ht?.name ?? 'A definir'}</span>
-                                                            {isEdit
-                                                                ? <input type="number" value={editHome} onChange={e => setEditHome(e.target.value)} style={{ width: '44px', textAlign: 'center', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: '6px', padding: '4px', color: 'white', fontSize: '1.1rem', fontWeight: 800 }} />
-                                                                : <span style={{ fontWeight: 900, fontSize: '1.25rem', color: 'var(--primary)' }}>{b.status !== 'scheduled' ? b.homeScore : '-'}</span>}
-                                                        </div>
-                                                        {/* Away */}
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', borderRadius: '8px', background: b.status === 'finished' && b.awayScore > b.homeScore ? 'rgba(16,185,129,0.15)' : 'rgba(0,0,0,0.2)' }}>
-                                                            <TeamLogo src={at?.logo} size={32} />
-                                                            <span style={{ flex: 1, fontWeight: 700, fontSize: '0.95rem' }}>{at?.name ?? 'A definir'}</span>
-                                                            {isEdit
-                                                                ? <input type="number" value={editAway} onChange={e => setEditAway(e.target.value)} style={{ width: '44px', textAlign: 'center', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--accent)', borderRadius: '6px', padding: '4px', color: 'white', fontSize: '1.1rem', fontWeight: 800 }} />
-                                                                : <span style={{ fontWeight: 900, fontSize: '1.25rem', color: 'var(--accent)' }}>{b.status !== 'scheduled' ? b.awayScore : '-'}</span>}
-                                                        </div>
-                                                        {/* Actions */}
-                                                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '12px' }}>
-                                                            {isEdit ? (
-                                                                <>
-                                                                    <button onClick={() => saveScore(b)} className="action-icon-btn accent" title="Salvar">✓</button>
-                                                                    <button onClick={() => setEditingId(null)} className="action-icon-btn" title="Cancelar">✕</button>
-                                                                </>
-                                                            ) : (
-                                                                <button onClick={() => { setEditingId(b.id); setEditHome(String(b.homeScore)); setEditAway(String(b.awayScore)); }} className="action-icon-btn" title="Editar placar">
-                                                                    Editar
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
+                        <div className="visual-bracket-wrapper glass-panel">
+                            <div className="bracket-container">
+                                {/* Left Side */}
+                                {renderSide('left')}
+
+                                {/* Center (Final) */}
+                                <div className="bracket-center-node">
+                                    <Trophy className="trophy-center" size={80} color="#fbbf24" />
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fbbf24', letterSpacing: '2px' }}>FINAL</div>
+                                    {brackets.filter(b => b.round === 'final').map(m => (
+                                        <div key={m.id} className="bracket-match-node final-match"
+                                            onClick={() => { setEditingId(m.id); setEditHome(String(m.homeScore)); setEditAway(String(m.awayScore)); }}>
+                                            <MatchNode b={m} />
                                         </div>
-                                    </div>
-                                );
-                            })}
+                                    ))}
+                                </div>
+
+                                {/* Right Side */}
+                                {renderSide('right')}
+                            </div>
                         </div>
                     )}
                 </>
