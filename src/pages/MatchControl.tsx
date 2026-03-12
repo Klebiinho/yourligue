@@ -7,7 +7,7 @@ import TeamLogo from '../components/TeamLogo';
 const MatchControl = () => {
     const { matchId } = useParams<{ matchId: string }>();
     const navigate = useNavigate();
-    const { matches, teams, endMatch, addEvent, removeEvent, updateTimer, updateMatch, isPublicView } = useLeague();
+    const { league, matches, teams, endMatch, addEvent, removeEvent, updateTimer, updateMatch, isPublicView } = useLeague();
 
     const match = matches.find((m: Match) => m.id === matchId);
     const homeTeam = teams.find((t: Team) => t.id === match?.homeTeamId);
@@ -90,7 +90,12 @@ const MatchControl = () => {
     const handleGolContra = (teamId: string, playerId: string) => { if (matchId) addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); };
     const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { if (matchId) addEvent(matchId, { type, teamId, playerId, minute: currentMinute }); };
     const handleSubstitution = (teamId: string, playerInId: string, playerOutId: string) => {
-        if (matchId) {
+        if (matchId && league) {
+            const teamSubstitutions = (match?.events || []).filter(e => e.type === 'substitution' && e.teamId === teamId).length;
+            if (teamSubstitutions >= (league.substitutionsLimit || 5)) {
+                alert(`Limite de ${league.substitutionsLimit || 5} substituições atingido para este time!`);
+                return;
+            }
             addEvent(matchId, { type: 'substitution', teamId, playerId: playerInId, playerOutId, minute: currentMinute });
             setSubmittingPlayer(null);
         }

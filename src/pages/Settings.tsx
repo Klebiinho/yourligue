@@ -18,6 +18,7 @@ const Settings = () => {
     const [halfLength, setHalfLength] = useState(String(league?.defaultHalfLength ?? 45));
     const [playersPerTeam, setPlayersPerTeam] = useState(String(league?.playersPerTeam ?? 5));
     const [reserveLimit, setReserveLimit] = useState(String(league?.reserveLimitPerTeam ?? 5));
+    const [substitutionsLimit, setSubstitutionsLimit] = useState(String(league?.substitutionsLimit ?? 5));
     const [saved, setSaved] = useState(false);
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +35,8 @@ const Settings = () => {
             pointsForLoss: parseInt(pointsForLoss) || 0,
             defaultHalfLength: parseInt(halfLength) || 45,
             playersPerTeam: parseInt(playersPerTeam) || 5,
-            reserveLimitPerTeam: parseInt(reserveLimit) || 5
+            reserveLimitPerTeam: parseInt(reserveLimit) || 5,
+            substitutionsLimit: parseInt(substitutionsLimit) || 5
         });
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
@@ -141,6 +143,19 @@ const Settings = () => {
                                     <Users size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-accent" />
                                     <input type="number" value={reserveLimit} onChange={e => setReserveLimit(e.target.value)} required min={0} max={20}
                                         className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-accent transition-colors h-14"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Substitutions Config */}
+                        <div className="grid grid-cols-1 gap-8">
+                            <div className="space-y-2">
+                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Substituições Permitidas (por jogo/time)</label>
+                                <div className="relative">
+                                    <ArrowLeftRight size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" />
+                                    <input type="number" value={substitutionsLimit} onChange={e => setSubstitutionsLimit(e.target.value)} required min={0} max={50}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-primary transition-colors h-14"
                                     />
                                 </div>
                             </div>
