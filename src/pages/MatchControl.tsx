@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, Youtube } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const MatchControl = () => {
@@ -34,9 +34,7 @@ const MatchControl = () => {
     };
 
     const handleSaveTimeSettings = () => {
-        if (matchId) {
-            updateMatch(matchId, { halfLength, extraTime, period });
-        }
+        if (matchId) updateMatch(matchId, { halfLength, extraTime, period });
     };
 
     useEffect(() => {
@@ -76,7 +74,6 @@ const MatchControl = () => {
         const secs = totalSeconds % 60;
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
-
     const currentMinute = Math.floor(localSeconds / 60) + 1;
 
     const handleEndMatch = () => {
@@ -93,183 +90,194 @@ const MatchControl = () => {
     const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { if (matchId) addEvent(matchId, { type, teamId, playerId, minute: currentMinute }); };
 
     return (
-        <div className="animate-fade-in pb-24 md:pb-8 p-4 md:p-0">
-            {/* Scoreboard Header - Sticky with Glass Background */}
-            <div className="glass-panel sticky top-1 z-40 p-5 md:p-8 mb-8 shadow-2xl overflow-hidden">
-                <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none">
-                    <Youtube size={120} strokeWidth={1} className="text-danger" />
-                </div>
+        <div className="animate-fade-in">
+            {/* Back Button */}
+            <button onClick={() => navigate('/matches')} className="flex items-center gap-2 text-slate-500 hover:text-white text-xs font-black uppercase tracking-widest mb-6 transition-colors group">
+                <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Voltar às Partidas
+            </button>
 
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+            {/* ── SCOREBOARD ─────────────────────────────────────────── */}
+            <div className="glass-panel sticky top-2 z-40 p-4 sm:p-6 md:p-8 mb-6 md:mb-8 shadow-2xl overflow-hidden">
+                {/* Scoreboard inner content */}
+                <div className="flex items-center gap-3 sm:gap-6 relative z-10">
                     {/* Home Team */}
-                    <div className="flex items-center gap-4 flex-1 justify-end w-full md:w-auto">
-                        <div className="text-right hidden sm:block">
-                            <h2 className="text-lg md:text-2xl font-black text-white font-outfit uppercase truncate max-w-[140px] leading-tight">{homeTeam.name}</h2>
-                            <span className="text-[0.6rem] font-black text-primary tracking-widest uppercase">Mandante</span>
-                        </div>
-                        <TeamLogo src={homeTeam.logo} size={64} />
+                    <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                        <TeamLogo src={homeTeam.logo} size={44} />
+                        <h2 className="text-center font-black text-white font-outfit uppercase text-[0.65rem] sm:text-xs tracking-wide truncate w-full leading-tight">{homeTeam.name}</h2>
+                        <span className="text-[0.5rem] font-black text-primary tracking-widest uppercase">Casa</span>
                     </div>
 
-                    {/* Central Score & Timer */}
-                    <div className="flex flex-col items-center gap-1 md:gap-2 px-6">
-                        <div className="flex items-center gap-6 font-outfit font-black text-4xl md:text-7xl">
-                            <span className="text-primary drop-shadow-[0_0_20px_rgba(109,40,217,0.4)] transition-all transform hover:scale-110">{match.homeScore}</span>
-                            <span className="text-slate-700 font-bold select-none text-2xl md:text-4xl">X</span>
-                            <span className="text-accent drop-shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all transform hover:scale-110">{match.awayScore}</span>
+                    {/* Score */}
+                    <div className="flex flex-col items-center gap-2 flex-none px-2 sm:px-4">
+                        <div className="flex items-center gap-2 sm:gap-4 font-outfit font-black text-3xl sm:text-5xl md:text-6xl">
+                            <span className="text-primary drop-shadow-[0_0_20px_rgba(109,40,217,0.5)]">{match.homeScore}</span>
+                            <span className="text-slate-700 text-xl sm:text-3xl">–</span>
+                            <span className="text-accent drop-shadow-[0_0_20px_rgba(16,185,129,0.4)]">{match.awayScore}</span>
                         </div>
-                        <div className="bg-black/40 px-5 py-2 rounded-2xl flex items-center gap-3 border border-white/5 shadow-inner">
-                            <div className={`w-2 h-2 rounded-full ${timerRunning ? 'bg-danger animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-slate-600'}`} />
-                            <span className="font-mono text-xl md:text-2xl font-black text-white tracking-[0.1em]">{formatTime(localSeconds)}</span>
+                        <div className="bg-black/50 px-4 py-1.5 rounded-xl flex items-center gap-2 border border-white/[0.05] shadow-inner">
+                            <div className={`w-1.5 h-1.5 rounded-full ${timerRunning ? 'bg-danger animate-pulse shadow-[0_0_8px_rgba(239,68,68,1)]' : 'bg-slate-700'}`} />
+                            <span className="font-mono text-base sm:text-xl font-black text-white tracking-[0.1em]">{formatTime(localSeconds)}</span>
                         </div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em]">{period} {extraTime > 0 && <span className="text-danger">+{extraTime}'</span>}</span>
-                        </div>
+                        <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">{period}</span>
                     </div>
 
                     {/* Away Team */}
-                    <div className="flex items-center gap-4 flex-1 justify-start w-full md:w-auto">
-                        <TeamLogo src={awayTeam.logo} size={64} />
-                        <div className="text-left hidden sm:block">
-                            <h2 className="text-lg md:text-2xl font-black text-white font-outfit uppercase truncate max-w-[140px] leading-tight">{awayTeam.name}</h2>
-                            <span className="text-[0.6rem] font-black text-slate-500 tracking-widest uppercase">Visitante</span>
-                        </div>
+                    <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                        <TeamLogo src={awayTeam.logo} size={44} />
+                        <h2 className="text-center font-black text-white font-outfit uppercase text-[0.65rem] sm:text-xs tracking-wide truncate w-full leading-tight">{awayTeam.name}</h2>
+                        <span className="text-[0.5rem] font-black text-slate-500 tracking-widest uppercase">Fora</span>
                     </div>
                 </div>
 
-                {/* Control Actions Row */}
-                <div className="flex items-center justify-center gap-3 mt-8 border-t border-white/5 pt-6">
+                {/* Controls */}
+                <div className="flex items-center justify-center gap-2 sm:gap-3 mt-5 border-t border-white/[0.05] pt-5">
                     <button onClick={() => setTimerRunning(!timerRunning)}
-                        className={`px-8 py-3.5 rounded-xl font-black text-[0.75rem] uppercase tracking-[0.15em] transition-all flex items-center gap-3 shadow-lg active:scale-95 ${timerRunning ? 'bg-white/5 border border-white/10 text-slate-400 hover:text-white' : 'bg-primary text-white shadow-primary/30 hover:brightness-110'
+                        className={`flex-1 sm:flex-none px-4 sm:px-8 py-3 rounded-xl font-black text-[0.65rem] uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${timerRunning ? 'bg-white/5 border border-white/10 text-slate-400 hover:text-white' : 'bg-primary text-white shadow-primary/30 hover:brightness-110'
                             }`}>
-                        {timerRunning ? <><Pause size={18} strokeWidth={3} /> Pausar Cronômetro</> : <><Play size={18} fill="currentColor" /> Iniciar Partida</>}
+                        {timerRunning ? <><Pause size={16} strokeWidth={3} />Pausar</> : <><Play size={16} fill="currentColor" />Iniciar</>}
                     </button>
                     <button onClick={handleEndMatch}
-                        className="px-8 py-3.5 rounded-xl bg-danger/10 border border-danger/20 text-danger font-black text-[0.75rem] uppercase tracking-[0.15em] hover:bg-danger hover:text-white transition-all shadow-lg active:scale-95 flex items-center gap-3">
-                        <StopCircle size={18} strokeWidth={3} /> Finalizar Partida
+                        className="flex-1 sm:flex-none px-4 sm:px-8 py-3 rounded-xl bg-danger/10 border border-danger/20 text-danger font-black text-[0.65rem] uppercase tracking-[0.15em] hover:bg-danger hover:text-white transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                        <StopCircle size={16} strokeWidth={3} />Finalizar
                     </button>
                 </div>
             </div>
 
-            {/* Event Input Area */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8 items-start">
-                {/* Team Controls */}
+            {/* ── MAIN GRID ──────────────────────────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+                {/* Team Player Controls */}
                 {[homeTeam, awayTeam].map((team, idx) => (
-                    <section key={team.id} className="xl:col-span-12 2xl:col-span-4 glass-panel p-6 md:p-8">
-                        <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-5">
-                            <TeamLogo src={team.logo} size={48} />
-                            <div>
-                                <h2 className="text-[1.15rem] font-black text-white font-outfit uppercase tracking-wider">{team.name}</h2>
-                                <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.2em]">{idx === 0 ? 'Gestão Mandante' : 'Gestão Visitante'}</span>
+                    <section key={team.id} className="glass-panel p-4 md:p-6">
+                        <div className="flex items-center gap-3 mb-5 border-b border-white/[0.05] pb-4">
+                            <TeamLogo src={team.logo} size={40} />
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-sm font-black text-white font-outfit uppercase tracking-wide truncate">{team.name}</h2>
+                                <span className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">{idx === 0 ? 'Mandante' : 'Visitante'}</span>
                             </div>
-                            <div className={`ml-auto px-4 py-1.5 rounded-xl font-black font-outfit text-xl ${idx === 0 ? 'bg-primary/20 text-primary' : 'bg-accent/20 text-accent'}`}>
+                            <div className={`px-3 py-1.5 rounded-xl font-black font-outfit text-lg flex-none ${idx === 0 ? 'bg-primary/20 text-primary' : 'bg-accent/20 text-accent'}`}>
                                 {idx === 0 ? match.homeScore : match.awayScore}
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-3 max-h-[700px] overflow-y-auto pr-1 no-scrollbar">
-                            {team.players.map((player: Player) => {
-                                const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
-                                return (
-                                    <div key={player.id} className={`flex items-center gap-3 p-4 rounded-2xl border transition-all duration-300 ${isRedCarded ? 'bg-danger/10 border-danger/20 opacity-60' : 'bg-white/3 border-white/5'}`}>
-                                        <div className="relative flex-none">
-                                            <TeamLogo src={player.photo} size={44} />
-                                            {player.isCaptain && <Crown size={14} className="absolute -top-1 -right-1 text-warning fill-warning/20 shadow-lg" />}
-                                        </div>
-
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-black text-white text-sm truncate font-outfit uppercase tracking-wide leading-tight">#{player.number} {player.name}</h4>
-                                            <div className="flex items-center gap-2 mt-1.5 h-4">
-                                                {Array.from({ length: yellowCards }).map((_, i) => <div key={i} className="w-2.5 h-4 bg-warning rounded-[2px] shadow-sm transform rotate-6 border border-black/10" />)}
-                                                {isRedCarded && <div className="w-2.5 h-4 bg-danger rounded-[2px] shadow-sm transform -rotate-12 border border-black/10" />}
-                                                {(!pStatus.isRedCarded && pStatus.yellowCards === 0) && <span className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest">Sem punição</span>}
+                        <div className="space-y-2 max-h-[500px] md:max-h-[600px] overflow-y-auto pr-1 no-scrollbar">
+                            {team.players.length === 0 ? (
+                                <p className="text-center text-slate-600 text-[0.65rem] uppercase tracking-widest py-10 font-black">Sem jogadores cadastrados</p>
+                            ) : (
+                                team.players.map((player: Player) => {
+                                    const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
+                                    return (
+                                        <div key={player.id} className={`flex items-center gap-2 p-3 rounded-xl border transition-all duration-300 ${isRedCarded ? 'bg-danger/5 border-danger/15 opacity-50' : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05]'
+                                            }`}>
+                                            <div className="relative flex-none">
+                                                <TeamLogo src={player.photo} size={36} />
+                                                {player.isCaptain && <Crown size={12} className="absolute -top-1 -right-1 text-warning fill-warning/20" />}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-black text-white text-[0.7rem] truncate font-outfit uppercase leading-tight">
+                                                    #{player.number} {player.name}
+                                                </h4>
+                                                <div className="flex items-center gap-1 mt-1 h-3.5">
+                                                    {Array.from({ length: yellowCards }).map((_, i) => (
+                                                        <div key={i} className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm" />
+                                                    ))}
+                                                    {isRedCarded && <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm" />}
+                                                </div>
+                                            </div>
+                                            {/* Action Buttons */}
+                                            <div className={`flex items-center gap-1 transition-all ${isRedCarded ? 'opacity-20 pointer-events-none' : ''}`}>
+                                                <button onClick={() => handleGol(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90" title="Gol"><Target size={14} /></button>
+                                                <button onClick={() => handleAssist(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90" title="Assistência"><Award size={14} /></button>
+                                                <button onClick={() => handleGolContra(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90" title="Gol Contra"><XCircle size={14} /></button>
+                                                <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs" title="Amarelo">🟨</button>
+                                                <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs" title="Vermelho">🟥</button>
+                                                {(isRedCarded || yellowCards > 0) && (
+                                                    <button onClick={() => handleUndoLastCard(player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 text-slate-500 hover:text-white transition-all" title="Desfazer"><Trash2 size={12} /></button>
+                                                )}
                                             </div>
                                         </div>
-
-                                        <div className={`flex items-center gap-1.5 transition-all ${isRedCarded ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
-                                            <button onClick={() => handleGol(team.id, player.id)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-accent/20 text-accent hover:bg-accent hover:text-white transition-all shadow-lg active:scale-90" title="Gol"><Target size={16} /></button>
-                                            <button onClick={() => handleAssist(team.id, player.id)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-warning/20 text-warning hover:bg-warning hover:text-white transition-all shadow-lg active:scale-90" title="Assistência"><Award size={16} /></button>
-                                            <button onClick={() => handleGolContra(team.id, player.id)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all shadow-lg active:scale-90" title="Gol Contra"><XCircle size={16} /></button>
-                                            <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/5 text-warning border border-warning/20 hover:bg-warning hover:text-white transition-all shadow-lg active:scale-90" title="Cartão Amarelo">🟨</button>
-                                            <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/5 text-danger border border-danger/20 hover:bg-danger hover:text-white transition-all shadow-lg active:scale-90" title="Cartão Vermelho">🟥</button>
-                                        </div>
-
-                                        {(isRedCarded || yellowCards > 0) && (
-                                            <button onClick={() => handleUndoLastCard(player.id)} className="ml-1 p-2 rounded-xl bg-white/5 text-slate-500 hover:text-white transition-all" title="Desfazer cartão">
-                                                <Trash2 size={16} />
-                                            </button>
-                                        )}
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })
+                            )}
                         </div>
                     </section>
                 ))}
 
-                {/* Match Log & Settings */}
-                <div className="xl:col-span-12 2xl:col-span-4 space-y-6 md:space-y-8 h-full flex flex-col">
-                    <section className="glass-panel p-6 md:p-8">
-                        <h3 className="text-xl font-black text-white font-outfit uppercase tracking-widest mb-8 flex items-center gap-3">
-                            <Settings2 size={20} className="text-primary" /> Painel Técnico
+                {/* Right: Settings + Event Log */}
+                <div className="space-y-4 md:space-y-6 lg:col-span-2 xl:col-span-1">
+                    {/* Technical Panel */}
+                    <section className="glass-panel p-4 md:p-6">
+                        <h3 className="text-sm font-black text-white font-outfit uppercase tracking-widest mb-5 flex items-center gap-2">
+                            <Settings2 size={16} className="text-primary" /> Painel Técnico
                         </h3>
-                        <div className="grid grid-cols-2 gap-5 mb-8">
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Etapa Atual</label>
+                        <div className="grid grid-cols-2 gap-4 mb-5">
+                            <div className="space-y-1.5">
+                                <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Etapa</label>
                                 <select value={period} onChange={e => setPeriod(e.target.value)}
-                                    className="bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none transition-all font-bold appearance-none cursor-pointer">
-                                    <option className="bg-bg-dark">1º Tempo</option><option className="bg-bg-dark">Intervalo</option>
-                                    <option className="bg-bg-dark">2º Tempo</option><option className="bg-bg-dark">Prorrogação</option>
-                                    <option className="bg-bg-dark">Pênaltis</option><option className="bg-bg-dark">Fim de Jogo</option>
+                                    className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs font-bold focus:border-primary outline-none appearance-none cursor-pointer h-10">
+                                    <option className="bg-[#07070a]">1º Tempo</option>
+                                    <option className="bg-[#07070a]">Intervalo</option>
+                                    <option className="bg-[#07070a]">2º Tempo</option>
+                                    <option className="bg-[#07070a]">Prorrogação</option>
+                                    <option className="bg-[#07070a]">Pênaltis</option>
+                                    <option className="bg-[#07070a]">Fim de Jogo</option>
                                 </select>
                             </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Duração (min)</label>
+                            <div className="space-y-1.5">
+                                <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Duração (min)</label>
                                 <input type="number" value={halfLength} onChange={e => setHalfLength(parseInt(e.target.value))}
-                                    className="bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none transition-all font-bold" />
-                            </div>
-                            <div className="flex flex-col gap-2 col-span-2">
-                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Acréscimos (minutos)</label>
-                                <input type="number" value={extraTime} onChange={e => setExtraTime(parseInt(e.target.value))}
-                                    className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-4 text-white focus:border-primary outline-none transition-all font-black text-center text-xl" />
+                                    className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm font-bold focus:border-primary outline-none h-10" />
                             </div>
                         </div>
-                        <button onClick={handleSaveTimeSettings} className="w-full bg-white/5 border border-white/10 text-white font-black py-4 rounded-xl uppercase tracking-widest text-[0.7rem] hover:bg-white/10 active:scale-[0.98] transition-all shadow-lg flex items-center justify-center gap-3">
-                            <Clock size={16} strokeWidth={3} /> Atualizar Cronograma
+                        <div className="space-y-1.5 mb-5">
+                            <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Acréscimos (min)</label>
+                            <input type="number" value={extraTime} onChange={e => setExtraTime(parseInt(e.target.value))}
+                                className="w-full bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 text-white text-center text-xl font-black focus:border-primary outline-none" />
+                        </div>
+                        <button onClick={handleSaveTimeSettings} className="w-full bg-white/5 border border-white/10 text-white font-black py-3 rounded-xl uppercase tracking-widest text-[0.65rem] hover:bg-white/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                            <Clock size={14} strokeWidth={3} /> Salvar Cronograma
                         </button>
                     </section>
 
-                    <section className="glass-panel p-6 md:p-8 flex-1 flex flex-col">
-                        <h3 className="text-xl font-black text-white font-outfit uppercase tracking-widest mb-8 flex items-center gap-3">
-                            <History size={20} className="text-accent" /> Súmula Realtime
+                    {/* Event Log */}
+                    <section className="glass-panel p-4 md:p-6">
+                        <h3 className="text-sm font-black text-white font-outfit uppercase tracking-widest mb-5 flex items-center gap-2">
+                            <History size={16} className="text-accent" /> Súmula Realtime
                         </h3>
-                        <div className="flex-1 overflow-y-auto pr-2 no-scrollbar space-y-4 max-h-[850px]">
+                        <div className="space-y-2 overflow-y-auto max-h-[400px] pr-1 no-scrollbar">
                             {match.events.length === 0 ? (
-                                <div className="text-center py-20 opacity-30 flex flex-col items-center gap-4">
-                                    <History size={48} strokeWidth={1} />
-                                    <span className="text-[0.65rem] font-black uppercase tracking-[0.2em]">Aguardando eventos...</span>
+                                <div className="text-center py-16 opacity-30 flex flex-col items-center gap-3">
+                                    <History size={36} strokeWidth={1} />
+                                    <span className="text-[0.6rem] font-black uppercase tracking-[0.2em]">Aguardando eventos...</span>
                                 </div>
                             ) : (
                                 [...match.events].reverse().map((event) => {
                                     const p = [...homeTeam.players, ...awayTeam.players].find(pl => pl.id === event.playerId);
-                                    const eventColor = event.type === 'goal' || event.type === 'penalty_goal' ? 'text-accent' : event.type === 'own_goal' ? 'text-danger' : 'text-warning';
+                                    const colorMap: Record<string, string> = {
+                                        goal: 'text-accent',
+                                        penalty_goal: 'text-accent',
+                                        own_goal: 'text-danger',
+                                        assist: 'text-warning',
+                                        yellow_card: 'text-warning',
+                                        red_card: 'text-danger',
+                                    };
+                                    const labelMap: Record<string, string> = {
+                                        goal: '⚽ Gol', penalty_goal: '⚽ Pênalti', own_goal: '🔴 Gol Contra',
+                                        yellow_card: '🟨 Amarelo', red_card: '🟥 Vermelho', assist: '🅰️ Assistência',
+                                    };
                                     return (
-                                        <div key={event.id} className="group p-4 rounded-2xl bg-white/3 border border-white/5 flex items-center gap-4 hover:bg-white/5 transition-all animate-slide-left">
-                                            <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-black/40 font-black font-outfit text-primary shadow-inner">
+                                        <div key={event.id} className="group flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] transition-all">
+                                            <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-black/40 font-black font-outfit text-primary text-xs flex-none shadow-inner">
                                                 {event.minute}'
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-outfit font-black text-white uppercase truncate text-sm">{p?.name}</span>
-                                                    <span className={`text-[0.6rem] font-black uppercase tracking-tighter shadow-sm ${eventColor}`}>
-                                                        {{ goal: 'GOL!', penalty_goal: 'PÊNALTI!', own_goal: 'GOL CONTRA!', yellow_card: 'CARTÃO AMARELO', red_card: 'CARTÃO VERMELHO', assist: 'ASSISTÊNCIA' }[event.type as string] || 'EVENTO'}
-                                                    </span>
-                                                </div>
-                                                <p className="text-[0.55rem] font-bold text-slate-600 uppercase tracking-widest mt-1">
-                                                    ID: {event.id.slice(0, 8)} • TIME: {teams.find(t => t.id === event.teamId)?.name}
-                                                </p>
+                                                <span className="font-outfit font-black text-white uppercase truncate text-xs block">{p?.name ?? '—'}</span>
+                                                <span className={`text-[0.6rem] font-black uppercase tracking-tight ${colorMap[event.type] || 'text-slate-500'}`}>
+                                                    {labelMap[event.type] || event.type}
+                                                </span>
                                             </div>
                                             <button onClick={() => removeEvent(matchId!, event.id)}
-                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all opacity-0 group-hover:opacity-100">
-                                                <XCircle size={14} />
+                                                className="w-7 h-7 flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all opacity-0 group-hover:opacity-100 flex-none">
+                                                <XCircle size={12} />
                                             </button>
                                         </div>
                                     );

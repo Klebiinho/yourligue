@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Users, MoreVertical, Trash2, Edit2, PlusCircle, Star, Target, Shield, AlertTriangle, ChevronRight, TrendingUp } from 'lucide-react';
+import { Users, Trash2, Edit2, PlusCircle, Star, Target, TrendingUp } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const TeamsDashboard = () => {
@@ -44,7 +44,7 @@ const TeamsDashboard = () => {
     };
 
     return (
-        <div className="animate-fade-in pb-24 md:pb-8 p-4 md:p-0">
+        <div className="animate-fade-in">
             <header className="mb-8 md:mb-12">
                 <h1 className="text-3xl md:text-5xl font-outfit font-extrabold tracking-tight mb-2 uppercase">Gestão de Times</h1>
                 <p className="text-slate-400 font-medium md:text-lg">Controle elencos, estatísticas e identidades visuais</p>
@@ -95,8 +95,8 @@ const TeamsDashboard = () => {
                             teams.map(team => (
                                 <div key={team.id} onClick={() => setSelectedTeamId(team.id)}
                                     className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all duration-300 border ${selectedTeamId === team.id
-                                            ? 'bg-primary/10 border-primary/30 shadow-[0_4px_24px_rgba(109,40,217,0.1)]'
-                                            : 'bg-white/3 border-white/5 hover:bg-white/5'
+                                        ? 'bg-primary/10 border-primary/30 shadow-[0_4px_24px_rgba(109,40,217,0.1)]'
+                                        : 'bg-white/3 border-white/5 hover:bg-white/5'
                                         }`}>
                                     <TeamLogo src={team.logo} size={44} />
                                     <div className="flex-1 min-w-0">

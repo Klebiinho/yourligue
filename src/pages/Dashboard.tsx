@@ -1,5 +1,5 @@
 import { useLeague } from '../context/LeagueContext';
-import { Trophy, Users, Swords, Calendar, MapPin, ChevronRight, TrendingUp, Star } from 'lucide-react';
+import { Trophy, Users, Swords, Calendar, MapPin, ChevronRight, TrendingUp, Star, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
@@ -8,8 +8,8 @@ const Dashboard = () => {
     const navigate = useNavigate();
 
     if (loading) return (
-        <div className="flex items-center justify-center min-h-[400px]">
-            <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+        <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
         </div>
     );
 
@@ -18,133 +18,159 @@ const Dashboard = () => {
     const totalGoals = teams.reduce((acc, t) => acc + (t.stats?.goalsFor || 0), 0);
 
     const stats = [
-        { label: 'Times', value: teams.length, icon: <Users size={22} />, color: 'text-primary' },
-        { label: 'Partidas', value: matches.length, icon: <Swords size={22} />, color: 'text-accent' },
-        { label: 'Gols Marcados', value: totalGoals, icon: <TrendingUp size={22} />, color: 'text-warning' },
-        { label: 'Ao Vivo', value: liveMatches.length, icon: <Star size={22} />, color: 'text-danger' },
+        { label: 'Times', value: teams.length, icon: <Users size={20} />, color: 'from-primary/20 to-primary/5 border-primary/20 text-primary', val: 'text-primary' },
+        { label: 'Partidas', value: matches.length, icon: <Swords size={20} />, color: 'from-accent/20 to-accent/5 border-accent/20 text-accent', val: 'text-accent' },
+        { label: 'Gols', value: totalGoals, icon: <TrendingUp size={20} />, color: 'from-warning/20 to-warning/5 border-warning/20 text-warning', val: 'text-warning' },
+        { label: 'Ao Vivo', value: liveMatches.length, icon: <Star size={20} />, color: 'from-danger/20 to-danger/5 border-danger/20 text-danger', val: 'text-danger' },
     ];
 
-    const formatDate = (dt?: string) => dt ? new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
-
-    const handleEnterMatch = (id: string) => {
-        navigate(`/match/${id}`);
-    };
+    const formatDate = (dt?: string) =>
+        dt ? new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 
     const sortedTeams = [...teams].sort((a, b) => {
-        const ptsA = (a.stats?.wins || 0) * (league?.pointsForWin || 3) + (a.stats?.draws || 0) * (league?.pointsForDraw || 1);
-        const ptsB = (b.stats?.wins || 0) * (league?.pointsForWin || 3) + (b.stats?.draws || 0) * (league?.pointsForDraw || 1);
-        return ptsB - ptsA;
+        const pts = (t: typeof teams[0]) => (t.stats?.wins || 0) * (league?.pointsForWin || 3) + (t.stats?.draws || 0) * (league?.pointsForDraw || 1);
+        return pts(b) - pts(a);
     });
 
     return (
-        <div className="animate-fade-in pb-24 md:pb-8 p-4 md:p-0">
-            <header className="mb-8 md:mb-12">
-                <h1 className="text-3xl md:text-5xl font-outfit font-extrabold tracking-tight mb-2">
-                    Olá, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#a855f7]">Bem-vindo!</span>
-                </h1>
-                <p className="text-slate-400 font-medium md:text-lg">Dashboard da liga {league?.name}</p>
+        <div className="animate-fade-in">
+            {/* ── Header ─────────────────────────────────────────────── */}
+            <header className="mb-8 md:mb-10">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl md:text-5xl font-outfit font-extrabold tracking-tight leading-tight">
+                            Bem-vindo de volta 👋
+                        </h1>
+                        <p className="text-slate-400 mt-1 text-sm md:text-base">
+                            Liga <span className="text-white font-bold">{league?.name}</span> · {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+                        </p>
+                    </div>
+                    {liveMatches.length > 0 && (
+                        <div className="flex items-center gap-2 bg-danger/10 border border-danger/30 px-4 py-2 rounded-xl shadow-lg self-start">
+                            <span className="w-2 h-2 bg-danger rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                            <span className="text-danger font-black text-xs uppercase tracking-widest">{liveMatches.length} Partida(s) AO VIVO</span>
+                        </div>
+                    )}
+                </div>
             </header>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
+            {/* ── Stats Grid ─────────────────────────────────────────── */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-8 md:mb-10">
                 {stats.map((stat, i) => (
-                    <div key={i} className="glass-panel p-5 md:p-6 flex flex-col gap-3 group hover:scale-[1.02] transition-transform duration-300">
-                        <div className={`w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
+                    <div key={i} className={`glass-panel p-4 sm:p-5 md:p-6 bg-gradient-to-br ${stat.color} flex flex-col gap-3 border hover:scale-[1.02] transition-all duration-300 cursor-default`}>
+                        <div className={`w-9 h-9 rounded-xl bg-black/30 flex items-center justify-center ${stat.val}`}>
                             {stat.icon}
                         </div>
                         <div>
-                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wider">{stat.label}</p>
-                            <p className="text-2xl md:text-3xl font-extrabold text-white font-outfit mt-1">{stat.value}</p>
+                            <p className="text-[0.65rem] sm:text-xs font-black text-slate-500 uppercase tracking-wider">{stat.label}</p>
+                            <p className={`text-2xl sm:text-3xl md:text-4xl font-extrabold font-outfit mt-0.5 leading-none ${stat.val}`}>{stat.value}</p>
                         </div>
                     </div>
                 ))}
             </div>
 
+            {/* ── Main Content ───────────────────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-                {/* Live & Upcoming Matches */}
-                <div className="lg:col-span-2 space-y-6">
-                    <section className="glass-panel p-6 md:p-8">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold flex items-center gap-3">
-                                <Swords size={22} className="text-primary" />
-                                Partidas Recentes
-                            </h2>
-                            <button onClick={() => navigate('/matches')} className="text-primary text-sm font-bold hover:underline">Ver todas</button>
-                        </div>
-
-                        <div className="space-y-4">
-                            {[...liveMatches, ...upcomingMatches].length === 0 ? (
-                                <p className="text-slate-500 text-center py-8 font-medium">Nenhuma partida agendada.</p>
-                            ) : (
-                                [...liveMatches, ...upcomingMatches].map(match => {
-                                    const ht = teams.find(t => t.id === match.homeTeamId);
-                                    const at = teams.find(t => t.id === match.awayTeamId);
-                                    const isLive = match.status === 'live';
-                                    return (
-                                        <div key={match.id}
-                                            onClick={() => handleEnterMatch(match.id)}
-                                            className={`flex flex-col sm:flex-row justify-between items-center p-4 md:p-5 rounded-2xl cursor-pointer transition-all duration-300 gap-4 border ${isLive
-                                                    ? 'bg-primary/10 border-primary/30 shadow-[0_4px_20px_rgba(109,40,217,0.1)]'
-                                                    : 'bg-white/5 border-white/5 hover:bg-white/10'
-                                                }`}>
-                                            <div className="flex items-center gap-4 flex-1 w-full min-w-0">
-                                                <TeamLogo src={ht?.logo} size={40} />
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="font-bold text-sm md:text-base truncate">
-                                                        {ht?.name} <span className="text-slate-500 mx-1">vs</span> {at?.name}
+                {/* Matches Column */}
+                <div className="lg:col-span-2 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-base md:text-lg font-black font-outfit uppercase tracking-widest text-slate-300 flex items-center gap-2">
+                            <Swords size={18} className="text-primary" /> Partidas
+                        </h2>
+                        <button onClick={() => navigate('/matches')} className="flex items-center gap-1 text-primary text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
+                            Ver todas <ArrowRight size={14} />
+                        </button>
+                    </div>
+                    <div className="glass-panel p-4 md:p-6 space-y-3">
+                        {[...liveMatches, ...upcomingMatches].length === 0 ? (
+                            <div className="py-16 text-center opacity-30">
+                                <Swords size={40} strokeWidth={1} className="mx-auto mb-3" />
+                                <p className="text-xs font-black uppercase tracking-widest">Nenhuma partida agendada</p>
+                            </div>
+                        ) : (
+                            [...liveMatches, ...upcomingMatches].map(match => {
+                                const ht = teams.find(t => t.id === match.homeTeamId);
+                                const at = teams.find(t => t.id === match.awayTeamId);
+                                const isLive = match.status === 'live';
+                                return (
+                                    <div key={match.id}
+                                        onClick={() => navigate(`/match/${match.id}`)}
+                                        className={`flex items-center gap-3 p-3 sm:p-4 rounded-2xl cursor-pointer transition-all duration-300 border ${isLive ? 'bg-primary/10 border-primary/20 shadow-[0_4px_20px_rgba(109,40,217,0.1)]' : 'bg-white/[0.02] border-white/[0.05] hover:bg-white/[0.05]'
+                                            }`}>
+                                        {/* Home */}
+                                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                            <TeamLogo src={ht?.logo} size={34} />
+                                            <span className="font-bold text-xs sm:text-sm truncate">{ht?.name}</span>
+                                        </div>
+                                        {/* Score / Status */}
+                                        <div className="flex flex-col items-center gap-1 px-2 flex-none">
+                                            {isLive ? (
+                                                <>
+                                                    <div className="flex items-center gap-2 font-black font-outfit text-lg">
+                                                        <span className="text-primary">{match.homeScore}</span>
+                                                        <span className="text-slate-600 text-base">:</span>
+                                                        <span className="text-accent">{match.awayScore}</span>
                                                     </div>
-                                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-slate-500 font-medium text-[0.7rem] md:text-xs">
-                                                        {match.scheduledAt && <span className="flex items-center gap-1.5"><Calendar size={12} /> {formatDate(match.scheduledAt)}</span>}
-                                                        {match.location && <span className="flex items-center gap-1.5"><MapPin size={12} /> {match.location}</span>}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto mt-2 sm:mt-0 border-t sm:border-t-0 border-white/5 pt-3 sm:pt-0">
-                                                <div className="flex items-center gap-3">
-                                                    {isLive && (
-                                                        <span className="bg-danger text-white px-2.5 py-1 rounded-lg text-[0.65rem] font-black uppercase tracking-widest animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.4)]">
-                                                            AO VIVO
+                                                    <span className="text-[0.55rem] text-danger font-black uppercase tracking-widest animate-pulse">Ao Vivo</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="text-[0.6rem] font-black text-slate-600 uppercase">vs</span>
+                                                    {match.scheduledAt && (
+                                                        <span className="text-[0.55rem] font-bold text-slate-600 flex items-center gap-1">
+                                                            <Calendar size={10} /> {formatDate(match.scheduledAt)}
                                                         </span>
                                                     )}
-                                                    <TeamLogo src={at?.logo} size={40} />
-                                                </div>
-                                                <ChevronRight size={18} className="text-slate-600 ml-2" />
-                                            </div>
+                                                </>
+                                            )}
                                         </div>
-                                    );
-                                })
-                            )}
-                        </div>
-                    </section>
+                                        {/* Away */}
+                                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 justify-end">
+                                            <span className="font-bold text-xs sm:text-sm truncate text-right">{at?.name}</span>
+                                            <TeamLogo src={at?.logo} size={34} />
+                                        </div>
+                                        <ChevronRight size={14} className="text-slate-700 flex-none" />
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
                 </div>
 
-                {/* Classification Mini Table */}
-                <div className="space-y-6">
-                    <section className="glass-panel p-6 md:p-8">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold flex items-center gap-3">
-                                <Trophy size={22} className="text-accent" />
-                                Liderança
-                            </h2>
-                            <button onClick={() => navigate('/standings')} className="text-accent text-sm font-bold hover:underline">Ver Tabela</button>
-                        </div>
-
-                        <div className="space-y-4">
-                            {sortedTeams.slice(0, 5).map((team, i) => (
-                                <div key={team.id} className="flex items-center gap-4 p-3.5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group">
-                                    <span className={`w-7 h-7 flex items-center justify-center rounded-lg font-black text-xs ${i === 0 ? 'bg-warning/20 text-warning' : 'bg-white/10 text-slate-400'
-                                        }`}>
-                                        {i + 1}
-                                    </span>
-                                    <TeamLogo src={team.logo} size={32} />
-                                    <span className="font-bold flex-1 truncate text-sm">{team.name}</span>
-                                    <span className="font-black text-primary group-hover:scale-110 transition-transform">
-                                        {(team.stats?.wins || 0) * (league?.pointsForWin || 3) + (team.stats?.draws || 0) * (league?.pointsForDraw || 1)} PTS
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
+                {/* Standings Mini */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-base md:text-lg font-black font-outfit uppercase tracking-widest text-slate-300 flex items-center gap-2">
+                            <Trophy size={18} className="text-warning" /> Liderança
+                        </h2>
+                        <button onClick={() => navigate('/standings')} className="flex items-center gap-1 text-accent text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
+                            Tabela <ArrowRight size={14} />
+                        </button>
+                    </div>
+                    <div className="glass-panel p-4 md:p-6 space-y-2">
+                        {sortedTeams.length === 0 ? (
+                            <div className="py-12 text-center opacity-30">
+                                <Trophy size={36} strokeWidth={1} className="mx-auto mb-3" />
+                                <p className="text-xs font-black uppercase tracking-widest">Sem times cadastrados</p>
+                            </div>
+                        ) : (
+                            sortedTeams.slice(0, 6).map((team, i) => {
+                                const pts = (team.stats?.wins || 0) * (league?.pointsForWin || 3) + (team.stats?.draws || 0) * (league?.pointsForDraw || 1);
+                                return (
+                                    <div key={team.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] transition-colors group">
+                                        <span className={`w-7 h-7 flex items-center justify-center rounded-lg font-black text-xs font-outfit flex-none ${i === 0 ? 'bg-warning/20 text-warning shadow-[0_0_10px_rgba(245,158,11,0.2)]' :
+                                                i < 3 ? 'bg-white/10 text-slate-300' : 'text-slate-600'
+                                            }`}>
+                                            {i + 1}
+                                        </span>
+                                        <TeamLogo src={team.logo} size={30} />
+                                        <span className="font-bold flex-1 truncate text-sm">{team.name}</span>
+                                        <span className="font-black text-primary text-sm font-outfit flex-none">{pts}</span>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

@@ -2,11 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
   --bg-dark: #07070a;
-  --bg-card: rgba(15, 15, 25, 0.7);
   --primary: #6d28d9;
   --accent: #10b981;
   --danger: #ef4444;
@@ -14,13 +13,23 @@
 }
 
 @layer base {
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-[#07070a] text-slate-200 font-inter antialiased;
     background-image:
-      radial-gradient(circle at 10% 20%, rgba(109, 40, 217, 0.1) 0%, transparent 40%),
-      radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
-      radial-gradient(circle at 50% 50%, rgba(15, 15, 25, 1) 0%, #07070a 100%);
+      radial-gradient(ellipse at 10% 0%, rgba(109, 40, 217, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 100%, rgba(16, 185, 129, 0.07) 0%, transparent 50%);
     background-attachment: fixed;
+    min-height: 100dvh;
+    overflow-x: hidden;
   }
 
   h1,
@@ -31,14 +40,31 @@
   h6 {
     @apply font-outfit tracking-tight;
   }
+
+  input,
+  select,
+  textarea,
+  button {
+    @apply outline-none;
+    font-family: inherit;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 0.3;
+  }
 }
 
 @layer components {
   .glass-panel {
-    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] rounded-3xl shadow-2xl;
+    background: rgba(255, 255, 255, 0.025);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 1.25rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
-  /* Custom Scrollbar */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -49,26 +75,74 @@
   }
 
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-transparent;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Safe area bottom for mobile nav */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
 @layer utilities {
+
+  /* Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out both;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
   .animate-float {
-    animation: float 6s ease-in-out infinite;
+    animation: float 7s ease-in-out infinite;
   }
 
   .animate-pulse-slow {
-    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    animation: pulse 3.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .score-pop {
+    animation: scorePop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes float {
@@ -79,21 +153,8 @@
     }
 
     50% {
-      transform: translateY(-20px);
+      transform: translateY(-16px);
     }
-  }
-
-  .text-glow-primary {
-    text-shadow: 0 0 20px rgba(109, 40, 217, 0.5);
-  }
-
-  .text-glow-accent {
-    text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
-  }
-
-  /* Team Score Counter Animation */
-  .score-pop {
-    animation: scorePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
 
   @keyframes scorePop {
@@ -102,54 +163,38 @@
     }
 
     50% {
-      transform: scale(1.4);
-      filter: brightness(1.5);
+      transform: scale(1.5);
+      filter: brightness(1.8);
     }
 
     100% {
       transform: scale(1);
     }
   }
-}
 
-/* Auth Page Specialized Blobs */
-.auth-blob {
-  @apply fixed rounded-full mix-blend-screen filter blur-[80px] opacity-20 pointer-events-none;
-}
-
-/* Global Transition */
-* {
-  @apply transition-colors duration-200 outline-none;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  @apply border-primary ring-4 ring-primary/10;
-}
-
-/* Standings Status Badges */
-.status-leader {
-  @apply bg-primary/20 text-primary border border-primary/30 font-black uppercase text-[0.6rem] px-2 py-0.5 rounded tracking-widest;
-}
-
-.status-relegation {
-  @apply bg-danger/20 text-danger border border-danger/30 font-black uppercase text-[0.6rem] px-2 py-0.5 rounded tracking-widest;
-}
-
-/* Shimmer Animation for Loading */
-.shimmer {
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
+  /* Text glows */
+  .text-glow-primary {
+    text-shadow: 0 0 20px rgba(109, 40, 217, 0.6);
   }
 
-  100% {
-    background-position: 200% 0;
+  .text-glow-accent {
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+  }
+
+  /* Shimmer loading */
+  .shimmer {
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.04) 50%, transparent 100%);
+    background-size: 300% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -300% 0;
+    }
+
+    100% {
+      background-position: 300% 0;
+    }
   }
 }

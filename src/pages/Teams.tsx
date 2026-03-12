@@ -64,10 +64,10 @@ const Teams = () => {
     };
 
     return (
-        <div className="animate-fade-in pb-24 md:pb-8 p-4 md:p-0">
-            <header className="mb-8 md:mb-12">
-                <h1 className="text-3xl md:text-5xl font-outfit font-extrabold tracking-tight mb-2 uppercase flex items-center gap-4">
-                    <Shield size={42} className="text-primary drop-shadow-[0_0_15px_rgba(109,40,217,0.3)]" strokeWidth={2.5} />
+        <div className="animate-fade-in">
+            <header className="mb-8">
+                <h1 className="text-2xl sm:text-3xl md:text-5xl font-outfit font-extrabold tracking-tight mb-1 uppercase flex items-center gap-3">
+                    <Shield size={32} className="text-primary drop-shadow-[0_0_15px_rgba(109,40,217,0.3)] flex-none" strokeWidth={2.5} />
                     Times & Elencos
                 </h1>
                 <p className="text-slate-400 font-medium md:text-lg">
@@ -75,7 +75,7 @@ const Teams = () => {
                 </p>
             </header>
 
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 md:gap-8 items-start">
                 {/* Left Section: Team Registration & Selection */}
                 <section className="xl:col-span-12 2xl:col-span-4 space-y-6">
                     <div className="glass-panel p-6 md:p-8">
