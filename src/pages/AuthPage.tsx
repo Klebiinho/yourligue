@@ -66,7 +66,7 @@ const AuthPage = () => {
                 </div>
 
                 {/* Card */}
-                <div className="glass-panel" style={{ padding: '32px' }}>
+                <div className="glass-panel" style={{ padding: 'clamp(20px, 5vw, 32px)' }}>
 
                     {/* Google Button */}
                     <button onClick={handleGoogle} disabled={googleLoading}

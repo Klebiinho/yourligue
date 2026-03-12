@@ -18,46 +18,67 @@ const AppRouter = () => {
   const { user, loading } = useAuth();
   const { leagues, loading: leagueLoading, league } = useLeague();
 
+  // Show spinner while auth or leagues are loading
   if (loading || leagueLoading) return <LoadingScreen />;
-  if (!user) return <AuthPage />;
-  if (leagues.length === 0 || !league) return <LeagueSelector />;
 
+  // Not logged in — show auth page
+  if (!user) return <AuthPage />;
+
+  // Logged in but no league yet
+  if (leagues.length === 0 || !league) {
+    return (
+      <Routes>
+        <Route path="*" element={<LeagueSelector />} />
+      </Routes>
+    );
+  }
+
+  // Full app with sidebar
   return (
-    <BrowserRouter>
-      <div className="app-container">
-        <Sidebar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/teams" element={<Teams />} />
-            <Route path="/teams-dashboard" element={<TeamsDashboard />} />
-            <Route path="/matches" element={<Matches />} />
-            <Route path="/standings" element={<Standings />} />
-            <Route path="/bracket" element={<Bracket />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/match/:matchId" element={<MatchControl />} />
-            <Route path="/leagues" element={<LeagueSelector />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
-      </div>
-    </BrowserRouter>
+    <div className="app-container">
+      <Sidebar />
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/teams" element={<Teams />} />
+          <Route path="/teams-dashboard" element={<TeamsDashboard />} />
+          <Route path="/matches" element={<Matches />} />
+          <Route path="/standings" element={<Standings />} />
+          <Route path="/bracket" element={<Bracket />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/match/:matchId" element={<MatchControl />} />
+          <Route path="/leagues" element={<LeagueSelector />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+    </div>
   );
 };
 
 const LoadingScreen = () => (
-  <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
-    <div style={{ width: '48px', height: '48px', border: '3px solid var(--glass-border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+  <div style={{
+    minHeight: '100vh', display: 'flex', flexDirection: 'column',
+    alignItems: 'center', justifyContent: 'center', gap: '20px'
+  }}>
+    <div style={{
+      width: '48px', height: '48px',
+      border: '3px solid var(--glass-border)',
+      borderTopColor: 'var(--primary)',
+      borderRadius: '50%',
+      animation: 'spin 0.8s linear infinite'
+    }} />
     <p style={{ color: 'var(--text-muted)' }}>Carregando...</p>
   </div>
 );
 
 const App = () => (
-  <AuthProvider>
-    <LeagueProvider>
-      <AppRouter />
-    </LeagueProvider>
-  </AuthProvider>
+  <BrowserRouter>
+    <AuthProvider>
+      <LeagueProvider>
+        <AppRouter />
+      </LeagueProvider>
+    </AuthProvider>
+  </BrowserRouter>
 );
 
 export default App;

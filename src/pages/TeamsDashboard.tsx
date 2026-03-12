@@ -62,7 +62,7 @@ const TeamsDashboard = () => {
 
             <div className="teams-dashboard-layout">
                 {/* Team List */}
-                <aside className="glass-panel p-24" style={{ position: 'sticky', top: '24px', alignSelf: 'start' }}>
+                <aside className="glass-panel p-24" style={{ alignSelf: 'start' }}>
                     <h2 style={{ marginBottom: '16px', fontSize: '1.1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>Times Cadastrados</h2>
                     {teams.length === 0
                         ? <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Nenhum time ainda.</p>
@@ -119,7 +119,7 @@ const TeamsDashboard = () => {
                                 </div>
 
                                 {/* Stats */}
-                                <div className="grid-4" style={{ gap: '12px', marginTop: '20px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '12px', marginTop: '20px' }}>
                                     {[
                                         { label: 'Partidas', val: selectedTeam.stats.matches, color: 'var(--text-main)' },
                                         { label: 'Vitórias', val: selectedTeam.stats.wins, color: '#22c55e' },

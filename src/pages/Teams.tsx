@@ -129,7 +129,7 @@ const Teams = () => {
                         </h2>
 
                         {/* Add Player Form */}
-                        <form onSubmit={handleAddPlayer} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                        <form onSubmit={handleAddPlayer} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '24px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
                             <div className="input-group" style={{ marginBottom: 0 }}>
                                 <label>Nome do Jogador</label>
                                 <input type="text" placeholder="Nome completo" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} required />

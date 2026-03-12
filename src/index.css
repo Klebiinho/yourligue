@@ -14,6 +14,8 @@
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --glass-border: rgba(255, 255, 255, 0.08);
+  --sidebar-width: 260px;
+  --navbar-height: 60px;
 }
 
 * {
@@ -33,7 +35,6 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   display: flex;
-  /* Ensure body children can stretch */
 }
 
 h1,
@@ -61,7 +62,7 @@ a {
   color: inherit;
 }
 
-/* Utilities */
+/* ─── Utilities ──────────────────────────────────────────────── */
 .glass-panel {
   background: var(--bg-card);
   backdrop-filter: blur(12px);
@@ -94,6 +95,11 @@ a {
   transform: translateY(-2px) scale(1.02);
   box-shadow: 0 6px 20px var(--primary-glow);
   filter: brightness(1.1);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .btn-accent {
@@ -164,12 +170,13 @@ a {
 }
 
 .responsive-title {
-  font-size: clamp(1.5rem, 6vw, 2.5rem);
-  margin-bottom: 8px;
+  font-size: clamp(1.4rem, 5vw, 2.2rem);
+  margin-bottom: 6px;
+  line-height: 1.2;
 }
 
 .responsive-subtitle {
-  font-size: clamp(0.875rem, 3vw, 1rem);
+  font-size: clamp(0.8rem, 3vw, 0.95rem);
   color: var(--text-muted);
 }
 
@@ -191,7 +198,7 @@ a {
   }
 }
 
-/* Animations */
+/* ─── Animations ──────────────────────────────────────────────── */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -214,6 +221,18 @@ a {
   }
 }
 
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
 .animate-spin {
   animation: spin 1s linear infinite;
 }
@@ -222,44 +241,48 @@ a {
   animation: fadeIn 0.4s ease forwards;
 }
 
-/* Layout */
+/* ─── App Layout ──────────────────────────────────────────────── */
 .app-container {
   display: flex;
   min-height: 100vh;
   width: 100%;
 }
 
+/* ─── Sidebar (Desktop) ───────────────────────────────────────── */
 .sidebar {
-  width: 280px;
+  width: var(--sidebar-width);
   flex-shrink: 0;
   border-right: 1px solid var(--glass-border);
-  background: rgba(10, 10, 15, 0.8);
+  background: rgba(10, 10, 15, 0.85);
   backdrop-filter: blur(20px);
-  padding: 24px;
+  -webkit-backdrop-filter: blur(20px);
+  padding: 20px 16px;
   display: flex;
   flex-direction: column;
   position: sticky;
   top: 0;
   height: 100vh;
   z-index: 100;
+  overflow-y: auto;
 }
 
 .sidebar-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
+  padding: 0 4px;
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .sidebar-footer {
   margin-top: auto;
-  padding-top: 20px;
+  padding-top: 16px;
   border-top: 1px solid var(--glass-border);
 }
 
@@ -267,50 +290,39 @@ a {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  border-radius: 12px;
+  padding: 11px 14px;
+  border-radius: 10px;
   color: var(--text-muted);
   font-weight: 500;
+  font-size: 0.9rem;
   transition: all 0.2s;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .nav-link:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text-main);
 }
 
 .nav-link.active {
-  background: var(--primary-glow);
-  color: white;
-  box-shadow: 0 4px 15px rgba(109, 40, 217, 0.2);
+  background: rgba(109, 40, 217, 0.25);
+  color: #c4b5fd;
+  box-shadow: inset 0 0 0 1px rgba(109, 40, 217, 0.4);
 }
 
+/* ─── Main Content ────────────────────────────────────────────── */
 .main-content {
   flex-grow: 1;
-  padding: 40px;
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 36px 40px;
+  max-width: calc(100% - var(--sidebar-width));
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  transition: padding 0.3s ease;
+  overflow-x: hidden;
 }
 
-@media (max-width: 1024px) {
-  .main-content {
-    padding: 24px;
-  }
-}
-
-@media (max-width: 640px) {
-  .main-content {
-    padding: 16px;
-  }
-}
-
-/* Inputs */
+/* ─── Inputs ──────────────────────────────────────────────────── */
 .input-group {
   display: flex;
   flex-direction: column;
@@ -319,30 +331,64 @@ a {
 }
 
 .input-group label {
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
   font-weight: 500;
 }
 
 .input-group input,
-.input-group select {
-  background: rgba(0, 0, 0, 0.2);
+.input-group select,
+.input-group textarea {
+  background: rgba(0, 0, 0, 0.25);
   border: 1px solid var(--glass-border);
   border-radius: 8px;
-  padding: 12px 16px;
+  padding: 11px 14px;
   color: var(--text-main);
-  font-size: 1rem;
+  font-size: 0.95rem;
   transition: all 0.2s;
   outline: none;
+  width: 100%;
 }
 
 .input-group input:focus,
-.input-group select:focus {
+.input-group select:focus,
+.input-group textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px var(--primary-glow);
+  box-shadow: 0 0 0 2px rgba(109, 40, 217, 0.25);
 }
 
-/* Scoreboard */
+/* ─── Grid Layouts ────────────────────────────────────────────── */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.teams-dashboard-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) 2fr;
+  gap: 24px;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ─── Scoreboard ──────────────────────────────────────────────── */
 .scoreboard {
   display: flex;
   align-items: center;
@@ -386,9 +432,10 @@ a {
 }
 
 .team-name {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-family: 'Outfit';
   font-weight: 700;
+  text-align: center;
 }
 
 .score {
@@ -429,179 +476,11 @@ a {
   display: flex;
   gap: 12px;
   margin-top: 16px;
-}
-
-/* Grid Layouts */
-.grid-2 {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-}
-
-.grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-}
-
-.grid-4 {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
-}
-
-.teams-dashboard-layout {
-  display: grid;
-  grid-template-columns: minmax(300px, 1fr) 2fr;
-  gap: 24px;
-}
-
-.table-responsive {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .app-container {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-    height: auto;
-    padding: 12px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    flex-direction: row;
-    justify-content: space-around;
-    overflow-x: auto;
-    border-right: none;
-    border-bottom: 1px solid var(--glass-border);
-    backdrop-filter: blur(25px);
-  }
-
-  .sidebar-header {
-    display: none;
-  }
-
-  .sidebar-nav {
-    flex-direction: row;
-    gap: 12px;
-    width: 100%;
-    justify-content: center;
-  }
-
-  .sidebar-footer {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: none;
-  }
-
-  .nav-link {
-    padding: 8px;
-    gap: 0;
-  }
-
-  .nav-link span {
-    display: none;
-  }
-
-  .scoreboard {
-    flex-direction: column;
-    gap: 24px;
-    padding: 24px;
-    text-align: center;
-  }
-
-  .timer-block {
-    order: -1;
-    margin-bottom: 0;
-  }
-
-  .teams-dashboard-layout {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .grid-2,
-  .grid-3,
-  .grid-4 {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .team-name {
-    font-size: 1.2rem;
-  }
-
-  .team-logo {
-    width: 60px;
-    height: 60px;
-    font-size: 1.5rem;
-  }
-
-  .file-upload-custom span {
-    display: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .score {
-    gap: 10px;
-  }
-
-  .score span:nth-child(2) {
-    margin: 0 10px !important;
-    font-size: 2rem !important;
-  }
-}
-
-/* Custom File Upload Styling */
-.file-upload-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.file-upload-custom {
-  display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 10px;
-  width: 100%;
-  padding: 12px 16px;
-  background: rgba(109, 40, 217, 0.05);
-  border: 2px dashed rgba(109, 40, 217, 0.3);
-  border-radius: 12px;
-  color: var(--text-main);
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
 }
 
-.file-upload-custom:hover {
-  background: rgba(109, 40, 217, 0.1);
-  border-color: var(--primary);
-  transform: translateY(-1px);
-}
-
-.file-upload-custom svg {
-  color: var(--primary);
-}
-
-.file-input-hidden {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-
-/* Action Buttons in Match Control */
+/* ─── Action Buttons ──────────────────────────────────────────── */
 .action-btn {
   width: 42px;
   height: 42px;
@@ -643,22 +522,7 @@ a {
   box-shadow: 0 4px 15px var(--danger-glow);
 }
 
-.captain-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  transition: all 0.2s;
-  cursor: pointer;
-}
-
-.captain-toggle.active {
-  color: #fbbf24;
-  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8));
-  transform: scale(1.1);
-}
-
-/* ─── Action Buttons (Unified Design) ─────────────────────── */
+/* ─── Action Icon Buttons ─────────────────────────────────────── */
 .action-group {
   display: flex;
   align-items: center;
@@ -672,13 +536,12 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid var(--glass-border);
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .action-icon-btn:hover {
@@ -716,7 +579,65 @@ a {
   color: #fbbf24;
 }
 
-/* ─── Bracket Grids ─────────────────────────────────────────── */
+/* ─── Captain Toggle ──────────────────────────────────────────── */
+.captain-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.captain-toggle.active {
+  color: #fbbf24;
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8));
+  transform: scale(1.1);
+}
+
+/* ─── File Upload ─────────────────────────────────────────────── */
+.file-upload-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.file-upload-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(109, 40, 217, 0.05);
+  border: 2px dashed rgba(109, 40, 217, 0.3);
+  border-radius: 12px;
+  color: var(--text-main);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.file-upload-custom:hover {
+  background: rgba(109, 40, 217, 0.1);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.file-upload-custom svg {
+  color: var(--primary);
+}
+
+.file-input-hidden {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* ─── Bracket Grids ───────────────────────────────────────────── */
 .bracket-grid-1 {
   display: grid;
   grid-template-columns: 1fr;
@@ -742,15 +663,188 @@ a {
   gap: 16px;
 }
 
-/* ─── Pulse animation ────────────────────────────────────────── */
-@keyframes pulse {
-
-  0%,
-  100% {
-    opacity: 1;
+/* ─── RESPONSIVE: Tablet 1024px ──────────────────────────────── */
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 220px;
   }
 
-  50% {
-    opacity: 0.6;
+  .main-content {
+    padding: 28px 24px;
+  }
+
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .teams-dashboard-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .bracket-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bracket-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ─── RESPONSIVE: Mobile navbar switch 768px ─────────────────── */
+@media (max-width: 768px) {
+
+  /* Switch to bottom navbar layout */
+  .app-container {
+    flex-direction: column;
+  }
+
+  .main-content {
+    max-width: 100%;
+    padding: 20px 16px;
+    padding-bottom: calc(var(--navbar-height) + 20px);
+    /* space for bottom nav */
+    min-height: calc(100vh - var(--navbar-height));
+  }
+
+  /* ── Bottom Sidebar / Navbar ── */
+  .sidebar {
+    width: 100%;
+    height: var(--navbar-height);
+    position: fixed;
+    bottom: 0;
+    top: auto;
+    left: 0;
+    right: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 8px;
+    border-right: none;
+    border-top: 1px solid var(--glass-border);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    overflow: visible;
+    z-index: 200;
+  }
+
+  .sidebar-header {
+    display: none;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    gap: 0;
+    flex: 1;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .sidebar-footer {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    display: flex;
+    align-items: center;
+  }
+
+  .nav-link {
+    flex-direction: column;
+    padding: 8px 12px;
+    gap: 3px;
+    border-radius: 10px;
+    font-size: 0.6rem;
+    min-width: 52px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-link span {
+    display: block !important;
+    font-size: 0.6rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .nav-link svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Grid adjustments */
+  .grid-2 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .teams-dashboard-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Scoreboard */
+  .scoreboard {
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px 16px;
+    text-align: center;
+  }
+
+  .timer-block {
+    order: -1;
+  }
+
+  .team-name {
+    font-size: 1.1rem;
+  }
+
+  .team-logo {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+
+  /* Brackets */
+  .bracket-grid-4,
+  .bracket-grid-3,
+  .bracket-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── RESPONSIVE: Mobile small 480px ─────────────────────────── */
+@media (max-width: 480px) {
+  .main-content {
+    padding: 16px 12px;
+    padding-bottom: calc(var(--navbar-height) + 20px);
+  }
+
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .score span:nth-child(2) {
+    margin: 0 8px !important;
+    font-size: 2rem !important;
+  }
+
+  .file-upload-custom span {
+    display: none;
+  }
+
+  .scoreboard {
+    padding: 20px 12px;
+    gap: 16px;
   }
 }

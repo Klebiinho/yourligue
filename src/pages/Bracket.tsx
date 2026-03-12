@@ -44,10 +44,10 @@ const Bracket = () => {
             </header>
 
             {/* Filter */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '6px' }}>
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '32px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '6px', flexWrap: 'wrap' }}>
                 {['all', ...ROUNDS].map(r => (
                     <button key={r} onClick={() => setFilter(r)}
-                        style={{ flex: 1, padding: '10px 8px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, transition: 'all 0.2s', background: filter === r ? 'var(--primary)' : 'transparent', color: filter === r ? 'white' : 'var(--text-muted)' }}>
+                        style={{ flex: '1 1 auto', minWidth: '60px', padding: '8px 6px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, transition: 'all 0.2s', background: filter === r ? 'var(--primary)' : 'transparent', color: filter === r ? 'white' : 'var(--text-muted)' }}>
                         {r === 'all' ? 'Todos' : ROUND_LABELS[r]}
                     </button>
                 ))}

@@ -43,8 +43,8 @@ const Dashboard = () => {
                 </div>
             </header>
 
-            {/* Stats Cards */}
-            <div className="grid-4 mb-40">
+            {/* Stats Cards - responsive grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }} className="mb-40">
                 <StatCard title="Times" value={`${teams.length} / ${league?.maxTeams ?? 16}`} icon={<Trophy color="var(--primary)" />} />
                 <StatCard title="Jogadores" value={totalPlayers} icon={<Users color="var(--accent)" />} />
                 <StatCard title="Ao Vivo" value={liveMatches} icon={<Activity color="var(--danger)" />} accent="danger" />
@@ -125,8 +125,8 @@ const Dashboard = () => {
                         <Trophy size={20} className="text-gradient-accent" /> Classificação
                     </h2>
                     {sortedTeams.length === 0 ? <p style={{ color: 'var(--text-muted)' }}>Nenhum time registrado.</p> : (
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                        <div className="table-responsive">
+                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '560px' }}>
                                 <thead>
                                     <tr style={{ color: 'var(--text-muted)', fontSize: '0.8rem', letterSpacing: '0.05em', textTransform: 'uppercase', borderBottom: '1px solid var(--glass-border)' }}>
                                         {['#', 'Time', 'Pts', 'J', 'V', 'E', 'D', 'GP', 'GC', 'SG'].map(h => (

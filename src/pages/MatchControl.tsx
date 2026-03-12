@@ -114,51 +114,55 @@ const MatchControl = () => {
     return (
         <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
             {/* Header: Placar e Tempo */}
-            <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px', position: 'sticky', top: '0', zIndex: 100, backdropFilter: 'blur(20px)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: 1, justifyContent: 'flex-end' }}>
+            <div className="glass-panel" style={{ padding: '20px', marginBottom: '24px', position: 'sticky', top: '0', zIndex: 100, backdropFilter: 'blur(20px)' }}>
+                {/* Score row */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                    {/* Home team */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, justifyContent: 'flex-end', minWidth: '80px' }}>
                         <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontWeight: 800, fontSize: '1.25rem' }}>{homeTeam.name}</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>MANDANTE</div>
+                            <div style={{ fontWeight: 800, fontSize: 'clamp(0.85rem, 3vw, 1.2rem)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }}>{homeTeam.name}</div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>MANDANTE</div>
                         </div>
-                        <TeamLogo src={homeTeam.logo} size={64} />
+                        <TeamLogo src={homeTeam.logo} size={48} />
                     </div>
 
-                    <div style={{ padding: '0 40px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'Outfit', letterSpacing: '4px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    {/* Placar central */}
+                    <div style={{ padding: '0 16px', textAlign: 'center', flexShrink: 0 }}>
+                        <div style={{ fontSize: 'clamp(1.8rem, 6vw, 3rem)', fontWeight: 900, fontFamily: 'Outfit', letterSpacing: '4px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <span style={{ color: 'var(--primary)' }}>{match.homeScore}</span>
                             <span style={{ color: 'var(--text-muted)', fontSize: '1.5rem' }}>X</span>
                             <span style={{ color: 'var(--accent)' }}>{match.awayScore}</span>
                         </div>
-                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '6px 16px', borderRadius: '100px', display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-                            <Clock size={16} color="var(--primary)" />
-                            <span style={{ fontWeight: 800, fontSize: '1.2rem', fontFamily: 'monospace' }}>{formatTime(localSeconds)}</span>
+                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 12px', borderRadius: '100px', display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+                            <Clock size={14} color="var(--primary)" />
+                            <span style={{ fontWeight: 800, fontSize: 'clamp(0.85rem, 2.5vw, 1.1rem)', fontFamily: 'monospace' }}>{formatTime(localSeconds)}</span>
                         </div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: '4px', textTransform: 'uppercase' }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: '4px', textTransform: 'uppercase' }}>
                             {period} {extraTime > 0 && `(+${extraTime}')`}
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: 1 }}>
-                        <TeamLogo src={awayTeam.logo} size={64} />
+                    {/* Away team */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '80px' }}>
+                        <TeamLogo src={awayTeam.logo} size={48} />
                         <div>
-                            <div style={{ fontWeight: 800, fontSize: '1.25rem' }}>{awayTeam.name}</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>VISITANTE</div>
+                            <div style={{ fontWeight: 800, fontSize: 'clamp(0.85rem, 3vw, 1.2rem)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }}>{awayTeam.name}</div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>VISITANTE</div>
                         </div>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-                    <button onClick={() => setTimerRunning(!timerRunning)} className={`btn-${timerRunning ? 'outline' : 'primary'}`} style={{ minWidth: '140px', justifyContent: 'center' }}>
-                        {timerRunning ? <><Pause size={18} /> Pausar</> : <><Play size={18} /> Iniciar</>}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <button onClick={() => setTimerRunning(!timerRunning)} className={`btn-${timerRunning ? 'outline' : 'primary'}`} style={{ minWidth: '120px', justifyContent: 'center', padding: '10px 20px' }}>
+                        {timerRunning ? <><Pause size={16} /> Pausar</> : <><Play size={16} /> Iniciar</>}
                     </button>
-                    <button onClick={handleEndMatch} className="btn-danger" style={{ minWidth: '140px', justifyContent: 'center' }}>
-                        <StopCircle size={18} /> Finalizar
+                    <button onClick={handleEndMatch} className="btn-danger" style={{ minWidth: '120px', justifyContent: 'center', padding: '10px 20px' }}>
+                        <StopCircle size={16} /> Finalizar
                     </button>
                 </div>
             </div>
 
-            <div className="grid-2">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
                 {/* Abas de Equipes */}
                 {[homeTeam, awayTeam].map((team) => (
                     <section key={team.id} className="glass-panel p-24">
