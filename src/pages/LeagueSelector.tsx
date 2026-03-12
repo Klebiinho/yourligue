@@ -15,17 +15,6 @@ const LeagueSelector = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newName.trim()) return;
-        setLoading(true);
-        await createLeague({
-            name: newName, logo: '', maxTeams: 16,
-            pointsForWin: 3, pointsForDraw: 1, pointsForLoss: 0, defaultHalfLength: 45
-        });
-        setNewName(''); setShowCreate(false); setLoading(false);
-    };
-
     const handleDelete = async (id: string) => {
         if (window.confirm('Tem certeza? Todos os dados desta liga serão excluídos.')) {
             await deleteLeague(id);
@@ -125,16 +114,30 @@ const LeagueSelector = () => {
 
                 {/* Create League */}
                 {showCreate ? (
-                    <form onSubmit={handleCreate} className="glass-panel" style={{ padding: '24px', display: 'flex', gap: '12px' }}>
+                    <form onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (!newName.trim()) return;
+                        setLoading(true);
+                        const res = await createLeague({
+                            name: newName, logo: '', maxTeams: 16,
+                            pointsForWin: 3, pointsForDraw: 1, pointsForLoss: 0, defaultHalfLength: 45
+                        });
+                        if (!res.error) {
+                            setNewName(''); setShowCreate(false); navigate('/');
+                        }
+                        setLoading(false);
+                    }} className="glass-panel" style={{ padding: 'clamp(16px, 4vw, 24px)', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                         <input type="text" placeholder="Nome da liga (ex: Copa dos Campeões)" value={newName}
                             onChange={e => setNewName(e.target.value)} autoFocus required
-                            style={{ flex: 1, background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '12px 16px', color: 'white', fontSize: '1rem', outline: 'none' }} />
-                        <button type="submit" className="btn-primary" disabled={loading} style={{ padding: '12px 20px', whiteSpace: 'nowrap' }}>
-                            {loading ? '...' : 'Criar'}
-                        </button>
-                        <button type="button" onClick={() => setShowCreate(false)} className="btn-outline" style={{ padding: '12px 16px' }}>
-                            <X size={18} />
-                        </button>
+                            style={{ flex: '1 1 200px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '12px 16px', color: 'white', fontSize: '1rem', outline: 'none' }} />
+                        <div style={{ display: 'flex', gap: '8px', flex: '1 1 auto' }}>
+                            <button type="submit" className="btn-primary" disabled={loading} style={{ flex: 1, padding: '12px 20px', whiteSpace: 'nowrap', justifyContent: 'center' }}>
+                                {loading ? '...' : 'Criar'}
+                            </button>
+                            <button type="button" onClick={() => setShowCreate(false)} className="btn-outline" style={{ padding: '12px 16px', flexShrink: 0 }}>
+                                <X size={18} />
+                            </button>
+                        </div>
                     </form>
                 ) : (
                     <button onClick={() => setShowCreate(true)} className="btn-primary"

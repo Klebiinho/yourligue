@@ -80,7 +80,7 @@ interface LeagueContextType {
     dataLoading: boolean;
 
     // League actions
-    createLeague: (data: Omit<League, 'id'>) => Promise<void>;
+    createLeague: (data: Omit<League, 'id'>) => Promise<{ error: string | null }>;
     updateLeague: (data: Partial<League>) => Promise<void>;
     deleteLeague: (id: string) => Promise<void>;
     selectLeague: (id: string) => void;
@@ -236,16 +236,23 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     // ── League CRUD ────────────────────────────────────────────
     const createLeague = async (data: Omit<League, 'id'>) => {
-        const { data: row } = await supabase.from('leagues').insert({
+        const { data: row, error } = await supabase.from('leagues').insert({
             user_id: user!.id, name: data.name, logo: data.logo, max_teams: data.maxTeams,
             points_for_win: data.pointsForWin, points_for_draw: data.pointsForDraw,
             points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength
         }).select().single();
+        if (error) {
+            console.error('Error creating league:', error);
+            alert('Failed to create league: ' + error.message);
+            return { error: error.message };
+        }
         if (row) {
             const lg: League = { id: row.id, name: row.name, logo: row.logo || '', maxTeams: row.max_teams, pointsForWin: row.points_for_win, pointsForDraw: row.points_for_draw, pointsForLoss: row.points_for_loss, defaultHalfLength: row.default_half_length };
             setLeagues(prev => [...prev, lg]);
             setLeague(lg);
+            return { error: null };
         }
+        return { error: 'Unknown error' };
     };
 
     const updateLeague = async (data: Partial<League>) => {
