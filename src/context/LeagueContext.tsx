@@ -121,7 +121,7 @@ interface LeagueContextType {
 
     loadLeagues: () => Promise<void>;
     isPublicView: boolean;
-    loadPublicLeague: (id: string) => Promise<void>;
+    loadPublicLeague: (id: string) => Promise<boolean>;
 }
 
 const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
@@ -167,29 +167,41 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const loadPublicLeague = useCallback(async (slugOrId: string) => {
+        if (!slugOrId) return false;
         setLoading(true);
         setIsPublicView(true);
 
-        // Try slug first
-        let { data } = await supabase.from('leagues').select('*').eq('slug', slugOrId).single();
+        try {
+            // Try slug first
+            let { data, error } = await supabase.from('leagues').select('*').eq('slug', slugOrId).single();
 
-        // If not found and looks like UUID, try ID
-        if (!data && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId)) {
-            const { data: idData } = await supabase.from('leagues').select('*').eq('id', slugOrId).single();
-            data = idData;
-        }
+            // If not found (or error) and looks like UUID, try ID
+            if ((!data || error) && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId)) {
+                const { data: idData } = await supabase.from('leagues').select('*').eq('id', slugOrId).single();
+                data = idData;
+            }
 
-        if (data) {
-            const lg: League = {
-                id: data.id, name: data.name, logo: data.logo || '', maxTeams: data.max_teams,
-                pointsForWin: data.points_for_win, pointsForDraw: data.points_for_draw,
-                pointsForLoss: data.points_for_loss, defaultHalfLength: data.default_half_length,
-                playersPerTeam: data.players_per_team || 5, reserveLimitPerTeam: data.reserve_limit_per_team || 5,
-                substitutionsLimit: data.substitutions_limit || 5, slug: data.slug || ''
-            };
-            setLeague(lg);
+            if (data) {
+                const lg: League = {
+                    id: data.id, name: data.name, logo: data.logo || '', maxTeams: data.max_teams,
+                    pointsForWin: data.points_for_win, pointsForDraw: data.points_for_draw,
+                    pointsForLoss: data.points_for_loss, defaultHalfLength: data.default_half_length,
+                    playersPerTeam: data.players_per_team || 5, reserveLimitPerTeam: data.reserve_limit_per_team || 5,
+                    substitutionsLimit: data.substitutions_limit || 5, slug: data.slug || ''
+                };
+                setLeague(lg);
+                return true;
+            } else {
+                setLeague(null);
+                return false;
+            }
+        } catch (err) {
+            console.error('Error loading public league:', err);
+            setLeague(null);
+            return false;
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }, []);
 
     // ── Load league data (teams, matches, brackets) ────────────

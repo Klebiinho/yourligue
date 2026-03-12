@@ -81,9 +81,17 @@ const AppRouter = () => {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (slug) {
-      loadPublicLeague(slug).catch(() => setNotFound(true));
-    }
+    const fetchLeague = async () => {
+      if (slug) {
+        try {
+          const success = await loadPublicLeague(slug);
+          if (!success) setNotFound(true);
+        } catch {
+          setNotFound(true);
+        }
+      }
+    };
+    fetchLeague();
   }, [slug, loadPublicLeague]);
 
   useEffect(() => {
