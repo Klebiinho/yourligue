@@ -39,6 +39,7 @@ const Dashboard = () => {
     const topScorers = [...allPlayers].sort((a, b) => (b.stats?.goals || 0) - (a.stats?.goals || 0)).filter(p => (p.stats?.goals || 0) > 0).slice(0, 5);
 
     const [activeTab, setActiveTab] = useState<'matches' | 'standings' | 'scorers'>('matches');
+    const [showTopScorersModal, setShowTopScorersModal] = useState(false);
 
     return (
         <div className="animate-fade-in space-y-6 md:space-y-8 pb-10">
@@ -225,6 +226,9 @@ const Dashboard = () => {
                                 <Star size={16} className="text-warning" />
                                 Destaques da Liga
                             </h2>
+                            <button onClick={() => setShowTopScorersModal(true)} className="flex items-center gap-1 text-warning text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
+                                Ver Rank <ArrowRight size={12} />
+                            </button>
                         </div>
 
                         <div className="glass-panel divide-y divide-white/[0.04] overflow-hidden">
@@ -261,6 +265,61 @@ const Dashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {/* ── TOP SCORERS MODAL ────────────────────────────────────── */}
+            {showTopScorersModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowTopScorersModal(false)} />
+                    <div className="relative glass-panel w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col animate-scale-in">
+                        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center text-warning shadow-lg shadow-warning/10">
+                                    <Star size={20} className="fill-warning/20" />
+                                </div>
+                                <div>
+                                    <h3 className="font-outfit font-black text-white uppercase tracking-tight text-xl">Ranking de Artilharia</h3>
+                                    <p className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Gols marcados nesta liga</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowTopScorersModal(false)} className="p-2 text-slate-500 hover:text-white transition-colors">
+                                <Star size={24} className="rotate-45" /> {/* Close icon substitute or use Star as placeholder */}
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 no-scrollbar">
+                            {[...allPlayers].sort((a, b) => (b.stats?.goals || 0) - (a.stats?.goals || 0))
+                                .filter(p => (p.stats?.goals || 0) > 0)
+                                .map((player, i) => (
+                                    <div key={player.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] transition-all group">
+                                        <span className={`w-8 h-8 flex items-center justify-center rounded-xl font-black font-outfit text-sm ${i === 0 ? 'bg-warning text-black shadow-lg shadow-warning/20' :
+                                            i === 1 ? 'bg-slate-300 text-black' :
+                                                i === 2 ? 'bg-orange-400 text-black' : 'text-slate-600'}`}>
+                                            {i + 1}
+                                        </span>
+                                        <div className="relative flex-none">
+                                            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-primary/50 transition-colors bg-white/5">
+                                                {player.photo ? <img src={player.photo} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold">#</div>}
+                                            </div>
+                                            <div className="absolute -bottom-1 -right-1">
+                                                <TeamLogo src={player.team.logo} size={22} />
+                                            </div>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-black text-white font-outfit uppercase tracking-wide text-sm truncate">{player.name}</h4>
+                                            <p className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">{player.team.name}</p>
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-2xl font-black text-accent font-outfit tabular-nums">{player.stats?.goals || 0}</span>
+                                            <span className="text-[0.45rem] font-black text-slate-600 uppercase">Gols</span>
+                                        </div>
+                                    </div>
+                                ))}
+                        </div>
+                        <div className="p-4 bg-black/40 border-t border-white/5 text-center">
+                            <p className="text-[0.55rem] font-black text-slate-600 uppercase tracking-[0.2em] italic">Estatísticas atualizadas em tempo real</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

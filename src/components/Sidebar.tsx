@@ -14,14 +14,21 @@ const navItems = [
     { to: '/settings', icon: Settings, label: 'Config.', shortLabel: 'Config.' },
 ];
 
-// Primary items visible in bottom bar (5 slots: 4 main + "More")
-const primaryItems = navItems.slice(0, 4);
-const secondaryItems = navItems.slice(4);
+// Primary items configuration is now handled inside the component to react to public view state
+
 
 const Sidebar = () => {
-    const { league } = useLeague();
+    const { league, isPublicView } = useLeague();
     const navigate = useNavigate();
     const [moreOpen, setMoreOpen] = useState(false);
+
+    // Filter nav items based on public view
+    const filteredNavItems = isPublicView
+        ? navItems.filter(item => ['/', '/matches', '/standings', '/bracket'].includes(item.to))
+        : navItems;
+
+    const primaryItems = filteredNavItems.slice(0, 4);
+    const secondaryItems = filteredNavItems.slice(4);
 
     return (
         <>
@@ -141,10 +148,14 @@ const Sidebar = () => {
                         <TeamLogo src={league?.logo} size={40} fallbackIcon={<Trophy size={18} className="text-primary" />} />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <h2 className="text-sm font-black text-white truncate font-outfit uppercase tracking-wide leading-tight group-hover:text-primary transition-colors">
-                            {league?.name ?? 'Selecionar Liga'}
-                        </h2>
-                        <p className="text-[0.6rem] text-slate-600 font-bold uppercase tracking-[0.15em] mt-0.5">Championship Manager</p>
+                        <div className="flex items-center gap-1.5">
+                            <h2 className="text-sm font-black text-white truncate font-outfit uppercase tracking-wide leading-tight group-hover:text-primary transition-colors">
+                                {league?.name ?? 'Selecionar Liga'}
+                            </h2>
+                        </div>
+                        <p className="text-[0.6rem] text-slate-600 font-bold uppercase tracking-[0.15em] mt-0.5">
+                            {isPublicView ? <span className="text-accent">MODO ESPECTADOR</span> : 'Championship Manager'}
+                        </p>
                     </div>
                 </div>
 
@@ -152,8 +163,10 @@ const Sidebar = () => {
 
                 {/* Nav Links */}
                 <nav className="flex-1 flex flex-col gap-0.5 px-3 py-2 overflow-y-auto no-scrollbar">
-                    <p className="text-[0.55rem] font-black text-slate-700 uppercase tracking-[0.2em] px-3 py-2">Menu Principal</p>
-                    {navItems.map(({ to, icon: Icon, label }) => (
+                    <p className="text-[0.55rem] font-black text-slate-700 uppercase tracking-[0.2em] px-3 py-2">
+                        {isPublicView ? 'Acompanhamento' : 'Menu Principal'}
+                    </p>
+                    {filteredNavItems.map(({ to, icon: Icon, label }) => (
                         <NavLink
                             key={to}
                             to={to}
@@ -183,15 +196,17 @@ const Sidebar = () => {
                 </nav>
 
                 {/* Footer */}
-                <div className="p-3 border-t border-white/[0.05]">
-                    <button
-                        onClick={() => navigate('/leagues')}
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:text-white hover:bg-white/5 w-full transition-all group font-bold text-[0.8rem] tracking-wide"
-                    >
-                        <ArrowLeftRight size={16} className="group-hover:rotate-180 transition-transform duration-500 flex-none" />
-                        <span>Trocar Liga</span>
-                    </button>
-                </div>
+                {!isPublicView && (
+                    <div className="p-3 border-t border-white/[0.05]">
+                        <button
+                            onClick={() => navigate('/leagues')}
+                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:text-white hover:bg-white/5 w-full transition-all group font-bold text-[0.8rem] tracking-wide"
+                        >
+                            <ArrowLeftRight size={16} className="group-hover:rotate-180 transition-transform duration-500 flex-none" />
+                            <span>Trocar Liga</span>
+                        </button>
+                    </div>
+                )}
             </aside>
         </>
     );

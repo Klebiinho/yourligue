@@ -113,6 +113,8 @@ interface LeagueContextType {
     updateBracket: (bracketId: string, data: Partial<BracketMatch>) => Promise<void>;
 
     loadLeagues: () => Promise<void>;
+    isPublicView: boolean;
+    loadPublicLeague: (id: string) => Promise<void>;
 }
 
 const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
@@ -128,6 +130,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const [brackets, setBrackets] = useState<BracketMatch[]>([]);
     const [loading, setLoading] = useState(true);
     const [dataLoading, setDataLoading] = useState(false);
+    const [isPublicView, setIsPublicView] = useState(false);
 
     // ── Load all leagues for user ──────────────────────────────
     useEffect(() => {
@@ -150,6 +153,21 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 const found = saved ? mapped.find(l => l.id === saved) : null;
                 setLeague(found ?? mapped[0]);
             }
+        }
+        setLoading(false);
+    };
+
+    const loadPublicLeague = async (id: string) => {
+        setLoading(true);
+        setIsPublicView(true);
+        const { data } = await supabase.from('leagues').select('*').eq('id', id).single();
+        if (data) {
+            const lg: League = {
+                id: data.id, name: data.name, logo: data.logo || '', maxTeams: data.max_teams,
+                pointsForWin: data.points_for_win, pointsForDraw: data.points_for_draw,
+                pointsForLoss: data.points_for_loss, defaultHalfLength: data.default_half_length
+            };
+            setLeague(lg);
         }
         setLoading(false);
     };
@@ -530,7 +548,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             addPlayer, updatePlayer, removePlayer, toggleCaptain,
             createMatch, updateMatch, deleteMatch, startMatch, endMatch, updateTimer,
             addEvent, removeEvent,
-            generateBracket, updateBracket, loadLeagues
+            generateBracket, updateBracket, loadLeagues, isPublicView, loadPublicLeague
         }}>
             {children}
         </LeagueContext.Provider>

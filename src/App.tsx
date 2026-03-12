@@ -1,60 +1,21 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LeagueProvider, useLeague } from './context/LeagueContext';
-import AuthPage from './pages/AuthPage';
-import LeagueSelector from './pages/LeagueSelector';
+import AuthPage from './pages/AuthPage.tsx';
+import LeagueSelector from './pages/LeagueSelector.tsx';
 import Sidebar from './components/Sidebar';
-import Dashboard from './pages/Dashboard';
-import Teams from './pages/Teams';
-import TeamsDashboard from './pages/TeamsDashboard';
-import Matches from './pages/Matches';
-import Standings from './pages/Standings';
-import Bracket from './pages/Bracket';
-import Settings from './pages/Settings';
-import MatchControl from './pages/MatchControl';
-
-const AppRouter = () => {
-  const { user, loading } = useAuth();
-  const { leagues, loading: leagueLoading, league } = useLeague();
-
-  if (loading || leagueLoading) return <LoadingScreen />;
-  if (!user) return <AuthPage />;
-
-  if ((leagues.length === 0 || !league) && window.location.pathname !== '/leagues') {
-    return (
-      <Routes>
-        <Route path="*" element={<LeagueSelector />} />
-      </Routes>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-[#07070a] text-white font-inter">
-      <Sidebar />
-      {/* Main: offset for desktop sidebar, bottom padding for mobile nav */}
-      <main className="md:pl-64 min-h-screen">
-        <div className="p-4 md:p-8 lg:p-10 pb-24 md:pb-10 max-w-[1600px] mx-auto w-full">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/teams" element={<Teams />} />
-            <Route path="/teams-dashboard" element={<TeamsDashboard />} />
-            <Route path="/matches" element={<Matches />} />
-            <Route path="/standings" element={<Standings />} />
-            <Route path="/bracket" element={<Bracket />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/match/:matchId" element={<MatchControl />} />
-            <Route path="/leagues" element={<LeagueSelector />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
-      </main>
-    </div>
-  );
-};
+import Dashboard from './pages/Dashboard.tsx';
+import Teams from './pages/Teams.tsx';
+import TeamsDashboard from './pages/TeamsDashboard.tsx';
+import Matches from './pages/Matches.tsx';
+import Standings from './pages/Standings.tsx';
+import Bracket from './pages/Bracket.tsx';
+import Settings from './pages/Settings.tsx';
+import MatchControl from './pages/MatchControl.tsx';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center gap-8 z-[999]">
-    {/* Ambient glow */}
     <div className="absolute inset-0 pointer-events-none">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/10 rounded-full blur-[120px]" />
     </div>
@@ -78,11 +39,80 @@ const LoadingScreen = () => (
   </div>
 );
 
+const PublicLayout = () => (
+  <div className="min-h-screen bg-[#07070a] text-white font-inter">
+    <Sidebar />
+    <main className="md:pl-64 min-h-screen">
+      <div className="p-4 md:p-8 lg:p-10 pb-24 md:pb-10 max-w-[1600px] mx-auto w-full">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/matches" element={<Matches />} />
+          <Route path="/standings" element={<Standings />} />
+          <Route path="/bracket" element={<Bracket />} />
+          <Route path="*" element={<Navigate to={`/view/${window.location.pathname.split('/')[2]}`} replace />} />
+        </Routes>
+      </div>
+    </main>
+  </div>
+);
+
+const AppRouter = () => {
+  const { user, loading } = useAuth();
+  const { leagues, loading: leagueLoading, league, loadPublicLeague } = useLeague();
+  const { leagueId } = useParams<{ leagueId: string }>();
+
+  useEffect(() => {
+    if (leagueId) loadPublicLeague(leagueId);
+  }, [leagueId, loadPublicLeague]);
+
+  if (loading || leagueLoading) return <LoadingScreen />;
+
+  if (leagueId) {
+    if (!league) return <LoadingScreen />;
+    return <PublicLayout />;
+  }
+
+  if (!user) return <AuthPage />;
+
+  if ((leagues.length === 0 || !league) && window.location.pathname !== '/leagues') {
+    return (
+      <Routes>
+        <Route path="*" element={<LeagueSelector />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#07070a] text-white font-inter">
+      <Sidebar />
+      <main className="md:pl-64 min-h-screen">
+        <div className="p-4 md:p-8 lg:p-10 pb-24 md:pb-10 max-w-[1600px] mx-auto w-full">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/teams" element={<Teams />} />
+            <Route path="/teams-dashboard" element={<TeamsDashboard />} />
+            <Route path="/matches" element={<Matches />} />
+            <Route path="/standings" element={<Standings />} />
+            <Route path="/bracket" element={<Bracket />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/match/:matchId" element={<MatchControl />} />
+            <Route path="/leagues" element={<LeagueSelector />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </main>
+    </div>
+  );
+};
+
 const App = () => (
   <BrowserRouter>
     <AuthProvider>
       <LeagueProvider>
-        <AppRouter />
+        <Routes>
+          <Route path="/view/:leagueId/*" element={<AppRouter />} />
+          <Route path="/*" element={<AppRouter />} />
+        </Routes>
       </LeagueProvider>
     </AuthProvider>
   </BrowserRouter>
