@@ -74,8 +74,8 @@ const Standings = () => {
                                             <td style={{ padding: '14px 8px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                     <TeamLogo src={team.logo} size={32} />
-                                                    <span style={{ fontWeight: 700 }}>{team.name}</span>
-                                                    {isTop && <Shield size={14} style={{ color: 'var(--primary)' }} />}
+                                                    <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{team.name}</span>
+                                                    {isTop && <Shield size={14} style={{ color: 'var(--primary)', flexShrink: 0 }} />}
                                                 </div>
                                             </td>
                                             <td style={{ padding: '14px 8px', textAlign: 'center', fontWeight: 900, fontSize: '1.1rem', color: 'var(--accent)' }}>{pts}</td>

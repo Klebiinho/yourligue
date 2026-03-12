@@ -153,7 +153,7 @@ const Bracket = () => {
                             </h1>
                             <p className="responsive-subtitle">Sorteie os times em grupos automaticamente</p>
                         </div>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.2)', padding: '4px 12px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Times/Grupo:</span>
                                 <input type="number" min="2" max="10" value={teamsPerGroup} onChange={e => setTeamsPerGroup(parseInt(e.target.value))} style={{ width: '40px', background: 'transparent', border: 'none', color: 'white', fontWeight: 800, fontSize: '1rem', outline: 'none' }} />
@@ -182,7 +182,7 @@ const Bracket = () => {
                                         {groups[gn].map((t, idx) => (
                                             <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: idx % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'transparent', borderRadius: '8px' }}>
                                                 <TeamLogo src={t.logo} size={32} />
-                                                <span style={{ fontWeight: 600 }}>{t.name}</span>
+                                                <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
                                             </div>
                                         ))}
                                     </div>

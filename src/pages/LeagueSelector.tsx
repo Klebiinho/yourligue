@@ -89,7 +89,7 @@ const LeagueSelector = () => {
                                 {editingId === l.id ? (
                                     <input value={editName} onChange={e => setEditName(e.target.value)}
                                         autoFocus onClick={e => e.stopPropagation()}
-                                        style={{ flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '1rem', outline: 'none' }} />
+                                        style={{ flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid var(--primary)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '1rem', outline: 'none', minWidth: 0 }} />
                                 ) : (
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{ fontWeight: 700, fontSize: '1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.name}</div>
