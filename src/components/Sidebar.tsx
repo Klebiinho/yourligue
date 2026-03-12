@@ -172,7 +172,7 @@ const Sidebar = () => {
                     {filteredNavItems.map(({ to, icon: Icon, label }) => (
                         <NavLink
                             key={to}
-                            to={to}
+                            to={getLink(to)}
                             end={to === '/'}
                             className={({ isActive }) =>
                                 `flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-semibold ${isActive

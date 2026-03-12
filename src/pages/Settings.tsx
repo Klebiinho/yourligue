@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
-import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2 } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,6 +20,7 @@ const Settings = () => {
     const [reserveLimit, setReserveLimit] = useState(String(league?.reserveLimitPerTeam ?? 5));
     const [substitutionsLimit, setSubstitutionsLimit] = useState(String(league?.substitutionsLimit ?? 5));
     const [saved, setSaved] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -40,6 +41,14 @@ const Settings = () => {
         });
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
+    };
+
+    const handleCopyLink = () => {
+        if (!league) return;
+        const link = `${window.location.origin}/view/${league.id}`;
+        navigator.clipboard.writeText(link);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
     const handleSignOut = async () => {
@@ -237,6 +246,31 @@ const Settings = () => {
                             <p className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em] transition-all group-hover:tracking-widest">
                                 Versão 2.4.0-PRO • Tailwind UI
                             </p>
+                        </div>
+                    </div>
+
+                    {/* Share League */}
+                    <div className="glass-panel p-8 bg-black/40 border border-primary/20 relative overflow-hidden group">
+                        <div className="absolute -right-4 -top-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                            <Share2 size={160} />
+                        </div>
+                        <h2 className="text-xl font-black text-white font-outfit uppercase tracking-widest mb-4 flex items-center gap-3">
+                            <Share2 size={22} className="text-primary" /> Compartilhar Liga
+                        </h2>
+                        <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                            Gere um link de acesso público para que torcedores e jogadores possam acompanhar a tabela, artilharia e resultados em tempo real, sem precisar de senha.
+                        </p>
+                        <div className="flex gap-2">
+                            <div className="flex-1 bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-slate-400 font-mono text-xs truncate flex items-center">
+                                {window.location.origin}/view/{league?.id}
+                            </div>
+                            <button
+                                onClick={handleCopyLink}
+                                className={`px-6 py-3 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${copied ? 'bg-accent text-white' : 'bg-primary text-white hover:brightness-110'
+                                    }`}
+                            >
+                                {copied ? <><CheckCircle2 size={14} /> Copiado!</> : <><Copy size={14} /> Copiar Link</>}
+                            </button>
                         </div>
                     </div>
                 </section>
