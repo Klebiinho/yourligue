@@ -106,6 +106,10 @@ const MatchControl = () => {
         if (matchId) addEvent(matchId, { type: 'assist', teamId, playerId, minute: currentMinute });
     };
 
+    const handleGolContra = (teamId: string, playerId: string) => {
+        if (matchId) addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute });
+    };
+
     const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => {
         if (matchId) addEvent(matchId, { type, teamId, playerId, minute: currentMinute });
     };
@@ -198,7 +202,8 @@ const MatchControl = () => {
 
                                         <div className="action-group" style={{ opacity: isRedCarded ? 0.3 : 1, pointerEvents: isRedCarded ? 'none' : 'auto' }}>
                                             <button onClick={() => handleGol(team.id, player.id)} className="action-icon-btn accent" title="Gol"><Target size={16} /></button>
-                                            <button onClick={() => handleAssist(team.id, player.id)} className="action-icon-btn" title="Assistência"><Award size={16} /></button>
+                                            <button onClick={() => handleAssist(team.id, player.id)} className="action-icon-btn" style={{ color: '#fbbf24' }} title="Assistência"><Award size={16} /></button>
+                                            <button onClick={() => handleGolContra(team.id, player.id)} className="action-icon-btn danger" title="Gol Contra"><XCircle size={16} /></button>
                                             <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="action-icon-btn" style={{ color: '#fbbf24' }} title="Amarelo">🟨</button>
                                             <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="action-icon-btn danger" title="Vermelho">🟥</button>
                                         </div>

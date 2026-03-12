@@ -11,7 +11,7 @@ export type Player = {
     position: string;
     photo?: string;
     isCaptain?: boolean;
-    stats: { goals: number; assists: number; yellowCards: number; redCards: number };
+    stats: { goals: number; assists: number; ownGoals: number; yellowCards: number; redCards: number };
 };
 
 export type Team = {
@@ -195,10 +195,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                         id: p.id, name: p.name, number: p.number, position: p.position,
                         photo: p.photo || '', isCaptain: p.is_captain || false,
                         stats: {
-                            goals: allEvents.filter((e: any) => e.player_id === p.id && e.type === 'goal').length,
+                            goals: allEvents.filter((e: any) => e.player_id === p.id && (e.type === 'goal' || e.type === 'penalty_goal')).length,
                             assists: allEvents.filter((e: any) => e.player_id === p.id && e.type === 'assist').length,
-                            yellowCards: allEvents.filter((e: any) => e.player_id === p.id && e.type === 'yellow_card').length,
-                            redCards: allEvents.filter((e: any) => e.player_id === p.id && e.type === 'red_card').length,
+                            ownGoals: allEvents.filter((e: any) => e.player_id === p.id && e.type === 'own_goal').length,
+                            yellowCards: allEvents.filter((e: any) => e.player_id === p.id && (e.type === 'yellow_card' || e.type === 'yellow')).length,
+                            redCards: allEvents.filter((e: any) => e.player_id === p.id && (e.type === 'red_card' || e.type === 'red')).length,
                         }
                     })),
                     stats: { matches: teamMatches.length, wins, draws, losses, goalsFor, goalsAgainst }
@@ -318,7 +319,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }).select().single();
         if (error) return { error: error.message };
         if (data) {
-            const np: Player = { id: data.id, name: data.name, number: data.number, position: data.position, photo: data.photo || '', isCaptain: data.is_captain, stats: { goals: 0, assists: 0, yellowCards: 0, redCards: 0 } };
+            const np: Player = { id: data.id, name: data.name, number: data.number, position: data.position, photo: data.photo || '', isCaptain: data.is_captain, stats: { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0 } };
             setTeams(prev => prev.map(t => t.id === teamId ? { ...t, players: [...t.players, np] } : t));
         }
         return { error: null };
