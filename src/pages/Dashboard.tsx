@@ -68,7 +68,7 @@ const Dashboard = () => {
                     {!isPublicView && league && (
                         <button
                             onClick={() => {
-                                const url = `${window.location.origin}/view/${league.id}`;
+                                const url = `${window.location.origin}/view/${league.slug || league.id}`;
                                 navigator.clipboard.writeText(url);
                                 alert('Link da visão de telespectador copiado!');
                             }}

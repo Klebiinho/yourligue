@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Users, Trash2, Edit2, PlusCircle, Star, Target, TrendingUp } from 'lucide-react';
+import { Users, Trash2, Edit2, PlusCircle, Star, Target, TrendingUp, Crown, ShieldCheck } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const TeamsDashboard = () => {
-    const { teams, addTeam, updateTeam, deleteTeam, addPlayer, updatePlayer, removePlayer, toggleCaptain } = useLeague();
+    const { league, teams, addTeam, updateTeam, deleteTeam, addPlayer, updatePlayer, removePlayer, toggleCaptain } = useLeague();
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(teams[0]?.id || null);
     const [isAddingTeam, setIsAddingTeam] = useState(false);
     const [isEditingTeam, setIsEditingTeam] = useState<string | null>(null);
@@ -60,6 +60,12 @@ const TeamsDashboard = () => {
         }
         setFormPlayer({ name: '', number: 0, position: 'Goleiro', isCaptain: false, isReserve: false, photo: '' });
     };
+
+    // List filtering
+    const starters = selectedTeam?.players.filter(p => !p.isReserve) || [];
+    const reserves = selectedTeam?.players.filter(p => p.isReserve) || [];
+    const maxStarters = league?.playersPerTeam || 5;
+    const maxReserves = league?.reserveLimitPerTeam || 5;
 
     return (
         <div className="animate-fade-in">
@@ -153,179 +159,161 @@ const TeamsDashboard = () => {
                     ) : (
                         <>
                             {/* Team Header Card */}
-                            <div className="glass-panel p-4 sm:p-6 flex items-center gap-4 sm:gap-6 border-b-2 border-b-primary">
+                            <div className="glass-panel p-4 sm:p-6 flex items-center gap-4 sm:gap-6 border-b-2 border-b-primary shadow-2xl">
                                 <div className="relative flex-none">
                                     <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl" />
-                                    <TeamLogo src={selectedTeam.logo} size={56} />
+                                    <TeamLogo src={selectedTeam.logo} size={64} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h2 className="text-lg sm:text-2xl md:text-3xl font-black text-white font-outfit uppercase tracking-tight leading-none truncate">{selectedTeam.name}</h2>
+                                    <h2 className="text-xl sm:text-3xl font-black text-white font-outfit uppercase tracking-tight leading-none truncate">{selectedTeam.name}</h2>
                                     {/* Stats row */}
-                                    <div className="flex items-center gap-4 sm:gap-6 mt-2.5 flex-wrap">
+                                    <div className="flex items-center gap-4 sm:gap-6 mt-3 flex-wrap">
                                         <div className="flex flex-col">
-                                            <span className="text-[0.5rem] font-black text-slate-600 uppercase tracking-widest">Pontos</span>
-                                            <span className="text-xl sm:text-2xl font-black text-white font-outfit leading-none">
-                                                {(selectedTeam.stats?.wins || 0) * 3 + (selectedTeam.stats?.draws || 0)}
+                                            <span className="text-[0.5rem] font-black text-slate-600 uppercase tracking-widest">Aproveitamento</span>
+                                            <span className="text-lg sm:text-xl font-black text-white font-outfit leading-none">
+                                                {selectedTeam.stats?.matches > 0 ? Math.round(((selectedTeam.stats.wins * 3 + selectedTeam.stats.draws) / (selectedTeam.stats.matches * 3)) * 100) : 0}%
                                             </span>
                                         </div>
                                         <div className="w-px h-8 bg-white/10 flex-none" />
                                         <div className="flex flex-col">
-                                            <span className="text-[0.5rem] font-black text-slate-600 uppercase tracking-widest">Gols</span>
-                                            <span className="text-xl sm:text-2xl font-black text-accent font-outfit leading-none">{selectedTeam.stats?.goalsFor || 0}</span>
+                                            <span className="text-[0.5rem] font-black text-slate-600 uppercase tracking-widest">Titulares</span>
+                                            <div className="flex items-end gap-1">
+                                                <span className={`text-lg sm:text-xl font-black font-outfit leading-none ${starters.length > maxStarters ? 'text-danger' : (starters.length === maxStarters ? 'text-accent' : 'text-white')}`}>{starters.length}</span>
+                                                <span className="text-[0.6rem] text-slate-700 font-black mb-0.5">/ {maxStarters}</span>
+                                            </div>
                                         </div>
                                         <div className="w-px h-8 bg-white/10 flex-none" />
                                         <div className="flex flex-col">
-                                            <span className="text-[0.5rem] font-black text-slate-600 uppercase tracking-widest">Atletas</span>
-                                            <span className="text-xl sm:text-2xl font-black text-primary font-outfit leading-none">{selectedTeam.players.length}</span>
+                                            <span className="text-[0.5rem] font-black text-slate-600 uppercase tracking-widest">Reservas</span>
+                                            <div className="flex items-end gap-1">
+                                                <span className={`text-lg sm:text-xl font-black font-outfit leading-none ${reserves.length > maxReserves ? 'text-danger' : (reserves.length === maxReserves ? 'text-accent' : 'text-white')}`}>{reserves.length}</span>
+                                                <span className="text-[0.6rem] text-slate-700 font-black mb-0.5">/ {maxReserves}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Player Panel */}
-                            <div className="glass-panel p-4 sm:p-6">
-                                <div className="flex items-center justify-between mb-4">
+                            <div className="glass-panel p-4 sm:p-6 shadow-xl">
+                                <div className="flex items-center justify-between mb-6">
                                     <h2 className="text-sm font-black flex items-center gap-2 font-outfit uppercase tracking-widest text-slate-300">
                                         <Star size={15} className="text-warning fill-warning/20" />
-                                        Elenco Atual
-                                        <span className="text-xs font-outfit text-slate-600">({selectedTeam.players.length})</span>
+                                        Gestão de Atletas
+                                        <span className="text-xs font-outfit text-slate-600">({selectedTeam.players.length} Total)</span>
                                     </h2>
                                     <button onClick={() => { setIsAddingPlayer(!isAddingPlayer); setIsEditingPlayer(null); }}
-                                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent text-white font-black text-[0.6rem] uppercase tracking-widest hover:brightness-110 transition-all active:scale-95">
-                                        <PlusCircle size={13} strokeWidth={3} /> Adicionar
+                                        className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-accent text-white font-black text-[0.65rem] uppercase tracking-widest hover:brightness-110 shadow-lg shadow-accent/20 transition-all active:scale-95">
+                                        <PlusCircle size={14} strokeWidth={3} /> Inscrever Jogador
                                     </button>
                                 </div>
 
                                 {/* Player Form */}
                                 {(isAddingPlayer || isEditingPlayer) && (
-                                    <div className="bg-black/30 p-4 rounded-2xl border border-white/[0.06] mb-4 animate-fade-in">
-                                        <form onSubmit={handlePlayerSubmit} className="space-y-3">
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                                                <div className="col-span-2 sm:col-span-2">
-                                                    <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Nome</label>
-                                                    <input className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:border-accent outline-none mt-1 font-bold placeholder:text-slate-700"
-                                                        placeholder="Neymar Jr" value={formPlayer.name} onChange={e => setFormPlayer({ ...formPlayer, name: e.target.value })} required />
+                                    <div className="bg-black/40 p-5 md:p-6 rounded-3xl border border-white/[0.08] mb-8 animate-fade-in shadow-2xl">
+                                        <form onSubmit={handlePlayerSubmit} className="space-y-5">
+                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                                <div className="md:col-span-2">
+                                                    <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Nome Completo</label>
+                                                    <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm focus:border-accent outline-none mt-1.5 font-bold h-14"
+                                                        placeholder="Ex: Cristiano Ronaldo" value={formPlayer.name} onChange={e => setFormPlayer({ ...formPlayer, name: e.target.value })} required />
                                                 </div>
                                                 <div>
-                                                    <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Camisa</label>
-                                                    <input type="number" className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:border-accent outline-none mt-1 font-bold"
+                                                    <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Nº Camisa</label>
+                                                    <input type="number" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm focus:border-accent outline-none mt-1.5 font-bold h-14"
                                                         value={formPlayer.number} onChange={e => setFormPlayer({ ...formPlayer, number: parseInt(e.target.value) })} required />
                                                 </div>
                                                 <div>
-                                                    <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Posição</label>
-                                                    <select className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:border-accent outline-none mt-1 font-bold appearance-none cursor-pointer h-[42px]"
+                                                    <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Posição Principal</label>
+                                                    <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm focus:border-accent outline-none mt-1.5 font-bold appearance-none cursor-pointer h-14"
                                                         value={formPlayer.position} onChange={e => setFormPlayer({ ...formPlayer, position: e.target.value })}>
                                                         {['Goleiro', 'Zagueiro', 'Lateral', 'Meia', 'Atacante'].map(p => <option key={p} value={p} className="bg-[#07070a]">{p}</option>)}
                                                     </select>
                                                 </div>
-                                                <div className="col-span-2 sm:col-span-4 mt-1">
-                                                    <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Foto do Jogador</label>
-                                                    <label className="flex items-center justify-center gap-2 w-full h-[42px] mt-1 bg-white/5 border border-dashed border-white/10 rounded-xl cursor-pointer hover:bg-white/[0.08] hover:border-accent/40 transition-all font-bold text-slate-500 hover:text-white">
-                                                        <span className="text-[0.65rem] uppercase tracking-widest leading-none flex items-center gap-2">
-                                                            {formPlayer.photo ? '✓ Foto Selecionada' : 'Fazer Upload da Foto'}
-                                                        </span>
-                                                        <input type="file" accept="image/*" onChange={e => handleFile(e, (v) => setFormPlayer({ ...formPlayer, photo: v }))} className="hidden" />
-                                                    </label>
-                                                </div>
                                             </div>
-                                            {/* Additional Options */}
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
-                                                <div className="flex items-center gap-3 bg-black/20 p-4 rounded-xl border border-white/5">
-                                                    <input type="checkbox" id="isReserve"
-                                                        checked={formPlayer.isReserve}
-                                                        onChange={e => setFormPlayer({ ...formPlayer, isReserve: e.target.checked })}
-                                                        className="w-5 h-5 accent-accent" />
-                                                    <label htmlFor="isReserve" className="text-xs font-black text-slate-400 uppercase tracking-widest cursor-pointer">Reserva</label>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Tipo de Inscrição</label>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <button type="button" onClick={() => setFormPlayer({ ...formPlayer, isReserve: false })}
+                                                            className={`py-3 rounded-xl font-black text-[0.6rem] uppercase tracking-widest border transition-all ${!formPlayer.isReserve ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-white/5 text-slate-500 border-white/10 hover:bg-white/10'}`}>
+                                                            Titular
+                                                        </button>
+                                                        <button type="button" onClick={() => setFormPlayer({ ...formPlayer, isReserve: true })}
+                                                            className={`py-3 rounded-xl font-black text-[0.6rem] uppercase tracking-widest border transition-all ${formPlayer.isReserve ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20' : 'bg-white/5 text-slate-500 border-white/10 hover:bg-white/10'}`}>
+                                                            Reserva
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-3 bg-black/20 p-4 rounded-xl border border-white/5">
-                                                    <input type="checkbox" id="isCaptain"
-                                                        checked={formPlayer.isCaptain}
-                                                        onChange={e => setFormPlayer({ ...formPlayer, isCaptain: e.target.checked })}
-                                                        className="w-5 h-5 accent-primary" />
-                                                    <label htmlFor="isCaptain" className="text-xs font-black text-slate-400 uppercase tracking-widest cursor-pointer">Capitão</label>
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Liderança</label>
+                                                    <button type="button" onClick={() => setFormPlayer({ ...formPlayer, isCaptain: !formPlayer.isCaptain })}
+                                                        className={`w-full py-3 rounded-xl font-black text-[0.6rem] uppercase tracking-widest border transition-all flex items-center justify-center gap-2 ${formPlayer.isCaptain ? 'bg-warning text-black border-warning shadow-lg shadow-warning/20' : 'bg-white/5 text-slate-500 border-white/10 hover:bg-white/10'}`}>
+                                                        <Crown size={14} /> {formPlayer.isCaptain ? 'Capitão da Equipe' : 'Torne este Atleta Capitão'}
+                                                    </button>
                                                 </div>
                                             </div>
 
-                                            <div className="flex gap-2">
-                                                <button type="submit" className="flex-1 bg-accent text-white font-black py-2.5 rounded-xl uppercase tracking-widest text-[0.62rem] hover:brightness-110 active:scale-95 transition-all">
-                                                    {isEditingPlayer ? 'Salvar' : 'Adicionar'}
+                                            <div>
+                                                <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Avatar / Foto</label>
+                                                <label className="flex items-center justify-center gap-3 w-full h-14 mt-1.5 bg-white/5 border border-dashed border-white/10 rounded-xl cursor-pointer hover:bg-white/[0.08] hover:border-accent transition-all font-bold text-slate-500 hover:text-white">
+                                                    <span className="text-[0.65rem] uppercase tracking-widest leading-none">
+                                                        {formPlayer.photo ? '✓ Foto Carregada' : 'Selecionar Foto do Atleta'}
+                                                    </span>
+                                                    <input type="file" accept="image/*" onChange={e => handleFile(e, (v) => setFormPlayer({ ...formPlayer, photo: v }))} className="hidden" />
+                                                </label>
+                                            </div>
+
+                                            <div className="flex gap-3 pt-2">
+                                                <button type="submit" className="flex-1 bg-accent text-white font-black py-4 rounded-xl uppercase tracking-[0.15em] text-xs shadow-xl shadow-accent/20 hover:brightness-110 active:scale-[0.98] transition-all">
+                                                    {isEditingPlayer ? 'Atualizar Atleta' : 'Finalizar Inscrição'}
                                                 </button>
-                                                <button type="button" onClick={() => { setIsAddingPlayer(false); setIsEditingPlayer(null); }} className="px-5 border border-white/10 text-slate-500 font-black py-2.5 rounded-xl uppercase text-[0.62rem] hover:bg-white/5 transition-all">X</button>
+                                                <button type="button" onClick={() => { setIsAddingPlayer(false); setIsEditingPlayer(null); }} className="px-8 bg-white/5 border border-white/10 text-slate-500 font-black py-4 rounded-xl uppercase text-xs hover:bg-white/10 transition-all">Cancelar</button>
                                             </div>
                                         </form>
                                     </div>
                                 )}
 
-                                {/* Player List: compact scrollable table */}
-                                <div className="overflow-x-auto no-scrollbar -mx-1">
-                                    <table className="w-full border-separate border-spacing-y-1.5 min-w-[360px]">
-                                        <thead className="text-[0.55rem] font-black text-slate-600 uppercase tracking-[0.15em]">
-                                            <tr>
-                                                <th className="px-3 py-1 text-left">Nº / Nome</th>
-                                                <th className="px-3 py-1 text-center hidden sm:table-cell">Posição</th>
-                                                <th className="px-3 py-1 text-center">
-                                                    <Target size={11} className="mx-auto text-accent" />
-                                                </th>
-                                                <th className="px-3 py-1 text-center">Cartões</th>
-                                                <th className="px-3 py-1 text-right">Ações</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {selectedTeam.players.length === 0 ? (
-                                                <tr><td colSpan={5} className="text-center py-10 text-slate-600 font-black text-[0.6rem] uppercase tracking-widest">Sem atletas inscritos.</td></tr>
-                                            ) : (
-                                                selectedTeam.players.sort((a, b) => a.number - b.number).map(p => (
-                                                    <tr key={p.id} className="group bg-white/[0.02] hover:bg-white/[0.05] transition-all rounded-xl">
-                                                        <td className="px-3 py-3 first:rounded-l-xl">
-                                                            <div className="flex items-center gap-2.5 min-w-[130px]">
-                                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black font-outfit border-2 text-xs flex-none ${p.isCaptain ? 'border-warning bg-warning/20 text-warning' : 'border-white/10 bg-white/5 text-slate-400'}`}>
-                                                                    {p.number}
-                                                                </div>
-                                                                <div className="min-w-0">
-                                                                    <div className="flex items-center gap-1.5 min-w-0">
-                                                                        <span className="font-black text-white truncate max-w-[90px] font-outfit uppercase tracking-wide text-xs sm:text-sm">{p.name}</span>
-                                                                        {p.isCaptain && <span className="text-[0.45rem] font-black bg-warning text-black px-1 rounded uppercase leading-tight py-0.5 flex-none">CAP</span>}
-                                                                    </div>
-                                                                    <span className="text-[0.5rem] font-black text-slate-600 uppercase sm:hidden">{p.position}</span>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-3 py-3 text-center hidden sm:table-cell">
-                                                            <span className="text-[0.6rem] font-black bg-white/5 px-2 py-1 rounded-lg text-slate-500 border border-white/5 uppercase tracking-widest">{p.position}</span>
-                                                        </td>
-                                                        <td className="px-3 py-3 text-center">
-                                                            <span className="font-black text-white font-outfit text-sm sm:text-base">{p.stats?.goals || 0}</span>
-                                                        </td>
-                                                        <td className="px-3 py-3 text-center">
-                                                            <div className="flex items-center justify-center gap-1.5">
-                                                                {(p.stats?.yellowCards > 0) && <span className="w-3 h-4 bg-warning rounded-[2px] inline-block shadow-sm" />}
-                                                                {(p.stats?.yellowCards > 1) && <span className="w-3 h-4 bg-warning rounded-[2px] inline-block shadow-sm" />}
-                                                                {(p.stats?.redCards > 0) && <span className="w-3 h-4 bg-danger rounded-[2px] inline-block shadow-sm" />}
-                                                                {(!p.stats?.yellowCards && !p.stats?.redCards) && <span className="text-slate-700 text-[0.6rem]">—</span>}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-3 py-3 text-right last:rounded-r-xl">
-                                                            <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                                                <button onClick={() => toggleCaptain(selectedTeam.id, p.id)}
-                                                                    className={`p-1.5 rounded-lg transition-all ${p.isCaptain ? 'bg-warning/20 text-warning' : 'text-slate-600 hover:text-warning hover:bg-white/5'}`}
-                                                                    title="Capitão">
-                                                                    <Star size={13} strokeWidth={2} />
-                                                                </button>
-                                                                <button onClick={() => { setIsEditingPlayer(p.id); setFormPlayer({ name: p.name, number: p.number, position: p.position, isCaptain: p.isCaptain || false, isReserve: p.isReserve || false, photo: p.photo || '' }); setIsAddingPlayer(true); }}
-                                                                    className="p-1.5 rounded-lg text-slate-600 hover:text-white hover:bg-white/5 transition-all">
-                                                                    <Edit2 size={13} />
-                                                                </button>
-                                                                <button onClick={() => { if (window.confirm('Excluir jogador?')) removePlayer(selectedTeam.id, p.id); }}
-                                                                    className="p-1.5 rounded-lg text-danger/50 hover:text-danger hover:bg-danger/10 transition-all">
-                                                                    <Trash2 size={13} />
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))
+                                {/* Categorized Player List */}
+                                <div className="space-y-8">
+                                    {/* Starters Section */}
+                                    <div>
+                                        <div className="flex items-center justify-between mb-3 px-2">
+                                            <h3 className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <ShieldCheck size={14} /> Titulares ({starters.length} / {maxStarters})
+                                            </h3>
+                                            {starters.length > maxStarters && (
+                                                <span className="text-[0.55rem] font-black bg-danger/10 text-danger border border-danger/20 px-2 py-1 rounded-md animate-pulse">LIMITE EXCEDIDO</span>
                                             )}
-                                        </tbody>
-                                    </table>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {starters.length === 0 ? (
+                                                <p className="col-span-full text-center py-6 text-slate-700 font-black text-[0.6rem] uppercase tracking-widest border border-white/5 rounded-2xl bg-white/[0.01] italic">Nenhum titular definido.</p>
+                                            ) : (
+                                                starters.map(p => renderPlayerCard(p, selectedTeam.id))
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Reserves Section */}
+                                    <div>
+                                        <div className="flex items-center justify-between mb-3 px-2">
+                                            <h3 className="text-[0.65rem] font-black text-accent uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <Users size={14} /> Reservas ({reserves.length} / {maxReserves})
+                                            </h3>
+                                            {reserves.length > maxReserves && (
+                                                <span className="text-[0.55rem] font-black bg-danger/10 text-danger border border-danger/20 px-2 py-1 rounded-md animate-pulse">LIMITE EXCEDIDO</span>
+                                            )}
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {reserves.length === 0 ? (
+                                                <p className="col-span-full text-center py-6 text-slate-700 font-black text-[0.6rem] uppercase tracking-widest border border-white/5 rounded-2xl bg-white/[0.01] italic">Nenhum reserva definido.</p>
+                                            ) : (
+                                                reserves.map(p => renderPlayerCard(p, selectedTeam.id))
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </>
@@ -334,6 +322,53 @@ const TeamsDashboard = () => {
             </div>
         </div>
     );
+
+    function renderPlayerCard(p: any, teamId: string) {
+        return (
+            <div key={p.id} className="group flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:border-white/[0.15] hover:bg-white/[0.06] transition-all duration-300">
+                <div className="relative flex-none">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black font-outfit border-2 text-sm shadow-inner transition-colors ${p.photo ? 'bg-transparent overflow-hidden' : (p.isCaptain ? 'border-warning bg-warning/20 text-warning' : 'border-white/10 bg-white/5 text-slate-500')}`}>
+                        <TeamLogo src={p.photo} size={48} />
+                        {!p.photo && p.number}
+                    </div>
+                    {p.isCaptain && <Crown size={14} className="absolute -top-1.5 -right-1.5 text-warning fill-warning/30 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-bold text-white uppercase tracking-tight text-xs sm:text-sm truncate">
+                            {p.name}
+                        </span>
+                        <span className="text-[0.55rem] font-bold px-1.5 py-0.5 rounded-md bg-black/40 text-slate-500 border border-white/5 flex-none">{p.position}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <span className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest">Nº {p.number}</span>
+                        <div className="flex items-center gap-1">
+                            {p.stats?.goals > 0 && <span className="text-[0.6rem] font-black text-accent uppercase">⚽ {p.stats.goals}</span>}
+                            {p.stats?.yellowCards > 0 && <span className="w-2 h-3 bg-warning rounded-[2px]" />}
+                            {p.stats?.redCards > 0 && <span className="w-2 h-3 bg-danger rounded-[2px]" />}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
+                    <button onClick={() => toggleCaptain(teamId, p.id)}
+                        className={`p-2 rounded-xl transition-all ${p.isCaptain ? 'bg-warning/20 text-warning shadow-inner' : 'text-slate-600 hover:text-white hover:bg-white/10'}`}
+                        title="Tornar Capitão">
+                        <Star size={14} fill={p.isCaptain ? "currentColor" : "none"} />
+                    </button>
+                    <button onClick={() => { setIsEditingPlayer(p.id); setFormPlayer({ name: p.name, number: p.number, position: p.position, isCaptain: p.isCaptain || false, isReserve: p.isReserve || false, photo: p.photo || '' }); setIsAddingPlayer(true); }}
+                        className="p-2 rounded-xl text-slate-600 hover:text-white hover:bg-white/10 transition-all" title="Editar">
+                        <Edit2 size={14} />
+                    </button>
+                    <button onClick={() => { if (window.confirm(`Excluir ${p.name}?`)) removePlayer(teamId, p.id); }}
+                        className="p-2 rounded-xl text-danger/40 hover:text-danger hover:bg-danger/10 transition-all" title="Excluir">
+                        <Trash2 size={14} />
+                    </button>
+                </div>
+            </div>
+        );
+    }
 };
 
 export default TeamsDashboard;

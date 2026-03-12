@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LeagueProvider, useLeague } from './context/LeagueContext';
@@ -40,6 +40,21 @@ const LoadingScreen = () => (
   </div>
 );
 
+const NotFoundScreen = ({ message, onRetry }: { message: string, onRetry?: () => void }) => (
+  <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center gap-8 z-[999] p-6 text-center">
+    <div className="w-20 h-20 bg-danger/10 text-danger rounded-2xl flex items-center justify-center mb-4">
+      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+    </div>
+    <h1 className="text-white font-outfit font-black text-2xl sm:text-4xl uppercase tracking-tighter">Ops! Liga não encontrada</h1>
+    <p className="text-slate-400 max-w-md">{message}</p>
+    {onRetry && (
+      <button onClick={onRetry} className="bg-primary px-8 py-3 rounded-xl font-black uppercase text-xs tracking-widest hover:brightness-110 transition-all">
+        Tentar Novamente
+      </button>
+    )}
+  </div>
+);
+
 const PublicLayout = () => (
   <div className="min-h-screen bg-[#07070a] text-white font-inter">
     <Sidebar />
@@ -51,6 +66,7 @@ const PublicLayout = () => (
           <Route path="live" element={<LiveMatches />} />
           <Route path="standings" element={<Standings />} />
           <Route path="bracket" element={<Bracket />} />
+          <Route path="match/:matchId" element={<MatchControl />} />
           <Route path="*" element={<Navigate to="." replace />} />
         </Routes>
       </div>
@@ -61,15 +77,27 @@ const PublicLayout = () => (
 const AppRouter = () => {
   const { user, loading } = useAuth();
   const { leagues, loading: leagueLoading, league, loadPublicLeague } = useLeague();
-  const { leagueId } = useParams<{ leagueId: string }>();
+  const { slug } = useParams<{ slug: string }>();
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (leagueId) loadPublicLeague(leagueId);
-  }, [leagueId, loadPublicLeague]);
+    if (slug) {
+      loadPublicLeague(slug).catch(() => setNotFound(true));
+    }
+  }, [slug, loadPublicLeague]);
 
-  if (loading || leagueLoading) return <LoadingScreen />;
+  useEffect(() => {
+    if (!leagueLoading && slug && !league) {
+      setNotFound(true);
+    } else if (league) {
+      setNotFound(false);
+    }
+  }, [leagueLoading, slug, league]);
 
-  if (leagueId) {
+  if (loading || (leagueLoading && !notFound)) return <LoadingScreen />;
+
+  if (slug) {
+    if (notFound) return <NotFoundScreen message="Não conseguimos localizar esta liga. Verifique se o link está correto." onRetry={() => window.location.reload()} />;
     if (!league) return <LoadingScreen />;
     return <PublicLayout />;
   }
@@ -113,7 +141,7 @@ const App = () => (
     <AuthProvider>
       <LeagueProvider>
         <Routes>
-          <Route path="/view/:leagueId/*" element={<AppRouter />} />
+          <Route path="/view/:slug/*" element={<AppRouter />} />
           <Route path="/*" element={<AppRouter />} />
         </Routes>
       </LeagueProvider>

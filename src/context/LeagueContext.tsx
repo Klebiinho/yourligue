@@ -74,6 +74,7 @@ export type League = {
     playersPerTeam: number;
     reserveLimitPerTeam: number;
     substitutionsLimit: number;
+    slug: string;
 };
 
 // ─── Context Type ────────────────────────────────────────────
@@ -153,7 +154,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
                 pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
                 playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
-                substitutionsLimit: l.substitutions_limit || 5
+                substitutionsLimit: l.substitutions_limit || 5, slug: l.slug || ''
             }));
             setLeagues(mapped);
             if (mapped.length > 0 && !league) {
@@ -165,17 +166,26 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
     };
 
-    const loadPublicLeague = useCallback(async (id: string) => {
+    const loadPublicLeague = useCallback(async (slugOrId: string) => {
         setLoading(true);
         setIsPublicView(true);
-        const { data } = await supabase.from('leagues').select('*').eq('id', id).single();
+
+        // Try slug first
+        let { data } = await supabase.from('leagues').select('*').eq('slug', slugOrId).single();
+
+        // If not found and looks like UUID, try ID
+        if (!data && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId)) {
+            const { data: idData } = await supabase.from('leagues').select('*').eq('id', slugOrId).single();
+            data = idData;
+        }
+
         if (data) {
             const lg: League = {
                 id: data.id, name: data.name, logo: data.logo || '', maxTeams: data.max_teams,
                 pointsForWin: data.points_for_win, pointsForDraw: data.points_for_draw,
                 pointsForLoss: data.points_for_loss, defaultHalfLength: data.default_half_length,
                 playersPerTeam: data.players_per_team || 5, reserveLimitPerTeam: data.reserve_limit_per_team || 5,
-                substitutionsLimit: data.substitutions_limit || 5
+                substitutionsLimit: data.substitutions_limit || 5, slug: data.slug || ''
             };
             setLeague(lg);
         }
@@ -270,14 +280,28 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         else { setTeams([]); setMatches([]); setBrackets([]); }
     }, [league, loadLeagueData]);
 
+    const generateSlug = (name: string) => {
+        return name.toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+    };
+
     // ── League CRUD ────────────────────────────────────────────
     const createLeague = async (data: Omit<League, 'id'>) => {
+        const slug = generateSlug(data.name);
+        const { data: existing } = await supabase.from('leagues').select('id').eq('slug', slug).single();
+        if (existing) return { error: 'Uma liga com este nome já existe.' };
+
         const { data: row, error } = await supabase.from('leagues').insert({
             user_id: user!.id, name: data.name, logo: data.logo, max_teams: data.maxTeams,
             points_for_win: data.pointsForWin, points_for_draw: data.pointsForDraw,
             points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
             players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
-            substitutions_limit: data.substitutionsLimit
+            substitutions_limit: data.substitutionsLimit,
+            slug
         }).select().single();
         if (error) {
             console.error('Error creating league:', error);
@@ -290,7 +314,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 pointsForWin: row.points_for_win, pointsForDraw: row.points_for_draw,
                 pointsForLoss: row.points_for_loss, defaultHalfLength: row.default_half_length,
                 playersPerTeam: row.players_per_team || 5, reserveLimitPerTeam: row.reserve_limit_per_team || 5,
-                substitutionsLimit: row.substitutions_limit || 5
+                substitutionsLimit: row.substitutions_limit || 5, slug: row.slug || ''
             };
             setLeagues(prev => [...prev, lg]);
             setLeague(lg);
@@ -301,14 +325,27 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const updateLeague = async (data: Partial<League>) => {
         if (!league) return;
-        await supabase.from('leagues').update({
+        const updateData: any = {
             name: data.name, logo: data.logo, max_teams: data.maxTeams,
             points_for_win: data.pointsForWin, points_for_draw: data.pointsForDraw,
             points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
             players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
             substitutions_limit: data.substitutionsLimit
-        }).eq('id', league.id);
+        };
+
+        if (data.name && data.name !== league.name) {
+            const newSlug = generateSlug(data.name);
+            const { data: existing } = await supabase.from('leagues').select('id').eq('slug', newSlug).neq('id', league.id).single();
+            if (existing) {
+                alert('Este nome de liga já está em uso.');
+                return;
+            }
+            updateData.slug = newSlug;
+        }
+
+        await supabase.from('leagues').update(updateData).eq('id', league.id);
         const updated = { ...league, ...data };
+        if (updateData.slug) updated.slug = updateData.slug;
         setLeague(updated);
         setLeagues(prev => prev.map(l => l.id === league.id ? updated : l));
     };

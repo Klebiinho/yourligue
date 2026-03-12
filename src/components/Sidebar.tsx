@@ -7,10 +7,10 @@ import TeamLogo from './TeamLogo';
 const navItems = [
     { to: '/', icon: LayoutDashboard, label: 'Home', shortLabel: 'Home' },
     { to: '/teams', icon: Users, label: 'Times', shortLabel: 'Times' },
-    { to: '/teams-dashboard', icon: BarChart2, label: 'Painel', shortLabel: 'Painel' },
     { to: '/matches', icon: Swords, label: 'Partidas', shortLabel: 'Partidas' },
     { to: '/live', icon: Signal, label: 'Ao Vivo', shortLabel: 'Ao Vivo' },
     { to: '/standings', icon: Trophy, label: 'Tabela', shortLabel: 'Tabela' },
+    { to: '/teams-dashboard', icon: BarChart2, label: 'Painel', shortLabel: 'Painel' },
     { to: '/bracket', icon: GitBranch, label: 'Chaveamento', shortLabel: 'Chaveam.' },
     { to: '/settings', icon: Settings, label: 'Config.', shortLabel: 'Config.' },
 ];
@@ -24,7 +24,7 @@ const Sidebar = () => {
     const [moreOpen, setMoreOpen] = useState(false);
 
     // Prefix paths if in public view
-    const getLink = (to: string) => isPublicView ? `/view/${league?.id}${to === '/' ? '' : to}` : to;
+    const getLink = (to: string) => isPublicView ? `/view/${league?.slug || league?.id}${to === '/' ? '' : to}` : to;
 
     // Filter nav items based on public view
     const filteredNavItems = isPublicView

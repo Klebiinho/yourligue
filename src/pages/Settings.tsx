@@ -45,7 +45,7 @@ const Settings = () => {
 
     const handleCopyLink = () => {
         if (!league) return;
-        const link = `${window.location.origin}/view/${league.id}`;
+        const link = `${window.location.origin}/view/${league.slug || league.id}`;
         navigator.clipboard.writeText(link);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
