@@ -1,9 +1,28 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
 
+/* ── Tailwind v4: custom theme via @theme ─────────────────────────── */
+@theme {
+  /* Colors */
+  --color-primary: #6d28d9;
+  --color-primary-glow: rgba(109, 40, 217, 0.5);
+  --color-accent: #10b981;
+  --color-accent-glow: rgba(16, 185, 129, 0.5);
+  --color-danger: #ef4444;
+  --color-danger-glow: rgba(239, 68, 68, 0.5);
+  --color-warning: #f59e0b;
+  --color-bg-dark: #0a0a0f;
+  --color-bg-card: rgba(28, 28, 36, 0.6);
+
+  /* Fonts */
+  --font-outfit: 'Outfit', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+
+  /* Backdrop blur extras */
+  --blur-xs: 2px;
+}
+
+/* ── CSS Variable aliases (for raw CSS usage) ────────────────────── */
 :root {
   --bg-dark: #07070a;
   --primary: #6d28d9;
@@ -12,189 +31,190 @@
   --warning: #f59e0b;
 }
 
-@layer base {
-  * {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
+/* ── Base ────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #07070a;
+  color: rgb(203 213 225);
+  /* slate-200 */
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-image:
+    radial-gradient(ellipse at 10% 0%, rgba(109, 40, 217, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 100%, rgba(16, 185, 129, 0.07) 0%, transparent 50%);
+  background-attachment: fixed;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.025em;
+}
+
+input,
+select,
+textarea,
+button {
+  outline: none;
+  font-family: inherit;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.3;
+}
+
+/* ── Components ──────────────────────────────────────────────────── */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ── Animations ──────────────────────────────────────────────────── */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out both;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-float {
+  animation: float 7s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse 3.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.score-pop {
+  animation: scorePop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
-
-  body {
-    @apply bg-[#07070a] text-slate-200 font-inter antialiased;
-    background-image:
-      radial-gradient(ellipse at 10% 0%, rgba(109, 40, 217, 0.12) 0%, transparent 50%),
-      radial-gradient(ellipse at 90% 100%, rgba(16, 185, 129, 0.07) 0%, transparent 50%);
-    background-attachment: fixed;
-    min-height: 100dvh;
-    overflow-x: hidden;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-outfit tracking-tight;
-  }
-
-  input,
-  select,
-  textarea,
-  button {
-    @apply outline-none;
-    font-family: inherit;
-  }
-
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
-    opacity: 0.3;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@layer components {
-  .glass-panel {
-    background: rgba(255, 255, 255, 0.025);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 1.25rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
   }
 
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 999px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.15);
-  }
-
-  /* Safe area bottom for mobile nav */
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@layer utilities {
+@keyframes float {
 
-  /* Animations */
-  .animate-fade-in {
-    animation: fadeIn 0.4s ease-out both;
+  0%,
+  100% {
+    transform: translateY(0);
   }
 
-  .animate-slide-up {
-    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  50% {
+    transform: translateY(-16px);
+  }
+}
+
+@keyframes scorePop {
+  0% {
+    transform: scale(1);
   }
 
-  .animate-float {
-    animation: float 7s ease-in-out infinite;
+  50% {
+    transform: scale(1.5);
+    filter: brightness(1.8);
   }
 
-  .animate-pulse-slow {
-    animation: pulse 3.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -300% 0;
   }
 
-  .score-pop {
-    animation: scorePop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  100% {
+    background-position: 300% 0;
   }
+}
 
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(12px);
-    }
+/* ── Utilities ───────────────────────────────────────────────────── */
+.text-glow-primary {
+  text-shadow: 0 0 20px rgba(109, 40, 217, 0.6);
+}
 
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+.text-glow-accent {
+  text-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+}
 
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(24px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes float {
-
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-
-    50% {
-      transform: translateY(-16px);
-    }
-  }
-
-  @keyframes scorePop {
-    0% {
-      transform: scale(1);
-    }
-
-    50% {
-      transform: scale(1.5);
-      filter: brightness(1.8);
-    }
-
-    100% {
-      transform: scale(1);
-    }
-  }
-
-  /* Text glows */
-  .text-glow-primary {
-    text-shadow: 0 0 20px rgba(109, 40, 217, 0.6);
-  }
-
-  .text-glow-accent {
-    text-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
-  }
-
-  /* Shimmer loading */
-  .shimmer {
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.04) 50%, transparent 100%);
-    background-size: 300% 100%;
-    animation: shimmer 2s infinite;
-  }
-
-  @keyframes shimmer {
-    0% {
-      background-position: -300% 0;
-    }
-
-    100% {
-      background-position: 300% 0;
-    }
-  }
+.shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.04) 50%, transparent 100%);
+  background-size: 300% 100%;
+  animation: shimmer 2s infinite;
 }
