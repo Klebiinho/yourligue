@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Users } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const MatchControl = () => {
@@ -201,6 +201,7 @@ const MatchControl = () => {
                                                     <div className={`flex items-center gap-1 transition-all ${isRedCarded ? 'opacity-20 pointer-events-none' : ''}`}>
                                                         <button onClick={() => handleGol(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90" title="Gol"><Target size={14} /></button>
                                                         <button onClick={() => handleAssist(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90" title="Assistência"><Award size={14} /></button>
+                                                        <button onClick={() => handleGolContra(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90" title="Gol Contra"><XCircle size={14} /></button>
                                                         <button onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary hover:text-white transition-all active:scale-90" title="Substituir"><ArrowLeftRight size={14} /></button>
                                                         <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs" title="Amarelo">🟨</button>
                                                         <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs" title="Vermelho">🟥</button>
@@ -236,6 +237,9 @@ const MatchControl = () => {
                                                 </h4>
                                                 <div className="flex items-center gap-1 mt-1 h-3.5">
                                                     {isSubbedIn && <span className="text-[0.5rem] text-accent font-black uppercase tracking-tighter">ENTROU</span>}
+                                                    {Array.from({ length: yellowCards }).map((_, i) => (
+                                                        <div key={i} className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm" />
+                                                    ))}
                                                     {isRedCarded && <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm" />}
                                                 </div>
                                             </div>
