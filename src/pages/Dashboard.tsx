@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -37,9 +38,10 @@ const Dashboard = () => {
     const allPlayers = teams.flatMap(t => t.players.map(p => ({ ...p, team: t })));
     const topScorers = [...allPlayers].sort((a, b) => (b.stats?.goals || 0) - (a.stats?.goals || 0)).filter(p => (p.stats?.goals || 0) > 0).slice(0, 5);
 
+    const [activeTab, setActiveTab] = useState<'matches' | 'standings' | 'scorers'>('matches');
 
     return (
-        <div className="animate-fade-in space-y-6 md:space-y-8">
+        <div className="animate-fade-in space-y-6 md:space-y-8 pb-10">
             {/* ── Header ────────────────────────────────────────────────── */}
             <header>
                 <div className="flex items-start justify-between gap-3">
@@ -77,14 +79,31 @@ const Dashboard = () => {
                 ))}
             </div>
 
+            {/* ── Mobile Tabs Switcher ── */}
+            <div className="flex lg:hidden bg-black/40 p-1 rounded-2xl border border-white/5">
+                {[
+                    { id: 'matches', label: 'Jogos', icon: Zap },
+                    { id: 'standings', label: 'Tabela', icon: Trophy },
+                    { id: 'scorers', label: 'Destaques', icon: Star },
+                ].map(t => (
+                    <button
+                        key={t.id}
+                        onClick={() => setActiveTab(t.id as any)}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-black text-[0.6rem] uppercase tracking-widest transition-all ${activeTab === t.id ? 'bg-primary text-white shadow-lg' : 'text-slate-500'}`}
+                    >
+                        <t.icon size={13} /> {t.label}
+                    </button>
+                ))}
+            </div>
+
             {/* ── Main Grid ─────────────────────────────────────────────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-8">
 
                 {/* ── PRÓXIMAS & AO VIVO ─────────────────────────────────── */}
-                <div className="lg:col-span-2 space-y-3">
+                <div className={`${activeTab === 'matches' ? 'block' : 'hidden md:block'} lg:col-span-2 space-y-4`}>
                     <div className="flex items-center justify-between">
-                        <h2 className="text-xs sm:text-sm font-black font-outfit uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                            <Zap size={14} className="text-primary" />
+                        <h2 className="text-sm font-black font-outfit uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                            <Zap size={16} className="text-primary" />
                             Próximas & Ao Vivo
                         </h2>
                         <button onClick={() => navigate('/matches')} className="flex items-center gap-1 text-primary text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
@@ -106,7 +125,7 @@ const Dashboard = () => {
                                 return (
                                     <div key={match.id}
                                         onClick={() => navigate(`/match/${match.id}`)}
-                                        className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 sm:py-4 cursor-pointer transition-all duration-200 ${isLive ? 'bg-danger/[0.04]' : 'hover:bg-white/[0.03]'}`}>
+                                        className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 sm:py-5 cursor-pointer transition-all duration-200 ${isLive ? 'bg-danger/[0.04]' : 'hover:bg-white/[0.03]'}`}>
 
                                         {/* Home: logo + nome */}
                                         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -118,12 +137,15 @@ const Dashboard = () => {
                                         <div className="flex flex-col items-center gap-0.5 flex-none px-1 sm:px-2 min-w-[52px] sm:min-w-[70px]">
                                             {isLive ? (
                                                 <>
-                                                    <div className="flex items-center gap-1.5 font-black font-outfit text-base sm:text-xl">
-                                                        <span className="text-primary">{match.homeScore}</span>
+                                                    <div className="flex items-center gap-1.5 font-black font-outfit text-base sm:text-xl text-primary">
+                                                        <span>{match.homeScore}</span>
                                                         <span className="text-slate-700 text-xs">:</span>
                                                         <span className="text-accent">{match.awayScore}</span>
                                                     </div>
-                                                    <span className="text-[0.45rem] sm:text-[0.5rem] text-danger font-black uppercase tracking-widest animate-pulse whitespace-nowrap">● Ao Vivo</span>
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="w-1 h-1 bg-danger rounded-full animate-pulse" />
+                                                        <span className="text-[0.45rem] sm:text-[0.5rem] text-danger font-black uppercase tracking-widest whitespace-nowrap">Ao Vivo</span>
+                                                    </div>
                                                 </>
                                             ) : (
                                                 <>
@@ -152,12 +174,13 @@ const Dashboard = () => {
                 </div>
 
                 {/* ── COLUNA DIREITA ─────────────────────────────────────────── */}
-                <div className="space-y-5 md:space-y-6">
+                <div className={`${activeTab === 'matches' ? 'hidden md:block' : 'block'} space-y-5 md:space-y-6 lg:border-l lg:border-white/5 lg:pl-6`}>
+
                     {/* ── CLASSIFICAÇÃO ──────────────────────────────────────── */}
-                    <div className="space-y-3">
+                    <div className={`${activeTab === 'standings' || activeTab === 'matches' ? 'block' : 'hidden md:block'} space-y-4`}>
                         <div className="flex items-center justify-between">
-                            <h2 className="text-xs sm:text-sm font-black font-outfit uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                <Trophy size={14} className="text-warning" />
+                            <h2 className="text-sm font-black font-outfit uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                                <Trophy size={16} className="text-warning" />
                                 Classificação
                             </h2>
                             <button onClick={() => navigate('/standings')} className="flex items-center gap-1 text-accent text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
@@ -175,7 +198,7 @@ const Dashboard = () => {
                                 sortedTeams.slice(0, 5).map((team, i) => {
                                     const pts = (team.stats?.wins || 0) * (league?.pointsForWin || 3) + (team.stats?.draws || 0) * (league?.pointsForDraw || 1);
                                     return (
-                                        <div key={team.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-white/[0.03] transition-colors">
+                                        <div key={team.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3.5 hover:bg-white/[0.03] transition-colors">
                                             {/* Position badge */}
                                             <span className={`w-6 h-6 flex items-center justify-center rounded-md font-black text-[0.6rem] font-outfit flex-none ${i === 0 ? 'bg-warning/20 text-warning' :
                                                 i < 3 ? 'bg-white/10 text-slate-300' : 'text-slate-600'
@@ -184,7 +207,7 @@ const Dashboard = () => {
                                             </span>
                                             <TeamLogo src={team.logo} size={26} />
                                             <span className="font-bold flex-1 truncate text-[0.7rem] sm:text-sm">{team.name}</span>
-                                            <div className="flex flex-col items-end flex-none">
+                                            <div className="flex flex-col items-end flex-none min-w-[32px]">
                                                 <span className="font-black text-primary text-sm sm:text-base font-outfit leading-none">{pts}</span>
                                                 <span className="text-[0.5rem] text-slate-700 font-black uppercase">pts</span>
                                             </div>
@@ -196,10 +219,10 @@ const Dashboard = () => {
                     </div>
 
                     {/* ── DESTAQUES DA LIGA ───────────────────────────────────── */}
-                    <div className="space-y-3">
+                    <div className={`${activeTab === 'scorers' || activeTab === 'matches' ? 'block' : 'hidden md:block'} space-y-4`}>
                         <div className="flex items-center justify-between">
-                            <h2 className="text-xs sm:text-sm font-black font-outfit uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                <Star size={14} className="text-warning" />
+                            <h2 className="text-sm font-black font-outfit uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                                <Star size={16} className="text-warning" />
                                 Destaques da Liga
                             </h2>
                         </div>
@@ -212,7 +235,7 @@ const Dashboard = () => {
                                 </div>
                             ) : (
                                 topScorers.map((player, i) => (
-                                    <div key={player.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-white/[0.03] transition-colors">
+                                    <div key={player.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-white/[0.03] transition-colors">
                                         <span className={`w-5 h-5 flex items-center justify-center rounded-md font-black text-[0.55rem] font-outfit flex-none ${i === 0 ? 'bg-warning/20 text-warning' : 'text-slate-500'}`}>
                                             {i + 1}
                                         </span>
@@ -225,9 +248,9 @@ const Dashboard = () => {
                                         </div>
                                         <div className="flex-1 min-w-0 flex flex-col">
                                             <span className="font-bold truncate text-[0.65rem] sm:text-xs text-white">{player.name}</span>
-                                            <span className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest truncate">{player.team.name}</span>
+                                            <span className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest truncate leading-tight">{player.team.name}</span>
                                         </div>
-                                        <div className="flex flex-col items-end flex-none">
+                                        <div className="flex flex-col items-end flex-none min-w-[32px]">
                                             <span className="font-black text-accent text-sm sm:text-base font-outfit leading-none">{player.stats?.goals || 0}</span>
                                             <span className="text-[0.45rem] text-slate-500 font-black uppercase">Gols</span>
                                         </div>

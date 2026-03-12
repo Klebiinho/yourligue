@@ -184,14 +184,18 @@ const MatchControl = () => {
                                                 </div>
                                             </div>
                                             {/* Action Buttons */}
-                                            <div className={`flex items-center gap-1 transition-all ${isRedCarded ? 'opacity-20 pointer-events-none' : ''}`}>
-                                                <button onClick={() => handleGol(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90" title="Gol"><Target size={14} /></button>
-                                                <button onClick={() => handleAssist(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90" title="Assistência"><Award size={14} /></button>
-                                                <button onClick={() => handleGolContra(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90" title="Gol Contra"><XCircle size={14} /></button>
-                                                <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs" title="Amarelo">🟨</button>
-                                                <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs" title="Vermelho">🟥</button>
+                                            <div className="flex items-center gap-1">
+                                                <div className={`flex items-center gap-1 transition-all ${isRedCarded ? 'opacity-20 pointer-events-none' : ''}`}>
+                                                    <button onClick={() => handleGol(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90" title="Gol"><Target size={14} /></button>
+                                                    <button onClick={() => handleAssist(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90" title="Assistência"><Award size={14} /></button>
+                                                    <button onClick={() => handleGolContra(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90" title="Gol Contra"><XCircle size={14} /></button>
+                                                    <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs" title="Amarelo">🟨</button>
+                                                    <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs" title="Vermelho">🟥</button>
+                                                </div>
                                                 {(isRedCarded || yellowCards > 0) && (
-                                                    <button onClick={() => handleUndoLastCard(player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 text-slate-500 hover:text-white transition-all" title="Desfazer"><Trash2 size={12} /></button>
+                                                    <button onClick={() => handleUndoLastCard(player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/10 text-warning hover:bg-warning hover:text-black transition-all shadow-md" title="Anular Cartão">
+                                                        <Trash2 size={12} />
+                                                    </button>
                                                 )}
                                             </div>
                                         </div>
@@ -276,8 +280,8 @@ const MatchControl = () => {
                                                 </span>
                                             </div>
                                             <button onClick={() => removeEvent(matchId!, event.id)}
-                                                className="w-7 h-7 flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all opacity-0 group-hover:opacity-100 flex-none">
-                                                <XCircle size={12} />
+                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all sm:opacity-0 sm:group-hover:opacity-100 flex-none border border-danger/20">
+                                                <XCircle size={14} />
                                             </button>
                                         </div>
                                     );
