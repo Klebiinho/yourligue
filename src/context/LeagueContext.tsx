@@ -25,7 +25,7 @@ export type Team = {
 
 export type MatchEvent = {
     id: string;
-    type: 'goal' | 'assist' | 'yellow_card' | 'red_card' | 'substitution' | 'foul' | 'penalty_goal' | 'penalty_miss';
+    type: 'goal' | 'assist' | 'yellow_card' | 'red_card' | 'substitution' | 'foul' | 'penalty_goal' | 'penalty_miss' | 'own_goal';
     teamId: string;
     playerId: string;
     minute: number;
@@ -404,17 +404,21 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             let homeScore = m.homeScore, awayScore = m.awayScore;
             if (event.type === 'goal' || event.type === 'penalty_goal') {
                 if (event.teamId === m.homeTeamId) homeScore++; else awayScore++;
+            } else if (event.type === 'own_goal') {
+                if (event.teamId === m.homeTeamId) awayScore++; else homeScore++;
             }
             return { ...m, events: [...m.events, ne], homeScore, awayScore };
         }));
 
         // Update score in DB
         const match = matches.find(m => m.id === matchId);
-        if (match && (event.type === 'goal' || event.type === 'penalty_goal')) {
+        if (match && (event.type === 'goal' || event.type === 'penalty_goal' || event.type === 'own_goal')) {
             const isHome = event.teamId === match.homeTeamId;
+            const scoringTeamIsHome = event.type === 'own_goal' ? !isHome : isHome;
+
             await supabase.from('matches').update({
-                home_score: isHome ? match.homeScore + 1 : match.homeScore,
-                away_score: !isHome ? match.awayScore + 1 : match.awayScore,
+                home_score: scoringTeamIsHome ? match.homeScore + 1 : match.homeScore,
+                away_score: !scoringTeamIsHome ? match.awayScore + 1 : match.awayScore,
             }).eq('id', matchId);
         }
 
@@ -433,16 +437,21 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             if (event && (event.type === 'goal' || event.type === 'penalty_goal')) {
                 if (event.teamId === m.homeTeamId) homeScore = Math.max(0, homeScore - 1);
                 else awayScore = Math.max(0, awayScore - 1);
+            } else if (event && event.type === 'own_goal') {
+                if (event.teamId === m.homeTeamId) awayScore = Math.max(0, awayScore - 1);
+                else homeScore = Math.max(0, homeScore - 1);
             }
             return { ...m, events: m.events.filter(e => e.id !== eventId), homeScore, awayScore };
         }));
 
-        if (event && (event.type === 'goal' || event.type === 'penalty_goal')) {
+        if (event && (event.type === 'goal' || event.type === 'penalty_goal' || event.type === 'own_goal')) {
             const m = matches.find(m => m.id === matchId)!;
             const isHome = event.teamId === m.homeTeamId;
+            const scoringTeamIsHome = event.type === 'own_goal' ? !isHome : isHome;
+
             await supabase.from('matches').update({
-                home_score: isHome ? Math.max(0, m.homeScore - 1) : m.homeScore,
-                away_score: !isHome ? Math.max(0, m.awayScore - 1) : m.awayScore,
+                home_score: scoringTeamIsHome ? Math.max(0, m.homeScore - 1) : m.homeScore,
+                away_score: !scoringTeamIsHome ? Math.max(0, m.awayScore - 1) : m.awayScore,
             }).eq('id', matchId);
         }
     };
