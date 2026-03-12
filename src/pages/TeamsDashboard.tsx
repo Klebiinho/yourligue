@@ -119,7 +119,7 @@ const TeamsDashboard = () => {
                                 </div>
 
                                 {/* Stats */}
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '12px', marginTop: '20px' }}>
+                                <div className="grid-4" style={{ marginTop: '20px' }}>
                                     {[
                                         { label: 'Partidas', val: selectedTeam.stats.matches, color: 'var(--text-main)' },
                                         { label: 'Vitórias', val: selectedTeam.stats.wins, color: '#22c55e' },
@@ -260,7 +260,7 @@ const TeamsDashboard = () => {
                                                 <td style={{ padding: '10px 12px' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                         <TeamLogo src={p.team.logo} size={20} />
-                                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{p.team.name}</span>
+                                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{p.team.name}</span>
                                                     </div>
                                                 </td>
                                                 <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 800, color: 'var(--primary)', fontSize: '1.1rem' }}>{p.stats.goals}</td>

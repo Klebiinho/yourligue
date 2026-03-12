@@ -360,25 +360,25 @@ a {
 /* ─── Grid Layouts ────────────────────────────────────────────── */
 .grid-2 {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 24px;
 }
 
 .grid-3 {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
 }
 
 .grid-4 {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
 }
 
 .teams-dashboard-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) 2fr;
+  grid-template-columns: minmax(300px, 1fr) 2fr;
   gap: 24px;
 }
 
@@ -673,11 +673,6 @@ a {
     padding: 28px 24px;
   }
 
-  .grid-4 {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-  }
-
   .teams-dashboard-layout {
     grid-template-columns: 1fr;
     gap: 20px;
@@ -772,19 +767,19 @@ a {
     height: 20px;
   }
 
-  /* Grid adjustments */
+  /* Grid adjustments for mobile specifically if minmax falls short */
   .grid-2 {
     grid-template-columns: 1fr;
     gap: 16px;
   }
 
   .grid-3 {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 12px;
   }
 
   .grid-4 {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 12px;
   }
 
@@ -930,7 +925,7 @@ a {
   width: 220px;
   padding: 16px;
   border: 2px solid var(--primary);
-  background: linear-gradient(135deg, rgba(109, 40, 217, 0.2), rgba(0,0,0,0.4));
+  background: linear-gradient(135deg, rgba(109, 40, 217, 0.2), rgba(0, 0, 0, 0.4));
   box-shadow: 0 0 30px var(--primary-glow);
 }
 

@@ -149,8 +149,8 @@ const Matches = () => {
                                         {/* Teams */}
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                                             <TeamLogo src={ht?.logo} size={32} />
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{ht?.name} x {at?.name}</div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ fontWeight: 700, fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ht?.name} x {at?.name}</div>
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                                     {match.scheduledAt && <span>📅 {formatDate(match.scheduledAt)}</span>}
                                                     {match.location && <span>📍 {match.location}</span>}

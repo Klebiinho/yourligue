@@ -44,7 +44,7 @@ const Dashboard = () => {
             </header>
 
             {/* Stats Cards - responsive grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }} className="mb-40">
+            <div className="grid-4 mb-40">
                 <StatCard title="Times" value={`${teams.length} / ${league?.maxTeams ?? 16}`} icon={<Trophy color="var(--primary)" />} />
                 <StatCard title="Jogadores" value={totalPlayers} icon={<Users color="var(--accent)" />} />
                 <StatCard title="Ao Vivo" value={liveMatches} icon={<Activity color="var(--danger)" />} accent="danger" />
@@ -144,7 +144,7 @@ const Dashboard = () => {
                                                 <td style={{ padding: '12px' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                         <TeamLogo src={team.logo} size={28} />
-                                                        <span style={{ fontWeight: 600 }}>{team.name}</span>
+                                                        <span style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{team.name}</span>
                                                     </div>
                                                 </td>
                                                 <td style={{ padding: '12px', textAlign: 'center', fontWeight: 800, color: 'var(--accent)' }}>{pts}</td>
