@@ -121,8 +121,11 @@ const Matches = () => {
                             {/* Date & Location */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5"><Calendar size={11} />Data & Hora</label>
-                                    <input className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none transition-all text-sm"
+                                    <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                                        <Calendar size={11} className="flex-none" />
+                                        Data & Hora
+                                    </label>
+                                    <input className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-3 text-white focus:border-primary outline-none transition-all text-sm [color-scheme:dark]"
                                         type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} />
                                 </div>
                                 <div className="space-y-1.5">
@@ -155,8 +158,8 @@ const Matches = () => {
                 {tabConfig.map(({ key, label, count }) => (
                     <button key={key} onClick={() => setTab(key)}
                         className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.6rem] font-black uppercase tracking-widest transition-all duration-300 flex-none ${tab === key
-                                ? key === 'live' ? 'bg-danger text-white shadow-[0_4px_15px_rgba(239,68,68,0.3)]' : 'bg-accent text-white shadow-[0_4px_15px_rgba(16,185,129,0.3)]'
-                                : 'bg-white/5 border border-white/5 text-slate-500 hover:text-slate-300'
+                            ? key === 'live' ? 'bg-danger text-white shadow-[0_4px_15px_rgba(239,68,68,0.3)]' : 'bg-accent text-white shadow-[0_4px_15px_rgba(16,185,129,0.3)]'
+                            : 'bg-white/5 border border-white/5 text-slate-500 hover:text-slate-300'
                             }`}>
                         {key === 'live' && <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
                         {label}
@@ -180,44 +183,44 @@ const Matches = () => {
                         const isFinished = match.status === 'finished';
                         return (
                             <div key={match.id} className={`glass-panel p-4 sm:p-5 border transition-all duration-300 ${isLive ? 'border-danger/25 bg-danger/[0.03] shadow-[0_0_30px_rgba(239,68,68,0.05)]' :
-                                    isFinished ? 'border-white/[0.04]' : 'border-white/[0.04] hover:border-white/[0.08]'
+                                isFinished ? 'border-white/[0.04]' : 'border-white/[0.04] hover:border-white/[0.08]'
                                 }`}>
                                 {/* Match Header Row */}
                                 <div className="flex items-center gap-3 sm:gap-4">
                                     {/* Home */}
-                                    <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                                        <TeamLogo src={ht?.logo} size={40} />
-                                        <span className="text-[0.6rem] font-black text-white uppercase tracking-wide truncate w-full text-center font-outfit">{ht?.name}</span>
+                                    <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                                        <TeamLogo src={ht?.logo} size={38} />
+                                        <span className="text-[0.55rem] sm:text-[0.65rem] font-black text-white uppercase tracking-wide w-full text-center font-outfit line-clamp-2 leading-tight">{ht?.name}</span>
                                     </div>
 
                                     {/* Center */}
-                                    <div className="flex flex-col items-center gap-1.5 flex-none px-2">
+                                    <div className="flex flex-col items-center gap-1 flex-none min-w-[56px] sm:min-w-[80px]">
                                         {(isLive || isFinished) ? (
-                                            <div className="flex items-center gap-2 sm:gap-3 font-outfit font-black text-xl sm:text-3xl">
+                                            <div className="flex items-center gap-1.5 sm:gap-3 font-outfit font-black text-xl sm:text-3xl">
                                                 <span className={isLive ? 'text-primary' : 'text-white'}>{match.homeScore}</span>
-                                                <span className="text-slate-700 text-sm">✕</span>
+                                                <span className="text-slate-700 text-xs">✕</span>
                                                 <span className={isLive ? 'text-accent' : 'text-white'}>{match.awayScore}</span>
                                             </div>
                                         ) : (
-                                            <div className="text-[0.7rem] font-black text-slate-600 uppercase tracking-widest font-outfit">VS</div>
+                                            <div className="text-[0.65rem] font-black text-slate-600 uppercase tracking-widest font-outfit">VS</div>
                                         )}
                                         {isLive && (
-                                            <div className="flex items-center gap-1.5 bg-danger/10 border border-danger/20 px-2.5 py-1 rounded-lg">
-                                                <span className="w-1.5 h-1.5 bg-danger rounded-full animate-pulse shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
-                                                <span className="text-[0.5rem] font-black text-danger uppercase tracking-widest">Ao Vivo</span>
+                                            <div className="flex items-center gap-1 bg-danger/10 border border-danger/20 px-2 py-0.5 rounded-md">
+                                                <span className="w-1 h-1 bg-danger rounded-full animate-pulse flex-none" />
+                                                <span className="text-[0.45rem] sm:text-[0.5rem] font-black text-danger uppercase tracking-widest whitespace-nowrap">Ao Vivo</span>
                                             </div>
                                         )}
                                         {!isLive && !isFinished && match.scheduledAt && (
-                                            <div className="flex items-center gap-1 text-[0.5rem] text-slate-600 font-bold">
-                                                <Calendar size={9} />{formatDate(match.scheduledAt)}
+                                            <div className="flex items-center gap-0.5 text-[0.45rem] sm:text-[0.5rem] text-slate-600 font-bold whitespace-nowrap">
+                                                <Calendar size={8} className="flex-none" />{formatDate(match.scheduledAt)}
                                             </div>
                                         )}
                                     </div>
 
                                     {/* Away */}
-                                    <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                                        <TeamLogo src={at?.logo} size={40} />
-                                        <span className="text-[0.6rem] font-black text-white uppercase tracking-wide truncate w-full text-center font-outfit">{at?.name}</span>
+                                    <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                                        <TeamLogo src={at?.logo} size={38} />
+                                        <span className="text-[0.55rem] sm:text-[0.65rem] font-black text-white uppercase tracking-wide w-full text-center font-outfit line-clamp-2 leading-tight">{at?.name}</span>
                                     </div>
                                 </div>
 
@@ -225,7 +228,7 @@ const Matches = () => {
                                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/[0.05] gap-2">
                                     {/* Status Badge */}
                                     <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[0.55rem] font-black uppercase tracking-widest flex-none ${isLive ? 'bg-danger/15 text-danger' :
-                                            isFinished ? 'bg-accent/15 text-accent' : 'bg-warning/15 text-warning'
+                                        isFinished ? 'bg-accent/15 text-accent' : 'bg-warning/15 text-warning'
                                         }`}>
                                         {isLive ? <Signal size={10} /> : isFinished ? <CheckCircle2 size={10} /> : <Clock size={10} />}
                                         {isLive ? 'Em curso' : isFinished ? 'Finalizada' : 'Agendada'}
@@ -240,8 +243,8 @@ const Matches = () => {
                                         )}
                                         <button onClick={() => handleEnter(match.id, match.status)}
                                             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-[0.6rem] uppercase tracking-widest transition-all active:scale-95 ${isLive ? 'bg-accent text-white shadow-[0_4px_15px_rgba(16,185,129,0.3)] hover:brightness-110' :
-                                                    isFinished ? 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10' :
-                                                        'bg-primary text-white shadow-[0_4px_15px_rgba(109,40,217,0.3)] hover:brightness-110'
+                                                isFinished ? 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10' :
+                                                    'bg-primary text-white shadow-[0_4px_15px_rgba(109,40,217,0.3)] hover:brightness-110'
                                                 }`}>
                                             <Play size={12} fill="currentColor" />
                                             {isLive ? 'Gerenciar' : isFinished ? 'Ver' : 'Iniciar'}

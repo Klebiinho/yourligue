@@ -33,7 +33,7 @@ const AppRouter = () => {
       <Sidebar />
       {/* Main: offset for desktop sidebar, bottom padding for mobile nav */}
       <main className="md:pl-64 min-h-screen">
-        <div className="p-4 md:p-8 lg:p-10 pb-28 md:pb-10 max-w-[1600px] mx-auto w-full">
+        <div className="p-4 md:p-8 lg:p-10 pb-24 md:pb-10 max-w-[1600px] mx-auto w-full">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/teams" element={<Teams />} />
