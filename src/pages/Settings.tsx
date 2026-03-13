@@ -45,7 +45,8 @@ const Settings = () => {
 
     const handleCopyLink = () => {
         if (!league) return;
-        const link = `${window.location.origin}/view/${league.slug || league.id}`;
+        const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+        const link = `${baseUrl}/view/${league.slug || league.id}`;
         navigator.clipboard.writeText(link);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -270,7 +271,7 @@ const Settings = () => {
                         </p>
                         <div className="flex gap-2">
                             <div className="flex-1 bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-slate-400 font-mono text-xs truncate flex items-center">
-                                {window.location.origin}/view/{league?.slug || league?.id}
+                                {import.meta.env.VITE_APP_URL || window.location.origin}/view/{league?.slug || league?.id}
                             </div>
                             <button
                                 onClick={handleCopyLink}

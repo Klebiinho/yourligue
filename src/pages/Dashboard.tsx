@@ -71,7 +71,8 @@ const Dashboard = () => {
                     {!isPublicView && isAdmin && league && (
                         <button
                             onClick={() => {
-                                const url = `${window.location.origin}/view/${league.slug || league.id}`;
+                                const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+                                const url = `${baseUrl}/view/${league.slug || league.id}`;
                                 navigator.clipboard.writeText(url);
                                 alert('Link da visão de telespectador copiado!');
                             }}

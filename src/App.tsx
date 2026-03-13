@@ -104,6 +104,13 @@ const AppRouter = () => {
     }
   }, [leagueLoading, slug, league]);
 
+  // Clean empty hash fragments (like /#)
+  useEffect(() => {
+    if (window.location.hash === '#' || window.location.hash === '') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }, []);
+
   if (loading || (leagueLoading && !notFound)) return <LoadingScreen />;
 
   if (slug) {
