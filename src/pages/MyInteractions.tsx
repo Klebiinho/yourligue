@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Heart, Star, Swords, Shield, Users, TrendingUp } from 'lucide-react';
+import { Heart, Star, Swords, Shield, Users, TrendingUp, Calendar, Zap } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import { useNavigate } from 'react-router-dom';
 
 const MyInteractions = () => {
-    const { teams, userInteractions, league, leagueBasePath } = useLeague();
+    const { teams, matches, userInteractions, league, leagueBasePath } = useLeague();
     const navigate = useNavigate();
 
     const supporting = userInteractions.filter(i => i.interactionType === 'supporting');
@@ -19,6 +19,16 @@ const MyInteractions = () => {
     );
 
     const selectedTeam = teams.find(t => t.id === selectedTeamId);
+
+    const teamMatches = matches.filter(m => m.homeTeamId === selectedTeamId || m.awayTeamId === selectedTeamId);
+    const upcomingMatches = teamMatches
+        .filter(m => m.status !== 'finished')
+        .sort((a, b) => new Date(a.scheduledAt || 0).getTime() - new Date(b.scheduledAt || 0).getTime())
+        .slice(0, 3);
+
+    const formatDate = (dt?: string) =>
+        dt ? new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'A definir';
+
 
     if (userInteractions.length === 0) {
         return (
@@ -190,6 +200,55 @@ const MyInteractions = () => {
                                         <p className="text-[0.6rem] font-bold text-slate-600 uppercase tracking-wider mt-1">{s.label}</p>
                                     </div>
                                 ))}
+                            </div>
+
+                            {/* Upcoming Matches */}
+                            <div className="glass-panel p-6">
+                                <h3 className="text-sm font-black text-white font-outfit uppercase tracking-widest flex items-center gap-2 mb-6">
+                                    <Calendar size={16} className="text-accent" /> Próximas Partidas
+                                </h3>
+
+                                {upcomingMatches.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {upcomingMatches.map(m => {
+                                            const isHome = m.homeTeamId === selectedTeamId;
+                                            const opponentId = isHome ? m.awayTeamId : m.homeTeamId;
+                                            const opponent = getTeam(opponentId);
+                                            return (
+                                                <div key={m.id} className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-4 flex items-center justify-between group hover:bg-white/[0.06] transition-all">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="flex flex-col items-center">
+                                                            <div className="bg-accent/10 p-2 rounded-xl mb-1">
+                                                                <Zap size={14} className="text-accent" />
+                                                            </div>
+                                                            <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-tighter">VS</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <TeamLogo src={opponent?.logo} size={32} />
+                                                            <div>
+                                                                <p className="text-sm font-bold text-white uppercase">{opponent?.name}</p>
+                                                                <p className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">{formatDate(m.scheduledAt)}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-[0.55rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${m.status === 'live' ? 'bg-danger/10 border-danger/30 text-danger animate-pulse' : 'bg-white/5 border-white/10 text-slate-500'
+                                                            }`}>
+                                                            {m.status === 'live' ? 'AO VIVO' : 'Agendado'}
+                                                        </span>
+                                                        <button onClick={() => navigate(`${leagueBasePath}/match/${m.id}`)} className="p-2 hover:bg-white/10 rounded-xl transition-colors">
+                                                            <TrendingUp size={14} className="text-slate-600" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 bg-white/[0.01] rounded-2xl border border-dashed border-white/10">
+                                        <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">Nenhuma partida agendada</p>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Elenco Section */}
