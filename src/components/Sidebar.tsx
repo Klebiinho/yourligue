@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Swords, Trophy, Settings, BarChart2, GitBranch, ArrowLeftRight, Grid3x3, X, Signal } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, Trophy, Settings, BarChart2, GitBranch, ArrowLeftRight, Grid3x3, X, Signal, Home } from 'lucide-react';
 import { useLeague } from '../context/LeagueContext';
 import TeamLogo from './TeamLogo';
 
@@ -53,15 +53,15 @@ const Sidebar = () => {
                             <div className="mx-3 mb-1 bg-[#0d0d14]/95 backdrop-blur-2xl rounded-2xl border border-white/[0.08] overflow-hidden shadow-[0_-20px_60px_rgba(0,0,0,0.6)]">
                                 {/* Liga switcher */}
                                 <button onClick={() => { navigate('/leagues'); setMoreOpen(false); }}
-                                    className="w-full flex items-center gap-4 px-5 py-4 hover:bg-white/5 transition-colors border-b border-white/[0.05]">
-                                    <div className="relative flex-none">
-                                        <TeamLogo src={league?.logo} size={36} fallbackIcon={<Trophy size={16} className="text-primary" />} />
+                                    className="w-full flex items-center gap-4 px-5 py-4 hover:bg-white/10 transition-all border-b border-white/[0.05] group">
+                                    <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-lg shadow-primary/10">
+                                        <Home size={20} />
                                     </div>
                                     <div className="flex-1 text-left">
-                                        <p className="text-xs font-black text-white font-outfit uppercase tracking-wide leading-tight">{league?.name ?? 'Selecionar Liga'}</p>
-                                        <p className="text-[0.55rem] text-slate-600 font-bold uppercase tracking-widest mt-0.5">Trocar Liga</p>
+                                        <p className="text-xs font-black text-white font-outfit uppercase tracking-wide leading-tight">Central de Ligas</p>
+                                        <p className="text-[0.55rem] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Explorar / Seguidas</p>
                                     </div>
-                                    <ArrowLeftRight size={16} className="text-slate-600 flex-none" />
+                                    <ArrowLeftRight size={16} className="text-slate-600 flex-none group-hover:rotate-180 transition-transform duration-500" />
                                 </button>
 
                                 {/* Secondary nav items in grid */}
@@ -197,6 +197,18 @@ const Sidebar = () => {
                             )}
                         </NavLink>
                     ))}
+
+                    <div className="mt-4 pt-4 border-t border-white/[0.05]">
+                        <button
+                            onClick={() => navigate('/leagues')}
+                            className="flex items-center gap-3.5 px-4 py-3 rounded-xl text-slate-500 hover:text-white hover:bg-primary/10 w-full transition-all group font-bold text-[0.8rem] tracking-wide"
+                        >
+                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-primary/20 group-hover:text-primary transition-all">
+                                <Home size={16} />
+                            </div>
+                            <span>Central de Ligas</span>
+                        </button>
+                    </div>
                 </nav>
 
                 {/* Footer */}
@@ -211,7 +223,7 @@ const Sidebar = () => {
                         </button>
                     </div>
                 )}
-            </aside>
+            </aside >
         </>
     );
 };
