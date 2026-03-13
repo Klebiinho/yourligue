@@ -16,6 +16,7 @@ import MatchControl from './pages/MatchControl.tsx';
 import LiveMatches from './pages/LiveMatches.tsx';
 import AuthModal from './components/AuthModal.tsx';
 import NotificationTray from './components/NotificationTray.tsx';
+import MyInteractions from './pages/MyInteractions.tsx';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center gap-8 z-[999]">
@@ -69,6 +70,7 @@ const PublicLayout = () => (
           <Route path="standings" element={<Standings />} />
           <Route path="bracket" element={<Bracket />} />
           <Route path="match/:matchId" element={<MatchControl />} />
+          <Route path="my-team" element={<MyInteractions />} />
           <Route path="*" element={<Navigate to="." replace />} />
         </Routes>
       </div>
@@ -150,6 +152,7 @@ const AppRouter = () => {
             <Route path="/settings" element={<Settings />} />
             <Route path="/match/:matchId" element={<MatchControl />} />
             <Route path="/leagues" element={<LeagueSelector />} />
+            <Route path="/my-team" element={<MyInteractions />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
