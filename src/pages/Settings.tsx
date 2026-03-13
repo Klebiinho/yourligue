@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
-import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Upload } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Upload, Link as LinkIcon } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import { useNavigate } from 'react-router-dom';
 
@@ -33,6 +33,7 @@ const Settings = () => {
         link_url: '',
         duration: 5
     });
+    const [adInputMethod, setAdInputMethod] = useState<'file' | 'url'>('file');
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -267,18 +268,44 @@ const Settings = () => {
                                                     placeholder="Ex: Patrocínio Coca-Cola"
                                                 />
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
-                                                    Mídia (Arquivo)
-                                                    <span className="text-[10px] lowercase font-normal opacity-50 italic">Máx 5MB recomendado</span>
-                                                </label>
-                                                <label className={`w-full bg-white/5 border-2 border-dashed rounded-xl px-4 py-3 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${formAd.media_url ? 'border-accent/40 bg-accent/5' : 'border-white/10 hover:border-white/20'}`}>
-                                                    <Upload size={20} className={formAd.media_url ? 'text-accent' : 'text-slate-500'} />
-                                                    <span className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400">
-                                                        {formAd.media_url ? 'Arquivo Selecionado' : 'Clique ou Arraste o Arquivo'}
-                                                    </span>
-                                                    <input type="file" onChange={handleAdMediaFile} accept="image/*,video/*,image/gif" className="hidden" />
-                                                </label>
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-4 bg-white/5 p-1 rounded-xl w-fit">
+                                                    <button type="button" onClick={() => { setAdInputMethod('file'); setFormAd(p => ({ ...p, media_url: '' })); }}
+                                                        className={`px-3 py-1.5 rounded-lg text-[0.6rem] font-black uppercase tracking-widest transition-all ${adInputMethod === 'file' ? 'bg-primary text-white' : 'text-slate-500 hover:text-white'}`}>
+                                                        Arquivo
+                                                    </button>
+                                                    <button type="button" onClick={() => { setAdInputMethod('url'); setFormAd(p => ({ ...p, media_url: '' })); }}
+                                                        className={`px-3 py-1.5 rounded-lg text-[0.6rem] font-black uppercase tracking-widest transition-all ${adInputMethod === 'url' ? 'bg-primary text-white' : 'text-slate-500 hover:text-white'}`}>
+                                                        URL Externo
+                                                    </button>
+                                                </div>
+
+                                                {adInputMethod === 'file' ? (
+                                                    <div className="space-y-2">
+                                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
+                                                            Mídia (Arquivo)
+                                                            <span className="text-[10px] lowercase font-normal opacity-50 italic">Máx 5MB recomendado</span>
+                                                        </label>
+                                                        <label className={`w-full bg-white/5 border-2 border-dashed rounded-xl px-4 py-8 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${formAd.media_url ? 'border-accent/40 bg-accent/5' : 'border-white/10 hover:border-white/20'}`}>
+                                                            <Upload size={20} className={formAd.media_url ? 'text-accent' : 'text-slate-500'} />
+                                                            <span className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400">
+                                                                {formAd.media_url ? 'Arquivo Selecionado' : 'Carregar Imagem, GIF ou Vídeo'}
+                                                            </span>
+                                                            <input type="file" onChange={handleAdMediaFile} accept="image/*,video/*,image/gif" className="hidden" />
+                                                        </label>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                                            <LinkIcon size={12} className="text-primary" /> Link Direto da Mídia
+                                                        </label>
+                                                        <input type="url" value={formAd.media_url} onChange={e => setFormAd({ ...formAd, media_url: e.target.value })} required
+                                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-accent"
+                                                            placeholder="https://exemplo.com/propaganda.mp4"
+                                                        />
+                                                        <p className="text-[10px] text-slate-500 italic">Dica: Use links diretos do Google Drive ou CDNs para carregamento instantâneo.</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
