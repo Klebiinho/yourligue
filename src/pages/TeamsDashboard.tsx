@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Users, Trash2, Edit2, PlusCircle, Star, Target, TrendingUp, Crown, ShieldCheck } from 'lucide-react';
+import { Users, Trash2, Edit2, PlusCircle, Star, TrendingUp, Crown, ShieldCheck } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const TeamsDashboard = () => {
