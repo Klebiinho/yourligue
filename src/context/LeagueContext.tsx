@@ -929,9 +929,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         if (league) loadUserInteractions(league.id);
     };
 
-    const clearNotification = (id: string) => {
-        setNotifications(prev => prev.filter(n => n.id !== id));
-    };
 
     const addAd = async (ad: Omit<Ad, 'id' | 'league_id' | 'active'>) => {
         if (!league) return { error: 'No league selected' };
