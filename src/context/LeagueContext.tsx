@@ -903,21 +903,41 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         if (!league) return;
 
         if (type === 'supporting') {
-            // Remove existing supporting for this league
-            await supabase.from('user_team_interactions').delete().eq('user_id', user.id).eq('league_id', league.id).eq('interaction_type', 'supporting');
-        } else {
-            // Check if already exist for favorite/rival
             const { data: existing } = await supabase.from('user_team_interactions')
-                .select('id').eq('user_id', user.id).eq('team_id', teamId).eq('interaction_type', type).single();
+                .select('id, team_id')
+                .eq('user_id', user.id)
+                .eq('league_id', league.id)
+                .eq('interaction_type', 'supporting')
+                .single();
+
             if (existing) {
-                // Remove if exists (toggle)
+                await supabase.from('user_team_interactions').delete().eq('id', existing.id);
+                // If it was the SAME team, we just wanted to toggle OFF
+                if (existing.team_id === teamId) {
+                    loadUserInteractions(league.id);
+                    loadSupportCounts(league.id);
+                    return;
+                }
+            }
+        } else {
+            const { data: existing } = await supabase.from('user_team_interactions')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('team_id', teamId)
+                .eq('interaction_type', type)
+                .single();
+
+            if (existing) {
                 await removeInteraction(existing.id);
                 return;
             }
         }
 
         await supabase.from('user_team_interactions').insert({
-            user_id: user.id, league_id: league.id, team_id: teamId, interaction_type: type
+            user_id: user.id,
+            league_id: league.id,
+            team_id: teamId,
+            interaction_type: type
         });
 
         loadUserInteractions(league.id);

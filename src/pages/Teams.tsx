@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Shield, UserPlus, Image as ImageIcon, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, TrendingUp, Heart, Star, Swords as RivalIcon } from 'lucide-react';
+import { Shield, UserPlus, Image as ImageIcon, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, TrendingUp, Heart, Star, Wind as SecarIcon } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
@@ -187,7 +187,7 @@ const Teams = () => {
                                         {[
                                             { type: 'supporting', icon: Heart, label: 'Torcer', activeColor: 'text-danger bg-danger/10 border-danger/30' },
                                             { type: 'favorite', icon: Star, label: 'Favoritar', activeColor: 'text-warning bg-warning/10 border-warning/30' },
-                                            { type: 'rival', icon: RivalIcon, label: 'Rival', activeColor: 'text-primary bg-primary/10 border-primary/30' },
+                                            { type: 'rival', icon: SecarIcon, label: 'Secar', activeColor: 'text-accent bg-accent/10 border-accent/40' },
                                         ].map(btn => {
                                             const isActive = userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === btn.type);
                                             const activeIndicator = btn.type === 'supporting' ? 'fill-danger' : btn.type === 'favorite' ? 'fill-warning' : 'fill-primary';

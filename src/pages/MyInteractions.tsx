@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Heart, Star, Swords, Shield, Users, TrendingUp, Calendar, Zap } from 'lucide-react';
+import { Heart, Star, Wind, Shield, Users, TrendingUp, Calendar, Zap } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 import { useNavigate } from 'react-router-dom';
@@ -125,8 +125,8 @@ const MyInteractions = () => {
                     {/* Rivals section */}
                     {rivals.length > 0 && (
                         <div className="space-y-3">
-                            <h2 className="text-[0.6rem] font-black text-primary uppercase tracking-[0.2em] px-2 flex items-center gap-2">
-                                <Swords size={12} /> Rivais (Secando)
+                            <h2 className="text-[0.6rem] font-black text-accent uppercase tracking-[0.2em] px-2 flex items-center gap-2">
+                                <Wind size={12} /> Secando
                             </h2>
                             <div className="space-y-2">
                                 {rivals.map(i => {
@@ -137,13 +137,13 @@ const MyInteractions = () => {
                                             key={t.id}
                                             onClick={() => setSelectedTeamId(t.id)}
                                             className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all border ${selectedTeamId === t.id
-                                                ? 'bg-primary/10 border-primary/30 text-white shadow-lg shadow-primary/5 scale-[1.02]'
+                                                ? 'bg-accent/10 border-accent/40 text-white shadow-lg shadow-accent/5 scale-[1.02]'
                                                 : 'bg-white/[0.03] border-white/[0.06] text-slate-400 hover:bg-white/[0.06]'
                                                 }`}
                                         >
                                             <TeamLogo src={t.logo} size={32} />
                                             <span className="font-bold text-sm truncate flex-1 text-left">{t.name}</span>
-                                            {selectedTeamId === t.id && <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />}
+                                            {selectedTeamId === t.id && <div className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />}
                                         </button>
                                     );
                                 })}
