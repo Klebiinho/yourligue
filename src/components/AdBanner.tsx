@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import type { Ad } from '../context/LeagueContext';
 import { ExternalLink, Play, X } from 'lucide-react';
 
 interface AdBannerProps {

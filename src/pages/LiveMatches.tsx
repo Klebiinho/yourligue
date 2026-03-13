@@ -2,9 +2,10 @@ import { useLeague } from '../context/LeagueContext';
 import { Signal, History, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
+import AdBanner from '../components/AdBanner';
 
 const LiveMatches = () => {
-    const { matches, teams, leagueBasePath } = useLeague();
+    const { matches, teams, leagueBasePath, isPublicView } = useLeague();
     const navigate = useNavigate();
 
     const liveMatches = matches.filter(m => m.status === 'live');
@@ -19,6 +20,7 @@ const LiveMatches = () => {
 
     return (
         <div className="animate-fade-in space-y-8">
+            {isPublicView && <AdBanner position="top" />}
             <header>
                 <h1 className="text-2xl sm:text-3xl md:text-5xl font-outfit font-extrabold tracking-tight mb-1 uppercase">Ao Vivo</h1>
                 <p className="text-slate-400 text-sm md:text-base">Acompanhe os resultados em tempo real</p>

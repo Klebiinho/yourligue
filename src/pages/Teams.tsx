@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { Shield, UserPlus, Image as ImageIcon, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, TrendingUp, Heart, Star, Swords as RivalIcon } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
+import AdBanner from '../components/AdBanner';
 
 const Teams = () => {
     const { league, teams, addTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain, isPublicView, isAdmin, interactWithTeam, userInteractions } = useLeague();
@@ -69,6 +70,7 @@ const Teams = () => {
 
     return (
         <div className="animate-fade-in">
+            {isPublicView && <AdBanner position="top" />}
             <header className="mb-6 md:mb-8">
                 <h1 className="text-xl sm:text-2xl md:text-4xl font-outfit font-extrabold tracking-tight mb-1 uppercase flex items-center gap-2.5">
                     <Shield size={26} className="text-primary flex-none" strokeWidth={2.5} />

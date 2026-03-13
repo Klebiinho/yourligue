@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { Heart, Star, Swords, Shield, Users, TrendingUp, Calendar, Zap } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
+import AdBanner from '../components/AdBanner';
 import { useNavigate } from 'react-router-dom';
 
 const MyInteractions = () => {
@@ -52,6 +53,7 @@ const MyInteractions = () => {
 
     return (
         <div className="animate-fade-in space-y-8 pb-10">
+            <AdBanner position="top" />
             <header>
                 <h1 className="text-xl sm:text-2xl md:text-4xl font-outfit font-extrabold tracking-tight mb-1 uppercase">Central do Torcedor</h1>
                 <p className="text-slate-400 text-xs sm:text-sm italic">

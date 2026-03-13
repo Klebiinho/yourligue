@@ -51,7 +51,7 @@ const Dashboard = () => {
 
     return (
         <div className="animate-fade-in space-y-6 md:space-y-8 pb-10">
-            <AdBanner position="top" />
+            {isPublicView && <AdBanner position="top" />}
             {/* ── Header ────────────────────────────────────────────────── */}
             <header>
                 <div className="flex items-start justify-between gap-3">
@@ -124,7 +124,7 @@ const Dashboard = () => {
                 ))}
             </div>
 
-            <AdBanner position="between" />
+            {isPublicView && <AdBanner position="between" />}
 
             {/* ── Mobile Tabs Switcher ── */}
             <div className="flex lg:hidden bg-black/40 p-1 rounded-2xl border border-white/5">
@@ -222,7 +222,7 @@ const Dashboard = () => {
 
                 {/* ── COLUNA DIREITA ─────────────────────────────────────────── */}
                 <div className={`${activeTab === 'matches' ? 'hidden md:block' : 'block'} space-y-5 md:space-y-6 lg:border-l lg:border-white/5 lg:pl-6`}>
-                    <AdBanner position="side" />
+                    {isPublicView && <AdBanner position="side" />}
 
                     {/* ── CLASSIFICAÇÃO ──────────────────────────────────────── */}
                     <div className={`${activeTab === 'standings' || activeTab === 'matches' ? 'block' : 'hidden md:block'} space-y-4`}>

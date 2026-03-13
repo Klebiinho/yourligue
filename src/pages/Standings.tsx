@@ -1,9 +1,10 @@
 import { useLeague } from '../context/LeagueContext';
 import { Trophy, Info, Medal, TrendingUp, Heart, Star, Swords } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
+import AdBanner from '../components/AdBanner';
 
 const Standings = () => {
-    const { league, teams, matches, userInteractions, interactWithTeam } = useLeague();
+    const { league, teams, matches, userInteractions, interactWithTeam, isPublicView } = useLeague();
 
     const sortedTeams = [...teams].sort((a, b) => {
         const pts = (t: typeof teams[0]) =>
@@ -19,6 +20,7 @@ const Standings = () => {
 
     return (
         <div className="animate-fade-in">
+            {isPublicView && <AdBanner position="top" />}
             {/* Header */}
             <header className="mb-8">
                 <h1 className="text-2xl sm:text-3xl md:text-5xl font-outfit font-extrabold tracking-tight mb-2 uppercase flex items-center gap-3">

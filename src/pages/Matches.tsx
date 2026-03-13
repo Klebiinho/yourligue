@@ -3,6 +3,7 @@ import { useLeague } from '../context/LeagueContext';
 import { Swords, PlusCircle, Play, Trash2, Edit2, Calendar, MapPin, AlertCircle, Clock, CheckCircle2, Signal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
+import AdBanner from '../components/AdBanner';
 
 const Matches = () => {
     const { teams, matches, createMatch, startMatch, deleteMatch, updateMatch, isPublicView, isAdmin, leagueBasePath } = useLeague();
@@ -75,6 +76,7 @@ const Matches = () => {
 
     return (
         <div className="animate-fade-in">
+            {isPublicView && <AdBanner position="top" />}
             {/* Header */}
             <header className="mb-6 md:mb-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>

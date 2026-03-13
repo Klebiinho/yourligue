@@ -110,13 +110,13 @@ const MatchControl = () => {
 
     return (
         <div className="animate-fade-in relative pb-10">
-            <AdBanner position="top" />
+            {isPublicView && <AdBanner position="top" />}
 
-            {period === 'Intervalo' && (
+            {isPublicView && period === 'Intervalo' && (
                 <AdBanner position="halftime" className="z-[60]" />
             )}
 
-            {(period === 'Intervalo' || match.status === 'scheduled') && showOverlay && (
+            {isPublicView && (period === 'Intervalo' || match.status === 'scheduled') && showOverlay && (
                 <AdBanner position="overlay" onClose={() => setShowOverlay(false)} />
             )}
             {/* Back Button */}
