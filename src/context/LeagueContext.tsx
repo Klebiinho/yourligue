@@ -98,6 +98,7 @@ export type League = {
 interface LeagueContextType {
     league: League | null;
     leagues: League[];
+    followedLeagues: League[];
     teams: Team[];
     matches: Match[];
     brackets: BracketMatch[];
@@ -140,6 +141,9 @@ interface LeagueContextType {
     isPublicView: boolean;
     isAdmin: boolean;
     loadPublicLeague: (id: string) => Promise<boolean>;
+    followLeague: (leagueId: string) => Promise<void>;
+    unfollowLeague: (leagueId: string) => Promise<void>;
+    searchLeagues: (query: string) => Promise<League[]>;
 
     // User Interactions
     userInteractions: TeamInteraction[];
@@ -162,6 +166,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useAuth();
 
     const [leagues, setLeagues] = useState<League[]>([]);
+    const [followedLeagues, setFollowedLeagues] = useState<League[]>([]);
     const [league, setLeague] = useState<League | null>(null);
     const [teams, setTeams] = useState<Team[]>([]);
     const [matches, setMatches] = useState<Match[]>([]);
@@ -208,14 +213,22 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const loadLeagues = async () => {
         if (!user) return;
         setLoading(true);
-        const { data } = await supabase
+
+        // Load owned leagues
+        const { data: ownedData } = await supabase
             .from('leagues')
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: true });
 
-        if (data) {
-            const mapped: League[] = data.map(l => ({
+        // Load followed leagues
+        const { data: followsData } = await supabase
+            .from('followed_leagues')
+            .select('leagues(*)')
+            .eq('user_id', user.id);
+
+        if (ownedData) {
+            const mapped: League[] = ownedData.map(l => ({
                 id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
                 pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
                 pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
@@ -224,13 +237,63 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 userId: l.user_id
             }));
             setLeagues(mapped);
-            if (mapped.length > 0 && !league) {
+            if (mapped.length > 0 && !league && !isPublicView) {
                 const saved = localStorage.getItem('selectedLeagueId');
                 const found = saved ? mapped.find(l => l.id === saved) : null;
                 setLeague(found ?? mapped[0]);
             }
         }
+
+        if (followsData) {
+            const mapped: League[] = followsData
+                .filter(f => f.leagues)
+                .map(f => {
+                    const l = f.leagues as any;
+                    return {
+                        id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
+                        pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
+                        pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
+                        playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
+                        substitutionsLimit: l.substitutions_limit || 5, slug: l.slug || '',
+                        userId: l.user_id
+                    };
+                });
+            setFollowedLeagues(mapped);
+        }
+
         setLoading(false);
+    };
+
+    const followLeague = async (leagueId: string) => {
+        if (!user) return;
+        await supabase.from('followed_leagues').upsert({ user_id: user.id, league_id: leagueId });
+        await loadLeagues();
+    };
+
+    const unfollowLeague = async (leagueId: string) => {
+        if (!user) return;
+        await supabase.from('followed_leagues').delete().eq('user_id', user.id).eq('league_id', leagueId);
+        await loadLeagues();
+    };
+
+    const searchLeagues = async (query: string): Promise<League[]> => {
+        const { data } = await supabase
+            .from('leagues')
+            .select('*')
+            .ilike('name', `%${query}%`)
+            .limit(10);
+
+        if (data) {
+            return data.map(l => ({
+                id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
+                pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
+                pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
+                playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
+                substitutionsLimit: l.substitutions_limit || 5, slug: l.slug || '',
+                userId: l.user_id
+            }));
+        }
+        return [];
     };
 
     const loadPublicLeague = useCallback(async (slugOrId: string) => {
@@ -849,8 +912,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     return (
         <LeagueContext.Provider value={{
-            league, leagues, teams, matches, brackets, loading, dataLoading,
+            league, leagues, followedLeagues, teams, matches, brackets, loading, dataLoading,
             createLeague, updateLeague, deleteLeague, selectLeague, generateGroups,
+            followLeague, unfollowLeague, searchLeagues,
             addTeam, updateTeam, deleteTeam,
             addPlayer, updatePlayer, removePlayer, toggleCaptain,
             createMatch, updateMatch, deleteMatch, startMatch, endMatch, updateTimer,

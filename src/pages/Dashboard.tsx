@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Heart } from 'lucide-react';
+import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Heart, Bell, BellOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
+import { useAuth } from '../context/AuthContext';
+
 const Dashboard = () => {
-    const { league, teams, matches, loading, isPublicView, isAdmin, supportCounts, leagueBasePath } = useLeague();
+    const { league, teams, matches, loading, isPublicView, isAdmin, supportCounts, leagueBasePath, followedLeagues, followLeague, unfollowLeague, setShowAuthModal } = useLeague();
+    const { user } = useAuth();
     const navigate = useNavigate();
 
     if (loading) return (
@@ -67,6 +70,28 @@ const Dashboard = () => {
                                 {liveMatches.length} Ao Vivo
                             </span>
                         </div>
+                    )}
+                    {isPublicView && league && (
+                        <button
+                            onClick={() => {
+                                if (!user) {
+                                    setShowAuthModal(true);
+                                    return;
+                                }
+                                if (followedLeagues.some(f => f.id === league.id)) {
+                                    unfollowLeague(league.id);
+                                } else {
+                                    followLeague(league.id);
+                                }
+                            }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[0.6rem] font-black uppercase tracking-widest flex-none self-start mt-1 transition-all border ${followedLeagues.some(f => f.id === league.id)
+                                ? 'bg-danger/10 border-danger/20 text-danger hover:bg-danger hover:text-white'
+                                : 'bg-accent/10 border-accent/20 text-accent hover:bg-accent hover:text-white'
+                                }`}
+                        >
+                            {followedLeagues.some(f => f.id === league.id) ? <BellOff size={14} /> : <Bell size={14} />}
+                            {followedLeagues.some(f => f.id === league.id) ? 'Parar de Acompanhar' : 'Acompanhar Liga'}
+                        </button>
                     )}
                     {!isPublicView && isAdmin && league && (
                         <button
