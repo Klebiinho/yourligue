@@ -106,9 +106,14 @@ const AppRouter = () => {
 
   // Clean empty hash fragments (like /#)
   useEffect(() => {
-    if (window.location.hash === '#' || window.location.hash === '') {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
+    const cleanHash = () => {
+      if (window.location.hash === '#' || window.location.hash === '') {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    };
+    cleanHash();
+    window.addEventListener('hashchange', cleanHash);
+    return () => window.removeEventListener('hashchange', cleanHash);
   }, []);
 
   if (loading || (leagueLoading && !notFound)) return <LoadingScreen />;
