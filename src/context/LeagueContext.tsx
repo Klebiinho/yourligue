@@ -381,7 +381,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             loadLeagueData(league.id);
             localStorage.setItem('selectedLeagueId', league.id);
 
-            let refreshTimeout: NodeJS.Timeout;
+            let refreshTimeout: any;
             const debouncedRefresh = () => {
                 clearTimeout(refreshTimeout);
                 refreshTimeout = setTimeout(() => loadLeagueData(league.id, true), 500);
