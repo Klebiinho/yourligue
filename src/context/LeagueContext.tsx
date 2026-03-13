@@ -69,6 +69,15 @@ export type TeamInteraction = {
     interactionType: 'supporting' | 'favorite' | 'rival';
 };
 
+export type LeagueNotification = {
+    id: string;
+    title: string;
+    message: string;
+    type: 'goal' | 'match_start' | 'info';
+    teamId?: string;
+    createdAt: number;
+};
+
 export type League = {
     id: string;
     name: string;
@@ -138,6 +147,9 @@ interface LeagueContextType {
     setPendingInteraction: (val: { teamId: string, type: TeamInteraction['interactionType'] } | null) => void;
     showAuthModal: boolean;
     setShowAuthModal: (val: boolean) => void;
+    supportCounts: Record<string, number>;
+    notifications: LeagueNotification[];
+    clearNotification: (id: string) => void;
 }
 
 const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
@@ -157,6 +169,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const [userInteractions, setUserInteractions] = useState<TeamInteraction[]>([]);
     const [pendingInteraction, setPendingInteraction] = useState<{ teamId: string, type: TeamInteraction['interactionType'] } | null>(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [supportCounts, setSupportCounts] = useState<Record<string, number>>({});
+    const [notifications, setNotifications] = useState<LeagueNotification[]>([]);
 
     // ── Load all leagues for user ──────────────────────────────
     useEffect(() => {
@@ -233,10 +247,31 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [user]);
 
+    const loadSupportCounts = useCallback(async (leagueId: string) => {
+        const { data } = await supabase.rpc('get_league_support_counts', { l_id: leagueId });
+        // Fallback if RPC doesn't exist yet, we'll try a manual count
+        if (data) {
+            const counts: Record<string, number> = {};
+            data.forEach((item: any) => { counts[item.team_id] = item.count; });
+            setSupportCounts(counts);
+        } else {
+            const { data: interactionData } = await supabase.from('user_team_interactions')
+                .select('team_id').eq('league_id', leagueId).eq('interaction_type', 'supporting');
+            if (interactionData) {
+                const counts: Record<string, number> = {};
+                interactionData.forEach((item: any) => {
+                    counts[item.team_id] = (counts[item.team_id] || 0) + 1;
+                });
+                setSupportCounts(counts);
+            }
+        }
+    }, []);
+
     // ── Load league data (teams, matches, brackets) ────────────
     const loadLeagueData = useCallback(async (leagueId: string) => {
         setDataLoading(true);
         loadUserInteractions(leagueId);
+        loadSupportCounts(leagueId);
 
         // Teams + Players
         const { data: teamsData } = await supabase
@@ -321,10 +356,70 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         if (league) {
             loadLeagueData(league.id);
             localStorage.setItem('selectedLeagueId', league.id);
+
+            // Subscribe to realtime updates for notifications
+            const channel = supabase.channel(`league-${league.id}`)
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_events' }, payload => {
+                    const event = payload.new;
+                    if (event.type === 'goal' || event.type === 'penalty_goal') {
+                        // Check if current user supports one of the teams in this match
+                        const supportedTeam = userInteractions.find(i => i.interactionType === 'supporting');
+                        if (supportedTeam) {
+                            // Find match teams
+                            const match = matches.find(m => m.id === event.match_id);
+                            if (match && (match.homeTeamId === supportedTeam.teamId || match.awayTeamId === supportedTeam.teamId)) {
+                                const team = teams.find(t => t.id === event.team_id);
+                                addNotification({
+                                    id: Math.random().toString(36).substr(2, 9),
+                                    title: '⚽ GOOOL!',
+                                    message: `Gol do ${team?.name || 'seu time'}!`,
+                                    type: 'goal',
+                                    teamId: event.team_id,
+                                    createdAt: Date.now()
+                                });
+                            }
+                        }
+                    }
+                })
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches' }, payload => {
+                    const match = payload.new;
+                    const oldMatch = payload.old;
+                    if (match.status === 'live' && oldMatch.status === 'scheduled') {
+                        const supportedTeam = userInteractions.find(i => i.interactionType === 'supporting');
+                        if (supportedTeam && (match.home_team_id === supportedTeam.teamId || match.away_team_id === supportedTeam.teamId)) {
+                            addNotification({
+                                id: Math.random().toString(36).substr(2, 9),
+                                title: '🏁 Partida Iniciada!',
+                                message: 'Seu time entrou em campo agora!',
+                                type: 'match_start',
+                                teamId: supportedTeam.teamId,
+                                createdAt: Date.now()
+                            });
+                        }
+                    }
+                })
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
         } else {
-            setTeams([]); setMatches([]); setBrackets([]); setUserInteractions([]);
+            setTeams([]); setMatches([]); setBrackets([]); setUserInteractions([]); setSupportCounts({});
         }
-    }, [league, loadLeagueData]);
+    }, [league, loadLeagueData, userInteractions, matches, teams]);
+
+    const addNotification = (notif: LeagueNotification) => {
+        setNotifications(prev => [notif, ...prev].slice(0, 5));
+
+        // Auto remove after 6 seconds (to match animation)
+        setTimeout(() => {
+            clearNotification(notif.id);
+        }, 6000);
+    };
+
+    const clearNotification = (id: string) => {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+    };
 
     // Handle pending interaction after login
     useEffect(() => {
@@ -692,6 +787,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         });
 
         loadUserInteractions(league.id);
+        loadSupportCounts(league.id);
     };
 
     const removeInteraction = async (interactionId: string) => {
@@ -709,7 +805,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             addEvent, removeEvent,
             generateBracket, updateBracket, loadLeagues, isPublicView, loadPublicLeague,
             userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
-            showAuthModal, setShowAuthModal
+            showAuthModal, setShowAuthModal,
+            supportCounts, notifications, clearNotification
         }}>
             {children}
         </LeagueContext.Provider>

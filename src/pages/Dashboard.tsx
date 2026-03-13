@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle } from 'lucide-react';
+import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
 const Dashboard = () => {
-    const { league, teams, matches, loading, isPublicView } = useLeague();
+    const { league, teams, matches, loading, isPublicView, supportCounts } = useLeague();
     const navigate = useNavigate();
 
     if (loading) return (
@@ -40,7 +40,10 @@ const Dashboard = () => {
     const topAssisters = [...allPlayers].sort((a, b) => (b.stats?.assists || 0) - (a.stats?.assists || 0)).filter(p => (p.stats?.assists || 0) > 0).slice(0, 5);
 
     const [activeTab, setActiveTab] = useState<'matches' | 'standings' | 'scorers'>('matches');
-    const [showTopRankModal, setShowTopRankModal] = useState<{ open: boolean, type: 'goals' | 'assists' }>({ open: false, type: 'goals' });
+    const [showTopRankModal, setShowTopRankModal] = useState<{ open: boolean, type: 'goals' | 'assists' | 'fans' }>({ open: false, type: 'goals' });
+
+    const fanRanking = [...teams].sort((a, b) => (supportCounts[b.id] || 0) - (supportCounts[a.id] || 0))
+        .filter(t => (supportCounts[t.id] || 0) > 0).slice(0, 5);
 
     return (
         <div className="animate-fade-in space-y-6 md:space-y-8 pb-10">
@@ -327,6 +330,41 @@ const Dashboard = () => {
                                 )}
                             </div>
                         </div>
+
+                        {/* Fan Ranking */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-sm font-black font-outfit uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                                    <Heart size={16} className="text-danger fill-danger/20" />
+                                    Ranking de Torcida
+                                </h2>
+                            </div>
+
+                            <div className="glass-panel divide-y divide-white/[0.04] overflow-hidden">
+                                {fanRanking.length === 0 ? (
+                                    <div className="py-8 sm:py-10 text-center opacity-25">
+                                        <Heart size={24} strokeWidth={1} className="mx-auto mb-2" />
+                                        <p className="text-[0.6rem] font-black uppercase tracking-widest">Ainda sem torcedores</p>
+                                    </div>
+                                ) : (
+                                    fanRanking.map((team, i) => (
+                                        <div key={team.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-white/[0.05] transition-colors group">
+                                            <span className={`w-5 h-5 flex items-center justify-center rounded-md font-black text-[0.55rem] font-outfit flex-none ${i === 0 ? 'bg-danger/20 text-danger' : 'text-slate-500'}`}>
+                                                {i + 1}
+                                            </span>
+                                            <TeamLogo src={team.logo} size={28} />
+                                            <div className="flex-1 min-w-0">
+                                                <span className="font-bold truncate text-[0.65rem] sm:text-xs text-white">{team.name}</span>
+                                            </div>
+                                            <div className="flex flex-col items-end flex-none min-w-[32px]">
+                                                <span className="font-black text-danger text-sm sm:text-base font-outfit leading-none">{supportCounts[team.id] || 0}</span>
+                                                <span className="text-[0.45rem] text-slate-500 font-black uppercase">Fãs</span>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -343,7 +381,7 @@ const Dashboard = () => {
                                 </div>
                                 <div>
                                     <h3 className="font-outfit font-black text-white uppercase tracking-tight text-xl">
-                                        {showTopRankModal.type === 'goals' ? 'Artilharia da Liga' : 'Maiores Garçons'}
+                                        {showTopRankModal.type === 'goals' ? 'Artilharia da Liga' : (showTopRankModal.type === 'assists' ? 'Maiores Garçons' : 'Maiores Torcidas')}
                                     </h3>
                                     <p className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Dados atualizados em tempo real</p>
                                 </div>

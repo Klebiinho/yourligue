@@ -15,6 +15,7 @@ import Settings from './pages/Settings.tsx';
 import MatchControl from './pages/MatchControl.tsx';
 import LiveMatches from './pages/LiveMatches.tsx';
 import AuthModal from './components/AuthModal.tsx';
+import NotificationTray from './components/NotificationTray.tsx';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center gap-8 z-[999]">
@@ -154,6 +155,7 @@ const App = () => (
           <Route path="/*" element={<AppRouter />} />
         </Routes>
         <AuthModal />
+        <NotificationTray />
       </LeagueProvider>
     </AuthProvider>
   </BrowserRouter>
