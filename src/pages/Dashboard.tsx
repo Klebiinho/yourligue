@@ -3,6 +3,7 @@ import { useLeague } from '../context/LeagueContext';
 import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Heart, Bell, BellOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
+import AdBanner from '../components/AdBanner';
 
 import { useAuth } from '../context/AuthContext';
 
@@ -50,6 +51,7 @@ const Dashboard = () => {
 
     return (
         <div className="animate-fade-in space-y-6 md:space-y-8 pb-10">
+            <AdBanner position="top" />
             {/* ── Header ────────────────────────────────────────────────── */}
             <header>
                 <div className="flex items-start justify-between gap-3">
@@ -121,6 +123,8 @@ const Dashboard = () => {
                     </div>
                 ))}
             </div>
+
+            <AdBanner position="between" />
 
             {/* ── Mobile Tabs Switcher ── */}
             <div className="flex lg:hidden bg-black/40 p-1 rounded-2xl border border-white/5">
@@ -218,6 +222,7 @@ const Dashboard = () => {
 
                 {/* ── COLUNA DIREITA ─────────────────────────────────────────── */}
                 <div className={`${activeTab === 'matches' ? 'hidden md:block' : 'block'} space-y-5 md:space-y-6 lg:border-l lg:border-white/5 lg:pl-6`}>
+                    <AdBanner position="side" />
 
                     {/* ── CLASSIFICAÇÃO ──────────────────────────────────────── */}
                     <div className={`${activeTab === 'standings' || activeTab === 'matches' ? 'block' : 'hidden md:block'} space-y-4`}>
@@ -392,80 +397,82 @@ const Dashboard = () => {
             </div>
 
             {/* ── RANKING MODAL (Goals or Assists) ───────────────────── */}
-            {showTopRankModal.open && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-fade-in" onClick={() => setShowTopRankModal({ ...showTopRankModal, open: false })} />
-                    <div className="relative glass-panel w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col animate-scale-in shadow-[0_30px_100px_rgba(0,0,0,0.8)] border-white/10">
-                        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                            <div className="flex items-center gap-3">
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${showTopRankModal.type === 'goals' ? 'bg-warning/20 text-warning' : 'bg-primary/20 text-primary'}`}>
-                                    {showTopRankModal.type === 'goals' ? <Star size={24} className="fill-warning/20" /> : <Zap size={24} className="fill-primary/20" />}
-                                </div>
-                                <div>
-                                    <h3 className="font-outfit font-black text-white uppercase tracking-tight text-xl">
-                                        {showTopRankModal.type === 'goals' ? 'Artilharia da Liga' : (showTopRankModal.type === 'assists' ? 'Maiores Garçons' : 'Maiores Torcidas')}
-                                    </h3>
-                                    <p className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Dados atualizados em tempo real</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setShowTopRankModal({ ...showTopRankModal, open: false })} className="p-2.5 rounded-xl bg-white/5 text-slate-500 hover:text-white hover:bg-white/10 transition-all">
-                                <XCircle size={24} />
-                            </button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 no-scrollbar pb-10">
-                            {[...allPlayers].sort((a, b) => {
-                                if (showTopRankModal.type === 'goals') return (b.stats?.goals || 0) - (a.stats?.goals || 0);
-                                return (b.stats?.assists || 0) - (a.stats?.assists || 0);
-                            })
-                                .filter(p => showTopRankModal.type === 'goals' ? (p.stats?.goals || 0) > 0 : (p.stats?.assists || 0) > 0)
-                                .map((player, i) => (
-                                    <div key={player.id} className="flex items-center gap-4 p-4 rounded-3xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] transition-all group">
-                                        <div className={`w-10 h-10 flex items-center justify-center rounded-2xl font-black font-outfit text-base ${i === 0 ? (showTopRankModal.type === 'goals' ? 'bg-warning text-black shadow-lg shadow-warning/20' : 'bg-primary text-white shadow-lg shadow-primary/20') :
-                                            i === 1 ? 'bg-slate-300 text-black' :
-                                                i === 2 ? 'bg-orange-400 text-black' : 'text-slate-600 border border-white/5'}`}>
-                                            {i + 1}
-                                        </div>
-                                        <div className="relative">
-                                            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
-                                                {player.photo ? (
-                                                    <img src={player.photo} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" alt={player.name} />
-                                                ) : (
-                                                    <span className="font-black text-xl text-slate-700">{player.number}</span>
-                                                )}
-                                            </div>
-                                            <TeamLogo src={player.team.logo} size={20} className="absolute -bottom-1 -right-1 shadow-lg border border-black/40" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-outfit font-black text-white text-base truncate leading-tight uppercase group-hover:text-primary transition-colors">{player.name}</h4>
-                                            <span className="text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.15em]">{player.team.name}</span>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="flex items-center gap-1.5 justify-end">
-                                                <span className={`text-2xl font-black font-outfit ${showTopRankModal.type === 'goals' ? 'text-accent' : 'text-primary'}`}>
-                                                    {showTopRankModal.type === 'goals' ? player.stats?.goals : player.stats?.assists}
-                                                </span>
-                                                {showTopRankModal.type === 'goals' ? <Star size={14} className="text-warning fill-warning" /> : <Zap size={14} className="text-primary fill-primary" />}
-                                            </div>
-                                            <span className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest leading-none">
-                                                {showTopRankModal.type === 'goals' ? 'Gols' : 'Assis.'}
-                                            </span>
-                                        </div>
+            {
+                showTopRankModal.open && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-fade-in" onClick={() => setShowTopRankModal({ ...showTopRankModal, open: false })} />
+                        <div className="relative glass-panel w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col animate-scale-in shadow-[0_30px_100px_rgba(0,0,0,0.8)] border-white/10">
+                            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${showTopRankModal.type === 'goals' ? 'bg-warning/20 text-warning' : 'bg-primary/20 text-primary'}`}>
+                                        {showTopRankModal.type === 'goals' ? <Star size={24} className="fill-warning/20" /> : <Zap size={24} className="fill-primary/20" />}
                                     </div>
-                                ))
-                            }
-                            {[...allPlayers].filter(p => showTopRankModal.type === 'goals' ? (p.stats?.goals || 0) > 0 : (p.stats?.assists || 0) > 0).length === 0 && (
-                                <div className="text-center py-20 opacity-30">
-                                    <p className="font-black uppercase tracking-widest text-sm">Nenhum dado registrado</p>
+                                    <div>
+                                        <h3 className="font-outfit font-black text-white uppercase tracking-tight text-xl">
+                                            {showTopRankModal.type === 'goals' ? 'Artilharia da Liga' : (showTopRankModal.type === 'assists' ? 'Maiores Garçons' : 'Maiores Torcidas')}
+                                        </h3>
+                                        <p className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Dados atualizados em tempo real</p>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-                        <div className="p-4 bg-black/40 border-t border-white/5 text-center">
-                            <p className="text-[0.55rem] font-black text-slate-600 uppercase tracking-[0.2em] italic">Estatísticas atualizadas em tempo real</p>
+                                <button onClick={() => setShowTopRankModal({ ...showTopRankModal, open: false })} className="p-2.5 rounded-xl bg-white/5 text-slate-500 hover:text-white hover:bg-white/10 transition-all">
+                                    <XCircle size={24} />
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 no-scrollbar pb-10">
+                                {[...allPlayers].sort((a, b) => {
+                                    if (showTopRankModal.type === 'goals') return (b.stats?.goals || 0) - (a.stats?.goals || 0);
+                                    return (b.stats?.assists || 0) - (a.stats?.assists || 0);
+                                })
+                                    .filter(p => showTopRankModal.type === 'goals' ? (p.stats?.goals || 0) > 0 : (p.stats?.assists || 0) > 0)
+                                    .map((player, i) => (
+                                        <div key={player.id} className="flex items-center gap-4 p-4 rounded-3xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] transition-all group">
+                                            <div className={`w-10 h-10 flex items-center justify-center rounded-2xl font-black font-outfit text-base ${i === 0 ? (showTopRankModal.type === 'goals' ? 'bg-warning text-black shadow-lg shadow-warning/20' : 'bg-primary text-white shadow-lg shadow-primary/20') :
+                                                i === 1 ? 'bg-slate-300 text-black' :
+                                                    i === 2 ? 'bg-orange-400 text-black' : 'text-slate-600 border border-white/5'}`}>
+                                                {i + 1}
+                                            </div>
+                                            <div className="relative">
+                                                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                                                    {player.photo ? (
+                                                        <img src={player.photo} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" alt={player.name} />
+                                                    ) : (
+                                                        <span className="font-black text-xl text-slate-700">{player.number}</span>
+                                                    )}
+                                                </div>
+                                                <TeamLogo src={player.team.logo} size={20} className="absolute -bottom-1 -right-1 shadow-lg border border-black/40" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-outfit font-black text-white text-base truncate leading-tight uppercase group-hover:text-primary transition-colors">{player.name}</h4>
+                                                <span className="text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.15em]">{player.team.name}</span>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="flex items-center gap-1.5 justify-end">
+                                                    <span className={`text-2xl font-black font-outfit ${showTopRankModal.type === 'goals' ? 'text-accent' : 'text-primary'}`}>
+                                                        {showTopRankModal.type === 'goals' ? player.stats?.goals : player.stats?.assists}
+                                                    </span>
+                                                    {showTopRankModal.type === 'goals' ? <Star size={14} className="text-warning fill-warning" /> : <Zap size={14} className="text-primary fill-primary" />}
+                                                </div>
+                                                <span className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest leading-none">
+                                                    {showTopRankModal.type === 'goals' ? 'Gols' : 'Assis.'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))
+                                }
+                                {[...allPlayers].filter(p => showTopRankModal.type === 'goals' ? (p.stats?.goals || 0) > 0 : (p.stats?.assists || 0) > 0).length === 0 && (
+                                    <div className="text-center py-20 opacity-30">
+                                        <p className="font-black uppercase tracking-widest text-sm">Nenhum dado registrado</p>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="p-4 bg-black/40 border-t border-white/5 text-center">
+                                <p className="text-[0.55rem] font-black text-slate-600 uppercase tracking-[0.2em] italic">Estatísticas atualizadas em tempo real</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

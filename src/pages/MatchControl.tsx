@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
 import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
+import AdBanner from '../components/AdBanner';
 
 const MatchControl = () => {
     const { matchId } = useParams<{ matchId: string }>();
@@ -19,6 +20,11 @@ const MatchControl = () => {
     const [extraTime, setExtraTime] = useState(match?.extraTime || 0);
     const [period, setPeriod] = useState(match?.period || '1º Tempo');
     const [submittingPlayer, setSubmittingPlayer] = useState<{ teamId: string, playerOutId: string } | null>(null);
+    const [showOverlay, setShowOverlay] = useState(true);
+
+    useEffect(() => {
+        setShowOverlay(true);
+    }, [period]);
 
     const getPlayerStatus = (playerId: string) => {
         const playerEvents = match?.events.filter((e: MatchEvent) => e.playerId === playerId) || [];
@@ -103,7 +109,16 @@ const MatchControl = () => {
 
 
     return (
-        <div className="animate-fade-in">
+        <div className="animate-fade-in relative pb-10">
+            <AdBanner position="top" />
+
+            {period === 'Intervalo' && (
+                <AdBanner position="halftime" className="z-[60]" />
+            )}
+
+            {(period === 'Intervalo' || match.status === 'scheduled') && showOverlay && (
+                <AdBanner position="overlay" onClose={() => setShowOverlay(false)} />
+            )}
             {/* Back Button */}
             <button onClick={() => navigate('/matches')} className="flex items-center gap-2 text-slate-500 hover:text-white text-xs font-black uppercase tracking-widest mb-6 transition-colors group">
                 <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Voltar às Partidas

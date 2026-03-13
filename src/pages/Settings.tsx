@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
-import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2 } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,6 +21,18 @@ const Settings = () => {
     const [substitutionsLimit, setSubstitutionsLimit] = useState(String(league?.substitutionsLimit ?? 5));
     const [saved, setSaved] = useState(false);
     const [copied, setCopied] = useState(false);
+
+    // Ads Management State
+    const { ads, addAd, updateAd, deleteAd } = useLeague();
+    const [isAddingAd, setIsAddingAd] = useState(false);
+    const [formAd, setFormAd] = useState({
+        title: '',
+        media_url: '',
+        media_type: 'image' as 'image' | 'video' | 'gif',
+        position: 'top' as 'top' | 'side' | 'between' | 'halftime' | 'overlay',
+        link_url: '',
+        duration: 5
+    });
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -55,6 +67,17 @@ const Settings = () => {
     const handleSignOut = async () => {
         await signOut();
         navigate('/');
+    };
+
+    const handleAdSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const { error } = await addAd(formAd);
+        if (!error) {
+            setIsAddingAd(false);
+            setFormAd({ title: '', media_url: '', media_type: 'image', position: 'top', link_url: '', duration: 5 });
+        } else {
+            alert(error);
+        }
     };
 
     const handleSwitchLeague = () => navigate('/leagues');
@@ -205,6 +228,136 @@ const Settings = () => {
                                 {saved ? <><ShieldCheck size={22} strokeWidth={3} /> Configurações Atualizadas!</> : <><Save size={22} strokeWidth={3} /> Salvar Alterações</>}
                             </button>
                         </form>
+
+                        {/* Ads Management Section */}
+                        <div className="mt-20 border-t border-white/5 pt-12">
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h2 className="text-xl font-black text-white font-outfit uppercase tracking-widest flex items-center gap-3">
+                                        <Megaphone size={24} className="text-accent" /> Gestão de Propagandas
+                                    </h2>
+                                    <p className="text-slate-500 text-xs mt-1 uppercase font-bold tracking-widest">Monetize ou destaque parceiros na sua liga</p>
+                                </div>
+                                <button
+                                    onClick={() => setIsAddingAd(!isAddingAd)}
+                                    className="bg-accent/10 text-accent hover:bg-accent hover:text-white px-4 py-2 rounded-xl transition-all flex items-center gap-2 text-[0.65rem] font-black uppercase tracking-widest"
+                                >
+                                    {isAddingAd ? <X size={16} /> : <Plus size={16} />}
+                                    {isAddingAd ? 'Cancelar' : 'Nova Prop'}
+                                </button>
+                            </div>
+
+                            {isAddingAd && (
+                                <div className="bg-black/40 border border-white/10 rounded-3xl p-8 mb-8 animate-scale-in">
+                                    <form onSubmit={handleAdSubmit} className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Título da Campanha</label>
+                                                <input type="text" value={formAd.title} onChange={e => setFormAd({ ...formAd, title: e.target.value })} required
+                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-accent"
+                                                    placeholder="Ex: Patrocínio Coca-Cola"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">URL da Mídia (Img/Gif/Vid)</label>
+                                                <input type="text" value={formAd.media_url} onChange={e => setFormAd({ ...formAd, media_url: e.target.value })} required
+                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-accent"
+                                                    placeholder="https://..."
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Tipo de Mídia</label>
+                                                <select value={formAd.media_type} onChange={e => setFormAd({ ...formAd, media_type: e.target.value as any })}
+                                                    className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-accent appearance-none">
+                                                    <option value="image">Imagem Estática</option>
+                                                    <option value="gif">GIF Animado</option>
+                                                    <option value="video">Vídeo</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Posicionamento</label>
+                                                <select value={formAd.position} onChange={e => setFormAd({ ...formAd, position: e.target.value as any })}
+                                                    className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-accent appearance-none">
+                                                    <option value="top">Topo da Página</option>
+                                                    <option value="side">Lateral (Barra)</option>
+                                                    <option value="between">Entre Conteúdos</option>
+                                                    <option value="halftime">Intervalo do Jogo</option>
+                                                    <option value="overlay">Overlay no Player</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Duração (Segundos)</label>
+                                                <input type="number" value={formAd.duration} onChange={e => setFormAd({ ...formAd, duration: parseInt(e.target.value) })}
+                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-accent" min={1}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Link de Destino (Opcional)</label>
+                                            <input type="text" value={formAd.link_url} onChange={e => setFormAd({ ...formAd, link_url: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-accent"
+                                                placeholder="https://seusite.com.br"
+                                            />
+                                        </div>
+
+                                        <button type="submit" className="w-full bg-accent text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest hover:brightness-110 transition-all shadow-lg shadow-accent/20">
+                                            Adicionar Propaganda
+                                        </button>
+                                    </form>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {ads.map(ad => (
+                                    <div key={ad.id} className="glass-panel p-5 flex items-center gap-4 relative group">
+                                        <div className="w-16 h-16 rounded-xl overflow-hidden bg-black/30 border border-white/5 flex-none">
+                                            {ad.media_type === 'video' ? (
+                                                <div className="w-full h-full flex items-center justify-center bg-accent/20 text-accent">
+                                                    <Video size={24} />
+                                                </div>
+                                            ) : (
+                                                <img src={ad.media_url} alt={ad.title} className="w-full h-full object-cover" />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-black text-white truncate">{ad.title}</p>
+                                            <div className="flex items-center gap-3 mt-1">
+                                                <span className="text-[0.5rem] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                                                    <Layout size={10} /> {ad.position}
+                                                </span>
+                                                <span className="text-[0.5rem] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                                                    <Clock size={10} /> {ad.duration}s
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => updateAd(ad.id, { active: !ad.active })}
+                                                className={`p-2 rounded-lg transition-all ${ad.active ? 'text-accent bg-accent/10' : 'text-slate-600 bg-white/5'}`}
+                                            >
+                                                <Monitor size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => deleteAd(ad.id)}
+                                                className="p-2 rounded-lg text-danger bg-danger/10 opacity-0 group-hover:opacity-100 transition-all"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                                {ads.length === 0 && !isAddingAd && (
+                                    <div className="sm:col-span-2 text-center py-12 border-2 border-dashed border-white/5 rounded-3xl">
+                                        <Megaphone size={40} className="text-slate-700 mx-auto mb-3" />
+                                        <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">Nenhuma propaganda ativa</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </section>
                 ) : (
                     <section className="lg:col-span-12 xl:col-span-8 glass-panel p-10 flex flex-col items-center justify-center text-center opacity-50">

@@ -94,6 +94,18 @@ export type League = {
     userId: string;
 };
 
+export type Ad = {
+    id: string;
+    league_id: string;
+    title: string;
+    media_url: string;
+    media_type: 'image' | 'video' | 'gif';
+    position: 'top' | 'side' | 'between' | 'halftime' | 'overlay';
+    link_url?: string;
+    duration: number;
+    active: boolean;
+};
+
 // ─── Context Type ────────────────────────────────────────────
 interface LeagueContextType {
     league: League | null;
@@ -157,6 +169,12 @@ interface LeagueContextType {
     notifications: LeagueNotification[];
     clearNotification: (id: string) => void;
     leagueBasePath: string;
+
+    // Ads
+    ads: Ad[];
+    addAd: (ad: Omit<Ad, 'id' | 'league_id' | 'active'>) => Promise<{ error: string | null }>;
+    updateAd: (id: string, ad: Partial<Ad>) => Promise<void>;
+    deleteAd: (id: string) => Promise<void>;
 }
 
 const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
@@ -179,6 +197,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [supportCounts, setSupportCounts] = useState<Record<string, number>>({});
     const [notifications, setNotifications] = useState<LeagueNotification[]>([]);
+    const [ads, setAds] = useState<Ad[]>([]);
 
     // Refs for realtime handlers to avoid infinite loops
     const teamsRef = useRef<Team[]>([]);
@@ -910,6 +929,44 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         if (league) loadUserInteractions(league.id);
     };
 
+    const clearNotification = (id: string) => {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+    };
+
+    const addAd = async (ad: Omit<Ad, 'id' | 'league_id' | 'active'>) => {
+        if (!league) return { error: 'No league selected' };
+        const { data, error } = await supabase.from('ads').insert([
+            { ...ad, league_id: league.id, active: true }
+        ]).select().single();
+        if (error) return { error: error.message };
+        setAds(prev => [...prev, data as Ad]);
+        return { error: null };
+    };
+
+    const updateAd = async (id: string, updates: Partial<Ad>) => {
+        if (!league) return;
+        const { error } = await supabase.from('ads').update(updates).eq('id', id);
+        if (!error) setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+    };
+
+    const deleteAd = async (id: string) => {
+        if (!league) return;
+        const { error } = await supabase.from('ads').delete().eq('id', id);
+        if (!error) setAds(prev => prev.filter(a => a.id !== id));
+    };
+
+    useEffect(() => {
+        if (!league) {
+            setAds([]);
+            return;
+        }
+        const fetchAds = async () => {
+            const { data } = await supabase.from('ads').select('*').eq('league_id', league.id);
+            if (data) setAds(data as Ad[]);
+        };
+        fetchAds();
+    }, [league?.id]);
+
     return (
         <LeagueContext.Provider value={{
             league, leagues, followedLeagues, teams, matches, brackets, loading, dataLoading,
@@ -922,7 +979,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             generateBracket, updateBracket, loadLeagues, isPublicView, isAdmin, loadPublicLeague,
             userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
             showAuthModal, setShowAuthModal,
-            supportCounts, notifications, clearNotification, leagueBasePath
+            supportCounts, notifications, clearNotification, leagueBasePath,
+            ads, addAd, updateAd, deleteAd
         }}>
             {children}
         </LeagueContext.Provider>
