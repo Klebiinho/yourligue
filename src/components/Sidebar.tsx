@@ -19,15 +19,15 @@ const navItems = [
 
 
 const Sidebar = () => {
-    const { league, isPublicView } = useLeague();
+    const { league, isPublicView, isAdmin } = useLeague();
     const navigate = useNavigate();
     const [moreOpen, setMoreOpen] = useState(false);
 
     // Prefix paths if in public view
     const getLink = (to: string) => isPublicView ? `/view/${league?.slug || league?.id}${to === '/' ? '' : to}` : to;
 
-    // Filter nav items based on public view
-    const filteredNavItems = isPublicView
+    // Filter nav items: if it's public view OR user is not an admin, show only base items
+    const filteredNavItems = (isPublicView || !isAdmin)
         ? navItems.filter(item => ['/', '/live', '/matches', '/standings', '/bracket'].includes(item.to))
         : navItems;
 
@@ -158,7 +158,7 @@ const Sidebar = () => {
                             </h2>
                         </div>
                         <p className="text-[0.6rem] text-slate-600 font-bold uppercase tracking-[0.15em] mt-0.5">
-                            {isPublicView ? <span className="text-accent">MODO ESPECTADOR</span> : 'Championship Manager'}
+                            {(isPublicView || !isAdmin) ? <span className="text-accent">MODO ESPECTADOR</span> : 'Championship Manager'}
                         </p>
                     </div>
                 </div>
@@ -168,7 +168,7 @@ const Sidebar = () => {
                 {/* Nav Links */}
                 <nav className="flex-1 flex flex-col gap-0.5 px-3 py-2 overflow-y-auto no-scrollbar">
                     <p className="text-[0.55rem] font-black text-slate-700 uppercase tracking-[0.2em] px-3 py-2">
-                        {isPublicView ? 'Acompanhamento' : 'Menu Principal'}
+                        {(isPublicView || !isAdmin) ? 'Acompanhamento' : 'Menu Principal'}
                     </p>
                     {filteredNavItems.map(({ to, icon: Icon, label }) => (
                         <NavLink
@@ -200,7 +200,7 @@ const Sidebar = () => {
                 </nav>
 
                 {/* Footer */}
-                {!isPublicView && (
+                {!isPublicView && isAdmin && (
                     <div className="p-3 border-t border-white/[0.05]">
                         <button
                             onClick={() => navigate('/leagues')}

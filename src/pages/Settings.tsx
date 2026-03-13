@@ -6,7 +6,7 @@ import TeamLogo from '../components/TeamLogo';
 import { useNavigate } from 'react-router-dom';
 
 const Settings = () => {
-    const { league, updateLeague } = useLeague();
+    const { league, updateLeague, isAdmin } = useLeague();
     const { user, signOut } = useAuth();
     const navigate = useNavigate();
     const [name, setName] = useState(league?.name ?? '');
@@ -82,128 +82,136 @@ const Settings = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 {/* Form Section */}
-                <section className="lg:col-span-12 xl:col-span-8 glass-panel p-6 md:p-10">
-                    <h2 className="text-xl font-black text-white font-outfit uppercase tracking-widest mb-10 flex items-center gap-3 border-b border-white/5 pb-6">
-                        <Trophy size={24} className="text-primary" /> Parâmetros da Competição
-                    </h2>
+                {isAdmin ? (
+                    <section className="lg:col-span-12 xl:col-span-8 glass-panel p-6 md:p-10">
+                        <h2 className="text-xl font-black text-white font-outfit uppercase tracking-widest mb-10 flex items-center gap-3 border-b border-white/5 pb-6">
+                            <Trophy size={24} className="text-primary" /> Parâmetros da Competição
+                        </h2>
 
-                    <form onSubmit={handleSave} className="space-y-10">
-                        {/* League Identity */}
-                        <div className="flex flex-col md:flex-row items-center gap-8 bg-black/20 p-8 rounded-3xl border border-white/5 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
-                                <ImageIcon size={140} strokeWidth={1} />
+                        <form onSubmit={handleSave} className="space-y-10">
+                            {/* League Identity */}
+                            <div className="flex flex-col md:flex-row items-center gap-8 bg-black/20 p-8 rounded-3xl border border-white/5 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                                    <ImageIcon size={140} strokeWidth={1} />
+                                </div>
+                                <div className="relative">
+                                    <TeamLogo src={logo} size={120} />
+                                    <label className="absolute -bottom-2 -right-2 bg-primary text-white p-3 rounded-2xl shadow-xl border-4 border-bg-dark cursor-pointer hover:scale-110 active:scale-90 transition-all">
+                                        <ImageIcon size={20} strokeWidth={2.5} />
+                                        <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
+                                    </label>
+                                </div>
+                                <div className="flex-1 space-y-4 w-full">
+                                    <div className="space-y-2">
+                                        <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Nome Oficial da Liga</label>
+                                        <input type="text" value={name} onChange={e => setName(e.target.value)} required
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white font-black text-xl outline-none focus:border-primary transition-all placeholder:text-slate-700 h-16"
+                                        />
+                                    </div>
+                                    <p className="text-[0.65rem] font-bold text-slate-500 uppercase tracking-widest italic ml-1">
+                                        <span className="text-primary">Dica:</span> Use nomes curtos e impactantes para o dashboard.
+                                    </p>
+                                </div>
                             </div>
-                            <div className="relative">
-                                <TeamLogo src={logo} size={120} />
-                                <label className="absolute -bottom-2 -right-2 bg-primary text-white p-3 rounded-2xl shadow-xl border-4 border-bg-dark cursor-pointer hover:scale-110 active:scale-90 transition-all">
-                                    <ImageIcon size={20} strokeWidth={2.5} />
-                                    <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
-                                </label>
-                            </div>
-                            <div className="flex-1 space-y-4 w-full">
+
+                            {/* General Configs */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-2">
-                                    <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Nome Oficial da Liga</label>
-                                    <input type="text" value={name} onChange={e => setName(e.target.value)} required
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white font-black text-xl outline-none focus:border-primary transition-all placeholder:text-slate-700 h-16"
-                                    />
-                                </div>
-                                <p className="text-[0.65rem] font-bold text-slate-500 uppercase tracking-widest italic ml-1">
-                                    <span className="text-primary">Dica:</span> Use nomes curtos e impactantes para o dashboard.
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* General Configs */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="space-y-2">
-                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Capacidade de Equipes</label>
-                                <div className="relative">
-                                    <ShieldCheck size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" />
-                                    <input type="number" value={maxTeams} onChange={e => setMaxTeams(e.target.value)} min={2} max={64} required
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-primary transition-colors h-14"
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Duração dos Tempos (min)</label>
-                                <div className="relative">
-                                    <Clock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-accent" />
-                                    <input type="number" value={halfLength} onChange={e => setHalfLength(e.target.value)} required min={1} max={90}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-accent transition-colors h-14"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Squad Size Configs */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="space-y-2">
-                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Jogadores Titulares (por time)</label>
-                                <div className="relative">
-                                    <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" />
-                                    <input type="number" value={playersPerTeam} onChange={e => setPlayersPerTeam(e.target.value)} min={1} max={11} required
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-primary transition-colors h-14"
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Limite de Reservas (por time)</label>
-                                <div className="relative">
-                                    <Users size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-accent" />
-                                    <input type="number" value={reserveLimit} onChange={e => setReserveLimit(e.target.value)} required min={0} max={20}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-accent transition-colors h-14"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Substitutions Config */}
-                        <div className="grid grid-cols-1 gap-8">
-                            <div className="space-y-2">
-                                <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Substituições Permitidas (por jogo/time)</label>
-                                <div className="relative">
-                                    <ArrowLeftRight size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" />
-                                    <input type="number" value={substitutionsLimit} onChange={e => setSubstitutionsLimit(e.target.value)} required min={0} max={50}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-primary transition-colors h-14"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Point System */}
-                        <div className="space-y-6 bg-black/10 p-8 rounded-3xl border border-white/5">
-                            <h3 className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                <Target size={14} className="text-primary" /> Sistema de Pontuação (Draft)
-                            </h3>
-                            <div className="grid grid-cols-3 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Vitória</label>
-                                    <input type="number" value={pointsForWin} onChange={e => setPointsForWin(e.target.value)} required min={0}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-primary/20 transition-all"
-                                    />
+                                    <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Capacidade de Equipes</label>
+                                    <div className="relative">
+                                        <ShieldCheck size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" />
+                                        <input type="number" value={maxTeams} onChange={e => setMaxTeams(e.target.value)} min={2} max={64} required
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-primary transition-colors h-14"
+                                        />
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Empate</label>
-                                    <input type="number" value={pointsForDraw} onChange={e => setPointsForDraw(e.target.value)} required min={0}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-white/10 transition-all"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Derrota</label>
-                                    <input type="number" value={pointsForLoss} onChange={e => setPointsForLoss(e.target.value)} required min={0}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-danger/20 transition-all"
-                                    />
+                                    <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Duração dos Tempos (min)</label>
+                                    <div className="relative">
+                                        <Clock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-accent" />
+                                        <input type="number" value={halfLength} onChange={e => setHalfLength(e.target.value)} required min={1} max={90}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-accent transition-colors h-14"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <button type="submit"
-                            className={`w-full py-5 rounded-2xl font-black text-[0.8rem] uppercase tracking-[0.2em] shadow-2xl transition-all flex items-center justify-center gap-4 active:scale-[0.98] ${saved ? 'bg-accent text-white animate-scale-in' : 'bg-primary text-white hover:brightness-110 shadow-primary/20'
-                                }`}>
-                            {saved ? <><ShieldCheck size={22} strokeWidth={3} /> Configurações Atualizadas!</> : <><Save size={22} strokeWidth={3} /> Salvar Alterações</>}
-                        </button>
-                    </form>
-                </section>
+                            {/* Squad Size Configs */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-2">
+                                    <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Jogadores Titulares (por time)</label>
+                                    <div className="relative">
+                                        <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" />
+                                        <input type="number" value={playersPerTeam} onChange={e => setPlayersPerTeam(e.target.value)} min={1} max={11} required
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-primary transition-colors h-14"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Limite de Reservas (por time)</label>
+                                    <div className="relative">
+                                        <Users size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-accent" />
+                                        <input type="number" value={reserveLimit} onChange={e => setReserveLimit(e.target.value)} required min={0} max={20}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-accent transition-colors h-14"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Substitutions Config */}
+                            <div className="grid grid-cols-1 gap-8">
+                                <div className="space-y-2">
+                                    <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Substituições Permitidas (por jogo/time)</label>
+                                    <div className="relative">
+                                        <ArrowLeftRight size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" />
+                                        <input type="number" value={substitutionsLimit} onChange={e => setSubstitutionsLimit(e.target.value)} required min={0} max={50}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-primary transition-colors h-14"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Point System */}
+                            <div className="space-y-6 bg-black/10 p-8 rounded-3xl border border-white/5">
+                                <h3 className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <Target size={14} className="text-primary" /> Sistema de Pontuação (Draft)
+                                </h3>
+                                <div className="grid grid-cols-3 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Vitória</label>
+                                        <input type="number" value={pointsForWin} onChange={e => setPointsForWin(e.target.value)} required min={0}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-primary/20 transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Empate</label>
+                                        <input type="number" value={pointsForDraw} onChange={e => setPointsForDraw(e.target.value)} required min={0}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-white/10 transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Derrota</label>
+                                        <input type="number" value={pointsForLoss} onChange={e => setPointsForLoss(e.target.value)} required min={0}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-danger/20 transition-all"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit"
+                                className={`w-full py-5 rounded-2xl font-black text-[0.8rem] uppercase tracking-[0.2em] shadow-2xl transition-all flex items-center justify-center gap-4 active:scale-[0.98] ${saved ? 'bg-accent text-white animate-scale-in' : 'bg-primary text-white hover:brightness-110 shadow-primary/20'
+                                    }`}>
+                                {saved ? <><ShieldCheck size={22} strokeWidth={3} /> Configurações Atualizadas!</> : <><Save size={22} strokeWidth={3} /> Salvar Alterações</>}
+                            </button>
+                        </form>
+                    </section>
+                ) : (
+                    <section className="lg:col-span-12 xl:col-span-8 glass-panel p-10 flex flex-col items-center justify-center text-center opacity-50">
+                        <ShieldCheck size={64} className="mb-4 text-slate-600" />
+                        <h2 className="text-xl font-black uppercase tracking-widest">Acesso Restrito</h2>
+                        <p className="text-sm mt-2">Apenas o criador da liga pode gerenciar estas configurações.</p>
+                    </section>
+                )}
 
                 {/* Right Column: User Data */}
                 <section className="lg:col-span-12 xl:col-span-4 space-y-8">

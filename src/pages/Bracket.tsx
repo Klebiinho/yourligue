@@ -4,7 +4,7 @@ import { Shuffle, Shield, Trophy, LayoutGrid, Network, Info, ChevronRight, Check
 import TeamLogo from '../components/TeamLogo';
 
 const Bracket = () => {
-    const { teams, brackets, generateBracket, updateBracket, generateGroups, isPublicView } = useLeague();
+    const { teams, brackets, generateBracket, updateBracket, generateGroups, isPublicView, isAdmin } = useLeague();
     const [mode, setMode] = useState<'bracket' | 'groups'>('bracket');
     const [generating, setGenerating] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -49,8 +49,8 @@ const Bracket = () => {
 
         return (
             <div className={`relative group mb-8 last:mb-0 transition-all duration-300 ${b.status === 'finished' ? 'opacity-90' : 'opacity-100 hover:scale-[1.02]'}`}>
-                <div onClick={() => { if (!isPublicView) { setEditingId(b.id); setEditHome(String(b.homeScore)); setEditAway(String(b.awayScore)); } }}
-                    className={`w-64 bg-white/3 border ${b.status === 'finished' ? 'border-primary/30 shadow-lg shadow-primary/10' : 'border-white/5 shadow-xl'} rounded-2xl overflow-hidden ${isPublicView ? 'cursor-default' : 'cursor-pointer'} backdrop-blur-md`}>
+                <div onClick={() => { if (!isPublicView && isAdmin) { setEditingId(b.id); setEditHome(String(b.homeScore)); setEditAway(String(b.awayScore)); } }}
+                    className={`w-64 bg-white/3 border ${b.status === 'finished' ? 'border-primary/30 shadow-lg shadow-primary/10' : 'border-white/5 shadow-xl'} rounded-2xl overflow-hidden ${(isPublicView || !isAdmin) ? 'cursor-default' : 'cursor-pointer'} backdrop-blur-md`}>
 
                     <div className={`flex items-center gap-3 p-3 transition-colors ${b.status === 'finished' && b.homeScore > b.awayScore ? 'bg-primary/20 text-white' : 'hover:bg-white/5'}`}>
                         <TeamLogo src={ht?.logo} size={28} />
@@ -173,7 +173,7 @@ const Bracket = () => {
                                 {isPublicView ? 'Acompanhe a fase eliminatória da competição' : 'Chaveamento gerado automaticamente via algoritmo de torneioss'}
                             </p>
                         </div>
-                        {!isPublicView && (
+                        {!isPublicView && isAdmin && (
                             <button onClick={handleGenerateBracket} disabled={generating}
                                 className="px-10 py-4 bg-primary text-white font-black rounded-2xl shadow-[0_10px_30px_rgba(109,40,217,0.3)] hover:brightness-110 active:scale-95 transition-all uppercase tracking-[0.15em] text-xs flex items-center gap-4">
                                 <Shuffle size={20} className={generating ? 'animate-spin' : ''} /> {generating ? 'Gerando...' : 'Sortear Chaveamento'}
@@ -204,7 +204,7 @@ const Bracket = () => {
                             </h1>
                             <p className="text-slate-400 font-medium md:text-lg">{isPublicView ? 'Acompanhe a divisão e classificação dos grupos' : 'Sorteio equilibrado de equipes divididas em potes.'}</p>
                         </div>
-                        {!isPublicView && (
+                        {!isPublicView && isAdmin && (
                             <div className="flex items-center gap-4 bg-black/40 p-4 rounded-3xl border border-white/5 shadow-2xl">
                                 <div className="flex flex-col gap-1.5 px-4 h-[60px] justify-center">
                                     <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest pl-1">Equipes / Grupo</span>

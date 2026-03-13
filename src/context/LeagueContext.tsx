@@ -91,6 +91,7 @@ export type League = {
     reserveLimitPerTeam: number;
     substitutionsLimit: number;
     slug: string;
+    userId: string;
 };
 
 // ─── Context Type ────────────────────────────────────────────
@@ -137,6 +138,7 @@ interface LeagueContextType {
 
     loadLeagues: () => Promise<void>;
     isPublicView: boolean;
+    isAdmin: boolean;
     loadPublicLeague: (id: string) => Promise<boolean>;
 
     // User Interactions
@@ -185,6 +187,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     // Track if we are doing a silent background refresh
     const isBackgroundRefreshing = useRef(false);
 
+    const isAdmin = !!user && !!league && league.userId === user.id;
+
     const leagueBasePath = isPublicView && league ? `/view/${league.slug || league.id}` : '';
 
     // ── Load all leagues for user ──────────────────────────────
@@ -202,15 +206,22 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     }, [user, isPublicView]);
 
     const loadLeagues = async () => {
+        if (!user) return;
         setLoading(true);
-        const { data } = await supabase.from('leagues').select('*').order('created_at', { ascending: true });
+        const { data } = await supabase
+            .from('leagues')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: true });
+
         if (data) {
             const mapped: League[] = data.map(l => ({
                 id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
                 pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
                 pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
                 playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
-                substitutionsLimit: l.substitutions_limit || 5, slug: l.slug || ''
+                substitutionsLimit: l.substitutions_limit || 5, slug: l.slug || '',
+                userId: l.user_id
             }));
             setLeagues(mapped);
             if (mapped.length > 0 && !league) {
@@ -243,7 +254,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     pointsForWin: data.points_for_win, pointsForDraw: data.points_for_draw,
                     pointsForLoss: data.points_for_loss, defaultHalfLength: data.default_half_length,
                     playersPerTeam: data.players_per_team || 5, reserveLimitPerTeam: data.reserve_limit_per_team || 5,
-                    substitutionsLimit: data.substitutions_limit || 5, slug: data.slug || ''
+                    substitutionsLimit: data.substitutions_limit || 5, slug: data.slug || '',
+                    userId: data.user_id
                 };
                 setLeague(lg);
                 return true;
@@ -503,7 +515,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 pointsForWin: row.points_for_win, pointsForDraw: row.points_for_draw,
                 pointsForLoss: row.points_for_loss, defaultHalfLength: row.default_half_length,
                 playersPerTeam: row.players_per_team || 5, reserveLimitPerTeam: row.reserve_limit_per_team || 5,
-                substitutionsLimit: row.substitutions_limit || 5, slug: row.slug || ''
+                substitutionsLimit: row.substitutions_limit || 5, slug: row.slug || '',
+                userId: row.user_id
             };
             setLeagues(prev => [...prev, lg]);
             setLeague(lg);
@@ -842,7 +855,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             addPlayer, updatePlayer, removePlayer, toggleCaptain,
             createMatch, updateMatch, deleteMatch, startMatch, endMatch, updateTimer,
             addEvent, removeEvent,
-            generateBracket, updateBracket, loadLeagues, isPublicView, loadPublicLeague,
+            generateBracket, updateBracket, loadLeagues, isPublicView, isAdmin, loadPublicLeague,
             userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
             showAuthModal, setShowAuthModal,
             supportCounts, notifications, clearNotification, leagueBasePath

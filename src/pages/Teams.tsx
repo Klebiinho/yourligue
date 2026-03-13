@@ -4,7 +4,7 @@ import { Shield, UserPlus, Image as ImageIcon, Crown, Trash2, Edit2, Check, X, A
 import TeamLogo from '../components/TeamLogo';
 
 const Teams = () => {
-    const { league, teams, addTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain, isPublicView, interactWithTeam, userInteractions } = useLeague();
+    const { league, teams, addTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain, isPublicView, isAdmin, interactWithTeam, userInteractions } = useLeague();
     const [activeTeamId, setActiveTeamId] = useState<string | null>(teams[0]?.id ?? null);
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLogo, setNewTeamLogo] = useState('');
@@ -82,8 +82,8 @@ const Teams = () => {
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 md:gap-8 items-start">
                 {/* ── LEFT: Cadastro + Seleção ─────────────────────────── */}
                 <section className="xl:col-span-4 space-y-4">
-                    {/* New Team Form (Hidden in Public View) */}
-                    {!isPublicView && (
+                    {/* New Team Form (Hidden in Public View or if not admin) */}
+                    {!isPublicView && isAdmin && (
                         <div className="glass-panel p-4 sm:p-6">
                             <h2 className="text-sm font-black text-white font-outfit uppercase tracking-widest mb-4 flex items-center gap-2">
                                 <Plus size={16} className="text-accent" /> Novo Clube
@@ -210,8 +210,8 @@ const Teams = () => {
                                 </div>
                             </div>
 
-                            {/* Add Player Form (Hidden in Public View) */}
-                            {!isPublicView && (
+                            {/* Add Player Form (Hidden in Public View or if not admin) */}
+                            {!isPublicView && isAdmin && (
                                 <div className="p-4 sm:p-6 border-b border-white/[0.05]">
                                     <h3 className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                                         <UserPlus size={13} className="text-accent" /> Inscrever Novo Atleta
@@ -347,7 +347,7 @@ const Teams = () => {
                                                         </div>
 
                                                         {/* Actions: always visible on mobile, hover on desktop */}
-                                                        {!isPublicView && (
+                                                        {!isPublicView && isAdmin && (
                                                             <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                                                 <button onClick={() => toggleCaptain(currentTeam.id, player.id)}
                                                                     className={`p-2 rounded-lg transition-all ${player.isCaptain ? 'bg-warning/20 text-warning' : 'bg-white/5 text-slate-600 hover:text-warning hover:bg-white/10'}`}>

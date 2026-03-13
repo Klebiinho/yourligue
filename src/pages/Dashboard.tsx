@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
 const Dashboard = () => {
-    const { league, teams, matches, loading, isPublicView, supportCounts, leagueBasePath } = useLeague();
+    const { league, teams, matches, loading, isPublicView, isAdmin, supportCounts, leagueBasePath } = useLeague();
     const navigate = useNavigate();
 
     if (loading) return (
@@ -52,7 +52,7 @@ const Dashboard = () => {
                 <div className="flex items-start justify-between gap-3">
                     <div>
                         <h1 className="text-xl sm:text-2xl md:text-4xl font-outfit font-extrabold tracking-tight leading-tight">
-                            {isPublicView ? 'Acompanhe a Liga 👋' : 'Bem-vindo 👋'}
+                            {(isPublicView || !isAdmin) ? 'Acompanhe a Liga 👋' : 'Bem-vindo 👋'}
                         </h1>
                         <p className="text-slate-500 mt-0.5 text-xs sm:text-sm">
                             <span className="text-white font-bold">{league?.name}</span>
@@ -68,7 +68,7 @@ const Dashboard = () => {
                             </span>
                         </div>
                     )}
-                    {!isPublicView && league && (
+                    {!isPublicView && isAdmin && league && (
                         <button
                             onClick={() => {
                                 const url = `${window.location.origin}/view/${league.slug || league.id}`;

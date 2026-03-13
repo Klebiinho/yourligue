@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
 const Matches = () => {
-    const { teams, matches, createMatch, startMatch, deleteMatch, updateMatch, isPublicView, leagueBasePath } = useLeague();
+    const { teams, matches, createMatch, startMatch, deleteMatch, updateMatch, isPublicView, isAdmin, leagueBasePath } = useLeague();
     const navigate = useNavigate();
     const [homeTeamId, setHomeTeamId] = useState(teams[0]?.id || '');
     const [awayTeamId, setAwayTeamId] = useState(teams[1]?.id || '');
@@ -59,7 +59,7 @@ const Matches = () => {
     };
 
     const handleEnter = async (id: string, status: string) => {
-        if (!isPublicView && status === 'scheduled') await startMatch(id);
+        if (!isPublicView && isAdmin && status === 'scheduled') await startMatch(id);
         navigate(`${leagueBasePath}/match/${id}`);
     };
 
@@ -81,7 +81,7 @@ const Matches = () => {
                     <h1 className="text-2xl sm:text-3xl md:text-5xl font-outfit font-extrabold tracking-tight mb-1 uppercase">Partidas</h1>
                     <p className="text-slate-400 text-sm md:text-base">{isPublicView ? 'Veja o cronograma e resultados da liga' : 'Agende, inicie e controle as partidas da liga'}</p>
                 </div>
-                {!isPublicView && (
+                {!isPublicView && isAdmin && (
                     <button
                         onClick={() => { setFormOpen(!formOpen); setEditingMatchId(null); resetForm(); }}
                         className="flex items-center gap-2 bg-primary text-white font-black py-3 px-6 rounded-2xl shadow-[0_8px_25px_rgba(109,40,217,0.35)] hover:brightness-110 active:scale-95 transition-all text-xs uppercase tracking-widest flex-none"
@@ -239,7 +239,7 @@ const Matches = () => {
 
                                     {/* Buttons */}
                                     <div className="flex items-center gap-1.5">
-                                        {!isPublicView && match.status === 'scheduled' && (
+                                        {!isPublicView && isAdmin && match.status === 'scheduled' && (
                                             <button onClick={() => handleEdit(match)} className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-slate-500 hover:text-white hover:bg-white/10 transition-all">
                                                 <Edit2 size={14} />
                                             </button>
@@ -250,9 +250,9 @@ const Matches = () => {
                                                     'bg-primary text-white shadow-[0_4px_15px_rgba(109,40,217,0.3)] hover:brightness-110'
                                                 }`}>
                                             <Play size={12} fill="currentColor" />
-                                            {isPublicView ? 'Ver Detalhes' : (isLive ? 'Gerenciar' : isFinished ? 'Ver' : 'Iniciar')}
+                                            {(isPublicView || !isAdmin) ? 'Ver Detalhes' : (isLive ? 'Gerenciar' : isFinished ? 'Ver' : 'Iniciar')}
                                         </button>
-                                        {!isPublicView && (
+                                        {!isPublicView && isAdmin && (
                                             <button onClick={() => handleDelete(match.id)} className="p-2.5 rounded-xl bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all border border-danger/10">
                                                 <Trash2 size={14} />
                                             </button>

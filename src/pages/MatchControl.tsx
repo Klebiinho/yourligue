@@ -7,7 +7,7 @@ import TeamLogo from '../components/TeamLogo';
 const MatchControl = () => {
     const { matchId } = useParams<{ matchId: string }>();
     const navigate = useNavigate();
-    const { league, matches, teams, endMatch, addEvent, removeEvent, updateTimer, updateMatch, isPublicView } = useLeague();
+    const { league, matches, teams, endMatch, addEvent, removeEvent, updateTimer, updateMatch, isPublicView, isAdmin } = useLeague();
 
     const match = matches.find((m: Match) => m.id === matchId);
     const homeTeam = teams.find((t: Team) => t.id === match?.homeTeamId);
@@ -144,7 +144,7 @@ const MatchControl = () => {
 
                 {/* Controls */}
                 <div className="flex items-center justify-center gap-2 sm:gap-3 mt-5 border-t border-white/[0.05] pt-5">
-                    {!isPublicView ? (
+                    {!isPublicView && isAdmin ? (
                         <>
                             <button onClick={() => setTimerRunning(!timerRunning)}
                                 className={`flex-1 sm:flex-none px-4 sm:px-8 py-3 rounded-xl font-black text-[0.65rem] uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${timerRunning ? 'bg-white/5 border border-white/10 text-slate-400 hover:text-white' : 'bg-primary text-white shadow-primary/30 hover:brightness-110'
@@ -210,7 +210,7 @@ const MatchControl = () => {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1">
-                                                {!isSubbedOut && !isPublicView && (
+                                                {!isSubbedOut && !isPublicView && isAdmin && (
                                                     <div className={`flex items-center gap-1 transition-all ${isRedCarded ? 'opacity-20 pointer-events-none' : ''}`}>
                                                         <button onClick={() => handleGol(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90" title="Gol"><Target size={14} /></button>
                                                         <button onClick={() => handleAssist(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90" title="Assistência"><Award size={14} /></button>
@@ -220,7 +220,7 @@ const MatchControl = () => {
                                                         <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs" title="Vermelho">🟥</button>
                                                     </div>
                                                 )}
-                                                {!isPublicView && (isRedCarded || yellowCards > 0) && (
+                                                {!isPublicView && isAdmin && (isRedCarded || yellowCards > 0) && (
                                                     <button onClick={() => handleUndoLastCard(player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/10 text-warning hover:bg-warning hover:text-black transition-all shadow-md" title="Anular Cartão">
                                                         <Trash2 size={12} />
                                                     </button>
@@ -256,7 +256,7 @@ const MatchControl = () => {
                                                     {isRedCarded && <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm" />}
                                                 </div>
                                             </div>
-                                            {isSubbedIn && !isRedCarded && !isPublicView && (
+                                            {isSubbedIn && !isRedCarded && !isPublicView && isAdmin && (
                                                 <div className="flex items-center gap-1">
                                                     <button onClick={() => handleGol(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90" title="Gol"><Target size={14} /></button>
                                                     <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs" title="Amarelo">🟨</button>
@@ -274,7 +274,7 @@ const MatchControl = () => {
                 {/* Right: Settings + Event Log */}
                 <div className="space-y-4 md:space-y-6 lg:col-span-2 xl:col-span-1">
                     {/* Technical Panel - conditionally rendered or read-only */}
-                    {!isPublicView ? (
+                    {!isPublicView && isAdmin ? (
                         <section className="glass-panel p-4 md:p-6">
                             <h3 className="text-sm font-black text-white font-outfit uppercase tracking-widest mb-5 flex items-center gap-2">
                                 <Settings2 size={16} className="text-primary" /> Painel Técnico
@@ -371,7 +371,7 @@ const MatchControl = () => {
                                                     {labelMap[event.type] || event.type}
                                                 </span>
                                             </div>
-                                            {!isPublicView && (
+                                            {!isPublicView && isAdmin && (
                                                 <button onClick={() => removeEvent(matchId!, event.id)}
                                                     className="w-8 h-8 flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all sm:opacity-0 sm:group-hover:opacity-100 flex-none border border-danger/20">
                                                     <XCircle size={14} />
