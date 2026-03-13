@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
 const Dashboard = () => {
-    const { league, teams, matches, loading, isPublicView, supportCounts } = useLeague();
+    const { league, teams, matches, loading, isPublicView, supportCounts, leagueBasePath } = useLeague();
     const navigate = useNavigate();
 
     if (loading) return (
@@ -123,11 +123,9 @@ const Dashboard = () => {
                             <Zap size={16} className="text-primary" />
                             Próximas & Ao Vivo
                         </h2>
-                        {!isPublicView && (
-                            <button onClick={() => navigate('/matches')} className="flex items-center gap-1 text-primary text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
-                                Ver todas <ArrowRight size={12} />
-                            </button>
-                        )}
+                        <button onClick={() => navigate(`${leagueBasePath}/matches`)} className="flex items-center gap-1 text-primary text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
+                            Ver todas <ArrowRight size={12} />
+                        </button>
                     </div>
 
                     <div className="glass-panel divide-y divide-white/[0.04] overflow-hidden">
@@ -143,7 +141,7 @@ const Dashboard = () => {
                                 const isLive = match.status === 'live';
                                 return (
                                     <div key={match.id}
-                                        onClick={() => navigate(`/match/${match.id}`)}
+                                        onClick={() => navigate(`${leagueBasePath}/match/${match.id}`)}
                                         className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 sm:py-5 cursor-pointer transition-all duration-200 ${isLive ? 'bg-danger/[0.04]' : 'hover:bg-white/[0.03]'}`}>
 
                                         {/* Home: logo + nome */}
@@ -202,11 +200,9 @@ const Dashboard = () => {
                                 <Trophy size={16} className="text-warning" />
                                 Classificação
                             </h2>
-                            {!isPublicView && (
-                                <button onClick={() => navigate('/standings')} className="flex items-center gap-1 text-accent text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
-                                    Tabela <ArrowRight size={12} />
-                                </button>
-                            )}
+                            <button onClick={() => navigate(`${leagueBasePath}/standings`)} className="flex items-center gap-1 text-accent text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
+                                Tabela <ArrowRight size={12} />
+                            </button>
                         </div>
 
                         <div className="glass-panel divide-y divide-white/[0.04] overflow-hidden">

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
 const LiveMatches = () => {
-    const { matches, teams } = useLeague();
+    const { matches, teams, leagueBasePath } = useLeague();
     const navigate = useNavigate();
 
     const liveMatches = matches.filter(m => m.status === 'live');
@@ -14,7 +14,7 @@ const LiveMatches = () => {
         .slice(0, 5);
 
     const handleEnter = (id: string) => {
-        navigate(`/match/${id}`);
+        navigate(`${leagueBasePath}/match/${id}`);
     };
 
     return (

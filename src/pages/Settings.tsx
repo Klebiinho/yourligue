@@ -262,7 +262,7 @@ const Settings = () => {
                         </p>
                         <div className="flex gap-2">
                             <div className="flex-1 bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-slate-400 font-mono text-xs truncate flex items-center">
-                                {window.location.origin}/view/{league?.id}
+                                {window.location.origin}/view/{league?.slug || league?.id}
                             </div>
                             <button
                                 onClick={handleCopyLink}

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 
 const Matches = () => {
-    const { teams, matches, createMatch, startMatch, deleteMatch, updateMatch, isPublicView } = useLeague();
+    const { teams, matches, createMatch, startMatch, deleteMatch, updateMatch, isPublicView, leagueBasePath } = useLeague();
     const navigate = useNavigate();
     const [homeTeamId, setHomeTeamId] = useState(teams[0]?.id || '');
     const [awayTeamId, setAwayTeamId] = useState(teams[1]?.id || '');
@@ -59,8 +59,8 @@ const Matches = () => {
     };
 
     const handleEnter = async (id: string, status: string) => {
-        if (status === 'scheduled') await startMatch(id);
-        navigate(`/match/${id}`);
+        if (!isPublicView && status === 'scheduled') await startMatch(id);
+        navigate(`${leagueBasePath}/match/${id}`);
     };
 
     const filteredMatches = matches.filter(m => tab === 'all' || m.status === tab);

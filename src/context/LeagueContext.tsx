@@ -150,6 +150,7 @@ interface LeagueContextType {
     supportCounts: Record<string, number>;
     notifications: LeagueNotification[];
     clearNotification: (id: string) => void;
+    leagueBasePath: string;
 }
 
 const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
@@ -171,6 +172,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [supportCounts, setSupportCounts] = useState<Record<string, number>>({});
     const [notifications, setNotifications] = useState<LeagueNotification[]>([]);
+
+    const leagueBasePath = isPublicView && league ? `/view/${league.slug || league.id}` : '';
 
     // ── Load all leagues for user ──────────────────────────────
     useEffect(() => {
@@ -357,34 +360,35 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             loadLeagueData(league.id);
             localStorage.setItem('selectedLeagueId', league.id);
 
-            // Subscribe to realtime updates for notifications
+            // Subscribe to realtime updates for notifications and state sync
             const channel = supabase.channel(`league-${league.id}`)
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_events' }, payload => {
-                    const event = payload.new;
-                    if (event.type === 'goal' || event.type === 'penalty_goal') {
-                        // Check if current user supports one of the teams in this match
-                        const supportedTeam = userInteractions.find(i => i.interactionType === 'supporting');
-                        if (supportedTeam) {
-                            // Find match teams
-                            const match = matches.find(m => m.id === event.match_id);
-                            if (match && (match.homeTeamId === supportedTeam.teamId || match.awayTeamId === supportedTeam.teamId)) {
-                                const team = teams.find(t => t.id === event.team_id);
-                                addNotification({
-                                    id: Math.random().toString(36).substr(2, 9),
-                                    title: '⚽ GOOOL!',
-                                    message: `Gol do ${team?.name || 'seu time'}!`,
-                                    type: 'goal',
-                                    teamId: event.team_id,
-                                    createdAt: Date.now()
-                                });
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'match_events', filter: `league_id=eq.${league.id}` }, payload => {
+                    const event = payload.new as any;
+                    if (payload.eventType === 'INSERT') {
+                        if (event.type === 'goal' || event.type === 'penalty_goal') {
+                            const supportedTeam = userInteractions.find(i => i.interactionType === 'supporting');
+                            if (supportedTeam) {
+                                const match = matches.find(m => m.id === event.match_id);
+                                if (match && (match.homeTeamId === supportedTeam.teamId || match.awayTeamId === supportedTeam.teamId)) {
+                                    const team = teams.find(t => t.id === event.team_id);
+                                    addNotification({
+                                        id: Math.random().toString(36).substr(2, 9),
+                                        title: '⚽ GOOOL!',
+                                        message: `Gol do ${team?.name || 'seu time'}!`,
+                                        type: 'goal',
+                                        teamId: event.team_id,
+                                        createdAt: Date.now()
+                                    });
+                                }
                             }
                         }
                     }
+                    loadLeagueData(league.id);
                 })
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches' }, payload => {
-                    const match = payload.new;
-                    const oldMatch = payload.old;
-                    if (match.status === 'live' && oldMatch.status === 'scheduled') {
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: `league_id=eq.${league.id}` }, payload => {
+                    const match = payload.new as any;
+                    const oldMatch = payload.old as any;
+                    if (payload.eventType === 'UPDATE' && match.status === 'live' && oldMatch.status === 'scheduled') {
                         const supportedTeam = userInteractions.find(i => i.interactionType === 'supporting');
                         if (supportedTeam && (match.home_team_id === supportedTeam.teamId || match.away_team_id === supportedTeam.teamId)) {
                             addNotification({
@@ -397,6 +401,14 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                             });
                         }
                     }
+                    loadLeagueData(league.id);
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'teams', filter: `league_id=eq.${league.id}` }, () => loadLeagueData(league.id))
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => loadLeagueData(league.id))
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'brackets', filter: `league_id=eq.${league.id}` }, () => loadLeagueData(league.id))
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'user_team_interactions', filter: `league_id=eq.${league.id}` }, () => {
+                    loadUserInteractions(league.id);
+                    loadSupportCounts(league.id);
                 })
                 .subscribe();
 
@@ -806,7 +818,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             generateBracket, updateBracket, loadLeagues, isPublicView, loadPublicLeague,
             userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
             showAuthModal, setShowAuthModal,
-            supportCounts, notifications, clearNotification
+            supportCounts, notifications, clearNotification, leagueBasePath
         }}>
             {children}
         </LeagueContext.Provider>
