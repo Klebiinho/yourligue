@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Shield, UserPlus, Image as ImageIcon, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, TrendingUp } from 'lucide-react';
+import { Shield, UserPlus, Image as ImageIcon, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, TrendingUp, Heart, Star, Swords as RivalIcon } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const Teams = () => {
-    const { league, teams, addTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain } = useLeague();
+    const { league, teams, addTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain, isPublicView, interactWithTeam, userInteractions } = useLeague();
     const [activeTeamId, setActiveTeamId] = useState<string | null>(teams[0]?.id ?? null);
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLogo, setNewTeamLogo] = useState('');
@@ -82,46 +82,48 @@ const Teams = () => {
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 md:gap-8 items-start">
                 {/* ── LEFT: Cadastro + Seleção ─────────────────────────── */}
                 <section className="xl:col-span-4 space-y-4">
-                    {/* New Team Form */}
-                    <div className="glass-panel p-4 sm:p-6">
-                        <h2 className="text-sm font-black text-white font-outfit uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <Plus size={16} className="text-accent" /> Novo Clube
-                        </h2>
-                        <form onSubmit={handleAddTeam} className="space-y-3">
-                            <div className="space-y-1.5">
-                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Nome da Equipe</label>
-                                <input type="text" placeholder="Ex: Galáticos FC" value={newTeamName} onChange={e => setNewTeamName(e.target.value)} required
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary outline-none transition-all font-bold placeholder:text-slate-700"
-                                />
-                            </div>
+                    {/* New Team Form (Hidden in Public View) */}
+                    {!isPublicView && (
+                        <div className="glass-panel p-4 sm:p-6">
+                            <h2 className="text-sm font-black text-white font-outfit uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <Plus size={16} className="text-accent" /> Novo Clube
+                            </h2>
+                            <form onSubmit={handleAddTeam} className="space-y-3">
+                                <div className="space-y-1.5">
+                                    <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Nome da Equipe</label>
+                                    <input type="text" placeholder="Ex: Galáticos FC" value={newTeamName} onChange={e => setNewTeamName(e.target.value)} required
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary outline-none transition-all font-bold placeholder:text-slate-700"
+                                    />
+                                </div>
 
-                            <div className="space-y-1.5">
-                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Escudo / Logo</label>
-                                <label className="flex items-center justify-center gap-2 w-full h-12 bg-white/5 border border-dashed border-white/10 rounded-xl cursor-pointer hover:bg-white/[0.08] hover:border-primary/40 transition-all group">
-                                    <Upload size={16} className="text-slate-600 group-hover:text-primary transition-colors flex-none" />
-                                    <span className="text-[0.65rem] font-black text-slate-600 group-hover:text-white uppercase tracking-widest leading-none">
-                                        {newTeamLogo ? '✓ Carregado' : 'Fazer Upload'}
-                                    </span>
-                                    <input type="file" accept="image/*" onChange={e => handleFile(e, setNewTeamLogo)} className="hidden" />
-                                </label>
-                                {newTeamLogo && (
-                                    <div className="flex items-center gap-3 p-3 bg-black/30 rounded-xl border border-white/5">
-                                        <TeamLogo src={newTeamLogo} size={44} />
-                                        <span className="text-xs font-bold text-slate-400 flex-1">Preview do escudo</span>
-                                        <button type="button" onClick={() => setNewTeamLogo('')} className="p-1.5 bg-danger/20 text-danger rounded-lg hover:bg-danger hover:text-white transition-all">
-                                            <X size={12} strokeWidth={3} />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Escudo / Logo</label>
+                                    <label className="flex items-center justify-center gap-2 w-full h-12 bg-white/5 border border-dashed border-white/10 rounded-xl cursor-pointer hover:bg-white/[0.08] hover:border-primary/40 transition-all group">
+                                        <Upload size={16} className="text-slate-600 group-hover:text-primary transition-colors flex-none" />
+                                        <span className="text-[0.65rem] font-black text-slate-600 group-hover:text-white uppercase tracking-widest leading-none">
+                                            {newTeamLogo ? '✓ Carregado' : 'Fazer Upload'}
+                                        </span>
+                                        <input type="file" accept="image/*" onChange={e => handleFile(e, setNewTeamLogo)} className="hidden" />
+                                    </label>
+                                    {newTeamLogo && (
+                                        <div className="flex items-center gap-3 p-3 bg-black/30 rounded-xl border border-white/5">
+                                            <TeamLogo src={newTeamLogo} size={44} />
+                                            <span className="text-xs font-bold text-slate-400 flex-1">Preview do escudo</span>
+                                            <button type="button" onClick={() => setNewTeamLogo('')} className="p-1.5 bg-danger/20 text-danger rounded-lg hover:bg-danger hover:text-white transition-all">
+                                                <X size={12} strokeWidth={3} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
 
-                            {teamError && <ErrorMsg msg={teamError} />}
+                                {teamError && <ErrorMsg msg={teamError} />}
 
-                            <button type="submit" className="w-full bg-primary text-white font-black py-3 rounded-xl shadow-[0_4px_20px_rgba(109,40,217,0.3)] hover:brightness-110 active:scale-[0.98] transition-all uppercase tracking-widest text-[0.65rem] flex items-center justify-center gap-2">
-                                <Shield size={15} fill="currentColor" /> Cadastrar Clube
-                            </button>
-                        </form>
-                    </div>
+                                <button type="submit" className="w-full bg-primary text-white font-black py-3 rounded-xl shadow-[0_4px_20px_rgba(109,40,217,0.3)] hover:brightness-110 active:scale-[0.98] transition-all uppercase tracking-widest text-[0.65rem] flex items-center justify-center gap-2">
+                                    <Shield size={15} fill="currentColor" /> Cadastrar Clube
+                                </button>
+                            </form>
+                        </div>
+                    )}
 
                     {/* Club List */}
                     <div className="glass-panel p-4 sm:p-6">
@@ -159,85 +161,117 @@ const Teams = () => {
                         <div className="glass-panel overflow-hidden">
                             {/* Team Hero */}
                             <div className="p-4 sm:p-6 bg-gradient-to-r from-primary/10 to-transparent border-b border-white/[0.05]">
-                                <div className="flex items-center gap-4">
-                                    <div className="relative group flex-none">
-                                        <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <TeamLogo src={currentTeam.logo} size={64} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h2 className="font-outfit font-black text-white uppercase text-lg sm:text-2xl md:text-3xl tracking-tight leading-none truncate">{currentTeam.name}</h2>
-                                        <div className="flex items-center gap-4 mt-2">
-                                            <div className="flex items-center gap-1.5 text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">
-                                                <Users size={12} className="text-primary" /> {currentTeam.players.length} Jogadores
-                                            </div>
-                                            <div className="flex items-center gap-1.5 text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">
-                                                <Check size={12} className="text-accent" /> Ativo
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="relative group flex-none">
+                                            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <TeamLogo src={currentTeam.logo} size={64} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h2 className="font-outfit font-black text-white uppercase text-lg sm:text-2xl md:text-3xl tracking-tight leading-none truncate">{currentTeam.name}</h2>
+                                            <div className="flex items-center gap-4 mt-2">
+                                                <div className="flex items-center gap-1.5 text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">
+                                                    <Users size={12} className="text-primary" /> {currentTeam.players.length} Jogadores
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">
+                                                    <Check size={12} className="text-accent" /> Ativo
+                                                </div>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    {/* Interaction Buttons (Spectator Mode or Personal Interaction) */}
+                                    <div className="flex items-center gap-2 pt-2 sm:pt-0">
+                                        {[
+                                            { type: 'supporting', icon: Heart, label: 'Torcer', activeColor: 'text-danger bg-danger/10 border-danger/30' },
+                                            { type: 'favorite', icon: Star, label: 'Favoritar', activeColor: 'text-warning bg-warning/10 border-warning/30' },
+                                            { type: 'rival', icon: RivalIcon, label: 'Rival', activeColor: 'text-primary bg-primary/10 border-primary/30' },
+                                        ].map(btn => {
+                                            const isActive = userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === btn.type);
+                                            const activeIndicator = btn.type === 'supporting' ? 'fill-danger' : btn.type === 'favorite' ? 'fill-warning' : 'fill-primary';
+
+                                            return (
+                                                <button
+                                                    key={btn.type}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        interactWithTeam(currentTeam.id, btn.type as any);
+                                                    }}
+                                                    className={`flex flex-col items-center justify-center gap-1.5 px-3 py-2 rounded-2xl border transition-all duration-300 min-w-[70px] sm:min-w-[80px] ${isActive
+                                                        ? btn.activeColor
+                                                        : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10 hover:text-white hover:border-white/20'}`}
+                                                >
+                                                    <btn.icon size={18} className={isActive ? `${activeIndicator} text-current` : ''} strokeWidth={isActive ? 2.5 : 2} />
+                                                    <span className="text-[0.5rem] font-black uppercase tracking-widest">{btn.label}</span>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Add Player Form */}
-                            <div className="p-4 sm:p-6 border-b border-white/[0.05]">
-                                <h3 className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <UserPlus size={13} className="text-accent" /> Inscrever Novo Atleta
-                                </h3>
-                                <form onSubmit={handleAddPlayer} className="space-y-3">
-                                    {/* Row 1: Nome + Nº + Posição */}
-                                    <div className="grid grid-cols-2 sm:grid-cols-12 gap-2 sm:gap-3">
-                                        <div className="col-span-2 sm:col-span-5 space-y-1">
-                                            <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Nome</label>
-                                            <input type="text" placeholder="Cristiano Ronaldo" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} required
-                                                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:border-accent outline-none transition-all font-bold placeholder:text-slate-700" />
+                            {/* Add Player Form (Hidden in Public View) */}
+                            {!isPublicView && (
+                                <div className="p-4 sm:p-6 border-b border-white/[0.05]">
+                                    <h3 className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <UserPlus size={13} className="text-accent" /> Inscrever Novo Atleta
+                                    </h3>
+                                    <form onSubmit={handleAddPlayer} className="space-y-3">
+                                        {/* Row 1: Nome + Nº + Posição */}
+                                        <div className="grid grid-cols-2 sm:grid-cols-12 gap-2 sm:gap-3">
+                                            <div className="col-span-2 sm:col-span-5 space-y-1">
+                                                <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Nome</label>
+                                                <input type="text" placeholder="Cristiano Ronaldo" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} required
+                                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:border-accent outline-none transition-all font-bold placeholder:text-slate-700" />
+                                            </div>
+                                            <div className="sm:col-span-2 space-y-1">
+                                                <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Nº</label>
+                                                <input type="number" placeholder="10" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} required min={1} max={99}
+                                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm font-black text-center focus:border-accent outline-none transition-all" />
+                                            </div>
+                                            <div className="sm:col-span-3 space-y-1">
+                                                <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Posição</label>
+                                                <select value={newPlayerPos} onChange={e => setNewPlayerPos(e.target.value)}
+                                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm font-bold outline-none cursor-pointer appearance-none h-[42px]">
+                                                    <option className="bg-[#07070a]">Goleiro</option>
+                                                    <option className="bg-[#07070a]">Zagueiro</option>
+                                                    <option className="bg-[#07070a]">Lateral</option>
+                                                    <option className="bg-[#07070a]">Meio-campo</option>
+                                                    <option className="bg-[#07070a]">Atacante</option>
+                                                </select>
+                                            </div>
+                                            <div className="sm:col-span-2 space-y-1">
+                                                <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Foto</label>
+                                                <label className="flex items-center justify-center bg-black/40 border border-white/10 h-[42px] rounded-xl cursor-pointer hover:bg-white/10 transition-all text-slate-500 hover:text-white">
+                                                    {newPlayerPhoto ? <Check size={18} className="text-accent" /> : <ImageIcon size={18} />}
+                                                    <input type="file" accept="image/*" onChange={e => handleFile(e, setNewPlayerPhoto)} className="hidden" />
+                                                </label>
+                                            </div>
                                         </div>
-                                        <div className="sm:col-span-2 space-y-1">
-                                            <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Nº</label>
-                                            <input type="number" placeholder="10" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} required min={1} max={99}
-                                                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm font-black text-center focus:border-accent outline-none transition-all" />
-                                        </div>
-                                        <div className="sm:col-span-3 space-y-1">
-                                            <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Posição</label>
-                                            <select value={newPlayerPos} onChange={e => setNewPlayerPos(e.target.value)}
-                                                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm font-bold outline-none cursor-pointer appearance-none h-[42px]">
-                                                <option className="bg-[#07070a]">Goleiro</option>
-                                                <option className="bg-[#07070a]">Zagueiro</option>
-                                                <option className="bg-[#07070a]">Lateral</option>
-                                                <option className="bg-[#07070a]">Meio-campo</option>
-                                                <option className="bg-[#07070a]">Atacante</option>
-                                            </select>
-                                        </div>
-                                        <div className="sm:col-span-2 space-y-1">
-                                            <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Foto</label>
-                                            <label className="flex items-center justify-center bg-black/40 border border-white/10 h-[42px] rounded-xl cursor-pointer hover:bg-white/10 transition-all text-slate-500 hover:text-white">
-                                                {newPlayerPhoto ? <Check size={18} className="text-accent" /> : <ImageIcon size={18} />}
-                                                <input type="file" accept="image/*" onChange={e => handleFile(e, setNewPlayerPhoto)} className="hidden" />
+
+                                        {error && <ErrorMsg msg={error} />}
+
+                                        <div className="flex flex-wrap items-end gap-3 px-1">
+                                            <label className="flex items-center gap-2 cursor-pointer group">
+                                                <div onClick={() => setNewPlayerIsReserve(!newPlayerIsReserve)}
+                                                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${newPlayerIsReserve ? 'bg-warning/20 border-warning text-warning' : 'bg-white/5 border-white/10 text-slate-500'}`}>
+                                                    <TrendingUp size={18} className={newPlayerIsReserve ? '' : 'opacity-50'} />
+                                                </div>
+                                                <div className="flex flex-col" onClick={() => setNewPlayerIsReserve(!newPlayerIsReserve)}>
+                                                    <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Status</span>
+                                                    <span className={`text-[0.7rem] font-black uppercase tracking-widest ${newPlayerIsReserve ? 'text-warning' : 'text-slate-400'}`}>
+                                                        {newPlayerIsReserve ? 'Reserva' : 'Titular'}
+                                                    </span>
+                                                </div>
                                             </label>
+
+                                            <button type="submit" className="flex-1 min-w-[150px] bg-accent text-white font-black h-[42px] rounded-xl shadow-lg hover:brightness-110 active:scale-[0.99] transition-all uppercase tracking-widest text-[0.65rem] flex items-center justify-center gap-2">
+                                                <UserPlus size={15} strokeWidth={3} /> Confirmar Inscrição
+                                            </button>
                                         </div>
-                                    </div>
-
-                                    {error && <ErrorMsg msg={error} />}
-
-                                    <div className="flex flex-wrap items-end gap-3 px-1">
-                                        <label className="flex items-center gap-2 cursor-pointer group">
-                                            <div onClick={() => setNewPlayerIsReserve(!newPlayerIsReserve)}
-                                                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${newPlayerIsReserve ? 'bg-warning/20 border-warning text-warning' : 'bg-white/5 border-white/10 text-slate-500'}`}>
-                                                <TrendingUp size={18} className={newPlayerIsReserve ? '' : 'opacity-50'} />
-                                            </div>
-                                            <div className="flex flex-col" onClick={() => setNewPlayerIsReserve(!newPlayerIsReserve)}>
-                                                <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Status</span>
-                                                <span className={`text-[0.7rem] font-black uppercase tracking-widest ${newPlayerIsReserve ? 'text-warning' : 'text-slate-400'}`}>
-                                                    {newPlayerIsReserve ? 'Reserva' : 'Titular'}
-                                                </span>
-                                            </div>
-                                        </label>
-
-                                        <button type="submit" className="flex-1 min-w-[150px] bg-accent text-white font-black h-[42px] rounded-xl shadow-lg hover:brightness-110 active:scale-[0.99] transition-all uppercase tracking-widest text-[0.65rem] flex items-center justify-center gap-2">
-                                            <UserPlus size={15} strokeWidth={3} /> Confirmar Inscrição
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+                                    </form>
+                                </div>
+                            )}
 
                             {/* ── Elenco ──────────────────────────────── */}
                             <div className="p-4 sm:p-6">
@@ -313,18 +347,20 @@ const Teams = () => {
                                                         </div>
 
                                                         {/* Actions: always visible on mobile, hover on desktop */}
-                                                        <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                                            <button onClick={() => toggleCaptain(currentTeam.id, player.id)}
-                                                                className={`p-2 rounded-lg transition-all ${player.isCaptain ? 'bg-warning/20 text-warning' : 'bg-white/5 text-slate-600 hover:text-warning hover:bg-white/10'}`}>
-                                                                <Crown size={13} strokeWidth={player.isCaptain ? 3 : 2} />
-                                                            </button>
-                                                            <button onClick={() => startEdit(player)} className="p-2 bg-white/5 text-slate-600 rounded-lg hover:text-white hover:bg-white/10 transition-all">
-                                                                <Edit2 size={13} />
-                                                            </button>
-                                                            <button onClick={() => removePlayer(currentTeam.id, player.id)} className="p-2 bg-danger/10 text-danger rounded-lg hover:bg-danger hover:text-white transition-all">
-                                                                <Trash2 size={13} />
-                                                            </button>
-                                                        </div>
+                                                        {!isPublicView && (
+                                                            <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                                <button onClick={() => toggleCaptain(currentTeam.id, player.id)}
+                                                                    className={`p-2 rounded-lg transition-all ${player.isCaptain ? 'bg-warning/20 text-warning' : 'bg-white/5 text-slate-600 hover:text-warning hover:bg-white/10'}`}>
+                                                                    <Crown size={13} strokeWidth={player.isCaptain ? 3 : 2} />
+                                                                </button>
+                                                                <button onClick={() => startEdit(player)} className="p-2 bg-white/5 text-slate-600 rounded-lg hover:text-white hover:bg-white/10 transition-all">
+                                                                    <Edit2 size={13} />
+                                                                </button>
+                                                                <button onClick={() => removePlayer(currentTeam.id, player.id)} className="p-2 bg-danger/10 text-danger rounded-lg hover:bg-danger hover:text-white transition-all">
+                                                                    <Trash2 size={13} />
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>

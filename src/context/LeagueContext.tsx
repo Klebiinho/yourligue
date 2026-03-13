@@ -62,6 +62,13 @@ export type BracketMatch = {
     status: 'scheduled' | 'live' | 'finished';
 };
 
+export type TeamInteraction = {
+    id: string;
+    teamId: string;
+    leagueId: string;
+    interactionType: 'supporting' | 'favorite' | 'rival';
+};
+
 export type League = {
     id: string;
     name: string;
@@ -122,6 +129,15 @@ interface LeagueContextType {
     loadLeagues: () => Promise<void>;
     isPublicView: boolean;
     loadPublicLeague: (id: string) => Promise<boolean>;
+
+    // User Interactions
+    userInteractions: TeamInteraction[];
+    interactWithTeam: (teamId: string, type: TeamInteraction['interactionType']) => Promise<void>;
+    removeInteraction: (interactionId: string) => Promise<void>;
+    pendingInteraction: { teamId: string, type: TeamInteraction['interactionType'] } | null;
+    setPendingInteraction: (val: { teamId: string, type: TeamInteraction['interactionType'] } | null) => void;
+    showAuthModal: boolean;
+    setShowAuthModal: (val: boolean) => void;
 }
 
 const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
@@ -138,6 +154,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const [loading, setLoading] = useState(true);
     const [dataLoading, setDataLoading] = useState(false);
     const [isPublicView, setIsPublicView] = useState(false);
+    const [userInteractions, setUserInteractions] = useState<TeamInteraction[]>([]);
+    const [pendingInteraction, setPendingInteraction] = useState<{ teamId: string, type: TeamInteraction['interactionType'] } | null>(null);
+    const [showAuthModal, setShowAuthModal] = useState(false);
 
     // ── Load all leagues for user ──────────────────────────────
     useEffect(() => {
@@ -204,9 +223,20 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
+    const loadUserInteractions = useCallback(async (leagueId: string) => {
+        if (!user) { setUserInteractions([]); return; }
+        const { data } = await supabase.from('user_team_interactions').select('*').eq('user_id', user.id).eq('league_id', leagueId);
+        if (data) {
+            setUserInteractions(data.map(i => ({
+                id: i.id, teamId: i.team_id, leagueId: i.league_id, interactionType: i.interaction_type
+            })));
+        }
+    }, [user]);
+
     // ── Load league data (teams, matches, brackets) ────────────
     const loadLeagueData = useCallback(async (leagueId: string) => {
         setDataLoading(true);
+        loadUserInteractions(leagueId);
 
         // Teams + Players
         const { data: teamsData } = await supabase
@@ -288,9 +318,22 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     useEffect(() => {
-        if (league) { loadLeagueData(league.id); localStorage.setItem('selectedLeagueId', league.id); }
-        else { setTeams([]); setMatches([]); setBrackets([]); }
+        if (league) {
+            loadLeagueData(league.id);
+            localStorage.setItem('selectedLeagueId', league.id);
+        } else {
+            setTeams([]); setMatches([]); setBrackets([]); setUserInteractions([]);
+        }
     }, [league, loadLeagueData]);
+
+    // Handle pending interaction after login
+    useEffect(() => {
+        if (user && pendingInteraction && league) {
+            interactWithTeam(pendingInteraction.teamId, pendingInteraction.type).then(() => {
+                setPendingInteraction(null);
+            });
+        }
+    }, [user, league]); // Re-run when user or league becomes available
 
     const generateSlug = (name: string) => {
         return name.toLowerCase()
@@ -621,6 +664,41 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         loadLeagueData(league.id);
     };
 
+    const interactWithTeam = async (teamId: string, type: TeamInteraction['interactionType']) => {
+        if (!user) {
+            setPendingInteraction({ teamId, type });
+            setShowAuthModal(true);
+            return;
+        }
+
+        if (!league) return;
+
+        if (type === 'supporting') {
+            // Remove existing supporting for this league
+            await supabase.from('user_team_interactions').delete().eq('user_id', user.id).eq('league_id', league.id).eq('interaction_type', 'supporting');
+        } else {
+            // Check if already exist for favorite/rival
+            const { data: existing } = await supabase.from('user_team_interactions')
+                .select('id').eq('user_id', user.id).eq('team_id', teamId).eq('interaction_type', type).single();
+            if (existing) {
+                // Remove if exists (toggle)
+                await removeInteraction(existing.id);
+                return;
+            }
+        }
+
+        await supabase.from('user_team_interactions').insert({
+            user_id: user.id, league_id: league.id, team_id: teamId, interaction_type: type
+        });
+
+        loadUserInteractions(league.id);
+    };
+
+    const removeInteraction = async (interactionId: string) => {
+        await supabase.from('user_team_interactions').delete().eq('id', interactionId);
+        if (league) loadUserInteractions(league.id);
+    };
+
     return (
         <LeagueContext.Provider value={{
             league, leagues, teams, matches, brackets, loading, dataLoading,
@@ -629,7 +707,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             addPlayer, updatePlayer, removePlayer, toggleCaptain,
             createMatch, updateMatch, deleteMatch, startMatch, endMatch, updateTimer,
             addEvent, removeEvent,
-            generateBracket, updateBracket, loadLeagues, isPublicView, loadPublicLeague
+            generateBracket, updateBracket, loadLeagues, isPublicView, loadPublicLeague,
+            userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
+            showAuthModal, setShowAuthModal
         }}>
             {children}
         </LeagueContext.Provider>

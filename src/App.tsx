@@ -14,6 +14,7 @@ import Bracket from './pages/Bracket.tsx';
 import Settings from './pages/Settings.tsx';
 import MatchControl from './pages/MatchControl.tsx';
 import LiveMatches from './pages/LiveMatches.tsx';
+import AuthModal from './components/AuthModal.tsx';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center gap-8 z-[999]">
@@ -152,6 +153,7 @@ const App = () => (
           <Route path="/view/:slug/*" element={<AppRouter />} />
           <Route path="/*" element={<AppRouter />} />
         </Routes>
+        <AuthModal />
       </LeagueProvider>
     </AuthProvider>
   </BrowserRouter>
