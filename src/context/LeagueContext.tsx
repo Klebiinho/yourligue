@@ -105,7 +105,7 @@ interface LeagueContextType {
     dataLoading: boolean;
 
     // League actions
-    createLeague: (data: Omit<League, 'id' | 'slug'>) => Promise<{ error: string | null }>;
+    createLeague: (data: Omit<League, 'id' | 'slug' | 'userId'>) => Promise<{ error: string | null }>;
     updateLeague: (data: Partial<League>) => Promise<void>;
     deleteLeague: (id: string) => Promise<void>;
     selectLeague: (id: string) => void;
@@ -491,7 +491,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // ── League CRUD ────────────────────────────────────────────
-    const createLeague = async (data: Omit<League, 'id' | 'slug'>) => {
+    const createLeague = async (data: Omit<League, 'id' | 'slug' | 'userId'>) => {
         const slug = generateSlug(data.name);
         const { data: existing } = await supabase.from('leagues').select('id').eq('slug', slug).single();
         if (existing) return { error: 'Uma liga com este nome já existe.' };
