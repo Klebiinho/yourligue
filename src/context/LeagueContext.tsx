@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
@@ -173,13 +173,33 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const [supportCounts, setSupportCounts] = useState<Record<string, number>>({});
     const [notifications, setNotifications] = useState<LeagueNotification[]>([]);
 
+    // Refs for realtime handlers to avoid infinite loops
+    const teamsRef = useRef<Team[]>([]);
+    const matchesRef = useRef<Match[]>([]);
+    const interactionsRef = useRef<TeamInteraction[]>([]);
+
+    useEffect(() => { teamsRef.current = teams; }, [teams]);
+    useEffect(() => { matchesRef.current = matches; }, [matches]);
+    useEffect(() => { interactionsRef.current = userInteractions; }, [userInteractions]);
+
+    // Track if we are doing a silent background refresh
+    const isBackgroundRefreshing = useRef(false);
+
     const leagueBasePath = isPublicView && league ? `/view/${league.slug || league.id}` : '';
 
     // ── Load all leagues for user ──────────────────────────────
     useEffect(() => {
-        if (!user) { setLeagues([]); setLeague(null); setLoading(false); return; }
+        if (!user) {
+            setLeagues([]);
+            // Only clear current league if we are NOT in public view mode
+            if (!isPublicView) {
+                setLeague(null);
+            }
+            setLoading(false);
+            return;
+        }
         loadLeagues();
-    }, [user]);
+    }, [user, isPublicView]);
 
     const loadLeagues = async () => {
         setLoading(true);
@@ -271,8 +291,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     // ── Load league data (teams, matches, brackets) ────────────
-    const loadLeagueData = useCallback(async (leagueId: string) => {
-        setDataLoading(true);
+    const loadLeagueData = useCallback(async (leagueId: string, background = false) => {
+        if (!background) setDataLoading(true);
+        isBackgroundRefreshing.current = background;
         loadUserInteractions(leagueId);
         loadSupportCounts(leagueId);
 
@@ -360,36 +381,41 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             loadLeagueData(league.id);
             localStorage.setItem('selectedLeagueId', league.id);
 
+            let refreshTimeout: NodeJS.Timeout;
+            const debouncedRefresh = () => {
+                clearTimeout(refreshTimeout);
+                refreshTimeout = setTimeout(() => loadLeagueData(league.id, true), 500);
+            };
+
             // Subscribe to realtime updates for notifications and state sync
             const channel = supabase.channel(`league-${league.id}`)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'match_events', filter: `league_id=eq.${league.id}` }, payload => {
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_events' }, payload => {
                     const event = payload.new as any;
-                    if (payload.eventType === 'INSERT') {
-                        if (event.type === 'goal' || event.type === 'penalty_goal') {
-                            const supportedTeam = userInteractions.find(i => i.interactionType === 'supporting');
-                            if (supportedTeam) {
-                                const match = matches.find(m => m.id === event.match_id);
-                                if (match && (match.homeTeamId === supportedTeam.teamId || match.awayTeamId === supportedTeam.teamId)) {
-                                    const team = teams.find(t => t.id === event.team_id);
-                                    addNotification({
-                                        id: Math.random().toString(36).substr(2, 9),
-                                        title: '⚽ GOOOL!',
-                                        message: `Gol do ${team?.name || 'seu time'}!`,
-                                        type: 'goal',
-                                        teamId: event.team_id,
-                                        createdAt: Date.now()
-                                    });
-                                }
-                            }
+                    // Filter in JS since league_id doesn't exist on match_events
+                    const match = matchesRef.current.find(m => m.id === event.match_id);
+                    if (!match) return;
+
+                    if (event.type === 'goal' || event.type === 'penalty_goal') {
+                        const supportedTeam = interactionsRef.current.find(i => i.interactionType === 'supporting');
+                        if (supportedTeam && (match.homeTeamId === supportedTeam.teamId || match.awayTeamId === supportedTeam.teamId)) {
+                            const team = teamsRef.current.find(t => t.id === event.team_id);
+                            addNotification({
+                                id: Math.random().toString(36).substr(2, 9),
+                                title: '⚽ GOOOL!',
+                                message: `Gol do ${team?.name || 'seu time'}!`,
+                                type: 'goal',
+                                teamId: event.team_id,
+                                createdAt: Date.now()
+                            });
                         }
                     }
-                    loadLeagueData(league.id);
+                    debouncedRefresh();
                 })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: `league_id=eq.${league.id}` }, payload => {
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches', filter: `league_id=eq.${league.id}` }, payload => {
                     const match = payload.new as any;
                     const oldMatch = payload.old as any;
-                    if (payload.eventType === 'UPDATE' && match.status === 'live' && oldMatch.status === 'scheduled') {
-                        const supportedTeam = userInteractions.find(i => i.interactionType === 'supporting');
+                    if (match.status === 'live' && oldMatch.status === 'scheduled') {
+                        const supportedTeam = interactionsRef.current.find(i => i.interactionType === 'supporting');
                         if (supportedTeam && (match.home_team_id === supportedTeam.teamId || match.away_team_id === supportedTeam.teamId)) {
                             addNotification({
                                 id: Math.random().toString(36).substr(2, 9),
@@ -401,11 +427,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                             });
                         }
                     }
-                    loadLeagueData(league.id);
+                    debouncedRefresh();
                 })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'teams', filter: `league_id=eq.${league.id}` }, () => loadLeagueData(league.id))
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => loadLeagueData(league.id))
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'brackets', filter: `league_id=eq.${league.id}` }, () => loadLeagueData(league.id))
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'teams', filter: `league_id=eq.${league.id}` }, debouncedRefresh)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, debouncedRefresh)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'brackets', filter: `league_id=eq.${league.id}` }, debouncedRefresh)
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'user_team_interactions', filter: `league_id=eq.${league.id}` }, () => {
                     loadUserInteractions(league.id);
                     loadSupportCounts(league.id);
@@ -414,11 +440,12 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
             return () => {
                 supabase.removeChannel(channel);
+                clearTimeout(refreshTimeout);
             };
         } else {
             setTeams([]); setMatches([]); setBrackets([]); setUserInteractions([]); setSupportCounts({});
         }
-    }, [league, loadLeagueData, userInteractions, matches, teams]);
+    }, [league, loadLeagueData, loadUserInteractions, loadSupportCounts]);
 
     const addNotification = (notif: LeagueNotification) => {
         setNotifications(prev => [notif, ...prev].slice(0, 5));
