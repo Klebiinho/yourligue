@@ -15,13 +15,14 @@ const MatchControl = () => {
     const homeTeam = teams.find((t: Team) => t.id === match?.homeTeamId);
     const awayTeam = teams.find((t: Team) => t.id === match?.awayTeamId);
 
-    const [timerRunning, setTimerRunning] = useState(match?.status === 'live');
     const [localSeconds, setLocalSeconds] = useState(match?.timer || 0);
+    const [timerRunning, setTimerRunning] = useState(match?.status === 'live');
     const [halfLength, setHalfLength] = useState(match?.halfLength || 45);
     const [extraTime, setExtraTime] = useState(match?.extraTime || 0);
     const [period, setPeriod] = useState(match?.period || '1º Tempo');
     const [submittingPlayer, setSubmittingPlayer] = useState<{ teamId: string, playerOutId: string } | null>(null);
     const [showOverlay, setShowOverlay] = useState(true);
+    const { startMatch, pauseMatch } = useLeague();
 
     useEffect(() => {
         setShowOverlay(true);
@@ -45,47 +46,40 @@ const MatchControl = () => {
         if (matchId) updateMatch(matchId, { halfLength, extraTime, period });
     };
 
+    // ── SMART TIMER CALCULATION ──
     useEffect(() => {
         let interval: number;
-        if (timerRunning && match?.status === 'live') {
-            interval = window.setInterval(() => {
-                setLocalSeconds((s: number) => {
-                    let baseLimit = halfLength;
-                    if (period === '2º Tempo') baseLimit = halfLength * 2;
-                    if (period === 'Prorrogação') baseLimit = halfLength * 2 + 30;
-                    if (period === 'Intervalo' || period === 'Pênaltis') return s + 1;
-                    const limitInSeconds = (baseLimit + extraTime) * 60;
-                    if (s >= limitInSeconds) { setTimerRunning(false); return s; }
-                    return s + 1;
-                });
-            }, 1000);
-        }
+        
+        const updateTimerDisplay = () => {
+            if (!match) return;
+
+            if (match.status === 'live') {
+                const lastUpdate = match.updatedAt ? new Date(match.updatedAt).getTime() : Date.now();
+                const now = Date.now();
+                const diffInSeconds = Math.floor((now - lastUpdate) / 1000);
+                
+                const calculatedSeconds = (match.timer || 0) + diffInSeconds;
+                setLocalSeconds(calculatedSeconds);
+                setTimerRunning(true);
+            } else {
+                setLocalSeconds(match.timer || 0);
+                setTimerRunning(false);
+            }
+        };
+
+        updateTimerDisplay();
+        interval = window.setInterval(updateTimerDisplay, 1000);
         return () => clearInterval(interval);
-    }, [timerRunning, match?.status, halfLength, extraTime, period]);
+    }, [match?.id, match?.status, match?.timer, match?.updatedAt]);
 
-    useEffect(() => {
-        // Broadcast updates every second to all viewers (low cost, high speed)
-        if (timerRunning && match?.status === 'live' && matchId && league?.id) {
-            const channel = supabase.channel(`league-${league.id}`);
-            channel.send({
-                type: 'broadcast',
-                event: 'match-update',
-                payload: {
-                    matchId,
-                    timer: localSeconds,
-                    homeScore: match.homeScore,
-                    awayScore: match.awayScore,
-                    period,
-                    status: match.status
-                }
-            });
+    const handleToggleTimer = async () => {
+        if (!matchId) return;
+        if (timerRunning) {
+            await pauseMatch(matchId, localSeconds);
+        } else {
+            await startMatch(matchId, localSeconds);
         }
-
-        // Persistent update to DB every 30 seconds for backup
-        if (match?.status === 'live' && localSeconds % 30 === 0 && matchId) {
-            updateTimer(matchId, localSeconds);
-        }
-    }, [localSeconds, matchId, match?.status, updateTimer, league?.id, timerRunning, period, match?.homeScore, match?.awayScore]);
+    };
 
     if (!match || !homeTeam || !awayTeam) return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500 gap-4 opacity-75">
@@ -105,7 +99,7 @@ const MatchControl = () => {
     const handleEndMatch = () => {
         if (matchId && window.confirm('Deseja realmente finalizar a partida?')) {
             setTimerRunning(false);
-            endMatch(matchId);
+            endMatch(matchId, localSeconds);
             navigate('/');
         }
     };
@@ -180,7 +174,7 @@ const MatchControl = () => {
                 <div className="flex items-center justify-center gap-2 sm:gap-3 mt-5 border-t border-white/[0.05] pt-5">
                     {!isPublicView && isAdmin ? (
                         <>
-                            <button onClick={() => setTimerRunning(!timerRunning)}
+                            <button onClick={handleToggleTimer}
                                 className={`flex-1 sm:flex-none px-4 sm:px-8 py-3 rounded-xl font-black text-[0.65rem] uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${timerRunning ? 'bg-white/5 border border-white/10 text-slate-400 hover:text-white' : 'bg-primary text-white shadow-primary/30 hover:brightness-110'
                                     }`}>
                                 {timerRunning ? <><Pause size={16} strokeWidth={3} />Pausar</> : <><Play size={16} fill="currentColor" />Iniciar</>}

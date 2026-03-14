@@ -141,8 +141,9 @@ interface LeagueContextType {
     createMatch: (data: { homeTeamId: string; awayTeamId: string; scheduledAt?: string; location?: string; youtubeLiveId?: string }) => Promise<{ error: string | null; matchId?: string }>;
     updateMatch: (matchId: string, data: Partial<Match>) => Promise<void>;
     deleteMatch: (matchId: string) => Promise<void>;
-    startMatch: (matchId: string) => Promise<void>;
-    endMatch: (matchId: string) => Promise<void>;
+    startMatch: (matchId: string, currentTimer: number) => Promise<void>;
+    pauseMatch: (matchId: string, currentTimer: number) => Promise<void>;
+    endMatch: (matchId: string, currentTimer: number) => Promise<void>;
     updateTimer: (matchId: string, time: number) => Promise<void>;
     addEvent: (matchId: string, event: Omit<MatchEvent, 'id'>) => Promise<void>;
     removeEvent: (matchId: string, eventId: string) => Promise<void>;
@@ -550,8 +551,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     const match = payload.new as any;
                     const oldMatch = payload.old as any;
                     
-                    // Sync with DB state
-                    setMatches(prev => prev.map(m => m.id === match.id ? { ...m, ...match } : m));
+                    // Sync with DB state (Mapping snake_case to camelCase)
+                    setMatches(prev => prev.map(m => m.id === match.id ? { 
+                        ...m, 
+                        status: match.status,
+                        timer: match.timer,
+                        homeScore: match.home_score,
+                        awayScore: match.away_score,
+                        period: match.period,
+                        updatedAt: match.updated_at,
+                        halfLength: match.half_length,
+                        extraTime: match.extra_time
+                    } : m));
 
                     if (match.status !== oldMatch.status) {
                         debouncedRefresh(); // Refresh standings if match ended
@@ -792,8 +803,20 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         setMatches(prev => prev.filter(m => m.id !== matchId));
     };
 
-    const startMatch = async (matchId: string) => updateMatch(matchId, { status: 'live' });
-    const endMatch = async (matchId: string) => updateMatch(matchId, { status: 'finished' });
+    const startMatch = async (matchId: string, currentTimer: number = 0) => {
+        // Ao iniciar/retomar, salvamos o tempo atual e o Supabase cuidará do updated_at (agora)
+        return updateMatch(matchId, { status: 'live', timer: currentTimer });
+    };
+    
+    const pauseMatch = async (matchId: string, currentTimer: number) => {
+        // Ao pausar, salvamos o tempo exato acumulado
+        return updateMatch(matchId, { status: 'scheduled', timer: currentTimer });
+    };
+
+    const endMatch = async (matchId: string, currentTimer: number) => {
+        return updateMatch(matchId, { status: 'finished', timer: currentTimer });
+    };
+    
     const updateTimer = async (matchId: string, time: number) => updateMatch(matchId, { timer: time });
 
     const addEvent = async (matchId: string, event: Omit<MatchEvent, 'id'>) => {
@@ -1046,7 +1069,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             followLeague, unfollowLeague, searchLeagues,
             addTeam, updateTeam, deleteTeam,
             addPlayer, updatePlayer, removePlayer, toggleCaptain,
-            createMatch, updateMatch, deleteMatch, startMatch, endMatch, updateTimer,
+            createMatch, updateMatch, deleteMatch, startMatch, pauseMatch, endMatch, updateTimer,
             addEvent, removeEvent,
             generateBracket, updateBracket, loadLeagues, isPublicView, isAdmin, loadPublicLeague,
             userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
