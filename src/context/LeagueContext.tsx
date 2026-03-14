@@ -231,7 +231,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const loadLeagues = async () => {
         if (!user) return;
-        setLoading(true);
+        // SILENT REFRESH: Only show active loading if we don't have leagues yet
+        if (leagues.length === 0) setLoading(true);
 
         // Load owned leagues
         const { data: ownedData } = await supabase
@@ -317,7 +318,10 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const loadPublicLeague = useCallback(async (slugOrId: string) => {
         if (!slugOrId) return false;
-        setLoading(true);
+        // SILENT REFRESH: Only show loading screen if this is the first time or league is different
+        if (!league || (league.id !== slugOrId && league.slug !== slugOrId)) {
+            setLoading(true);
+        }
         setIsPublicView(true);
 
         try {

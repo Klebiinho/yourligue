@@ -28,8 +28,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-            setUser(session?.user ?? null);
+            // Only update if something actually changed to avoid unnecessary re-renders on window focus
+            setSession(current => current?.access_token === session?.access_token ? current : session);
+            setUser(current => current?.id === session?.user?.id ? current : (session?.user ?? null));
         });
 
         return () => subscription.unsubscribe();
