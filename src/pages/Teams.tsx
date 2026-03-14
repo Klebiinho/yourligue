@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Shield, UserPlus, Image as ImageIcon, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, TrendingUp } from 'lucide-react';
+import { Shield, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, Star, PlusCircle } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
@@ -9,19 +9,18 @@ const Teams = () => {
     const [activeTeamId, setActiveTeamId] = useState<string | null>(teams[0]?.id ?? null);
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLogo, setNewTeamLogo] = useState('');
-    const [newPlayerName, setNewPlayerName] = useState('');
-    const [newPlayerNumber, setNewPlayerNumber] = useState('');
-    const [newPlayerPos, setNewPlayerPos] = useState('Atacante');
-    const [newPlayerPhoto, setNewPlayerPhoto] = useState('');
-    const [newPlayerIsReserve, setNewPlayerIsReserve] = useState(false);
     const [error, setError] = useState('');
     const [teamError, setTeamError] = useState('');
-    const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
-    const [editName, setEditName] = useState('');
-    const [editNumber, setEditNumber] = useState('');
-    const [editPos, setEditPos] = useState('');
-    const [editPhoto, setEditPhoto] = useState('');
-    const [editIsReserve, setEditIsReserve] = useState(false);
+    const [isAddingPlayer, setIsAddingPlayer] = useState(false);
+    const [isEditingPlayer, setIsEditingPlayer] = useState<string | null>(null);
+    const [formPlayer, setFormPlayer] = useState({
+        name: '',
+        number: 0,
+        position: 'Atacante',
+        isCaptain: false,
+        isReserve: false,
+        photo: ''
+    });
 
     const currentTeam = teams.find(t => t.id === activeTeamId);
 
@@ -41,31 +40,34 @@ const Teams = () => {
         if (added) setActiveTeamId(added.id);
     };
 
-    const handleAddPlayer = async (e: React.FormEvent) => {
+    const handlePlayerSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newPlayerName || !newPlayerNumber || !activeTeamId) return;
+        if (!activeTeamId) return;
         setError('');
-        const { error } = await addPlayer(activeTeamId, {
-            name: newPlayerName, number: parseInt(newPlayerNumber),
-            position: newPlayerPos, photo: newPlayerPhoto, isReserve: newPlayerIsReserve
-        });
-        if (error) { setError(error); return; }
-        setNewPlayerName(''); setNewPlayerNumber(''); setNewPlayerPhoto(''); setNewPlayerIsReserve(false);
+        
+        if (isEditingPlayer) {
+            const { error } = await updatePlayer(activeTeamId, isEditingPlayer, formPlayer);
+            if (error) { setError(error); return; }
+            setIsEditingPlayer(null);
+        } else {
+            const { error } = await addPlayer(activeTeamId, formPlayer);
+            if (error) { setError(error); return; }
+            setIsAddingPlayer(false);
+        }
+        setFormPlayer({ name: '', number: 0, position: 'Atacante', isCaptain: false, isReserve: false, photo: '' });
     };
 
     const startEdit = (p: any) => {
-        setEditingPlayerId(p.id); setEditName(p.name);
-        setEditNumber(String(p.number)); setEditPos(p.position); setEditPhoto(p.photo || '');
-        setEditIsReserve(p.isReserve || false);
-    };
-
-    const saveEdit = async () => {
-        if (!editingPlayerId || !activeTeamId) return;
-        await updatePlayer(activeTeamId, editingPlayerId, {
-            name: editName, number: parseInt(editNumber), position: editPos, photo: editPhoto,
-            isReserve: editIsReserve
+        setIsEditingPlayer(p.id);
+        setFormPlayer({
+            name: p.name,
+            number: p.number,
+            position: p.position,
+            isCaptain: p.isCaptain || false,
+            isReserve: p.isReserve || false,
+            photo: p.photo || ''
         });
-        setEditingPlayerId(null);
+        setIsAddingPlayer(true);
     };
 
     return (
@@ -186,66 +188,88 @@ const Teams = () => {
                                 </div>
                             </div>
 
-                            {/* Add Player Form (Hidden in Public View or if not admin) */}
+                            {/* PREMIUM PLAYER FORM (Same as Dashboard) */}
                             {!isPublicView && isAdmin && (
                                 <div className="p-4 sm:p-6 border-b border-white/[0.05]">
-                                    <h3 className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <UserPlus size={13} className="text-accent" /> Inscrever Novo Atleta
-                                    </h3>
-                                    <form onSubmit={handleAddPlayer} className="space-y-3">
-                                        {/* Row 1: Nome + Nº + Posição */}
-                                        <div className="grid grid-cols-2 sm:grid-cols-12 gap-2 sm:gap-3">
-                                            <div className="col-span-2 sm:col-span-5 space-y-1">
-                                                <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Nome</label>
-                                                <input type="text" placeholder="Cristiano Ronaldo" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} required
-                                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:border-accent outline-none transition-all font-bold placeholder:text-slate-700" />
-                                            </div>
-                                            <div className="sm:col-span-2 space-y-1">
-                                                <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Nº</label>
-                                                <input type="number" placeholder="10" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} required min={1} max={99}
-                                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm font-black text-center focus:border-accent outline-none transition-all" />
-                                            </div>
-                                            <div className="sm:col-span-3 space-y-1">
-                                                <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Posição</label>
-                                                <select value={newPlayerPos} onChange={e => setNewPlayerPos(e.target.value)}
-                                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm font-bold outline-none cursor-pointer appearance-none h-[42px]">
-                                                    <option className="bg-[#07070a]">Goleiro</option>
-                                                    <option className="bg-[#07070a]">Zagueiro</option>
-                                                    <option className="bg-[#07070a]">Lateral</option>
-                                                    <option className="bg-[#07070a]">Meio-campo</option>
-                                                    <option className="bg-[#07070a]">Atacante</option>
-                                                </select>
-                                            </div>
-                                            <div className="sm:col-span-2 space-y-1">
-                                                <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">Foto</label>
-                                                <label className="flex items-center justify-center bg-black/40 border border-white/10 h-[42px] rounded-xl cursor-pointer hover:bg-white/10 transition-all text-slate-500 hover:text-white">
-                                                    {newPlayerPhoto ? <Check size={18} className="text-accent" /> : <ImageIcon size={18} />}
-                                                    <input type="file" accept="image/*" onChange={e => handleFile(e, setNewPlayerPhoto)} className="hidden" />
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        {error && <ErrorMsg msg={error} />}
-
-                                        <div className="flex flex-wrap items-end gap-3 px-1">
-                                            <label className="flex items-center gap-2 cursor-pointer group">
-                                                <div onClick={() => setNewPlayerIsReserve(!newPlayerIsReserve)}
-                                                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${newPlayerIsReserve ? 'bg-warning/20 border-warning text-warning' : 'bg-white/5 border-white/10 text-slate-500'}`}>
-                                                    <TrendingUp size={18} className={newPlayerIsReserve ? '' : 'opacity-50'} />
-                                                </div>
-                                                <div className="flex flex-col" onClick={() => setNewPlayerIsReserve(!newPlayerIsReserve)}>
-                                                    <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Status</span>
-                                                    <span className={`text-[0.7rem] font-black uppercase tracking-widest ${newPlayerIsReserve ? 'text-warning' : 'text-slate-400'}`}>
-                                                        {newPlayerIsReserve ? 'Reserva' : 'Titular'}
-                                                    </span>
-                                                </div>
-                                            </label>
-
-                                            <button type="submit" className="flex-1 min-w-[150px] bg-accent text-white font-black h-[42px] rounded-xl shadow-lg hover:brightness-110 active:scale-[0.99] transition-all uppercase tracking-widest text-[0.65rem] flex items-center justify-center gap-2">
-                                                <UserPlus size={15} strokeWidth={3} /> Confirmar Inscrição
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                            <Star size={13} className="text-warning fill-warning/20" /> Gestão de Atletas
+                                        </h3>
+                                        {!isAddingPlayer && !isEditingPlayer && (
+                                            <button onClick={() => setIsAddingPlayer(true)}
+                                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent text-white font-black text-[0.65rem] uppercase tracking-widest hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-accent/20">
+                                                <PlusCircle size={14} strokeWidth={3} /> Inscrever Atleta
                                             </button>
+                                        )}
+                                    </div>
+
+                                    {(isAddingPlayer || isEditingPlayer) && (
+                                        <div className="bg-black/40 p-5 md:p-6 rounded-3xl border border-white/[0.08] mb-4 animate-fade-in shadow-2xl">
+                                            <form onSubmit={handlePlayerSubmit} className="space-y-5">
+                                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                                    <div className="md:col-span-2">
+                                                        <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Nome Completo</label>
+                                                        <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm focus:border-accent outline-none mt-1.5 font-bold h-14"
+                                                            placeholder="Ex: Cristiano Ronaldo" value={formPlayer.name} onChange={e => setFormPlayer({ ...formPlayer, name: e.target.value })} required />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Nº Camisa</label>
+                                                        <input type="number" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm focus:border-accent outline-none mt-1.5 font-bold h-14"
+                                                            value={formPlayer.number} onChange={e => setFormPlayer({ ...formPlayer, number: parseInt(e.target.value) })} required />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Posição Principal</label>
+                                                        <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm focus:border-accent outline-none mt-1.5 font-bold appearance-none cursor-pointer h-14"
+                                                            value={formPlayer.position} onChange={e => setFormPlayer({ ...formPlayer, position: e.target.value })}>
+                                                            {['Goleiro', 'Zagueiro', 'Lateral', 'Meia', 'Atacante'].map(p => <option key={p} value={p} className="bg-[#07070a]">{p}</option>)}
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Tipo de Inscrição</label>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <button type="button" onClick={() => setFormPlayer({ ...formPlayer, isReserve: false })}
+                                                                className={`py-3 rounded-xl font-black text-[0.6rem] uppercase tracking-widest border transition-all ${!formPlayer.isReserve ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-white/5 text-slate-500 border-white/10 hover:bg-white/10'}`}>
+                                                                Titular
+                                                            </button>
+                                                            <button type="button" onClick={() => setFormPlayer({ ...formPlayer, isReserve: true })}
+                                                                className={`py-3 rounded-xl font-black text-[0.6rem] uppercase tracking-widest border transition-all ${formPlayer.isReserve ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20' : 'bg-white/5 text-slate-500 border-white/10 hover:bg-white/10'}`}>
+                                                                Reserva
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Liderança</label>
+                                                        <button type="button" onClick={() => setFormPlayer({ ...formPlayer, isCaptain: !formPlayer.isCaptain })}
+                                                            className={`w-full py-3 rounded-xl font-black text-[0.6rem] uppercase tracking-widest border transition-all flex items-center justify-center gap-2 ${formPlayer.isCaptain ? 'bg-warning text-black border-warning shadow-lg shadow-warning/20' : 'bg-white/5 text-slate-500 border-white/10 hover:bg-white/10'}`}>
+                                                            <Crown size={14} /> {formPlayer.isCaptain ? 'Capitão da Equipe' : 'Torne este Atleta Capitão'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Avatar / Foto</label>
+                                                    <label className="flex items-center justify-center gap-3 w-full h-14 mt-1.5 bg-white/5 border border-dashed border-white/10 rounded-xl cursor-pointer hover:bg-white/[0.08] hover:border-accent transition-all font-bold text-slate-500 hover:text-white">
+                                                        <span className="text-[0.65rem] uppercase tracking-widest leading-none">
+                                                            {formPlayer.photo ? '✓ Foto Carregada' : 'Selecionar Foto do Atleta'}
+                                                        </span>
+                                                        <input type="file" accept="image/*" onChange={e => handleFile(e, (v) => setFormPlayer({ ...formPlayer, photo: v }))} className="hidden" />
+                                                    </label>
+                                                </div>
+
+                                                {error && <ErrorMsg msg={error} />}
+
+                                                <div className="flex gap-3 pt-2">
+                                                    <button type="submit" className="flex-1 bg-accent text-white font-black py-4 rounded-xl uppercase tracking-[0.15em] text-xs shadow-xl shadow-accent/20 hover:brightness-110 active:scale-[0.98] transition-all">
+                                                        {isEditingPlayer ? 'Atualizar Atleta' : 'Finalizar Inscrição'}
+                                                    </button>
+                                                    <button type="button" onClick={() => { setIsAddingPlayer(false); setIsEditingPlayer(null); setError(''); }} className="px-8 bg-white/5 border border-white/10 text-slate-500 font-black py-4 rounded-xl uppercase text-xs hover:bg-white/10 transition-all">Cancelar</button>
+                                                </div>
+                                            </form>
                                         </div>
-                                    </form>
+                                    )}
                                 </div>
                             )}
 
@@ -264,81 +288,50 @@ const Teams = () => {
                                     <div className="space-y-2">
                                         {currentTeam.players.map(player => (
                                             <div key={player.id} className="group rounded-2xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] transition-all overflow-hidden">
-                                                {editingPlayerId === player.id ? (
-                                                    /* ── EDIT MODE (mobile-first grid) ─── */
-                                                    <div className="p-3 sm:p-4 space-y-2" onClick={e => e.stopPropagation()}>
-                                                        <p className="text-[0.55rem] font-black text-primary uppercase tracking-widest mb-2">Editando: {player.name}</p>
-                                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                                            <input value={editName} onChange={e => setEditName(e.target.value)}
-                                                                className="col-span-2 bg-black/40 border border-primary/40 rounded-xl px-3 py-2.5 text-white text-sm font-bold outline-none w-full"
-                                                                placeholder="Nome" />
-                                                            <input type="number" value={editNumber} onChange={e => setEditNumber(e.target.value)}
-                                                                className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm font-black text-center outline-none" />
-                                                            <div onClick={() => setEditIsReserve(!editIsReserve)}
-                                                                className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-all ${editIsReserve ? 'bg-warning/20 border-warning text-warning' : 'bg-white/5 border-white/10 text-slate-500'}`}>
-                                                                <span className="text-[0.65rem] font-black uppercase">{editIsReserve ? 'Reserva' : 'Titular'}</span>
-                                                            </div>
-                                                            <select value={editPos} onChange={e => setEditPos(e.target.value)}
-                                                                className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs font-bold outline-none h-[42px] appearance-none">
-                                                                <option>Goleiro</option><option>Zagueiro</option><option>Lateral</option>
-                                                                <option>Meio-campo</option><option>Atacante</option>
-                                                            </select>
-                                                        </div>
-                                                        <div className="flex gap-2 pt-1">
-                                                            <button onClick={saveEdit} className="flex-1 flex items-center justify-center gap-2 bg-accent text-white py-2.5 rounded-xl font-black text-[0.65rem] uppercase tracking-widest hover:brightness-110 transition-all">
-                                                                <Check size={14} strokeWidth={3} /> Salvar
-                                                            </button>
-                                                            <button onClick={() => setEditingPlayerId(null)} className="px-4 bg-white/5 border border-white/10 text-slate-500 rounded-xl font-black text-[0.65rem] uppercase hover:bg-white/10 transition-all">
-                                                                <X size={14} />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    /* ── VIEW MODE ─── */
-                                                    <div className="flex items-center gap-3 p-3 sm:p-4">
-                                                        <div className="relative flex-none">
-                                                            <TeamLogo src={player.photo} size={40} />
-                                                            {player.isCaptain && (
-                                                                <div className="absolute -top-1 -right-1 bg-warning text-black w-4 h-4 rounded-full flex items-center justify-center border border-[#07070a]">
-                                                                    <Crown size={9} fill="currentColor" strokeWidth={2} />
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2 mb-0.5">
-                                                                <span className="w-7 h-7 flex items-center justify-center rounded-lg bg-black/30 font-black font-outfit text-white border border-white/5 text-[0.65rem] flex-none">
-                                                                    {player.number}
-                                                                </span>
-                                                                <h4 className="font-outfit font-black text-white uppercase text-xs sm:text-sm tracking-wide truncate">{player.name}</h4>
-                                                            </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className={`text-[0.55rem] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${player.isReserve ? 'text-warning bg-warning/10 border-warning/20' : 'text-accent bg-accent/10 border-accent/20'}`}>
-                                                                    {player.isReserve ? 'Reserva' : 'Titular'}
-                                                                </span>
-                                                                <span className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
-                                                                    {player.position}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Actions: always visible on mobile, hover on desktop */}
-                                                        {!isPublicView && isAdmin && (
-                                                            <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                                                <button onClick={() => toggleCaptain(currentTeam.id, player.id)}
-                                                                    className={`p-2 rounded-lg transition-all ${player.isCaptain ? 'bg-warning/20 text-warning' : 'bg-white/5 text-slate-600 hover:text-warning hover:bg-white/10'}`}>
-                                                                    <Crown size={13} strokeWidth={player.isCaptain ? 3 : 2} />
-                                                                </button>
-                                                                <button onClick={() => startEdit(player)} className="p-2 bg-white/5 text-slate-600 rounded-lg hover:text-white hover:bg-white/10 transition-all">
-                                                                    <Edit2 size={13} />
-                                                                </button>
-                                                                <button onClick={() => removePlayer(currentTeam.id, player.id)} className="p-2 bg-danger/10 text-danger rounded-lg hover:bg-danger hover:text-white transition-all">
-                                                                    <Trash2 size={13} />
-                                                                </button>
+                                                {/* ── VIEW MODE ─── */}
+                                                <div className="flex items-center gap-3 p-3 sm:p-4">
+                                                    <div className="relative flex-none">
+                                                        <TeamLogo src={player.photo} size={40} />
+                                                        {player.isCaptain && (
+                                                            <div className="absolute -top-1 -right-1 bg-warning text-black w-4 h-4 rounded-full flex items-center justify-center border border-[#07070a]">
+                                                                <Crown size={9} fill="currentColor" strokeWidth={2} />
                                                             </div>
                                                         )}
                                                     </div>
-                                                )}
+
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-0.5">
+                                                            <span className="w-7 h-7 flex items-center justify-center rounded-lg bg-black/30 font-black font-outfit text-white border border-white/5 text-[0.65rem] flex-none">
+                                                                {player.number}
+                                                            </span>
+                                                            <h4 className="font-outfit font-black text-white uppercase text-xs sm:text-sm tracking-wide truncate">{player.name}</h4>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`text-[0.55rem] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${player.isReserve ? 'text-warning bg-warning/10 border-warning/20' : 'text-accent bg-accent/10 border-accent/20'}`}>
+                                                                {player.isReserve ? 'Reserva' : 'Titular'}
+                                                            </span>
+                                                            <span className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+                                                                {player.position}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Actions: always visible on mobile, hover on desktop */}
+                                                    {!isPublicView && isAdmin && (
+                                                        <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                            <button onClick={() => toggleCaptain(currentTeam.id, player.id)}
+                                                                className={`p-2 rounded-lg transition-all ${player.isCaptain ? 'bg-warning/20 text-warning' : 'bg-white/5 text-slate-600 hover:text-warning hover:bg-white/10'}`}>
+                                                                <Crown size={13} strokeWidth={player.isCaptain ? 3 : 2} />
+                                                            </button>
+                                                            <button onClick={() => startEdit(player)} className="p-2 bg-white/5 text-slate-600 rounded-lg hover:text-white hover:bg-white/10 transition-all">
+                                                                <Edit2 size={13} />
+                                                            </button>
+                                                            <button onClick={() => removePlayer(currentTeam.id, player.id)} className="p-2 bg-danger/10 text-danger rounded-lg hover:bg-danger hover:text-white transition-all">
+                                                                <Trash2 size={13} />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
