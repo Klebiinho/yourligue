@@ -12,6 +12,14 @@ const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
     const { ads } = useLeague();
     const positionAds = ads.filter(ad => ad.active && ad.positions?.includes(position));
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 640);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     useEffect(() => {
         if (positionAds.length <= 1) return;
@@ -27,13 +35,15 @@ const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
     if (positionAds.length === 0) return null;
 
     const ad = positionAds[currentIndex];
+    const activeMediaUrl = (isMobile && ad.mobile_media_url) ? ad.mobile_media_url : ad.desktop_media_url;
 
     const renderMedia = () => {
         if (ad.media_type === 'video') {
             return (
                 <div className="relative w-full h-full">
                     <video
-                        src={ad.media_url}
+                        key={activeMediaUrl}
+                        src={activeMediaUrl}
                         autoPlay
                         muted
                         loop
@@ -50,7 +60,8 @@ const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
 
         return (
             <img
-                src={ad.media_url}
+                key={activeMediaUrl}
+                src={activeMediaUrl}
                 alt={ad.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[2000ms]"
                 style={{ objectPosition: ad.object_position || 'center' }}

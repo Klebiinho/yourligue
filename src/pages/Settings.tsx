@@ -40,7 +40,8 @@ const Settings = () => {
     const [isAddingAd, setIsAddingAd] = useState(false);
     const [formAd, setFormAd] = useState({
         title: '',
-        media_url: '',
+        desktop_media_url: '',
+        mobile_media_url: '',
         media_type: 'image' as 'image' | 'video' | 'gif',
         positions: [] as string[],
         object_position: 'center' as 'center' | 'top' | 'bottom',
@@ -56,12 +57,16 @@ const Settings = () => {
         if (file) { const r = new FileReader(); r.onloadend = () => setLogo(r.result as string); r.readAsDataURL(file); }
     };
 
-    const handleAdMediaFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAdMediaFile = (e: React.ChangeEvent<HTMLInputElement>, target: 'desktop' | 'mobile') => {
         const file = e.target.files?.[0];
         if (file) {
             const type = file.type.startsWith('video/') ? 'video' : file.type === 'image/gif' ? 'gif' : 'image';
             const r = new FileReader();
-            r.onloadend = () => setFormAd(prev => ({ ...prev, media_url: r.result as string, media_type: type as any }));
+            r.onloadend = () => setFormAd(prev => ({
+                ...prev,
+                [target === 'desktop' ? 'desktop_media_url' : 'mobile_media_url']: r.result as string,
+                media_type: type as any
+            }));
             r.readAsDataURL(file);
         }
     };
@@ -107,7 +112,7 @@ const Settings = () => {
             if (!error) {
                 setEditingAdId(null);
                 setIsAddingAd(false);
-                setFormAd({ title: '', media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
+                setFormAd({ title: '', desktop_media_url: '', mobile_media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
             } else {
                 alert(error);
             }
@@ -115,7 +120,7 @@ const Settings = () => {
             const { error } = await addAd(formAd);
             if (!error) {
                 setIsAddingAd(false);
-                setFormAd({ title: '', media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
+                setFormAd({ title: '', desktop_media_url: '', mobile_media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
             } else {
                 alert(error);
             }
@@ -126,7 +131,8 @@ const Settings = () => {
         setEditingAdId(ad.id);
         setFormAd({
             title: ad.title,
-            media_url: ad.media_url,
+            desktop_media_url: ad.desktop_media_url,
+            mobile_media_url: ad.mobile_media_url || '',
             media_type: ad.media_type,
             positions: ad.positions || [],
             object_position: ad.object_position || 'center',
@@ -134,7 +140,7 @@ const Settings = () => {
             duration: ad.duration || 5
         });
         setIsAddingAd(true);
-        setAdInputMethod(ad.media_url.startsWith('http') ? 'url' : 'file');
+        setAdInputMethod(ad.desktop_media_url?.startsWith('http') ? 'url' : 'file');
         window.scrollTo({ top: 300, behavior: 'smooth' }); // Scroll to form
     };
 
@@ -311,18 +317,36 @@ const Settings = () => {
                                 </button>
                             </div>
 
-                            {formAd.media_url && isAddingAd && (
-                                <div className="mb-6 rounded-2xl overflow-hidden glass-panel border-accent/20 border p-2">
-                                    <div className="aspect-video w-full bg-black/40 rounded-xl overflow-hidden relative">
-                                        {formAd.media_type === 'video' ? (
-                                            <video src={formAd.media_url} controls className="w-full h-full object-cover" style={{ objectPosition: formAd.object_position }} />
-                                        ) : (
-                                            <img src={formAd.media_url} alt="Preview" className="w-full h-full object-cover" style={{ objectPosition: formAd.object_position }} />
-                                        )}
-                                        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[0.6rem] font-black text-white uppercase tracking-widest border border-white/10">
-                                            Preview {editingAdId ? 'Original' : 'Novo'}
+                            {(formAd.desktop_media_url || formAd.mobile_media_url) && isAddingAd && (
+                                <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {formAd.desktop_media_url && (
+                                        <div className="rounded-2xl overflow-hidden glass-panel border-accent/20 border p-2">
+                                            <div className="aspect-[6/1] w-full bg-black/40 rounded-xl overflow-hidden relative">
+                                                {formAd.media_type === 'video' ? (
+                                                    <video src={formAd.desktop_media_url} controls className="w-full h-full object-cover" style={{ objectPosition: formAd.object_position }} />
+                                                ) : (
+                                                    <img src={formAd.desktop_media_url} alt="Desktop Preview" className="w-full h-full object-cover" style={{ objectPosition: formAd.object_position }} />
+                                                )}
+                                                <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[0.5rem] font-black text-white uppercase tracking-widest border border-white/10">
+                                                    Preview Desktop
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
+                                    {formAd.mobile_media_url && (
+                                        <div className="rounded-2xl overflow-hidden glass-panel border-accent/20 border p-2">
+                                            <div className="aspect-square sm:aspect-video w-full bg-black/40 rounded-xl overflow-hidden relative">
+                                                {formAd.media_type === 'video' ? (
+                                                    <video src={formAd.mobile_media_url} controls className="w-full h-full object-cover" style={{ objectPosition: formAd.object_position }} />
+                                                ) : (
+                                                    <img src={formAd.mobile_media_url} alt="Mobile Preview" className="w-full h-full object-cover" style={{ objectPosition: formAd.object_position }} />
+                                                )}
+                                                <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[0.5rem] font-black text-white uppercase tracking-widest border border-white/10">
+                                                    Preview Mobile
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -337,44 +361,42 @@ const Settings = () => {
                                                     placeholder="Ex: Patrocínio Coca-Cola"
                                                 />
                                             </div>
-                                            <div className="space-y-4">
-                                                <div className="flex items-center gap-4 bg-white/5 p-1 rounded-xl w-fit">
-                                                    <button type="button" onClick={() => { setAdInputMethod('file'); setFormAd(p => ({ ...p, media_url: '' })); }}
-                                                        className={`px-3 py-1.5 rounded-lg text-[0.6rem] font-black uppercase tracking-widest transition-all ${adInputMethod === 'file' ? 'bg-primary text-white' : 'text-slate-500 hover:text-white'}`}>
-                                                        Arquivo
-                                                    </button>
-                                                    <button type="button" onClick={() => { setAdInputMethod('url'); setFormAd(p => ({ ...p, media_url: '' })); }}
-                                                        className={`px-3 py-1.5 rounded-lg text-[0.6rem] font-black uppercase tracking-widest transition-all ${adInputMethod === 'url' ? 'bg-primary text-white' : 'text-slate-500 hover:text-white'}`}>
-                                                        URL Externo
-                                                    </button>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Mídia Desktop (1200x200)</label>
+                                                        <div className="flex bg-white/5 p-0.5 rounded-lg">
+                                                            <button type="button" onClick={() => setAdInputMethod('file')} className={`px-2 py-1 rounded-md text-[0.5rem] font-black uppercase transition-all ${adInputMethod === 'file' ? 'bg-primary text-white' : 'text-slate-500'}`}>Arqu</button>
+                                                            <button type="button" onClick={() => setAdInputMethod('url')} className={`px-2 py-1 rounded-md text-[0.5rem] font-black uppercase transition-all ${adInputMethod === 'url' ? 'bg-primary text-white' : 'text-slate-500'}`}>URL</button>
+                                                        </div>
+                                                    </div>
+                                                    {adInputMethod === 'file' ? (
+                                                        <label className={`w-full bg-white/5 border-2 border-dashed rounded-xl px-4 py-6 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${formAd.desktop_media_url ? 'border-accent/40 bg-accent/5' : 'border-white/10 hover:border-white/20'}`}>
+                                                            <Monitor size={16} className={formAd.desktop_media_url ? 'text-accent' : 'text-slate-500'} />
+                                                            <span className="text-[0.55rem] font-black uppercase tracking-widest text-slate-400">{formAd.desktop_media_url ? 'Alterar Desktop' : 'Upload Desktop'}</span>
+                                                            <input type="file" onChange={e => handleAdMediaFile(e, 'desktop')} accept="image/*,video/*,image/gif" className="hidden" />
+                                                        </label>
+                                                    ) : (
+                                                        <input type="url" value={formAd.desktop_media_url} onChange={e => setFormAd({ ...formAd, desktop_media_url: e.target.value })}
+                                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-accent outline-none" placeholder="URL Desktop" />
+                                                    )}
                                                 </div>
 
-                                                {adInputMethod === 'file' ? (
-                                                    <div className="space-y-2">
-                                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
-                                                            Mídia (Arquivo)
-                                                            <span className="text-[10px] lowercase font-normal opacity-50 italic">Máx 5MB recomendado</span>
-                                                        </label>
-                                                        <label className={`w-full bg-white/5 border-2 border-dashed rounded-xl px-4 py-8 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${formAd.media_url ? 'border-accent/40 bg-accent/5' : 'border-white/10 hover:border-white/20'}`}>
-                                                            <Upload size={20} className={formAd.media_url ? 'text-accent' : 'text-slate-500'} />
-                                                            <span className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400">
-                                                                {formAd.media_url ? 'Arquivo Selecionado' : 'Carregar Imagem, GIF ou Vídeo'}
-                                                            </span>
-                                                            <input type="file" onChange={handleAdMediaFile} accept="image/*,video/*,image/gif" className="hidden" />
-                                                        </label>
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Mídia Mobile (600x600)</label>
                                                     </div>
-                                                ) : (
-                                                    <div className="space-y-2">
-                                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                                            <LinkIcon size={12} className="text-primary" /> Link Direto da Mídia
+                                                    {adInputMethod === 'file' ? (
+                                                        <label className={`w-full bg-white/5 border-2 border-dashed rounded-xl px-4 py-6 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${formAd.mobile_media_url ? 'border-accent/40 bg-accent/5' : 'border-white/10 hover:border-white/20'}`}>
+                                                            <Smartphone size={16} className={formAd.mobile_media_url ? 'text-accent' : 'text-slate-500'} />
+                                                            <span className="text-[0.55rem] font-black uppercase tracking-widest text-slate-400">{formAd.mobile_media_url ? 'Alterar Mobile' : 'Upload Mobile'}</span>
+                                                            <input type="file" onChange={e => handleAdMediaFile(e, 'mobile')} accept="image/*,video/*,image/gif" className="hidden" />
                                                         </label>
-                                                        <input type="url" value={formAd.media_url} onChange={e => setFormAd({ ...formAd, media_url: e.target.value })} required
-                                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-accent"
-                                                            placeholder="https://exemplo.com/propaganda.mp4"
-                                                        />
-                                                        <p className="text-[10px] text-slate-500 italic">Dica: Use links diretos do Google Drive ou CDNs para carregamento instantâneo.</p>
-                                                    </div>
-                                                )}
+                                                    ) : (
+                                                        <input type="url" value={formAd.mobile_media_url} onChange={e => setFormAd({ ...formAd, mobile_media_url: e.target.value })}
+                                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-accent outline-none" placeholder="URL Mobile" />
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
 
@@ -506,7 +528,7 @@ const Settings = () => {
                                                     <Video size={24} />
                                                 </div>
                                             ) : (
-                                                <img src={ad.media_url} alt={ad.title} className="w-full h-full object-cover" style={{ objectPosition: ad.object_position || 'center' }} />
+                                                <img src={ad.desktop_media_url} alt={ad.title} className="w-full h-full object-cover" style={{ objectPosition: ad.object_position || 'center' }} />
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">
