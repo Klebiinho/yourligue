@@ -106,17 +106,27 @@ const AppRouter = () => {
     }
   }, [leagueLoading, slug, league]);
 
-  // Clean empty hash fragments (like /#)
+  // Clean sensitive hash fragments (from OAuth) and ensure home redirect
   useEffect(() => {
-    const cleanHash = () => {
-      if (window.location.hash === '#' || window.location.hash === '') {
+    const cleanAuthHash = () => {
+      // If we have an access token in the hash, we know we just returned from OAuth
+      if (window.location.hash.includes('access_token=') || window.location.hash === '#' || window.location.hash === '') {
+        console.log('App: Cleaning auth residue from URL');
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
     };
-    cleanHash();
-    window.addEventListener('hashchange', cleanHash);
-    return () => window.removeEventListener('hashchange', cleanHash);
-  }, []);
+
+    cleanAuthHash();
+    window.addEventListener('hashchange', cleanAuthHash);
+    return () => window.removeEventListener('hashchange', cleanAuthHash);
+  }, [user]);
+
+  // Redirect to home if authenticated but caught in a weird state/path
+  useEffect(() => {
+    if (user && !loading && (window.location.hash.includes('access_token') || window.location.pathname === '/auth')) {
+       window.history.replaceState(null, '', '/');
+    }
+  }, [user, loading]);
 
 
 

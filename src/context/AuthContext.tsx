@@ -64,16 +64,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const signInWithGoogle = async () => {
-        await supabase.auth.signInWithOAuth({
+        const redirectTo = window.location.origin;
+        console.log('AuthContext: Initiating Google Sign-In with redirect to:', redirectTo);
+        
+        const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: import.meta.env.VITE_APP_URL || window.location.origin,
+                redirectTo,
                 queryParams: {
                     access_type: 'offline',
                     prompt: 'consent',
                 }
             }
         });
+
+        if (error) {
+            console.error('AuthContext: Google Sign-In Error:', error.message);
+        }
     };
 
     const signOut = async () => {

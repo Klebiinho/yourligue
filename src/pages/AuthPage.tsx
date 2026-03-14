@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Trophy, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 
@@ -14,7 +15,16 @@ const GoogleIcon = () => (
 );
 
 const AuthPage = () => {
-    const { signIn, signUp, signInWithGoogle } = useAuth();
+    const { user, signIn, signUp, signInWithGoogle } = useAuth();
+    const navigate = useNavigate();
+    
+    // Proactive redirect if user is already logged in
+    useEffect(() => {
+        if (user) {
+            navigate('/', { replace: true });
+        }
+    }, [user, navigate]);
+
     const [mode, setMode] = useState<'login' | 'register'>('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
