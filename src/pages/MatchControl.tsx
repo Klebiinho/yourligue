@@ -50,14 +50,24 @@ const MatchControl = () => {
         let interval: number;
         
         const updateTimerDisplay = () => {
-            if (!match) return;
+            if (!match) {
+                console.log('Timer Sync: No match data yet');
+                return;
+            }
 
             if (match.status === 'live') {
-                const lastUpdate = match.updatedAt ? new Date(match.updatedAt).getTime() : Date.now();
+                const lastUpdateStr = match.updatedAt || new Date().toISOString();
+                const lastUpdate = new Date(lastUpdateStr).getTime();
                 const now = Date.now();
                 const diffInSeconds = Math.max(0, Math.floor((now - lastUpdate) / 1000));
                 
                 const calculatedSeconds = (match.timer || 0) + diffInSeconds;
+                
+                // Debug log (remove later)
+                if (calculatedSeconds % 10 === 0) {
+                    console.log('Timer Sync:', { status: match.status, dbTimer: match.timer, diff: diffInSeconds, total: calculatedSeconds, updatedAt: lastUpdateStr });
+                }
+
                 setLocalSeconds(calculatedSeconds);
                 setTimerRunning(true);
             } else {
