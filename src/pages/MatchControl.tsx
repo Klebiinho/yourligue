@@ -462,20 +462,52 @@ const MatchControl = () => {
                                 <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-2">Selecione quem entra:</span>
                                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
                                     {(submittingPlayer.teamId === homeTeam.id ? homeTeam : awayTeam).players
-                                        .filter(p => p.isReserve && !match.events.some(e => e.type === 'substitution' && e.playerId === p.id))
-                                        .map(reserve => (
-                                            <button key={reserve.id} onClick={() => handleSubstitution(submittingPlayer.teamId, reserve.id, submittingPlayer.playerOutId)}
+                                        .filter(p => {
+                                            if (p.id === submittingPlayer.playerOutId) return false;
+                                            const { isRedCarded } = getPlayerStatus(p.id);
+                                            if (isRedCarded) return false;
+
+                                            // Determine if player is currently on the pitch
+                                            const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === p.id).length;
+                                            const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === p.id).length;
+                                            
+                                            const isOriginalStarter = !p.isReserve;
+                                            const isOnPitch = isOriginalStarter ? (subOuts <= subIns) : (subIns > subOuts);
+
+                                            if (isOnPitch) return false;
+
+                                            // If return is not allowed, once subbed out, they stay out
+                                            if (league && !league.allowSubstitutionReturn) {
+                                                if (subOuts > 0) return false;
+                                            }
+
+                                            return true;
+                                        })
+                                        .map(availablePlayer => (
+                                            <button key={availablePlayer.id} onClick={() => handleSubstitution(submittingPlayer.teamId, availablePlayer.id, submittingPlayer.playerOutId)}
                                                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] hover:bg-accent/20 hover:border-accent/40 transition-all text-left">
-                                                <TeamLogo src={reserve.photo} size={32} />
+                                                <TeamLogo src={availablePlayer.photo} size={32} />
                                                 <div className="flex-1">
-                                                    <span className="font-black text-white text-xs uppercase block">#{reserve.number} {reserve.name}</span>
-                                                    <span className="text-[0.6rem] font-black text-accent uppercase tracking-widest">Disponível</span>
+                                                    <span className="font-black text-white text-xs uppercase block">#{availablePlayer.number} {availablePlayer.name}</span>
+                                                    <span className="text-[0.6rem] font-black text-accent uppercase tracking-widest">
+                                                        {availablePlayer.isReserve ? 'Reserva' : 'Titular (Retorno)'}
+                                                    </span>
                                                 </div>
                                             </button>
                                         ))
                                     }
-                                    {(submittingPlayer.teamId === homeTeam.id ? homeTeam : awayTeam).players.filter(p => p.isReserve && !match.events.some(e => e.type === 'substitution' && e.playerId === p.id)).length === 0 && (
-                                        <p className="text-center py-6 text-slate-600 text-[0.65rem] uppercase font-black uppercase tracking-widest italic">Nenhum reserva disponível</p>
+                                    {(submittingPlayer.teamId === homeTeam.id ? homeTeam : awayTeam).players.filter(p => {
+                                        const { isRedCarded } = getPlayerStatus(p.id);
+                                        if (isRedCarded) return false;
+                                        const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === p.id).length;
+                                        const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === p.id).length;
+                                        const isOriginalIn = !p.isReserve;
+                                        const isOnPitch = isOriginalIn ? (subOuts <= subIns) : (subIns > subOuts);
+                                        if (isOnPitch) return false;
+                                        if (league && !league.allowSubstitutionReturn && subOuts > 0) return false;
+                                        return p.id !== submittingPlayer.playerOutId;
+                                    }).length === 0 && (
+                                        <p className="text-center py-6 text-slate-600 text-[0.65rem] uppercase font-black uppercase tracking-widest italic">Nenhum jogador disponível para entrar</p>
                                     )}
                                 </div>
                             </div>

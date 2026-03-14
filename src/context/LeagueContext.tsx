@@ -90,6 +90,7 @@ export type League = {
     playersPerTeam: number;
     reserveLimitPerTeam: number;
     substitutionsLimit: number;
+    allowSubstitutionReturn: boolean;
     slug: string;
     userId: string;
 };
@@ -359,7 +360,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
                     pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
                     playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
-                    substitutionsLimit: l.substitutions_limit || 5, slug: l.slug || '',
+                    substitutionsLimit: l.substitutions_limit || 5,
+                    allowSubstitutionReturn: l.allow_substitution_return ?? true,
+                    slug: l.slug || '',
                     userId: l.user_id
                 }));
                 setLeagues(mapped);
@@ -380,7 +383,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                             pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
                             pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
                             playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
-                            substitutionsLimit: l.substitutions_limit || 5, slug: l.slug || '',
+                            substitutionsLimit: l.substitutions_limit || 5,
+                            allowSubstitutionReturn: l.allow_substitution_return ?? true,
+                            slug: l.slug || '',
                             userId: l.user_id
                         };
                     });
@@ -419,7 +424,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
                 pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
                 playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
-                substitutionsLimit: l.substitutions_limit || 5, slug: l.slug || '',
+                substitutionsLimit: l.substitutions_limit || 5,
+                allowSubstitutionReturn: l.allow_substitution_return ?? true,
+                slug: l.slug || '',
                 userId: l.user_id
             }));
         }
@@ -451,7 +458,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     pointsForWin: data.points_for_win, pointsForDraw: data.points_for_draw,
                     pointsForLoss: data.points_for_loss, defaultHalfLength: data.default_half_length,
                     playersPerTeam: data.players_per_team || 5, reserveLimitPerTeam: data.reserve_limit_per_team || 5,
-                    substitutionsLimit: data.substitutions_limit || 5, slug: data.slug || '',
+                    substitutionsLimit: data.substitutions_limit || 5,
+                    allowSubstitutionReturn: data.allow_substitution_return ?? true,
+                    slug: data.slug || '',
                     userId: data.user_id
                 };
                 setLeague(lg);
@@ -719,6 +728,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
             players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
             substitutions_limit: data.substitutionsLimit,
+            allow_substitution_return: data.allowSubstitutionReturn ?? true,
             slug
         }).select().single();
         if (error) {
@@ -732,7 +742,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 pointsForWin: row.points_for_win, pointsForDraw: row.points_for_draw,
                 pointsForLoss: row.points_for_loss, defaultHalfLength: row.default_half_length,
                 playersPerTeam: row.players_per_team || 5, reserveLimitPerTeam: row.reserve_limit_per_team || 5,
-                substitutionsLimit: row.substitutions_limit || 5, slug: row.slug || '',
+                substitutionsLimit: row.substitutions_limit || 5,
+                allowSubstitutionReturn: row.allow_substitution_return ?? true,
+                slug: row.slug || '',
                 userId: row.user_id
             };
             setLeagues(prev => [...prev, lg]);
@@ -749,7 +761,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             points_for_win: data.pointsForWin, points_for_draw: data.pointsForDraw,
             points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
             players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
-            substitutions_limit: data.substitutionsLimit
+            substitutions_limit: data.substitutionsLimit,
+            allow_substitution_return: data.allowSubstitutionReturn
         };
 
         if (data.name && data.name !== league.name) {

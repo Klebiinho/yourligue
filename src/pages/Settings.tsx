@@ -32,6 +32,7 @@ const Settings = () => {
     const [playersPerTeam, setPlayersPerTeam] = useState(String(league?.playersPerTeam ?? 5));
     const [reserveLimit, setReserveLimit] = useState(String(league?.reserveLimitPerTeam ?? 5));
     const [substitutionsLimit, setSubstitutionsLimit] = useState(String(league?.substitutionsLimit ?? 5));
+    const [allowSubstitutionReturn, setAllowSubstitutionReturn] = useState(league?.allowSubstitutionReturn ?? true);
     const [saved, setSaved] = useState(false);
     const [copied, setCopied] = useState(false);
 
@@ -81,7 +82,8 @@ const Settings = () => {
             defaultHalfLength: parseInt(halfLength) || 45,
             playersPerTeam: parseInt(playersPerTeam) || 5,
             reserveLimitPerTeam: parseInt(reserveLimit) || 5,
-            substitutionsLimit: parseInt(substitutionsLimit) || 5
+            substitutionsLimit: parseInt(substitutionsLimit) || 5,
+            allowSubstitutionReturn
         });
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
@@ -277,6 +279,23 @@ const Settings = () => {
                                             className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-primary transition-colors h-14"
                                         />
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Substitution Rule Toggle */}
+                            <div className="space-y-4 bg-black/10 p-6 rounded-3xl border border-white/5">
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-1">
+                                        <h3 className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <ArrowLeftRight size={14} className="text-primary" /> Regras de Substituição
+                                        </h3>
+                                        <p className="text-[0.6rem] text-slate-600 font-bold uppercase tracking-widest">Defina se jogadores substituídos podem voltar ao campo</p>
+                                    </div>
+                                    <button type="button" onClick={() => setAllowSubstitutionReturn(!allowSubstitutionReturn)}
+                                        className={`flex items-center gap-3 px-4 py-2 rounded-xl border transition-all font-black text-[0.6rem] uppercase tracking-widest ${allowSubstitutionReturn ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-white/5 border-white/10 text-slate-500'}`}>
+                                        {allowSubstitutionReturn ? <Check size={14} strokeWidth={4} /> : <X size={14} strokeWidth={4} />}
+                                        {allowSubstitutionReturn ? 'Retorno Permitido' : 'Retorno Proibido'}
+                                    </button>
                                 </div>
                             </div>
 
