@@ -107,23 +107,31 @@ const Settings = () => {
             alert('Selecione ao menos um posicionamento para a propaganda.');
             return;
         }
-        if (editingAdId) {
-            const { error } = await updateAd(editingAdId, formAd);
-            if (!error) {
-                setEditingAdId(null);
-                setIsAddingAd(false);
-                setFormAd({ title: '', desktop_media_url: '', mobile_media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
+
+        try {
+            if (editingAdId) {
+                const { error } = await updateAd(editingAdId, formAd);
+                if (!error) {
+                    setEditingAdId(null);
+                    setIsAddingAd(false);
+                    setFormAd({ title: '', desktop_media_url: '', mobile_media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
+                    alert('Propaganda atualizada com sucesso!');
+                } else {
+                    alert('Erro ao atualizar: ' + error);
+                }
             } else {
-                alert(error);
+                const { error } = await addAd(formAd);
+                if (!error) {
+                    setIsAddingAd(false);
+                    setFormAd({ title: '', desktop_media_url: '', mobile_media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
+                    alert('Propaganda adicionada com sucesso!');
+                } else {
+                    alert('Erro ao adicionar: ' + error);
+                }
             }
-        } else {
-            const { error } = await addAd(formAd);
-            if (!error) {
-                setIsAddingAd(false);
-                setFormAd({ title: '', desktop_media_url: '', mobile_media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
-            } else {
-                alert(error);
-            }
+        } catch (err: any) {
+            console.error('Ad submit error:', err);
+            alert('Ocorreu um erro inesperado ao salvar a propaganda.');
         }
     };
 
@@ -471,7 +479,7 @@ const Settings = () => {
                                         </div>
 
                                         <button type="submit" className="w-full bg-accent text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest hover:brightness-110 transition-all shadow-lg shadow-accent/20">
-                                            {editingAdId ? 'Salvar Alterações' : 'Adicionar Propaganda'}
+                                            {editingAdId ? 'Salvar Alterações da Prop' : 'Confirmar Propaganda'}
                                         </button>
                                     </form>
                                 </div>
