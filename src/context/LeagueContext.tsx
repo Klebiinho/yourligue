@@ -529,114 +529,151 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('selectedLeagueId', league.id);
 
         // ─── CENTRALIZED REALTIME (GOLDEN RULE: ZERO REFETCH) ───────
-        const channel = supabase.channel(`league-central-${league.id}`)
-            .on('postgres_changes', { event: '*', schema: 'public', filter: `league_id=eq.${league.id}` }, payload => {
-                const { table, eventType, new: newRow, old: oldRow } = payload;
-                const row = (newRow || oldRow) as any;
-                console.log(`[Realtime Central] ${table} ${eventType}`, payload);
+        console.log(`[Realtime] Connecting to league channel: ${league.id}`);
+        
+        const channel = supabase.channel(`league-central-${league.id}`);
 
-                switch (table) {
-                    case 'matches':
-                        if (eventType === 'DELETE') {
-                            setRawMatches(prev => prev.filter(m => m.id !== row.id));
-                        } else {
-                            setRawMatches(prev => prev.some(m => m.id === row.id)
-                                ? prev.map(m => m.id === row.id ? { ...m, ...mapDBMatch(row), events: m.events } : m)
-                                : [...prev, mapDBMatch(row)]);
-                        }
-                        break;
+        // 1. Tables with league_id filter (efficient)
+        channel.on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            filter: `league_id=eq.${league.id}` 
+        }, payload => {
+            const { table, eventType, new: newRow, old: oldRow } = payload;
+            const row = (newRow || oldRow) as any;
+            console.log(`[Realtime Filtered] ${table} ${eventType}`, row.id);
 
-                    case 'teams':
-                        if (eventType === 'DELETE') {
-                            setRawTeams(prev => prev.filter(t => t.id !== row.id));
-                        } else {
-                            setRawTeams(prev => prev.some(t => t.id === row.id)
-                                ? prev.map(t => t.id === row.id ? { ...t, ...mapDBTeam(row), players: t.players } : t)
-                                : [...prev, mapDBTeam(row)]);
-                        }
-                        break;
+            switch (table) {
+                case 'matches':
+                    if (eventType === 'DELETE') {
+                        setRawMatches(prev => prev.filter(m => m.id !== row.id));
+                    } else {
+                        setRawMatches(prev => {
+                            const existing = prev.find(m => m.id === row.id);
+                            const mapped = mapDBMatch(row);
+                            if (existing) {
+                                // Important: Preserve local events if they are already loaded
+                                return prev.map(m => m.id === row.id ? { ...m, ...mapped, events: m.events } : m);
+                            }
+                            return [...prev, mapped];
+                        });
+                    }
+                    break;
 
-                    case 'brackets':
-                        if (eventType === 'DELETE') {
-                            setBrackets(prev => prev.filter(b => b.id !== row.id));
-                        } else {
-                            setBrackets(prev => prev.some(b => b.id === row.id)
-                                ? prev.map(b => b.id === row.id ? mapDBBracket(row) : b)
-                                : [...prev, mapDBBracket(row)]);
-                        }
-                        break;
-                    
-                    case 'ads':
-                         if (eventType === 'DELETE') {
-                            setAds(prev => prev.filter(a => a.id !== row.id));
-                        } else {
-                            setAds(prev => {
-                                const ad = row as Ad;
-                                return prev.some(a => a.id === ad.id)
-                                    ? prev.map(a => a.id === ad.id ? ad : a)
-                                    : [...prev, ad];
-                            });
-                        }
-                        break;
-                }
-            })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, payload => {
-                const { eventType, new: newRow, old: oldRow } = payload;
-                const playerRow = (newRow || oldRow) as any;
-                const teamId = playerRow?.team_id;
-                if (!teamId) return;
+                case 'teams':
+                    if (eventType === 'DELETE') {
+                        setRawTeams(prev => prev.filter(t => t.id !== row.id));
+                    } else {
+                        setRawTeams(prev => {
+                            const existing = prev.find(t => t.id === row.id);
+                            const mapped = mapDBTeam(row);
+                            if (existing) {
+                                // Preserve players
+                                return prev.map(t => t.id === row.id ? { ...t, ...mapped, players: t.players } : t);
+                            }
+                            return [...prev, mapped];
+                        });
+                    }
+                    break;
+
+                case 'players':
+                    // Although players has league_id now, we update it via teams state
+                    setRawTeams(prev => prev.map(t => t.id === row.team_id ? {
+                        ...t,
+                        players: eventType === 'DELETE'
+                            ? t.players.filter(p => p.id !== row.id)
+                            : t.players.some(p => p.id === row.id)
+                                ? t.players.map(p => p.id === row.id ? mapDBPlayer(row) : p)
+                                : [...t.players, mapDBPlayer(row)]
+                    } : t));
+                    break;
+
+                case 'brackets':
+                    if (eventType === 'DELETE') {
+                        setBrackets(prev => prev.filter(b => b.id !== row.id));
+                    } else {
+                        setBrackets(prev => prev.some(b => b.id === row.id)
+                            ? prev.map(b => b.id === row.id ? mapDBBracket(row) : b)
+                            : [...prev, mapDBBracket(row)]);
+                    }
+                    break;
+
+                case 'ads':
+                    if (eventType === 'DELETE') {
+                        setAds(prev => prev.filter(a => a.id !== row.id));
+                    } else {
+                        setAds(prev => prev.some(a => a.id === row.id)
+                            ? prev.map(a => a.id === row.id ? (row as Ad) : a)
+                            : [...prev, row as Ad]);
+                    }
+                    break;
+
+                case 'user_team_interactions':
+                    // Refresh support counts silently
+                    loadSupportCounts(league.id);
+                    break;
+            }
+        });
+
+        // 2. Table: match_events (filtered by match_id locally since it lacks league_id)
+        channel.on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'match_events' 
+        }, payload => {
+            const { eventType, new: newRow, old: oldRow } = payload;
+            const row = (newRow || oldRow) as any;
+            const matchId = row?.match_id;
+            if (!matchId) return;
+
+            setRawMatches(prev => prev.map(m => {
+                if (m.id !== matchId) return m;
                 
-                setRawTeams(prev => prev.map(t => t.id === teamId ? {
-                    ...t,
-                    players: eventType === 'DELETE' 
-                        ? t.players.filter(p => p.id !== playerRow.id)
-                        : t.players.some(p => p.id === playerRow.id)
-                            ? t.players.map(p => p.id === playerRow.id ? mapDBPlayer(playerRow) : p)
-                            : [...t.players, mapDBPlayer(playerRow)]
-                } : t));
-            })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'match_events' }, payload => {
-                const { eventType, new: newRow, old: oldRow } = payload;
-                const eventRow = (newRow || oldRow) as any;
-                const matchId = eventRow?.match_id;
-                if (!matchId) return;
+                const events = eventType === 'DELETE'
+                    ? m.events.filter(e => e.id !== row.id)
+                    : m.events.some(e => e.id === row.id)
+                        ? m.events.map(e => e.id === row.id ? mapDBEvent(row) : e)
+                        : [...m.events, mapDBEvent(row)];
+                
+                return { ...m, events };
+            }));
 
-                setRawMatches((prev: Match[]) => prev.map(m => m.id === matchId ? {
-                    ...m,
-                    events: eventType === 'DELETE'
-                        ? m.events.filter(e => e.id !== eventRow.id)
-                        : m.events.some(e => e.id === eventRow.id)
-                            ? m.events.map(e => e.id === eventRow.id ? mapDBEvent(eventRow) : e)
-                            : [...m.events, mapDBEvent(eventRow)]
-                } : m));
+            // Goal Notification
+            if (eventType === 'INSERT' && (row.type === 'goal' || row.type === 'penalty_goal')) {
+                const team = teamsRef.current.find(t => t.id === row.team_id);
+                addNotification({
+                    id: Math.random().toString(36).substr(2, 9),
+                    title: '⚽ GOOOL!',
+                    message: `Gol do ${team?.name || 'time'}!`,
+                    type: 'goal',
+                    teamId: row.team_id,
+                    createdAt: Date.now()
+                });
+            }
+        });
 
-                // Notification on Goal
-                if (eventType === 'INSERT' && (eventRow.type === 'goal' || eventRow.type === 'penalty_goal')) {
-                    // We need the team name for the notification
-                    const team = teamsRef.current.find(rt => rt.id === eventRow.team_id);
-                    addNotification({
-                        id: Math.random().toString(36).substr(2, 9),
-                        title: '⚽ GOOOL!',
-                        message: `Gol do ${team?.name || 'seu time'}!`,
-                        type: 'goal',
-                        teamId: eventRow.team_id,
-                        createdAt: Date.now()
-                    });
-                }
-            })
-            .on('broadcast', { event: 'match-update' }, ({ payload }) => {
-                setRawMatches((prev: Match[]) => prev.map(m => m.id === payload.matchId ? { 
-                    ...m, 
-                    timer: payload.timer,
-                    homeScore: payload.homeScore,
-                    awayScore: payload.awayScore,
-                    period: payload.period,
-                    status: payload.status
-                } : m));
-            })
-            .subscribe();
+        // 3. Broadcast for low-latency timer sync
+        channel.on('broadcast', { event: 'match-update' }, ({ payload }) => {
+            console.log('[Realtime Broadcast] Match Update', payload);
+            setRawMatches(prev => prev.map(m => m.id === payload.matchId ? { 
+                ...m, 
+                timer: payload.timer,
+                homeScore: payload.homeScore,
+                awayScore: payload.awayScore,
+                period: payload.period,
+                status: payload.status,
+                updatedAt: new Date().toISOString() // Force timer restart calculation
+            } : m));
+        });
 
-        return () => { supabase.removeChannel(channel); };
+        channel.subscribe(status => {
+            console.log(`[Realtime] Subscription status: ${status}`);
+        });
+
+        return () => {
+            console.log('[Realtime] Cleaning up channel');
+            supabase.removeChannel(channel);
+        };
     }, [league?.id, loadLeagueData]);
 
     const addNotification = (notif: LeagueNotification) => {
@@ -846,8 +883,25 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         setRawMatches((prev: Match[]) => prev.map(m => m.id === matchId ? { 
             ...m, 
             ...data,
-            updatedAt: data.status ? new Date().toISOString() : m.updatedAt 
+            updatedAt: new Date().toISOString() 
         } : m));
+
+        // BROADCAST for other users (low latency)
+        const match = matchesRef.current.find(m => m.id === matchId);
+        if (match) {
+            supabase.channel(`league-central-${league?.id}`).send({
+                type: 'broadcast',
+                event: 'match-update',
+                payload: {
+                    matchId,
+                    timer: data.timer ?? match.timer,
+                    homeScore: data.homeScore ?? match.homeScore,
+                    awayScore: data.awayScore ?? match.awayScore,
+                    period: data.period ?? match.period,
+                    status: data.status ?? match.status
+                }
+            });
+        }
     };
 
     const deleteMatch = async (matchId: string) => {
