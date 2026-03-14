@@ -100,7 +100,7 @@ export type Ad = {
     title: string;
     media_url: string;
     media_type: 'image' | 'video' | 'gif';
-    position: 'top' | 'side' | 'between' | 'halftime' | 'overlay' | 'home_stats' | 'teams_list' | 'matches_filter' | 'live_top' | 'standings_info' | 'panel_stats';
+    positions: string[];
     link_url?: string;
     duration: number;
     active: boolean;

@@ -10,7 +10,7 @@ interface AdBannerProps {
 
 const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
     const { ads } = useLeague();
-    const positionAds = ads.filter(ad => ad.active && ad.position === position);
+    const positionAds = ads.filter(ad => ad.active && ad.positions?.includes(position));
     const [currentIndex, setCurrentIndex] = useState(0);
 
     useEffect(() => {

@@ -5,6 +5,19 @@ import TeamLogo from '../components/TeamLogo';
 import { useNavigate } from 'react-router-dom';
 import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Upload, Link as LinkIcon, Check, Edit2 } from 'lucide-react';
 
+const AD_POSITIONS = [
+    { id: 'top', label: 'Topo da Página' },
+    { id: 'home_stats', label: 'Home (Cards)' },
+    { id: 'teams_list', label: 'Times (Lista)' },
+    { id: 'matches_filter', label: 'Partidas (Filtro)' },
+    { id: 'live_top', label: 'Ao Vivo (Topo)' },
+    { id: 'standings_info', label: 'Tabela (Fundo)' },
+    { id: 'panel_stats', label: 'Painel (Stats)' },
+    { id: 'side', label: 'Lateral (Barra)' },
+    { id: 'halftime', label: 'Intervalo Jogo' },
+    { id: 'overlay', label: 'Overlay Vídeo' },
+];
+
 const Settings = () => {
     const { league, updateLeague, isAdmin } = useLeague();
     const { user, signOut } = useAuth();
@@ -29,7 +42,7 @@ const Settings = () => {
         title: '',
         media_url: '',
         media_type: 'image' as 'image' | 'video' | 'gif',
-        position: 'top' as 'top' | 'side' | 'between' | 'halftime' | 'overlay' | 'home_stats' | 'teams_list' | 'matches_filter' | 'live_top' | 'standings_info' | 'panel_stats',
+        positions: [] as string[],
         link_url: '',
         duration: 5
     });
@@ -84,12 +97,16 @@ const Settings = () => {
 
     const handleAdSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (formAd.positions.length === 0) {
+            alert('Selecione ao menos um posicionamento para a propaganda.');
+            return;
+        }
         if (editingAdId) {
             const { error } = await updateAd(editingAdId, formAd);
             if (!error) {
                 setEditingAdId(null);
                 setIsAddingAd(false);
-                setFormAd({ title: '', media_url: '', media_type: 'image', position: 'top', link_url: '', duration: 5 });
+                setFormAd({ title: '', media_url: '', media_type: 'image', positions: [], link_url: '', duration: 5 });
             } else {
                 alert(error);
             }
@@ -97,7 +114,7 @@ const Settings = () => {
             const { error } = await addAd(formAd);
             if (!error) {
                 setIsAddingAd(false);
-                setFormAd({ title: '', media_url: '', media_type: 'image', position: 'top', link_url: '', duration: 5 });
+                setFormAd({ title: '', media_url: '', media_type: 'image', positions: [], link_url: '', duration: 5 });
             } else {
                 alert(error);
             }
@@ -110,7 +127,7 @@ const Settings = () => {
             title: ad.title,
             media_url: ad.media_url,
             media_type: ad.media_type,
-            position: ad.position,
+            positions: ad.positions || [],
             link_url: ad.link_url || '',
             duration: ad.duration || 5
         });
@@ -282,7 +299,7 @@ const Settings = () => {
                                         setIsAddingAd(!isAddingAd);
                                         if (isAddingAd) {
                                             setEditingAdId(null);
-                                            setFormAd({ title: '', media_url: '', media_type: 'image', position: 'top', link_url: '', duration: 5 });
+                                            setFormAd({ title: '', media_url: '', media_type: 'image', positions: [], link_url: '', duration: 5 });
                                         }
                                     }}
                                     className="bg-accent/10 text-accent hover:bg-accent hover:text-white px-4 py-2 rounded-xl transition-all flex items-center gap-2 text-[0.65rem] font-black uppercase tracking-widest"
@@ -369,21 +386,34 @@ const Settings = () => {
                                                     <option value="video">Vídeo</option>
                                                 </select>
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Posicionamento</label>
-                                                <select value={formAd.position} onChange={e => setFormAd({ ...formAd, position: e.target.value as any })}
-                                                    className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-accent appearance-none">
-                                                    <option value="top">Topo da Página</option>
-                                                    <option value="home_stats">Home (Cards Principais)</option>
-                                                    <option value="teams_list">Times (Abaixo Cadastro)</option>
-                                                    <option value="matches_filter">Partidas (Abaixo Filtros)</option>
-                                                    <option value="live_top">Ao Vivo (Topo Resultados)</option>
-                                                    <option value="standings_info">Tabela (Abaixo Legenda)</option>
-                                                    <option value="panel_stats">Painel (Abaixo Stats Time)</option>
-                                                    <option value="side">Lateral (Barra)</option>
-                                                    <option value="halftime">Intervalo do Jogo</option>
-                                                    <option value="overlay">Overlay no Player</option>
-                                                </select>
+                                            <div className="space-y-4 md:col-span-2">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Exibir em quais locais?</label>
+                                                    <button type="button" onClick={() => {
+                                                        const allIds = AD_POSITIONS.map(p => p.id);
+                                                        setFormAd(prev => ({ ...prev, positions: prev.positions.length === allIds.length ? [] : allIds }));
+                                                    }} className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">
+                                                        {formAd.positions.length === AD_POSITIONS.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                                                    </button>
+                                                </div>
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-black/20 p-4 rounded-2xl border border-white/5">
+                                                    {AD_POSITIONS.map(pos => (
+                                                        <label key={pos.id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all border ${formAd.positions.includes(pos.id) ? 'bg-primary/10 border-primary/30 text-white' : 'hover:bg-white/5 border-transparent text-slate-500'}`}>
+                                                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${formAd.positions.includes(pos.id) ? 'bg-primary border-primary text-white' : 'bg-black/30 border-white/10'}`}>
+                                                                {formAd.positions.includes(pos.id) && <Check size={10} strokeWidth={4} />}
+                                                            </div>
+                                                            <span className="text-[0.6rem] font-black uppercase tracking-tight">{pos.label}</span>
+                                                            <input type="checkbox" className="hidden" checked={formAd.positions.includes(pos.id)} onChange={() => {
+                                                                setFormAd(prev => ({
+                                                                    ...prev,
+                                                                    positions: prev.positions.includes(pos.id)
+                                                                        ? prev.positions.filter(id => id !== pos.id)
+                                                                        : [...prev.positions, pos.id]
+                                                                }));
+                                                            }} />
+                                                        </label>
+                                                    ))}
+                                                </div>
                                             </div>
                                             <div className="space-y-2">
                                                 <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Duração (Segundos)</label>
@@ -466,7 +496,7 @@ const Settings = () => {
                                             <p className="text-sm font-black text-white truncate">{ad.title}</p>
                                             <div className="flex items-center gap-3 mt-1">
                                                 <span className="text-[0.5rem] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                                                    <Layout size={10} /> {ad.position}
+                                                    <Layout size={10} /> {ad.positions?.length || 0} Locais
                                                 </span>
                                                 <span className="text-[0.5rem] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
                                                     <Clock size={10} /> {ad.duration}s
