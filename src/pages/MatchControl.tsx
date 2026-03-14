@@ -244,7 +244,7 @@ const MatchControl = () => {
                                                 <p className="text-center text-slate-600 text-[0.65rem] uppercase tracking-widest py-4 font-black bg-white/[0.01] rounded-xl border border-dashed border-white/5">Ninguém em campo</p>
                                             ) : (
                                                 onPitch.map((player: Player) => {
-                                                    const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
+                                                    const { yellowCards } = getPlayerStatus(player.id);
                                                     return (
                                                         <div key={player.id} className="flex items-center gap-2 p-3 rounded-xl border bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05] transition-all duration-300">
                                                             <div className="relative flex-none">
