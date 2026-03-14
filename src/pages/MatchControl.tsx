@@ -113,7 +113,6 @@ const MatchControl = () => {
             if (window.confirm('Encerrar 1º tempo e iniciar o Intervalo?')) {
                 setTimerRunning(false);
                 handlePeriodChange('Intervalo');
-                return;
             }
             return;
         }
@@ -124,13 +123,12 @@ const MatchControl = () => {
                 handlePeriodChange('2º Tempo');
                 setTimerRunning(true);
                 startMatch(matchId, startTime);
-                return;
             }
             return;
         }
 
         if (period === '2º Tempo' && match.homeScore === match.awayScore) {
-            if (window.confirm('A partida terminou empatada. Deseja iniciar a Prorrogação? \n\n(Clique em Cancelar para finalizar a partida como empate)')) {
+            if (window.confirm('A partida terminou empatada. Deseja iniciar a Prorrogação?')) {
                 setTimerRunning(false);
                 handlePeriodChange('Prorrogação');
                 return;
@@ -138,7 +136,7 @@ const MatchControl = () => {
         }
 
         if (period === 'Prorrogação' && match.homeScore === match.awayScore) {
-            if (window.confirm('O empate persiste. Deseja iniciar a disputa de Pênaltis? \n\n(Clique em Cancelar para finalizar a partida como empate)')) {
+            if (window.confirm('O empate persiste. Deseja iniciar a disputa de Pênaltis?')) {
                 setTimerRunning(false);
                 handlePeriodChange('Pênaltis');
                 return;
@@ -262,7 +260,12 @@ const MatchControl = () => {
                             </button>
                             <button onClick={handleEndMatch}
                                 className="flex-1 sm:flex-none px-4 sm:px-8 py-3 rounded-xl bg-danger/10 border border-danger/20 text-danger font-black text-[0.65rem] uppercase tracking-[0.15em] hover:bg-danger hover:text-white transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
-                                <StopCircle size={16} strokeWidth={3} />Finalizar
+                                <StopCircle size={16} strokeWidth={3} />
+                                {period === '1º Tempo' ? 'Fim 1º Tempo' : 
+                                 period === 'Intervalo' ? 'Iniciar 2º Tempo' : 
+                                 (period === '2º Tempo' && match.homeScore === match.awayScore) ? 'Ir p/ Prorrogação' :
+                                 (period === 'Prorrogação' && match.homeScore === match.awayScore) ? 'Ir p/ Pênaltis' :
+                                 'Finalizar Jogo'}
                             </button>
                         </>
                     ) : (
