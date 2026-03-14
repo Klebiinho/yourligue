@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
 import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
@@ -63,10 +64,28 @@ const MatchControl = () => {
     }, [timerRunning, match?.status, halfLength, extraTime, period]);
 
     useEffect(() => {
-        if (match?.status === 'live' && localSeconds % 5 === 0 && matchId) {
+        // Broadcast updates every second to all viewers (low cost, high speed)
+        if (timerRunning && match?.status === 'live' && matchId && league?.id) {
+            const channel = supabase.channel(`league-${league.id}`);
+            channel.send({
+                type: 'broadcast',
+                event: 'match-update',
+                payload: {
+                    matchId,
+                    timer: localSeconds,
+                    homeScore: match.homeScore,
+                    awayScore: match.awayScore,
+                    period,
+                    status: match.status
+                }
+            });
+        }
+
+        // Persistent update to DB every 30 seconds for backup
+        if (match?.status === 'live' && localSeconds % 30 === 0 && matchId) {
             updateTimer(matchId, localSeconds);
         }
-    }, [localSeconds, matchId, match?.status, updateTimer]);
+    }, [localSeconds, matchId, match?.status, updateTimer, league?.id, timerRunning, period, match?.homeScore, match?.awayScore]);
 
     if (!match || !homeTeam || !awayTeam) return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500 gap-4 opacity-75">

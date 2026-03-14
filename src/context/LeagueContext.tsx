@@ -503,15 +503,34 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 refreshTimeout = setTimeout(() => loadLeagueData(league.id, true), 500);
             };
 
-            // Subscribe to realtime updates for notifications and state sync
+            // Subscribe to realtime updates
             const channel = supabase.channel(`league-${league.id}`)
+                // 1. Listen for Broadcasts (High frequency, low cost)
+                .on('broadcast', { event: 'match-update' }, ({ payload }) => {
+                    setMatches(prev => prev.map(m => m.id === payload.matchId ? { 
+                        ...m, 
+                        timer: payload.timer,
+                        homeScore: payload.homeScore,
+                        awayScore: payload.awayScore,
+                        period: payload.period,
+                        status: payload.status
+                    } : m));
+                })
+                // 2. Listen for DB changes (Backups and persistent events)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_events' }, payload => {
                     const event = payload.new as any;
-                    // Filter in JS since league_id doesn't exist on match_events
                     const match = matchesRef.current.find(m => m.id === event.match_id);
                     if (!match) return;
 
                     if (event.type === 'goal' || event.type === 'penalty_goal') {
+                        // Local score update to be immediate
+                        setMatches(prev => prev.map(m => m.id === event.match_id ? {
+                            ...m,
+                            homeScore: event.team_id === m.homeTeamId ? m.homeScore + 1 : m.homeScore,
+                            awayScore: event.team_id === m.awayTeamId ? m.awayScore + 1 : m.awayScore
+                        } : m));
+                        
+                        // Notification logic
                         const supportedTeam = interactionsRef.current.find(i => i.interactionType === 'supporting');
                         if (supportedTeam && (match.homeTeamId === supportedTeam.teamId || match.awayTeamId === supportedTeam.teamId)) {
                             const team = teamsRef.current.find(t => t.id === event.team_id);
@@ -525,32 +544,23 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                             });
                         }
                     }
-                    debouncedRefresh();
+                    debouncedRefresh(); // Refresh for scorers/stats
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches', filter: `league_id=eq.${league.id}` }, payload => {
                     const match = payload.new as any;
                     const oldMatch = payload.old as any;
-                    if (match.status === 'live' && oldMatch.status === 'scheduled') {
-                        const supportedTeam = interactionsRef.current.find(i => i.interactionType === 'supporting');
-                        if (supportedTeam && (match.home_team_id === supportedTeam.teamId || match.away_team_id === supportedTeam.teamId)) {
-                            addNotification({
-                                id: Math.random().toString(36).substr(2, 9),
-                                title: '🏁 Partida Iniciada!',
-                                message: 'Seu time entrou em campo agora!',
-                                type: 'match_start',
-                                teamId: supportedTeam.teamId,
-                                createdAt: Date.now()
-                            });
-                        }
+                    
+                    // Sync with DB state
+                    setMatches(prev => prev.map(m => m.id === match.id ? { ...m, ...match } : m));
+
+                    if (match.status !== oldMatch.status) {
+                        debouncedRefresh(); // Refresh standings if match ended
                     }
-                    debouncedRefresh();
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'teams', filter: `league_id=eq.${league.id}` }, debouncedRefresh)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, debouncedRefresh)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'brackets', filter: `league_id=eq.${league.id}` }, debouncedRefresh)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'user_team_interactions', filter: `league_id=eq.${league.id}` }, () => {
-                    loadUserInteractions(league.id);
-                    loadSupportCounts(league.id);
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, (payload) => {
+                    const p = (payload.new || payload.old) as any;
+                    if (p && teamsRef.current.some(t => t.id === p.team_id)) debouncedRefresh();
                 })
                 .subscribe();
 
@@ -561,7 +571,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         } else {
             setTeams([]); setMatches([]); setBrackets([]); setUserInteractions([]); setSupportCounts({});
         }
-    }, [league, loadLeagueData, loadUserInteractions, loadSupportCounts]);
+    }, [league?.id]);
 
     const addNotification = (notif: LeagueNotification) => {
         setNotifications(prev => [notif, ...prev].slice(0, 5));
