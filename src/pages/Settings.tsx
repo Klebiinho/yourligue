@@ -313,9 +313,9 @@ const Settings = () => {
                                 <div className="mb-6 rounded-2xl overflow-hidden glass-panel border-accent/20 border p-2">
                                     <div className="aspect-video w-full bg-black/40 rounded-xl overflow-hidden relative">
                                         {formAd.media_type === 'video' ? (
-                                            <video src={formAd.media_url} controls className="w-full h-full object-contain" />
+                                            <video src={formAd.media_url} controls className="w-full h-full object-cover" />
                                         ) : (
-                                            <img src={formAd.media_url} alt="Preview" className="w-full h-full object-contain" />
+                                            <img src={formAd.media_url} alt="Preview" className="w-full h-full object-cover" />
                                         )}
                                         <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[0.6rem] font-black text-white uppercase tracking-widest border border-white/10">
                                             Preview {editingAdId ? 'Original' : 'Novo'}

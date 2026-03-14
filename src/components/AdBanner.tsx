@@ -57,21 +57,21 @@ const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
     };
 
     const containerClasses = {
-        top: "w-full h-20 sm:h-24 mb-6",
-        side: "w-full aspect-[4/5] sm:aspect-square mb-4",
-        between: "w-full h-32 sm:h-40 my-8",
-        halftime: "w-full aspect-video max-w-2xl mx-auto my-8",
-        overlay: "absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4",
-        home_stats: "w-full h-28 sm:h-32 mb-6 sm:mb-8",
-        teams_list: "w-full h-28 sm:h-32 mb-6 sm:mb-8",
-        matches_filter: "w-full h-28 sm:h-32 mb-6 sm:mb-8",
-        live_top: "w-full h-28 sm:h-32 mb-6 sm:mb-8",
-        standings_info: "w-full h-28 sm:h-32 mb-6 sm:mb-8",
-        panel_stats: "w-full h-28 sm:h-32 mb-6 sm:mb-8"
+        top: "w-full h-24 sm:h-32 mb-8",
+        side: "w-full aspect-[4/5] sm:aspect-square mb-6",
+        between: "w-full h-32 sm:h-44 my-10",
+        halftime: "w-full aspect-video max-w-3xl mx-auto my-10",
+        overlay: "fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-6",
+        home_stats: "w-full h-32 sm:h-40 mb-8",
+        teams_list: "w-full h-32 sm:h-40 mb-8",
+        matches_filter: "w-full h-32 sm:h-40 mb-8",
+        live_top: "w-full h-32 sm:h-40 mb-8",
+        standings_info: "w-full h-32 sm:h-40 mb-8",
+        panel_stats: "w-full h-32 sm:h-40 mb-8"
     };
 
     const Content = (
-        <div className={`relative group overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all ${className} ${position === 'overlay' ? 'max-w-lg aspect-square sm:aspect-video w-full' : ''}`}>
+        <div className={`relative group overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all w-full h-full ${className} ${position === 'overlay' ? 'max-w-lg aspect-square sm:aspect-video' : ''}`}>
             {ad.link_url ? (
                 <a href={ad.link_url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
                     {renderMedia()}
