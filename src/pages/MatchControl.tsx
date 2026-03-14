@@ -114,10 +114,10 @@ const MatchControl = () => {
         }
     };
 
-    const handleGol = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live') addEvent(matchId, { type: 'goal', teamId, playerId, minute: currentMinute }); };
-    const handleAssist = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live') addEvent(matchId, { type: 'assist', teamId, playerId, minute: currentMinute }); };
-    const handleGolContra = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live') addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); };
-    const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { if (matchId && match?.status === 'live') addEvent(matchId, { type, teamId, playerId, minute: currentMinute }); };
+    const handleGol = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && period !== 'Intervalo') addEvent(matchId, { type: 'goal', teamId, playerId, minute: currentMinute }); };
+    const handleAssist = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && period !== 'Intervalo') addEvent(matchId, { type: 'assist', teamId, playerId, minute: currentMinute }); };
+    const handleGolContra = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && period !== 'Intervalo') addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); };
+    const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { if (matchId && match?.status === 'live' && period !== 'Intervalo') addEvent(matchId, { type, teamId, playerId, minute: currentMinute }); };
     const handlePeriodChange = async (newPeriod: string) => {
         if (!matchId || !match) return;
         
@@ -145,7 +145,7 @@ const MatchControl = () => {
     };
 
     const handleSubstitution = (teamId: string, playerInId: string, playerOutId: string) => {
-        if (matchId && match?.status === 'live') {
+        if (matchId && (match?.status === 'live' || period === 'Intervalo')) {
             const limit = league?.substitutionsLimit || 5;
             const teamSubstitutions = (match?.events || []).filter(e => e.type === 'substitution' && e.teamId === teamId).length;
             
@@ -288,13 +288,21 @@ const MatchControl = () => {
                                                             </div>
                                                             <div className="flex items-center gap-1">
                                                                 {!isPublicView && isAdmin && (
-                                                                    <div className={`flex items-center gap-1 ${match.status !== 'live' ? 'opacity-30 cursor-not-allowed' : ''}`}>
-                                                                        <button disabled={match.status !== 'live'} onClick={() => handleGol(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed" title="Gol"><Target size={14} /></button>
-                                                                        <button disabled={match.status !== 'live'} onClick={() => handleAssist(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed" title="Assistência"><Award size={14} /></button>
-                                                                        <button disabled={match.status !== 'live'} onClick={() => handleGolContra(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed" title="Gol Contra"><XCircle size={14} /></button>
-                                                                        <button disabled={match.status !== 'live'} onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed" title="Substituir"><ArrowLeftRight size={14} /></button>
-                                                                        <button disabled={match.status !== 'live'} onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs disabled:cursor-not-allowed" title="Amarelo">🟨</button>
-                                                                        <button disabled={match.status !== 'live'} onClick={() => handleCartao(team.id, player.id, 'red_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs disabled:cursor-not-allowed" title="Vermelho">🟥</button>
+                                                                    <div className="flex items-center gap-1">
+                                                                        <button disabled={match.status !== 'live' || period === 'Intervalo'} onClick={() => handleGol(team.id, player.id)} 
+                                                                            className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Gol"><Target size={14} /></button>
+                                                                        <button disabled={match.status !== 'live' || period === 'Intervalo'} onClick={() => handleAssist(team.id, player.id)} 
+                                                                            className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Assistência"><Award size={14} /></button>
+                                                                        <button disabled={match.status !== 'live' || period === 'Intervalo'} onClick={() => handleGolContra(team.id, player.id)} 
+                                                                            className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Gol Contra"><XCircle size={14} /></button>
+                                                                        
+                                                                        <button disabled={match.status !== 'live' && period !== 'Intervalo'} onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} 
+                                                                            className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Substituir"><ArrowLeftRight size={14} /></button>
+                                                                        
+                                                                        <button disabled={match.status !== 'live' || period === 'Intervalo'} onClick={() => handleCartao(team.id, player.id, 'yellow_card')} 
+                                                                            className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs disabled:cursor-not-allowed disabled:opacity-30`} title="Amarelo">🟨</button>
+                                                                        <button disabled={match.status !== 'live' || period === 'Intervalo'} onClick={() => handleCartao(team.id, player.id, 'red_card')} 
+                                                                            className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs disabled:cursor-not-allowed disabled:opacity-30`} title="Vermelho">🟥</button>
                                                                     </div>
                                                                 )}
                                                             </div>
