@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Heart, Star, Wind, Shield, Users, TrendingUp, Calendar, Zap } from 'lucide-react';
+import { Heart, Star, Wind, Shield, Users, TrendingUp, Calendar, Zap, Crown } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 import { useNavigate } from 'react-router-dom';
@@ -309,7 +309,7 @@ const MyInteractions = () => {
 
 const CrownIcon = ({ size, className }: { size: number, className?: string }) => (
     <div className={className}>
-        <TrendingUp size={size} />
+        <Crown size={size} />
     </div>
 );
 

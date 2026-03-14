@@ -400,57 +400,56 @@ const MatchControl = () => {
                         </div>
                     </section>
                 </div>
-            </div>
 
-            {/* Substitution Modal */}
-            {submittingPlayer && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-                    <div className="glass-panel w-full max-w-md p-6 md:p-8 border-primary/20 border shadow-[0_0_50px_rgba(109,40,217,0.2)]">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-lg font-black font-outfit uppercase tracking-widest flex items-center gap-3 text-white">
-                                <ArrowLeftRight size={20} className="text-primary" /> Substituição
-                            </h2>
-                            <button onClick={() => setSubmittingPlayer(null)} className="p-2 rounded-lg bg-white/5 text-slate-400 hover:text-white">
-                                <XCircle size={20} />
-                            </button>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="p-4 rounded-xl bg-danger/10 border border-danger/20">
-                                <span className="text-[0.6rem] font-black text-danger uppercase tracking-widest block mb-1">Efetuar Saída de:</span>
-                                <div className="flex items-center gap-3">
-                                    <TeamLogo src={[...homeTeam.players, ...awayTeam.players].find(p => p.id === submittingPlayer.playerOutId)?.photo} size={32} />
-                                    <span className="font-bold text-white uppercase">{[...homeTeam.players, ...awayTeam.players].find(p => p.id === submittingPlayer.playerOutId)?.name}</span>
-                                </div>
+                {/* Substitution Modal */}
+                {submittingPlayer && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+                        <div className="glass-panel w-full max-w-md p-6 md:p-8 border-primary/20 border shadow-[0_0_50px_rgba(109,40,217,0.2)]">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-lg font-black font-outfit uppercase tracking-widest flex items-center gap-3 text-white">
+                                    <ArrowLeftRight size={20} className="text-primary" /> Substituição
+                                </h2>
+                                <button onClick={() => setSubmittingPlayer(null)} className="p-2 rounded-lg bg-white/5 text-slate-400 hover:text-white">
+                                    <XCircle size={20} />
+                                </button>
                             </div>
 
-                            <div className="space-y-2">
-                                <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-2">Selecione quem entra:</span>
-                                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
-                                    {(submittingPlayer.teamId === homeTeam.id ? homeTeam : awayTeam).players
-                                        .filter(p => p.isReserve && !match.events.some(e => e.type === 'substitution' && e.playerId === p.id))
-                                        .map(reserve => (
-                                            <button key={reserve.id} onClick={() => handleSubstitution(submittingPlayer.teamId, reserve.id, submittingPlayer.playerOutId)}
-                                                className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] hover:bg-accent/20 hover:border-accent/40 transition-all text-left">
-                                                <TeamLogo src={reserve.photo} size={32} />
-                                                <div className="flex-1">
-                                                    <span className="font-black text-white text-xs uppercase block">#{reserve.number} {reserve.name}</span>
-                                                    <span className="text-[0.6rem] font-black text-accent uppercase tracking-widest">Disponível</span>
-                                                </div>
-                                            </button>
-                                        ))
-                                    }
-                                    {(submittingPlayer.teamId === homeTeam.id ? homeTeam : awayTeam).players.filter(p => p.isReserve && !match.events.some(e => e.type === 'substitution' && e.playerId === p.id)).length === 0 && (
-                                        <p className="text-center py-6 text-slate-600 text-[0.65rem] uppercase font-black uppercase tracking-widest italic">Nenhum reserva disponível</p>
-                                    )}
+                            <div className="space-y-4">
+                                <div className="p-4 rounded-xl bg-danger/10 border border-danger/20">
+                                    <span className="text-[0.6rem] font-black text-danger uppercase tracking-widest block mb-1">Efetuar Saída de:</span>
+                                    <div className="flex items-center gap-3">
+                                        <TeamLogo src={[...homeTeam.players, ...awayTeam.players].find(p => p.id === submittingPlayer.playerOutId)?.photo} size={32} />
+                                        <span className="font-bold text-white uppercase">{[...homeTeam.players, ...awayTeam.players].find(p => p.id === submittingPlayer.playerOutId)?.name}</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-2">Selecione quem entra:</span>
+                                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
+                                        {(submittingPlayer.teamId === homeTeam.id ? homeTeam : awayTeam).players
+                                            .filter(p => p.isReserve && !match.events.some(e => e.type === 'substitution' && e.playerId === p.id))
+                                            .map(reserve => (
+                                                <button key={reserve.id} onClick={() => handleSubstitution(submittingPlayer.teamId, reserve.id, submittingPlayer.playerOutId)}
+                                                    className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] hover:bg-accent/20 hover:border-accent/40 transition-all text-left">
+                                                    <TeamLogo src={reserve.photo} size={32} />
+                                                    <div className="flex-1">
+                                                        <span className="font-black text-white text-xs uppercase block">#{reserve.number} {reserve.name}</span>
+                                                        <span className="text-[0.6rem] font-black text-accent uppercase tracking-widest">Disponível</span>
+                                                    </div>
+                                                </button>
+                                            ))
+                                        }
+                                        {(submittingPlayer.teamId === homeTeam.id ? homeTeam : awayTeam).players.filter(p => p.isReserve && !match.events.some(e => e.type === 'substitution' && e.playerId === p.id)).length === 0 && (
+                                            <p className="text-center py-6 text-slate-600 text-[0.65rem] uppercase font-black uppercase tracking-widest italic">Nenhum reserva disponível</p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
-    );
+                )}
+            </div>
+            );
 };
 
-export default MatchControl;
+            export default MatchControl;

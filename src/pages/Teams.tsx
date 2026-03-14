@@ -155,6 +155,7 @@ const Teams = () => {
                             )}
                         </div>
                     </div>
+                    {isPublicView && <AdBanner position="side" className="mt-4" />}
                 </section>
 
                 {/* ── RIGHT: Elenco ───────────────────────────────────── */}
