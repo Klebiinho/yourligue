@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
-import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Upload, Link as LinkIcon } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Upload, Link as LinkIcon, Check } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import { useNavigate } from 'react-router-dom';
 
@@ -34,6 +34,7 @@ const Settings = () => {
         duration: 5
     });
     const [adInputMethod, setAdInputMethod] = useState<'file' | 'url'>('file');
+    const [selectedAds, setSelectedAds] = useState<string[]>([]);
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -353,10 +354,52 @@ const Settings = () => {
                                 </div>
                             )}
 
+                            {ads.length > 0 && (
+                                <div className="flex items-center justify-between mb-4 px-2">
+                                    <button
+                                        onClick={() => {
+                                            if (selectedAds.length === ads.length) setSelectedAds([]);
+                                            else setSelectedAds(ads.map(a => a.id));
+                                        }}
+                                        className="group/select flex items-center gap-2 text-[0.6rem] font-black text-slate-500 hover:text-white uppercase tracking-[0.2em] transition-all"
+                                    >
+                                        <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${selectedAds.length === ads.length ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-white/10 group-hover/select:border-white/30'}`}>
+                                            {selectedAds.length === ads.length && <Check size={12} strokeWidth={4} />}
+                                        </div>
+                                        {selectedAds.length === ads.length ? 'Desmarcar Tudo' : 'Selecionar Tudo'}
+                                    </button>
+
+                                    {selectedAds.length > 0 && (
+                                        <button
+                                            onClick={async () => {
+                                                if (window.confirm(`Excluir ${selectedAds.length} propagandas selecionadas?`)) {
+                                                    await Promise.all(selectedAds.map(id => deleteAd(id)));
+                                                    setSelectedAds([]);
+                                                }
+                                            }}
+                                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-danger/10 border border-danger/20 text-danger text-[0.6rem] font-black uppercase tracking-widest hover:bg-danger hover:text-white transition-all shadow-lg active:scale-95"
+                                        >
+                                            <Trash2 size={12} /> Excluir ({selectedAds.length})
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {ads.map(ad => (
-                                    <div key={ad.id} className="glass-panel p-5 flex items-center gap-4 relative group">
-                                        <div className="w-16 h-16 rounded-xl overflow-hidden bg-black/30 border border-white/5 flex-none">
+                                    <div key={ad.id}
+                                        onClick={() => {
+                                            if (selectedAds.includes(ad.id)) setSelectedAds(selectedAds.filter(id => id !== ad.id));
+                                            else setSelectedAds([...selectedAds, ad.id]);
+                                        }}
+                                        className={`glass-panel p-5 flex items-center gap-4 relative group transition-all cursor-pointer border-2 ${selectedAds.includes(ad.id) ? 'border-primary bg-primary/[0.03]' : 'border-transparent hover:border-white/5'}`}>
+
+                                        {/* Selection Indicator */}
+                                        <div className={`absolute top-3 left-3 w-4 h-4 rounded border flex items-center justify-center transition-all z-10 ${selectedAds.includes(ad.id) ? 'bg-primary border-primary text-white' : 'bg-black/40 border-white/10 opacity-0 group-hover:opacity-100'}`}>
+                                            {selectedAds.includes(ad.id) && <Check size={10} strokeWidth={4} />}
+                                        </div>
+
+                                        <div className="w-16 h-16 rounded-xl overflow-hidden bg-black/30 border border-white/5 flex-none ml-2">
                                             {ad.media_type === 'video' ? (
                                                 <div className="w-full h-full flex items-center justify-center bg-accent/20 text-accent">
                                                     <Video size={24} />
@@ -376,7 +419,7 @@ const Settings = () => {
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                                             <button
                                                 onClick={() => updateAd(ad.id, { active: !ad.active })}
                                                 className={`p-2 rounded-lg transition-all ${ad.active ? 'text-accent bg-accent/10' : 'text-slate-600 bg-white/5'}`}
