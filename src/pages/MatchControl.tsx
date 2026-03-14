@@ -107,7 +107,18 @@ const MatchControl = () => {
     const currentMinute = Math.floor(localSeconds / 60) + 1;
 
     const handleEndMatch = () => {
-        if (matchId && window.confirm('Deseja realmente finalizar a partida?')) {
+        if (!matchId) return;
+
+        if (period === '1º Tempo') {
+            if (window.confirm('Encerrar 1º tempo e iniciar o Intervalo?')) {
+                setTimerRunning(false);
+                handlePeriodChange('Intervalo');
+                return;
+            }
+            return;
+        }
+
+        if (window.confirm('Deseja realmente finalizar a partida definitivamente?')) {
             setTimerRunning(false);
             endMatch(matchId, localSeconds);
             navigate('/');
