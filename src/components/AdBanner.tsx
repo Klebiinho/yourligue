@@ -3,7 +3,7 @@ import { useLeague } from '../context/LeagueContext';
 import { ExternalLink, Play, X } from 'lucide-react';
 
 interface AdBannerProps {
-    position: 'top' | 'side' | 'between' | 'halftime' | 'overlay';
+    position: 'top' | 'side' | 'between' | 'halftime' | 'overlay' | 'home_stats' | 'teams_list' | 'matches_filter' | 'live_top' | 'standings_info' | 'panel_stats';
     className?: string;
     onClose?: () => void;
 }
@@ -61,7 +61,13 @@ const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
         side: "w-full aspect-[4/5] sm:aspect-square mb-4",
         between: "w-full h-32 sm:h-40 my-8",
         halftime: "w-full aspect-video max-w-2xl mx-auto my-8",
-        overlay: "absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+        overlay: "absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4",
+        home_stats: "w-full h-28 sm:h-32 mb-6 sm:mb-8",
+        teams_list: "w-full h-28 sm:h-32 mb-6 sm:mb-8",
+        matches_filter: "w-full h-28 sm:h-32 mb-6 sm:mb-8",
+        live_top: "w-full h-28 sm:h-32 mb-6 sm:mb-8",
+        standings_info: "w-full h-28 sm:h-32 mb-6 sm:mb-8",
+        panel_stats: "w-full h-28 sm:h-32 mb-6 sm:mb-8"
     };
 
     const Content = (

@@ -156,6 +156,12 @@ const Standings = () => {
                     </>
                 )}
             </section>
+
+            {isPublicView && (
+                <div className="mt-8">
+                    <AdBanner position="standings_info" />
+                </div>
+            )}
         </div>
     );
 };

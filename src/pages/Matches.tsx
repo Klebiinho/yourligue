@@ -173,6 +173,8 @@ const Matches = () => {
                 ))}
             </div>
 
+            {isPublicView && <AdBanner position="matches_filter" />}
+
             {/* Match List */}
             {filteredMatches.length === 0 ? (
                 <div className="glass-panel p-16 text-center opacity-30 flex flex-col items-center gap-4">

@@ -86,6 +86,8 @@ const LiveMatches = () => {
                 )}
             </section>
 
+            {isPublicView && <AdBanner position="live_top" />}
+
             {/* Recently Finished */}
             <section className="space-y-4">
                 <div className="flex items-center gap-2 mb-4">

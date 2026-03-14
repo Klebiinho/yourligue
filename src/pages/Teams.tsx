@@ -127,6 +127,8 @@ const Teams = () => {
                         </div>
                     )}
 
+                    {isPublicView && <AdBanner position="teams_list" className="mb-4" />}
+
                     {/* Club List */}
                     <div className="glass-panel p-4 sm:p-6">
                         <div className="flex items-center justify-between mb-4">
@@ -155,7 +157,6 @@ const Teams = () => {
                             )}
                         </div>
                     </div>
-                    {isPublicView && <AdBanner position="side" className="mt-4" />}
                 </section>
 
                 {/* ── RIGHT: Elenco ───────────────────────────────────── */}

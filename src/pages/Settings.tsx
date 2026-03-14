@@ -325,8 +325,13 @@ const Settings = () => {
                                                 <select value={formAd.position} onChange={e => setFormAd({ ...formAd, position: e.target.value as any })}
                                                     className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-accent appearance-none">
                                                     <option value="top">Topo da Página</option>
+                                                    <option value="home_stats">Home (Cards Principais)</option>
+                                                    <option value="teams_list">Times (Abaixo Cadastro)</option>
+                                                    <option value="matches_filter">Partidas (Abaixo Filtros)</option>
+                                                    <option value="live_top">Ao Vivo (Topo Resultados)</option>
+                                                    <option value="standings_info">Tabela (Abaixo Legenda)</option>
+                                                    <option value="panel_stats">Painel (Abaixo Stats Time)</option>
                                                     <option value="side">Lateral (Barra)</option>
-                                                    <option value="between">Entre Conteúdos</option>
                                                     <option value="halftime">Intervalo do Jogo</option>
                                                     <option value="overlay">Overlay no Player</option>
                                                 </select>

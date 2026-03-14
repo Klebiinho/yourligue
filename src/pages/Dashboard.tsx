@@ -124,7 +124,7 @@ const Dashboard = () => {
                 ))}
             </div>
 
-            {isPublicView && <AdBanner position="between" />}
+            {isPublicView && <AdBanner position="home_stats" />}
 
             {/* ── Mobile Tabs Switcher ── */}
             <div className="flex lg:hidden bg-black/40 p-1 rounded-2xl border border-white/5">

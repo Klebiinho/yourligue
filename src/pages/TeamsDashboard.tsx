@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { Users, Trash2, Edit2, PlusCircle, Star, TrendingUp, Crown, ShieldCheck } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
+import AdBanner from '../components/AdBanner';
 
 const TeamsDashboard = () => {
     const { league, teams, addTeam, updateTeam, deleteTeam, addPlayer, updatePlayer, removePlayer, toggleCaptain } = useLeague();
@@ -193,6 +194,8 @@ const TeamsDashboard = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            <AdBanner position="panel_stats" />
 
                             {/* Player Panel */}
                             <div className="glass-panel p-4 sm:p-6 shadow-xl">
