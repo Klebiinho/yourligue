@@ -118,13 +118,7 @@ const AppRouter = () => {
     return () => window.removeEventListener('hashchange', cleanHash);
   }, []);
 
-  console.log('AppRouter State:', { 
-    authLoading: loading, 
-    leagueLoading, 
-    league: league?.name, 
-    slug, 
-    notFound 
-  });
+
 
   if (loading || (leagueLoading && !notFound)) return <LoadingScreen />;
 

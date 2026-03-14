@@ -21,9 +21,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Safe timeout to prevent stuck loading screen if Supabase is slow/down
+        const timeout = setTimeout(() => {
+            if (loading) {
+                console.warn('AuthContext: getSession timeout reached. Forcing loading false.');
+                setLoading(false);
+            }
+        }, 5000);
+
         supabase.auth.getSession().then(({ data: { session } }) => {
+            clearTimeout(timeout);
             setSession(session);
             setUser(session?.user ?? null);
+            setLoading(false);
+        }).catch(err => {
+            console.error('AuthContext: getSession error:', err);
+            clearTimeout(timeout);
             setLoading(false);
         });
 

@@ -219,17 +219,25 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     // ── Load all leagues for user ──────────────────────────────
     useEffect(() => {
+        // Safety timeout for global loading
+        const globalTimeout = setTimeout(() => {
+            if (loading) {
+                console.warn('LeagueContext: Global loading timeout reached.');
+                setLoading(false);
+            }
+        }, 10000);
+
         if (!user) {
             setLeagues([]);
-            // Only clear current league if we are NOT in public view mode
             if (!isPublicView) {
                 setLeague(null);
                 setLoading(false);
+                clearTimeout(globalTimeout);
             }
-            // In public view, loadPublicLeague will handle setLoading(false)
             return;
         }
-        loadLeagues();
+        
+        loadLeagues().finally(() => clearTimeout(globalTimeout));
     }, [user, isPublicView]);
 
     const loadLeagues = async () => {
@@ -360,7 +368,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 return false;
             }
         } catch (err) {
-            console.error('Error loading public league:', err);
             setLeague(null);
             return false;
         } finally {
@@ -883,7 +890,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             })));
         }
     };
-
     const updateBracket = async (bracketId: string, data: Partial<BracketMatch>) => {
         await supabase.from('brackets').update({
             home_score: data.homeScore, away_score: data.awayScore, status: data.status,
@@ -891,6 +897,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }).eq('id', bracketId);
         setBrackets(prev => prev.map(b => b.id === bracketId ? { ...b, ...data } : b));
     };
+
+
 
     const generateGroups = async (teamsPerGroup: number) => {
         if (!league || teams.length === 0) return;
