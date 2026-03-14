@@ -133,6 +133,8 @@ const MatchControl = () => {
             newStatus = 'scheduled'; // Auto-pause at halftime
         } else if (newPeriod === '2º Tempo' && localSeconds < (match.halfLength || 45) * 60) {
             newTimer = (match.halfLength || 45) * 60;
+        } else if (newPeriod === 'Prorrogação' && localSeconds < (match.halfLength || 45) * 120) {
+            newTimer = (match.halfLength || 45) * 120;
         } else if (newPeriod === 'Pênaltis') {
             newStatus = 'scheduled'; // Stop main clock for penalties
         }
@@ -360,11 +362,11 @@ const MatchControl = () => {
                             <div className="grid grid-cols-2 gap-4 mb-5">
                                 <div className="col-span-2 space-y-1.5">
                                     <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Etapa Atual</label>
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                        {['1º Tempo', 'Intervalo', '2º Tempo', 'Pênaltis'].map(p => (
+                                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                        {['1º Tempo', 'Intervalo', '2º Tempo', 'Prorrogação', 'Pênaltis'].map(p => (
                                             <button key={p} onClick={() => handlePeriodChange(p)}
                                                 className={`py-2 px-1 rounded-lg text-[0.6rem] font-black uppercase tracking-tight transition-all border ${period === p ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}>
-                                                {p}
+                                                {p === 'Prorrogação' ? 'Prorrog.' : p}
                                             </button>
                                         ))}
                                     </div>
