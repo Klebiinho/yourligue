@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LeagueProvider, useLeague } from './context/LeagueContext';
 import AuthPage from './pages/AuthPage.tsx';
@@ -81,6 +81,7 @@ const PublicLayout = () => (
 const AppRouter = () => {
   const { user, loading } = useAuth();
   const { leagues, loading: leagueLoading, league, loadPublicLeague } = useLeague();
+  const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
   const [notFound, setNotFound] = useState(false);
 
@@ -106,27 +107,30 @@ const AppRouter = () => {
     }
   }, [leagueLoading, slug, league]);
 
-  // Clean sensitive hash fragments (from OAuth) and ensure home redirect
+  // Clean sensitive hash fragments (from OAuth) AFTER login is successful
   useEffect(() => {
-    const cleanAuthHash = () => {
-      // If we have an access token in the hash, we know we just returned from OAuth
-      if (window.location.hash.includes('access_token=') || window.location.hash === '#' || window.location.hash === '') {
-        console.log('App: Cleaning auth residue from URL');
+    if (user && window.location.hash.includes('access_token=')) {
+        console.log('App: Cleaning auth residue from URL after successful login');
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    
+    // Simple hash cleaner for empty #
+    const cleanEmptyHash = () => {
+      if (window.location.hash === '#' || window.location.hash === '') {
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
     };
-
-    cleanAuthHash();
-    window.addEventListener('hashchange', cleanAuthHash);
-    return () => window.removeEventListener('hashchange', cleanAuthHash);
+    cleanEmptyHash();
+    window.addEventListener('hashchange', cleanEmptyHash);
+    return () => window.removeEventListener('hashchange', cleanEmptyHash);
   }, [user]);
 
-  // Redirect to home if authenticated but caught in a weird state/path
+  // Redirect to leagues if authenticated but caught in a weird state
   useEffect(() => {
     if (user && !loading && (window.location.hash.includes('access_token') || window.location.pathname === '/auth')) {
-       window.history.replaceState(null, '', '/');
+       navigate('/leagues', { replace: true });
     }
-  }, [user, loading]);
+  }, [user, loading, navigate]);
 
 
 

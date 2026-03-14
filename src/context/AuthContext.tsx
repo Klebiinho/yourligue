@@ -64,7 +64,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const signInWithGoogle = async () => {
-        const redirectTo = window.location.origin;
+        // Redireciona especificamente para /leagues (Central de Ligas)
+        const redirectTo = `${window.location.origin}/leagues`;
         console.log('AuthContext: Initiating Google Sign-In with redirect to:', redirectTo);
         
         const { error } = await supabase.auth.signInWithOAuth({
