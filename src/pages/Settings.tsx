@@ -335,7 +335,7 @@ const Settings = () => {
                                     )}
                                     {formAd.mobile_media_url && (
                                         <div className="rounded-2xl overflow-hidden glass-panel border-accent/20 border p-2">
-                                            <div className="aspect-square sm:aspect-video w-full bg-black/40 rounded-xl overflow-hidden relative">
+                                            <div className="aspect-[5/2] w-full bg-black/40 rounded-xl overflow-hidden relative">
                                                 {formAd.media_type === 'video' ? (
                                                     <video src={formAd.mobile_media_url} controls className="w-full h-full object-cover" style={{ objectPosition: formAd.object_position }} />
                                                 ) : (
@@ -384,7 +384,7 @@ const Settings = () => {
 
                                                 <div className="space-y-4">
                                                     <div className="flex items-center justify-between">
-                                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Mídia Mobile (600x600)</label>
+                                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Mídia Mobile (800x320)</label>
                                                     </div>
                                                     {adInputMethod === 'file' ? (
                                                         <label className={`w-full bg-white/5 border-2 border-dashed rounded-xl px-4 py-6 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${formAd.mobile_media_url ? 'border-accent/40 bg-accent/5' : 'border-white/10 hover:border-white/20'}`}>
