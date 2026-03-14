@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Users } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
@@ -339,8 +339,8 @@ const MatchControl = () => {
                                             <div className="grid grid-cols-1 gap-2">
                                                 {team.players.map((player: Player) => {
                                                     const { isRedCarded } = getPlayerStatus(player.id);
-                                                    const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === player.id).length;
-                                                    const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === player.id).length;
+                                                    // const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === player.id).length;
+                                                    // const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === player.id).length;
                                                     // const wasSubbedOut = subOuts > subIns;
                                                     const onPitch = isPlayerOnPitch(match, player.id);
                                                     
