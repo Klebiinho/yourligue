@@ -107,7 +107,7 @@ const MatchControl = () => {
     const currentMinute = Math.floor(localSeconds / 60) + 1;
 
     const handleEndMatch = () => {
-        if (!matchId) return;
+        if (!matchId || !match) return;
 
         if (period === '1º Tempo') {
             if (window.confirm('Encerrar 1º tempo e iniciar o Intervalo?')) {
@@ -116,6 +116,25 @@ const MatchControl = () => {
                 return;
             }
             return;
+        }
+
+        if (period === 'Intervalo') {
+            if (window.confirm('Iniciar o 2º tempo agora?')) {
+                const startTime = (match?.halfLength || 45) * 60;
+                handlePeriodChange('2º Tempo');
+                setTimerRunning(true);
+                startMatch(matchId, startTime);
+                return;
+            }
+            return;
+        }
+
+        if (period === '2º Tempo' && match.homeScore === match.awayScore) {
+            if (window.confirm('A partida terminou empatada. Deseja iniciar a Prorrogação? \n\n(Clique em Cancelar para finalizar a partida como empate)')) {
+                setTimerRunning(false);
+                handlePeriodChange('Prorrogação');
+                return;
+            }
         }
 
         if (window.confirm('Deseja realmente finalizar a partida definitivamente?')) {
