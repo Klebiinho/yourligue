@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
@@ -180,6 +180,61 @@ interface LeagueContextType {
     deleteAd: (id: string) => Promise<{ error: string | null }>;
 }
 
+// ─── Mappings (DB to Frontend) ──────────────────────────────
+const mapDBEvent = (e: any): MatchEvent => ({
+    id: e.id,
+    type: e.type,
+    teamId: e.team_id,
+    playerId: e.player_id,
+    playerOutId: e.player_out_id,
+    minute: e.minute
+});
+
+const mapDBMatch = (m: any): Match => ({
+    id: m.id,
+    homeTeamId: m.home_team_id,
+    awayTeamId: m.away_team_id,
+    homeScore: m.home_score || 0,
+    awayScore: m.away_score || 0,
+    status: m.status,
+    timer: m.timer || 0,
+    youtubeLiveId: m.youtube_live_id,
+    halfLength: m.half_length,
+    extraTime: m.extra_time,
+    period: m.period,
+    scheduledAt: m.scheduled_at,
+    location: m.location,
+    updatedAt: m.updated_at || m.created_at || new Date().toISOString(),
+    events: (m.match_events || []).map(mapDBEvent)
+});
+
+const mapDBPlayer = (p: any): Player => ({
+    id: p.id,
+    name: p.name,
+    number: p.number || 0,
+    position: p.position || '',
+    photo: p.photo || '',
+    isCaptain: p.is_captain || false,
+    isReserve: p.is_reserve || false,
+    stats: { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0 }
+});
+
+const mapDBTeam = (t: any): Team => ({
+    id: t.id,
+    name: t.name,
+    logo: t.logo || '',
+    group_name: t.group_name || '',
+    players: (t.players || []).map(mapDBPlayer),
+    stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 }
+});
+
+const mapDBBracket = (b: any): BracketMatch => ({
+    id: b.id, round: b.round, matchOrder: b.match_order,
+    homeTeamId: b.home_team_id, awayTeamId: b.away_team_id,
+    homeScore: b.home_score || 0, awayScore: b.away_score || 0, 
+    status: b.status
+});
+
 const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
 
 // ─── Provider ────────────────────────────────────────────────
@@ -189,9 +244,47 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const [leagues, setLeagues] = useState<League[]>([]);
     const [followedLeagues, setFollowedLeagues] = useState<League[]>([]);
     const [league, setLeague] = useState<League | null>(null);
-    const [teams, setTeams] = useState<Team[]>([]);
-    const [matches, setMatches] = useState<Match[]>([]);
+    const [rawTeams, setRawTeams] = useState<Team[]>([]);
+    const [rawMatches, setRawMatches] = useState<Match[]>([]);
     const [brackets, setBrackets] = useState<BracketMatch[]>([]);
+    
+    // ─── Memoized Enriched Data (No Refetch) ─────────────────────
+    const teams = useMemo(() => {
+        if (!rawTeams.length) return [];
+        const allEvents = rawMatches.flatMap(m => m.events);
+        
+        return rawTeams.map(t => {
+            const teamMatches = rawMatches.filter(
+                m => m.status === 'finished' && (m.homeTeamId === t.id || m.awayTeamId === t.id)
+            );
+            
+            let wins = 0, draws = 0, losses = 0, goalsFor = 0, goalsAgainst = 0;
+            teamMatches.forEach(m => {
+                const isHome = m.homeTeamId === t.id;
+                const gf = isHome ? m.homeScore : m.awayScore;
+                const ga = isHome ? m.awayScore : m.homeScore;
+                goalsFor += gf; goalsAgainst += ga;
+                if (gf > ga) wins++; else if (gf === ga) draws++; else losses++;
+            });
+
+            return {
+                ...t,
+                players: t.players.map(p => ({
+                    ...p,
+                    stats: {
+                        goals: allEvents.filter(e => e.playerId === p.id && (e.type === 'goal' || e.type === 'penalty_goal')).length,
+                        assists: allEvents.filter(e => e.playerId === p.id && e.type === 'assist').length,
+                        ownGoals: allEvents.filter(e => e.playerId === p.id && e.type === 'own_goal').length,
+                        yellowCards: allEvents.filter(e => e.playerId === p.id && e.type === 'yellow_card').length,
+                        redCards: allEvents.filter(e => e.playerId === p.id && e.type === 'red_card').length,
+                    }
+                })),
+                stats: { matches: teamMatches.length, wins, draws, losses, goalsFor, goalsAgainst }
+            };
+        });
+    }, [rawTeams, rawMatches]);
+
+    const matches = useMemo(() => rawMatches, [rawMatches]);
     const [loading, setLoading] = useState(true);
     const [dataLoading, setDataLoading] = useState(false);
     const [isPublicView, setIsPublicView] = useState(false);
@@ -212,7 +305,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => { interactionsRef.current = userInteractions; }, [userInteractions]);
 
     // Track if we are doing a silent background refresh
-    const isBackgroundRefreshing = useRef(false);
 
     const isAdmin = !!user && !!league && league.userId === user.id;
 
@@ -410,184 +502,142 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     // ── Load league data (teams, matches, brackets) ────────────
     const loadLeagueData = useCallback(async (leagueId: string, background = false) => {
         if (!background) setDataLoading(true);
-        isBackgroundRefreshing.current = background;
         loadUserInteractions(leagueId);
         loadSupportCounts(leagueId);
 
-        // Teams + Players
-        const { data: teamsData } = await supabase
-            .from('teams').select('*, players(*)').eq('league_id', leagueId).order('created_at');
+        // Fetch everything in parallel
+        const [teamsRes, matchesRes, bracketsRes] = await Promise.all([
+            supabase.from('teams').select('*, players(*)').eq('league_id', leagueId).order('created_at'),
+            supabase.from('matches').select('*, match_events(*)').eq('league_id', leagueId).order('created_at'),
+            supabase.from('brackets').select('*').eq('league_id', leagueId).order('match_order')
+        ]);
 
-        // Matches + Events
-        const { data: matchesData } = await supabase
-            .from('matches').select('*, match_events(*)').eq('league_id', leagueId).order('created_at');
-
-        // Brackets
-        const { data: bracketsData } = await supabase
-            .from('brackets').select('*').eq('league_id', leagueId).order('match_order');
-
-        if (teamsData) {
-            // First pass: build events per player from matches
-            const allEvents = (matchesData || []).flatMap((m: any) => m.match_events || []);
-
-            const mapped: Team[] = teamsData.map((t: any) => {
-                // Calculate stats from finished matches
-                const teamMatches = (matchesData || []).filter(
-                    (m: any) => m.status === 'finished' && (m.home_team_id === t.id || m.away_team_id === t.id)
-                );
-                let wins = 0, draws = 0, losses = 0, goalsFor = 0, goalsAgainst = 0;
-                teamMatches.forEach((m: any) => {
-                    const isHome = m.home_team_id === t.id;
-                    const gf = isHome ? m.home_score : m.away_score;
-                    const ga = isHome ? m.away_score : m.home_score;
-                    goalsFor += gf; goalsAgainst += ga;
-                    if (gf > ga) wins++; else if (gf === ga) draws++; else losses++;
-                });
-
-                return {
-                    id: t.id, name: t.name, logo: t.logo || '',
-                    group_name: t.group_name || '',
-                    players: (t.players || []).map((p: any) => ({
-                        id: p.id, name: p.name, number: p.number, position: p.position,
-                        photo: p.photo || '', isCaptain: p.is_captain || false,
-                        isReserve: p.is_reserve || false,
-                        stats: {
-                            goals: allEvents.filter((e: any) => e.player_id === p.id && (e.type === 'goal' || e.type === 'penalty_goal')).length,
-                            assists: allEvents.filter((e: any) => e.player_id === p.id && e.type === 'assist').length,
-                            ownGoals: allEvents.filter((e: any) => e.player_id === p.id && e.type === 'own_goal').length,
-                            yellowCards: allEvents.filter((e: any) => e.player_id === p.id && (e.type === 'yellow_card' || e.type === 'yellow')).length,
-                            redCards: allEvents.filter((e: any) => e.player_id === p.id && (e.type === 'red_card' || e.type === 'red')).length,
-                        }
-                    })),
-                    stats: { matches: teamMatches.length, wins, draws, losses, goalsFor, goalsAgainst }
-                };
-            });
-            setTeams(mapped);
-        }
-
-        if (matchesData) {
-            const mapped: Match[] = matchesData.map((m: any) => ({
-                id: m.id, homeTeamId: m.home_team_id, awayTeamId: m.away_team_id,
-                homeScore: m.home_score, awayScore: m.away_score,
-                status: m.status, timer: m.timer,
-                youtubeLiveId: m.youtube_live_id, halfLength: m.half_length,
-                extraTime: m.extra_time, period: m.period,
-                scheduledAt: m.scheduled_at, location: m.location, 
-                updatedAt: m.updated_at || m.created_at || new Date().toISOString(),
-                events: (m.match_events || []).map((e: any) => ({
-                    id: e.id, type: e.type, teamId: e.team_id, playerId: e.player_id,
-                    playerOutId: e.player_out_id, minute: e.minute
-                }))
-            }));
-            setMatches(mapped);
-        }
-
-        if (bracketsData) {
-            const mapped: BracketMatch[] = bracketsData.map((b: any) => ({
-                id: b.id, round: b.round, matchOrder: b.match_order,
-                homeTeamId: b.home_team_id, awayTeamId: b.away_team_id,
-                homeScore: b.home_score, awayScore: b.away_score, status: b.status
-            }));
-            setBrackets(mapped);
-        }
+        if (teamsRes.data) setRawTeams(teamsRes.data.map(mapDBTeam));
+        if (matchesRes.data) setRawMatches(matchesRes.data.map(mapDBMatch));
+        if (bracketsRes.data) setBrackets(bracketsRes.data.map(mapDBBracket));
 
         setDataLoading(false);
-    }, []);
+    }, [loadUserInteractions, loadSupportCounts]);
 
     useEffect(() => {
-        if (league) {
-            loadLeagueData(league.id);
-            localStorage.setItem('selectedLeagueId', league.id);
+        if (!league) {
+            setRawTeams([]); setRawMatches([]); setBrackets([]); setUserInteractions([]); setSupportCounts({});
+            return;
+        }
 
-            let refreshTimeout: any;
-            const debouncedRefresh = () => {
-                clearTimeout(refreshTimeout);
-                refreshTimeout = setTimeout(() => loadLeagueData(league.id, true), 500);
-            };
+        loadLeagueData(league.id);
+        localStorage.setItem('selectedLeagueId', league.id);
 
-            // Subscribe to realtime updates
-            const channel = supabase.channel(`league-${league.id}`)
-                // 1. Listen for Broadcasts (High frequency, low cost)
-                .on('broadcast', { event: 'match-update' }, ({ payload }) => {
-                    setMatches(prev => prev.map(m => m.id === payload.matchId ? { 
-                        ...m, 
-                        timer: payload.timer,
-                        homeScore: payload.homeScore,
-                        awayScore: payload.awayScore,
-                        period: payload.period,
-                        status: payload.status
-                    } : m));
-                })
-                // 2. Listen for DB changes (Backups and persistent events)
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_events' }, payload => {
-                    const event = payload.new as any;
-                    const match = matchesRef.current.find(m => m.id === event.match_id);
-                    if (!match) return;
+        // ─── CENTRALIZED REALTIME (GOLDEN RULE: ZERO REFETCH) ───────
+        const channel = supabase.channel(`league-central-${league.id}`)
+            .on('postgres_changes', { event: '*', schema: 'public', filter: `league_id=eq.${league.id}` }, payload => {
+                const { table, eventType, new: newRow, old: oldRow } = payload;
+                const row = (newRow || oldRow) as any;
+                console.log(`[Realtime Central] ${table} ${eventType}`, payload);
 
-                    if (event.type === 'goal' || event.type === 'penalty_goal') {
-                        // Local score update to be immediate
-                        setMatches(prev => prev.map(m => m.id === event.match_id ? {
-                            ...m,
-                            homeScore: event.team_id === m.homeTeamId ? m.homeScore + 1 : m.homeScore,
-                            awayScore: event.team_id === m.awayTeamId ? m.awayScore + 1 : m.awayScore
-                        } : m));
-                        
-                        // Notification logic
-                        const supportedTeam = interactionsRef.current.find(i => i.interactionType === 'supporting');
-                        if (supportedTeam && (match.homeTeamId === supportedTeam.teamId || match.awayTeamId === supportedTeam.teamId)) {
-                            const team = teamsRef.current.find(t => t.id === event.team_id);
-                            addNotification({
-                                id: Math.random().toString(36).substr(2, 9),
-                                title: '⚽ GOOOL!',
-                                message: `Gol do ${team?.name || 'seu time'}!`,
-                                type: 'goal',
-                                teamId: event.team_id,
-                                createdAt: Date.now()
+                switch (table) {
+                    case 'matches':
+                        if (eventType === 'DELETE') {
+                            setRawMatches(prev => prev.filter(m => m.id !== row.id));
+                        } else {
+                            setRawMatches(prev => prev.some(m => m.id === row.id)
+                                ? prev.map(m => m.id === row.id ? { ...m, ...mapDBMatch(row), events: m.events } : m)
+                                : [...prev, mapDBMatch(row)]);
+                        }
+                        break;
+
+                    case 'teams':
+                        if (eventType === 'DELETE') {
+                            setRawTeams(prev => prev.filter(t => t.id !== row.id));
+                        } else {
+                            setRawTeams(prev => prev.some(t => t.id === row.id)
+                                ? prev.map(t => t.id === row.id ? { ...t, ...mapDBTeam(row), players: t.players } : t)
+                                : [...prev, mapDBTeam(row)]);
+                        }
+                        break;
+
+                    case 'brackets':
+                        if (eventType === 'DELETE') {
+                            setBrackets(prev => prev.filter(b => b.id !== row.id));
+                        } else {
+                            setBrackets(prev => prev.some(b => b.id === row.id)
+                                ? prev.map(b => b.id === row.id ? mapDBBracket(row) : b)
+                                : [...prev, mapDBBracket(row)]);
+                        }
+                        break;
+                    
+                    case 'ads':
+                         if (eventType === 'DELETE') {
+                            setAds(prev => prev.filter(a => a.id !== row.id));
+                        } else {
+                            setAds(prev => {
+                                const ad = row as Ad;
+                                return prev.some(a => a.id === ad.id)
+                                    ? prev.map(a => a.id === ad.id ? ad : a)
+                                    : [...prev, ad];
                             });
                         }
-                    }
-                    debouncedRefresh(); // Refresh for scorers/stats
-                })
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches', filter: `league_id=eq.${league.id}` }, payload => {
-                    const match = payload.new as any;
-                    const oldMatch = payload.old as any;
-                    
-                    // Sync with DB state (Mapping snake_case to camelCase)
-                    setMatches(prev => prev.map(m => m.id === match.id ? { 
-                        ...m, 
-                        status: match.status,
-                        timer: match.timer,
-                        homeScore: match.home_score,
-                        awayScore: match.away_score,
-                        period: match.period,
-                        updatedAt: match.updated_at,
-                        halfLength: match.half_length,
-                        extraTime: match.extra_time
-                    } : m));
+                        break;
+                }
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, payload => {
+                const { eventType, new: newRow, old: oldRow } = payload;
+                const playerRow = (newRow || oldRow) as any;
+                const teamId = playerRow?.team_id;
+                if (!teamId) return;
+                
+                setRawTeams(prev => prev.map(t => t.id === teamId ? {
+                    ...t,
+                    players: eventType === 'DELETE' 
+                        ? t.players.filter(p => p.id !== playerRow.id)
+                        : t.players.some(p => p.id === playerRow.id)
+                            ? t.players.map(p => p.id === playerRow.id ? mapDBPlayer(playerRow) : p)
+                            : [...t.players, mapDBPlayer(playerRow)]
+                } : t));
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'match_events' }, payload => {
+                const { eventType, new: newRow, old: oldRow } = payload;
+                const eventRow = (newRow || oldRow) as any;
+                const matchId = eventRow?.match_id;
+                if (!matchId) return;
 
-                    if (match.status !== oldMatch.status) {
-                        debouncedRefresh(); // Refresh standings if match ended
-                    }
-                })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'teams', filter: `league_id=eq.${league.id}` }, debouncedRefresh)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, (payload) => {
-                    const p = (payload.new || payload.old) as any;
-                    if (p && teamsRef.current.some(t => t.id === p.team_id)) debouncedRefresh();
-                })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'ads', filter: `league_id=eq.${league.id}` }, () => {
-                    console.log('Realtime: Ad change detected, refreshing...');
-                    debouncedRefresh();
-                })
-                .subscribe();
+                setRawMatches((prev: Match[]) => prev.map(m => m.id === matchId ? {
+                    ...m,
+                    events: eventType === 'DELETE'
+                        ? m.events.filter(e => e.id !== eventRow.id)
+                        : m.events.some(e => e.id === eventRow.id)
+                            ? m.events.map(e => e.id === eventRow.id ? mapDBEvent(eventRow) : e)
+                            : [...m.events, mapDBEvent(eventRow)]
+                } : m));
 
-            return () => {
-                supabase.removeChannel(channel);
-                clearTimeout(refreshTimeout);
-            };
-        } else {
-            setTeams([]); setMatches([]); setBrackets([]); setUserInteractions([]); setSupportCounts({});
-        }
-    }, [league?.id]);
+                // Notification on Goal
+                if (eventType === 'INSERT' && (eventRow.type === 'goal' || eventRow.type === 'penalty_goal')) {
+                    // We need the team name for the notification
+                    const team = teamsRef.current.find(rt => rt.id === eventRow.team_id);
+                    addNotification({
+                        id: Math.random().toString(36).substr(2, 9),
+                        title: '⚽ GOOOL!',
+                        message: `Gol do ${team?.name || 'seu time'}!`,
+                        type: 'goal',
+                        teamId: eventRow.team_id,
+                        createdAt: Date.now()
+                    });
+                }
+            })
+            .on('broadcast', { event: 'match-update' }, ({ payload }) => {
+                setRawMatches((prev: Match[]) => prev.map(m => m.id === payload.matchId ? { 
+                    ...m, 
+                    timer: payload.timer,
+                    homeScore: payload.homeScore,
+                    awayScore: payload.awayScore,
+                    period: payload.period,
+                    status: payload.status
+                } : m));
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [league?.id, loadLeagueData]);
 
     const addNotification = (notif: LeagueNotification) => {
         setNotifications(prev => [notif, ...prev].slice(0, 5));
@@ -695,30 +745,31 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // ── Team CRUD ──────────────────────────────────────────────
+    // ── Team CRUD ──────────────────────────────────────────────
     const addTeam = async (team: { name: string; logo: string }) => {
         if (!league) return { error: 'Nenhuma liga selecionada' };
         const { data, error } = await supabase.from('teams').insert({ league_id: league.id, name: team.name, logo: team.logo }).select().single();
         if (error) return { error: error.message };
         if (data) {
-            const newTeam: Team = { id: data.id, name: data.name, logo: data.logo || '', players: [], stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 } };
-            setTeams(prev => [...prev, newTeam]);
+            setRawTeams(prev => [...prev, mapDBTeam(data)]);
         }
         return { error: null };
     };
 
     const updateTeam = async (teamId: string, data: Partial<{ name: string; logo: string }>) => {
         await supabase.from('teams').update(data).eq('id', teamId);
-        setTeams(prev => prev.map(t => t.id === teamId ? { ...t, ...data } : t));
+        setRawTeams(prev => prev.map(t => t.id === teamId ? { ...t, ...data } : t));
     };
 
     const deleteTeam = async (teamId: string) => {
         await supabase.from('teams').delete().eq('id', teamId);
-        setTeams(prev => prev.filter(t => t.id !== teamId));
+        setRawTeams(prev => prev.filter(t => t.id !== teamId));
     };
 
     // ── Player CRUD ────────────────────────────────────────────
+    // ── Player CRUD ────────────────────────────────────────────
     const addPlayer = async (teamId: string, player: Omit<Player, 'id' | 'stats'>) => {
-        const team = teams.find(t => t.id === teamId);
+        const team = rawTeams.find(t => t.id === teamId);
         if (team?.players.some(p => p.number === player.number)) {
             return { error: `O número ${player.number} já está sendo usado neste time.` };
         }
@@ -729,12 +780,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }).select().single();
         if (error) return { error: error.message };
         if (data) {
-            const np: Player = {
-                id: data.id, name: data.name, number: data.number, position: data.position,
-                photo: data.photo || '', isCaptain: data.is_captain, isReserve: data.is_reserve,
-                stats: { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0 }
-            };
-            setTeams(prev => prev.map(t => t.id === teamId ? { ...t, players: [...t.players, np] } : t));
+            setRawTeams(prev => prev.map(t => t.id === teamId ? { ...t, players: [...t.players, mapDBPlayer(data)] } : t));
         }
         return { error: null };
     };
@@ -744,7 +790,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             name: data.name, number: data.number, position: data.position,
             photo: data.photo, is_captain: data.isCaptain, is_reserve: data.isReserve
         }).eq('id', playerId);
-        setTeams(prev => prev.map(t => t.id === teamId
+        setRawTeams(prev => prev.map(t => t.id === teamId
             ? { ...t, players: t.players.map(p => p.id === playerId ? { ...p, ...data } : p) }
             : t
         ));
@@ -752,20 +798,20 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const removePlayer = async (teamId: string, playerId: string) => {
         await supabase.from('players').delete().eq('id', playerId);
-        setTeams(prev => prev.map(t => t.id === teamId ? { ...t, players: t.players.filter(p => p.id !== playerId) } : t));
+        setRawTeams(prev => prev.map(t => t.id === teamId ? { ...t, players: t.players.filter(p => p.id !== playerId) } : t));
     };
 
     const toggleCaptain = async (teamId: string, playerId: string) => {
-        const team = teams.find(t => t.id === teamId);
+        const team = rawTeams.find(t => t.id === teamId);
         if (!team) return;
         const pl = team.players.find(p => p.id === playerId);
         const newVal = !pl?.isCaptain;
-        // Remove captain from others
+        // Optimization: bulk update handled by DB trigger would be better but for consistency:
         for (const p of team.players) {
             if (p.isCaptain && p.id !== playerId) await supabase.from('players').update({ is_captain: false }).eq('id', p.id);
         }
         await supabase.from('players').update({ is_captain: newVal }).eq('id', playerId);
-        setTeams(prev => prev.map(t => t.id === teamId
+        setRawTeams(prev => prev.map(t => t.id === teamId
             ? { ...t, players: t.players.map(p => ({ ...p, isCaptain: p.id === playerId ? newVal : false })) }
             : t
         ));
@@ -782,8 +828,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }).select().single();
         if (error) return { error: error.message };
         if (row) {
-            const nm: Match = { id: row.id, homeTeamId: row.home_team_id, awayTeamId: row.away_team_id, homeScore: 0, awayScore: 0, status: 'scheduled', events: [], timer: 0, youtubeLiveId: row.youtube_live_id, halfLength: row.half_length, extraTime: 0, period: '1º Tempo', scheduledAt: row.scheduled_at, location: row.location };
-            setMatches(prev => [...prev, nm]);
+            setRawMatches((prev: Match[]) => [...prev, mapDBMatch(row)]);
             return { error: null, matchId: row.id };
         }
         return { error: 'Unknown error' };
@@ -798,7 +843,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }).eq('id', matchId);
         
         // Optimistic update with current time to keep timer sync smooth
-        setMatches(prev => prev.map(m => m.id === matchId ? { 
+        setRawMatches((prev: Match[]) => prev.map(m => m.id === matchId ? { 
             ...m, 
             ...data,
             updatedAt: data.status ? new Date().toISOString() : m.updatedAt 
@@ -807,7 +852,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const deleteMatch = async (matchId: string) => {
         await supabase.from('matches').delete().eq('id', matchId);
-        setMatches(prev => prev.filter(m => m.id !== matchId));
+        setRawMatches((prev: Match[]) => prev.filter(m => m.id !== matchId));
     };
 
     const startMatch = async (matchId: string, currentTimer: number = 0) => {
@@ -832,60 +877,39 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             player_id: event.playerId, player_out_id: event.playerOutId, minute: event.minute
         }).select().single();
         if (!data) return;
-        const ne: MatchEvent = {
-            id: data.id, type: data.type, teamId: data.team_id,
-            playerId: data.player_id, playerOutId: data.player_out_id, minute: data.minute
-        };
+        
+        const mapped = mapDBEvent(data);
+        setRawMatches(prev => prev.map(m => m.id === matchId ? {
+            ...m,
+            events: [...m.events, mapped]
+        } : m));
 
-        setMatches(prev => prev.map(m => {
-            if (m.id !== matchId) return m;
-            let homeScore = m.homeScore, awayScore = m.awayScore;
-            if (event.type === 'goal' || event.type === 'penalty_goal') {
-                if (event.teamId === m.homeTeamId) homeScore++; else awayScore++;
-            } else if (event.type === 'own_goal') {
-                if (event.teamId === m.homeTeamId) awayScore++; else homeScore++;
-            }
-            return { ...m, events: [...m.events, ne], homeScore, awayScore };
-        }));
-
-        // Update score in DB
-        const match = matches.find(m => m.id === matchId);
-        if (match && (event.type === 'goal' || event.type === 'penalty_goal' || event.type === 'own_goal')) {
-            const isHome = event.teamId === match.homeTeamId;
-            const scoringTeamIsHome = event.type === 'own_goal' ? !isHome : isHome;
+        // Update score in DB (Trigger updates the match row, and our listener handles the UI)
+        if (event.type === 'goal' || event.type === 'penalty_goal' || event.type === 'own_goal') {
+            const match = rawMatches.find(m => m.id === matchId);
+            if (!match) return;
+            const scoringTeamIsHome = event.type === 'own_goal' ? (event.teamId !== match.homeTeamId) : (event.teamId === match.homeTeamId);
 
             await supabase.from('matches').update({
                 home_score: scoringTeamIsHome ? match.homeScore + 1 : match.homeScore,
                 away_score: !scoringTeamIsHome ? match.awayScore + 1 : match.awayScore,
             }).eq('id', matchId);
         }
-
-        // Recalculation happens on loadLeagueData
-
     };
 
     const removeEvent = async (matchId: string, eventId: string) => {
-        const match = matches.find(m => m.id === matchId);
+        const match = rawMatches.find(m => m.id === matchId);
         const event = match?.events.find(e => e.id === eventId);
         await supabase.from('match_events').delete().eq('id', eventId);
 
-        setMatches(prev => prev.map(m => {
-            if (m.id !== matchId) return m;
-            let homeScore = m.homeScore, awayScore = m.awayScore;
-            if (event && (event.type === 'goal' || event.type === 'penalty_goal')) {
-                if (event.teamId === m.homeTeamId) homeScore = Math.max(0, homeScore - 1);
-                else awayScore = Math.max(0, awayScore - 1);
-            } else if (event && event.type === 'own_goal') {
-                if (event.teamId === m.homeTeamId) awayScore = Math.max(0, awayScore - 1);
-                else homeScore = Math.max(0, homeScore - 1);
-            }
-            return { ...m, events: m.events.filter(e => e.id !== eventId), homeScore, awayScore };
-        }));
+        setRawMatches(prev => prev.map(m => m.id === matchId ? {
+            ...m,
+            events: m.events.filter(e => e.id !== eventId)
+        } : m));
 
         if (event && (event.type === 'goal' || event.type === 'penalty_goal' || event.type === 'own_goal')) {
-            const m = matches.find(m => m.id === matchId)!;
-            const isHome = event.teamId === m.homeTeamId;
-            const scoringTeamIsHome = event.type === 'own_goal' ? !isHome : isHome;
+            const m = rawMatches.find(rm => rm.id === matchId)!;
+            const scoringTeamIsHome = event.type === 'own_goal' ? (event.teamId !== m.homeTeamId) : (event.teamId === m.homeTeamId);
 
             await supabase.from('matches').update({
                 home_score: scoringTeamIsHome ? Math.max(0, m.homeScore - 1) : m.homeScore,
