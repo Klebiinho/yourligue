@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
 import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const MatchControl = () => {
     const { matchId } = useParams<{ matchId: string }>();
     const navigate = useNavigate();
-    const { league, matches, teams, endMatch, addEvent, removeEvent, updateTimer, updateMatch, isPublicView, isAdmin } = useLeague();
+    const { league, matches, teams, endMatch, addEvent, removeEvent, updateMatch, isPublicView, isAdmin } = useLeague();
 
     const match = matches.find((m: Match) => m.id === matchId);
     const homeTeam = teams.find((t: Team) => t.id === match?.homeTeamId);
@@ -56,7 +55,7 @@ const MatchControl = () => {
             if (match.status === 'live') {
                 const lastUpdate = match.updatedAt ? new Date(match.updatedAt).getTime() : Date.now();
                 const now = Date.now();
-                const diffInSeconds = Math.floor((now - lastUpdate) / 1000);
+                const diffInSeconds = Math.max(0, Math.floor((now - lastUpdate) / 1000));
                 
                 const calculatedSeconds = (match.timer || 0) + diffInSeconds;
                 setLocalSeconds(calculatedSeconds);

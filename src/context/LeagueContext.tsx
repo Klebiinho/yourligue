@@ -795,7 +795,13 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             extra_time: data.extraTime, period: data.period,
             scheduled_at: data.scheduledAt, location: data.location
         }).eq('id', matchId);
-        setMatches(prev => prev.map(m => m.id === matchId ? { ...m, ...data } : m));
+        
+        // Optimistic update with current time to keep timer sync smooth
+        setMatches(prev => prev.map(m => m.id === matchId ? { 
+            ...m, 
+            ...data,
+            updatedAt: data.status ? new Date().toISOString() : m.updatedAt 
+        } : m));
     };
 
     const deleteMatch = async (matchId: string) => {

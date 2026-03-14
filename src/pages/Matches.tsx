@@ -60,7 +60,7 @@ const Matches = () => {
     };
 
     const handleEnter = async (id: string, status: string) => {
-        if (!isPublicView && isAdmin && status === 'scheduled') await startMatch(id);
+        if (!isPublicView && isAdmin && status === 'scheduled') await startMatch(id, 0);
         navigate(`${leagueBasePath}/match/${id}`);
     };
 
