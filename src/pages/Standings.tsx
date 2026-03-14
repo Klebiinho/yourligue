@@ -1,10 +1,10 @@
 import { useLeague } from '../context/LeagueContext';
-import { Trophy, Info, Medal, TrendingUp, Heart, Star, Swords } from 'lucide-react';
+import { Trophy, Info, Medal, TrendingUp } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const Standings = () => {
-    const { league, teams, matches, userInteractions, interactWithTeam, isPublicView } = useLeague();
+    const { league, teams, matches, isPublicView } = useLeague();
 
     const sortedTeams = [...teams].sort((a, b) => {
         const pts = (t: typeof teams[0]) =>
@@ -49,7 +49,7 @@ const Standings = () => {
                                     <tr className="bg-white/[0.03] text-[0.6rem] font-black text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">
                                         <th className="px-3 sm:px-5 py-4 text-center w-12">#</th>
                                         <th className="px-3 sm:px-5 py-4 text-left">Clube</th>
-                                        <th className="px-3 py-4 text-center w-24">Torcida</th>
+
                                         <th className="px-2 sm:px-4 py-4 text-center text-white font-outfit">Pts</th>
                                         <th className="px-2 sm:px-3 py-4 text-center">PJ</th>
                                         <th className="px-2 sm:px-3 py-4 text-center text-accent">V</th>
@@ -67,8 +67,7 @@ const Standings = () => {
                                         const isTop = i === 0 && pts > 0;
                                         const isZone = i >= sortedTeams.length - 3 && sortedTeams.length > 4;
 
-                                        return (
-                                            <tr key={team.id} className={`group hover:bg-white/[0.04] transition-all duration-300 ${isTop ? 'bg-primary/[0.04]' : isZone ? 'bg-danger/[0.03]' : ''}`}>
+                                        return (                                            <tr key={team.id} className={`group hover:bg-white/[0.04] transition-all duration-300 ${isTop ? 'bg-primary/[0.04]' : isZone ? 'bg-danger/[0.03]' : ''}`}>
                                                 {/* Position */}
                                                 <td className="px-3 sm:px-5 py-4 text-center">
                                                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black font-outfit text-xs transition-transform group-hover:scale-110 mx-auto ${isTop ? 'bg-primary text-white shadow-lg shadow-primary/30' :
@@ -91,32 +90,6 @@ const Standings = () => {
                                                         <span className="font-outfit font-black text-white uppercase tracking-wide truncate max-w-[100px] sm:max-w-none text-xs sm:text-sm">
                                                             {team.name}
                                                         </span>
-                                                    </div>
-                                                </td>
-                                                {/* Interaction */}
-                                                <td className="px-2 py-4">
-                                                    <div className="flex items-center justify-center gap-1">
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'supporting'); }}
-                                                            className={`p-1.5 rounded-lg transition-all active:scale-90 ${userInteractions.some(i => i.teamId === team.id && i.interactionType === 'supporting') ? 'bg-danger/20 text-danger shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'bg-white/5 text-slate-700 hover:text-danger hover:bg-danger/10'}`}
-                                                            title="Torcer"
-                                                        >
-                                                            <Heart size={14} fill={userInteractions.some(i => i.teamId === team.id && i.interactionType === 'supporting') ? 'currentColor' : 'none'} />
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'favorite'); }}
-                                                            className={`p-1.5 rounded-lg transition-all active:scale-90 ${userInteractions.some(i => i.teamId === team.id && i.interactionType === 'favorite') ? 'bg-warning/20 text-warning shadow-[0_0_10px_rgba(245,158,11,0.2)]' : 'bg-white/5 text-slate-700 hover:text-warning hover:bg-warning/10'}`}
-                                                            title="Favoritar"
-                                                        >
-                                                            <Star size={14} fill={userInteractions.some(i => i.teamId === team.id && i.interactionType === 'favorite') ? 'currentColor' : 'none'} />
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'rival'); }}
-                                                            className={`p-1.5 rounded-lg transition-all active:scale-90 ${userInteractions.some(i => i.teamId === team.id && i.interactionType === 'rival') ? 'bg-primary/20 text-primary shadow-[0_0_10px_rgba(109,40,217,0.2)]' : 'bg-white/5 text-slate-700 hover:text-primary hover:bg-primary/10'}`}
-                                                            title="Secar (Rival)"
-                                                        >
-                                                            <Swords size={14} />
-                                                        </button>
                                                     </div>
                                                 </td>
                                                 {/* Stats */}

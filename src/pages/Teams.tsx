@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Shield, UserPlus, Image as ImageIcon, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, TrendingUp, Heart, Star, Wind as SecarIcon } from 'lucide-react';
+import { Shield, UserPlus, Image as ImageIcon, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, TrendingUp } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const Teams = () => {
-    const { league, teams, addTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain, isPublicView, isAdmin, interactWithTeam, userInteractions } = useLeague();
+    const { league, teams, addTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain, isPublicView, isAdmin } = useLeague();
     const [activeTeamId, setActiveTeamId] = useState<string | null>(teams[0]?.id ?? null);
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLogo, setNewTeamLogo] = useState('');
@@ -182,34 +182,6 @@ const Teams = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    {/* Interaction Buttons (Spectator Mode or Personal Interaction) */}
-                                    <div className="flex items-center gap-2 pt-2 sm:pt-0">
-                                        {[
-                                            { type: 'supporting', icon: Heart, label: 'Torcer', activeColor: 'text-danger bg-danger/10 border-danger/30' },
-                                            { type: 'favorite', icon: Star, label: 'Favoritar', activeColor: 'text-warning bg-warning/10 border-warning/30' },
-                                            { type: 'rival', icon: SecarIcon, label: 'Secar', activeColor: 'text-accent bg-accent/10 border-accent/40' },
-                                        ].map(btn => {
-                                            const isActive = userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === btn.type);
-                                            const activeIndicator = btn.type === 'supporting' ? 'fill-danger' : btn.type === 'favorite' ? 'fill-warning' : 'fill-primary';
-
-                                            return (
-                                                <button
-                                                    key={btn.type}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        interactWithTeam(currentTeam.id, btn.type as any);
-                                                    }}
-                                                    className={`flex flex-col items-center justify-center gap-1.5 px-3 py-2 rounded-2xl border transition-all duration-300 min-w-[70px] sm:min-w-[80px] ${isActive
-                                                        ? btn.activeColor
-                                                        : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10 hover:text-white hover:border-white/20'}`}
-                                                >
-                                                    <btn.icon size={18} className={isActive ? `${activeIndicator} text-current` : ''} strokeWidth={isActive ? 2.5 : 2} />
-                                                    <span className="text-[0.5rem] font-black uppercase tracking-widest">{btn.label}</span>
-                                                </button>
-                                            );
-                                        })}
                                     </div>
                                 </div>
                             </div>
