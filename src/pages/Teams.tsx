@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { useLeague } from '../context/LeagueContext';
-import { Shield, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, Star, PlusCircle } from 'lucide-react';
+import { useLeague, type Player } from '../context/LeagueContext';
+import { Shield, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, Star, PlusCircle, GripVertical, ArrowDownUp } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const Teams = () => {
-    const { league, teams, addTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain, isPublicView, isAdmin } = useLeague();
+    const { league, teams, addTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain, reorderPlayers, isPublicView, isAdmin } = useLeague();
     const [activeTeamId, setActiveTeamId] = useState<string | null>(teams[0]?.id ?? null);
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLogo, setNewTeamLogo] = useState('');
     const [error, setError] = useState('');
+    const [swappingPlayerId, setSwappingPlayerId] = useState<string | null>(null);
+    const [draggedPlayerId, setDraggedPlayerId] = useState<string | null>(null);
     const [teamError, setTeamError] = useState('');
     const [isAddingPlayer, setIsAddingPlayer] = useState(false);
     const [isEditingPlayer, setIsEditingPlayer] = useState<string | null>(null);
@@ -57,19 +59,71 @@ const Teams = () => {
         setFormPlayer({ name: '', number: 0, position: 'Atacante', isCaptain: false, isReserve: false, photo: '' });
     };
 
-    const startEdit = (p: any) => {
-        setIsEditingPlayer(p.id);
+    const startEdit = (player: Player) => {
+        setIsEditingPlayer(player.id);
         setFormPlayer({
-            name: p.name,
-            number: p.number,
-            position: p.position,
-            isCaptain: p.isCaptain || false,
-            isReserve: p.isReserve || false,
-            photo: p.photo || ''
+            name: player.name,
+            number: player.number,
+            position: player.position,
+            photo: player.photo || '',
+            isCaptain: player.isCaptain || false,
+            isReserve: player.isReserve || false
         });
-        setIsAddingPlayer(true);
+        setIsAddingPlayer(false);
+        setError('');
     };
 
+    // ── DRAG & DROP LOGIC ────────────────────────────────────
+    const handleDragStart = (e: React.DragEvent, id: string) => {
+        if (!isAdmin) return;
+        setDraggedPlayerId(id);
+        e.dataTransfer.setData('playerId', id);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = async (e: React.DragEvent, targetId: string) => {
+        e.preventDefault();
+        const sourceId = e.dataTransfer.getData('playerId');
+        if (!sourceId || sourceId === targetId || !currentTeam) return;
+
+        const playerIds = currentTeam.players.map(p => p.id);
+        const sourceIdx = playerIds.indexOf(sourceId);
+        const targetIdx = playerIds.indexOf(targetId);
+
+        const newOrder = [...playerIds];
+        newOrder.splice(sourceIdx, 1);
+        newOrder.splice(targetIdx, 0, sourceId);
+
+        await reorderPlayers(currentTeam.id, newOrder);
+        setDraggedPlayerId(null);
+    };
+
+    const handleSwapClick = async (playerId: string) => {
+        if (!isAdmin || !currentTeam) return;
+
+        if (!swappingPlayerId) {
+            setSwappingPlayerId(playerId);
+        } else {
+            if (swappingPlayerId !== playerId) {
+                const playerIds = currentTeam.players.map(p => p.id);
+                const idxA = playerIds.indexOf(swappingPlayerId);
+                const idxB = playerIds.indexOf(playerId);
+
+                const newOrder = [...playerIds];
+                const temp = newOrder[idxA];
+                newOrder[idxA] = newOrder[idxB];
+                newOrder[idxB] = temp;
+
+                await reorderPlayers(currentTeam.id, newOrder);
+            }
+            setSwappingPlayerId(null);
+        }
+    };
     return (
         <div className="animate-fade-in">
             {isPublicView && <AdBanner position="top" />}
@@ -286,10 +340,21 @@ const Teams = () => {
                                     </div>
                                 ) : (
                                     <div className="space-y-2">
-                                        {currentTeam.players.map(player => (
-                                            <div key={player.id} className="group rounded-2xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] transition-all overflow-hidden">
+                                        {currentTeam.players.map((player) => (
+                                            <div key={player.id} 
+                                                draggable={isAdmin && !isPublicView}
+                                                onDragStart={(e) => handleDragStart(e, player.id)}
+                                                onDragOver={handleDragOver}
+                                                onDrop={(e) => handleDrop(e, player.id)}
+                                                onClick={() => handleSwapClick(player.id)}
+                                                className={`group rounded-2xl bg-white/[0.02] border transition-all overflow-hidden cursor-move ${swappingPlayerId === player.id ? 'border-primary ring-1 ring-primary/50 bg-primary/5' : 'border-white/[0.04] hover:bg-white/[0.05]'} ${draggedPlayerId === player.id ? 'opacity-30 grayscale' : ''}`}>
                                                 {/* ── VIEW MODE ─── */}
                                                 <div className="flex items-center gap-3 p-3 sm:p-4">
+                                                    {isAdmin && !isPublicView && (
+                                                        <div className="text-slate-700 group-hover:text-slate-500 transition-colors">
+                                                            <GripVertical size={16} />
+                                                        </div>
+                                                    )}
                                                     <div className="relative flex-none">
                                                         <TeamLogo src={player.photo} size={40} />
                                                         {player.isCaptain && (
@@ -319,7 +384,12 @@ const Teams = () => {
                                                     {/* Actions: always visible on mobile, hover on desktop */}
                                                     {!isPublicView && isAdmin && (
                                                         <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                                            <button onClick={() => toggleCaptain(currentTeam.id, player.id)}
+                                                            {swappingPlayerId && swappingPlayerId !== player.id && (
+                                                                <div className="animate-pulse flex items-center gap-1 mr-2 px-2 py-1 rounded-md bg-primary/10 text-primary text-[0.55rem] font-bold uppercase tracking-tighter">
+                                                                    <ArrowDownUp size={10} /> Trocar
+                                                                </div>
+                                                            )}
+                                                            <button onClick={(e) => { e.stopPropagation(); toggleCaptain(currentTeam.id, player.id); }}
                                                                 className={`p-2 rounded-lg transition-all ${player.isCaptain ? 'bg-warning/20 text-warning' : 'bg-white/5 text-slate-600 hover:text-warning hover:bg-white/10'}`}>
                                                                 <Crown size={13} strokeWidth={player.isCaptain ? 3 : 2} />
                                                             </button>

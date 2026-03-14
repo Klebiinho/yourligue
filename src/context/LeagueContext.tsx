@@ -12,6 +12,7 @@ export type Player = {
     photo?: string;
     isCaptain?: boolean;
     isReserve?: boolean;
+    displayOrder?: number;
     stats: { goals: number; assists: number; ownGoals: number; yellowCards: number; redCards: number };
 };
 
@@ -137,6 +138,7 @@ interface LeagueContextType {
     updatePlayer: (teamId: string, playerId: string, data: Partial<Player>) => Promise<{ error: string | null }>;
     removePlayer: (teamId: string, playerId: string) => Promise<void>;
     toggleCaptain: (teamId: string, playerId: string) => Promise<void>;
+    reorderPlayers: (teamId: string, playerIds: string[]) => Promise<void>;
     isPlayerOnPitch: (match: Match, playerId: string) => boolean;
 
     // Match actions
@@ -218,17 +220,21 @@ const mapDBPlayer = (p: any): Player => ({
     photo: p.photo || '',
     isCaptain: p.is_captain || false,
     isReserve: p.is_reserve || false,
+    displayOrder: p.display_order || 0,
     stats: { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0 }
 });
 
-const mapDBTeam = (t: any): Team => ({
-    id: t.id,
-    name: t.name,
-    logo: t.logo || '',
-    group_name: t.group_name || '',
-    players: (t.players || []).map(mapDBPlayer),
-    stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 }
-});
+const mapDBTeam = (t: any): Team => {
+    const players = (t.players || []).map(mapDBPlayer).sort((a: Player, b: Player) => (a.displayOrder || 0) - (b.displayOrder || 0));
+    return {
+        id: t.id,
+        name: t.name,
+        logo: t.logo || '',
+        group_name: t.group_name || '',
+        players,
+        stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 }
+    };
+};
 
 const mapDBBracket = (b: any): BracketMatch => ({
     id: b.id, round: b.round, matchOrder: b.match_order,
@@ -676,6 +682,25 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             } : m));
         });
 
+        channel.on('broadcast', { event: 'players-reordered' }, ({ payload }) => {
+            console.log('[Realtime Broadcast] Players Reordered', payload);
+            setRawTeams(prev => prev.map(t => {
+                if (t.id === payload.teamId) {
+                    const sortedPlayers = [...t.players].sort((a, b) => {
+                        const idxA = payload.playerIds.indexOf(a.id);
+                        const idxB = payload.playerIds.indexOf(b.id);
+                        return idxA - idxB;
+                    }).map((p, idx) => ({
+                        ...p,
+                        displayOrder: idx,
+                        isReserve: idx >= payload.limit
+                    }));
+                    return { ...t, players: sortedPlayers };
+                }
+                return t;
+            }));
+        });
+
         channel.subscribe(status => {
             console.log(`[Realtime] Subscription status: ${status}`);
         });
@@ -993,6 +1018,59 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             })) }
             : t
         ));
+    };
+    
+    const reorderPlayers = async (teamId: string, playerIds: string[]) => {
+        if (!league) return;
+        const limit = league.playersPerTeam || 5;
+        
+        let newCaptainId = '';
+        const currentTeam = rawTeams.find(t => t.id === teamId);
+        const currentCaptain = currentTeam?.players.find(p => p.isCaptain);
+        
+        // If captain moved to reserve or doesn't exist, first player becomes captain
+        const captainIdx = currentCaptain ? playerIds.indexOf(currentCaptain.id) : -1;
+        if (captainIdx >= limit || captainIdx === -1) {
+            newCaptainId = playerIds[0];
+        }
+
+        // Prepare updates
+        const promises = playerIds.map((pid, idx) => {
+            const isReserve = idx >= limit;
+            const isCaptain = newCaptainId ? (pid === newCaptainId) : (pid === currentCaptain?.id);
+            return supabase.from('players').update({ 
+                display_order: idx,
+                is_reserve: isReserve,
+                is_captain: isCaptain
+            }).eq('id', pid);
+        });
+
+        await Promise.all(promises);
+
+        // Update local state
+        setRawTeams(prev => prev.map(t => {
+            if (t.id === teamId) {
+                const sortedPlayers = [...t.players].sort((a, b) => {
+                    const idxA = playerIds.indexOf(a.id);
+                    const idxB = playerIds.indexOf(b.id);
+                    return idxA - idxB;
+                }).map((p, idx) => ({
+                    ...p,
+                    displayOrder: idx,
+                    isReserve: idx >= limit,
+                    isCaptain: newCaptainId ? (p.id === newCaptainId) : (p.id === currentCaptain?.id)
+                }));
+                return { ...t, players: sortedPlayers };
+            }
+            return t;
+        }));
+
+        // Broadcast change
+        supabase.channel(`league-central-${league.id}`).send({
+            type: 'broadcast',
+            event: 'players-reordered',
+            payload: { teamId, playerIds, limit }
+        });
     };
 
     // ── Match CRUD ─────────────────────────────────────────────
@@ -1342,7 +1420,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             createLeague, updateLeague, deleteLeague, selectLeague, generateGroups,
             followLeague, unfollowLeague, searchLeagues,
             addTeam, updateTeam, deleteTeam,
-            addPlayer, updatePlayer, removePlayer, toggleCaptain, isPlayerOnPitch,
+            addPlayer, updatePlayer, removePlayer, toggleCaptain, reorderPlayers, isPlayerOnPitch,
             createMatch, updateMatch, deleteMatch, startMatch, pauseMatch, endMatch, updateTimer,
             addEvent, removeEvent,
             generateBracket, updateBracket, loadLeagues, isPublicView, isAdmin, loadPublicLeague,
