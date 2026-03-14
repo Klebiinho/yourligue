@@ -103,53 +103,66 @@ const Settings = () => {
 
     const handleAdSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('--- AD SUBMIT START ---');
+        console.log('Form data:', formAd);
+        console.log('Editing ID:', editingAdId);
+
         if (formAd.positions.length === 0) {
-            alert('Selecione ao menos um posicionamento para a propaganda.');
+            alert('⚠️ Selecione pelo menos um local para exibir a propaganda.');
             return;
         }
 
         try {
             if (editingAdId) {
+                console.log('Calling updateAd...');
                 const { error } = await updateAd(editingAdId, formAd);
                 if (!error) {
+                    console.log('Update Success');
                     setEditingAdId(null);
-                    setIsAddingAd(false);
                     setFormAd({ title: '', desktop_media_url: '', mobile_media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
-                    alert('Propaganda atualizada com sucesso!');
+                    setIsAddingAd(false);
+                    alert('✅ PROPAGANDA ATUALIZADA!\nAs mudanças foram salvas no sistema.');
                 } else {
-                    alert('Erro ao atualizar: ' + error);
+                    console.error('Update Failed:', error);
+                    alert('❌ ERRO AO ATUALIZAR:\n' + error);
                 }
             } else {
+                console.log('Calling addAd...');
                 const { error } = await addAd(formAd);
                 if (!error) {
-                    setIsAddingAd(false);
+                    console.log('Add Success');
                     setFormAd({ title: '', desktop_media_url: '', mobile_media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
-                    alert('Propaganda adicionada com sucesso!');
+                    setIsAddingAd(false);
+                    alert('✅ NOVA PROPAGANDA ADICIONADA!');
                 } else {
-                    alert('Erro ao adicionar: ' + error);
+                    console.error('Add Failed:', error);
+                    alert('❌ ERRO AO ADICIONAR:\n' + error);
                 }
             }
         } catch (err: any) {
-            console.error('Ad submit error:', err);
-            alert('Ocorreu um erro inesperado ao salvar a propaganda.');
+            console.error('Unexpected Error:', err);
+            alert('❌ OCORREU UM ERRO INESPERADO.\nVeja o console para mais detalhes.');
         }
+        console.log('--- AD SUBMIT END ---');
     };
 
     const startEditAd = (ad: any) => {
+        console.log('Starting edit for ad:', ad);
         setEditingAdId(ad.id);
-        setFormAd({
-            title: ad.title,
-            desktop_media_url: ad.desktop_media_url,
+        const adData = {
+            title: ad.title || '',
+            desktop_media_url: ad.desktop_media_url || '',
             mobile_media_url: ad.mobile_media_url || '',
-            media_type: ad.media_type,
+            media_type: ad.media_type || 'image',
             positions: ad.positions || [],
             object_position: ad.object_position || 'center',
             link_url: ad.link_url || '',
             duration: ad.duration || 5
-        });
+        };
+        setFormAd(adData);
         setIsAddingAd(true);
-        setAdInputMethod(ad.desktop_media_url?.startsWith('http') ? 'url' : 'file');
-        window.scrollTo({ top: 300, behavior: 'smooth' }); // Scroll to form
+        setAdInputMethod(adData.desktop_media_url?.startsWith('http') ? 'url' : 'file');
+        window.scrollTo({ top: 300, behavior: 'smooth' });
     };
 
     const handleSwitchLeague = () => navigate('/leagues');
@@ -385,8 +398,8 @@ const Settings = () => {
                                                             <input type="file" onChange={e => handleAdMediaFile(e, 'desktop')} accept="image/*,video/*,image/gif" className="hidden" />
                                                         </label>
                                                     ) : (
-                                                        <input type="url" value={formAd.desktop_media_url} onChange={e => setFormAd({ ...formAd, desktop_media_url: e.target.value })}
-                                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-accent outline-none" placeholder="URL Desktop" />
+                                                        <input type="text" value={formAd.desktop_media_url} onChange={e => setFormAd({ ...formAd, desktop_media_url: e.target.value })}
+                                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-accent outline-none" placeholder="Link Desktop (https://...)" />
                                                     )}
                                                 </div>
 
@@ -401,8 +414,8 @@ const Settings = () => {
                                                             <input type="file" onChange={e => handleAdMediaFile(e, 'mobile')} accept="image/*,video/*,image/gif" className="hidden" />
                                                         </label>
                                                     ) : (
-                                                        <input type="url" value={formAd.mobile_media_url} onChange={e => setFormAd({ ...formAd, mobile_media_url: e.target.value })}
-                                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-accent outline-none" placeholder="URL Mobile" />
+                                                        <input type="text" value={formAd.mobile_media_url} onChange={e => setFormAd({ ...formAd, mobile_media_url: e.target.value })}
+                                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-accent outline-none" placeholder="Link Mobile (https://...)" />
                                                     )}
                                                 </div>
                                             </div>

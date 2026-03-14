@@ -958,22 +958,32 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const addAd = async (ad: Omit<Ad, 'id' | 'league_id' | 'active'>) => {
         if (!league) return { error: 'No league selected' };
+        console.log('[LeagueContext] Adding Ad:', ad);
         const { data, error } = await supabase.from('ads').insert([
             { ...ad, league_id: league.id, active: true }
         ]).select().single();
-        if (error) return { error: error.message };
+        
+        if (error) {
+            console.error('[LeagueContext] Add Ad Error:', error);
+            return { error: error.message };
+        }
+        console.log('[LeagueContext] Add Ad Success:', data);
         setAds(prev => [...prev, data as Ad]);
         return { error: null };
     };
 
     const updateAd = async (id: string, updates: Partial<Ad>) => {
         if (!league) return { error: 'No league selected' };
+        console.log('[LeagueContext] Updating Ad:', id, updates);
         const { error } = await supabase.from('ads').update(updates).eq('id', id);
-        if (!error) {
-            setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
-            return { error: null };
+        
+        if (error) {
+            console.error('[LeagueContext] Update Ad Error:', error);
+            return { error: error.message };
         }
-        return { error: error.message };
+        console.log('[LeagueContext] Update Ad Success');
+        setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+        return { error: null };
     };
 
     const deleteAd = async (id: string) => {
