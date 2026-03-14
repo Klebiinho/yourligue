@@ -39,6 +39,7 @@ const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
                         loop
                         playsInline
                         className="w-full h-full object-cover"
+                        style={{ objectPosition: ad.object_position || 'center' }}
                     />
                     <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded text-[0.6rem] font-bold text-white uppercase tracking-widest flex items-center gap-1">
                         <Play size={10} fill="currentColor" /> Vídeo
@@ -52,6 +53,7 @@ const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
                 src={ad.media_url}
                 alt={ad.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[2000ms]"
+                style={{ objectPosition: ad.object_position || 'center' }}
             />
         );
     };

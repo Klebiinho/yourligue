@@ -43,6 +43,7 @@ const Settings = () => {
         media_url: '',
         media_type: 'image' as 'image' | 'video' | 'gif',
         positions: [] as string[],
+        object_position: 'center' as 'center' | 'top' | 'bottom',
         link_url: '',
         duration: 5
     });
@@ -106,7 +107,7 @@ const Settings = () => {
             if (!error) {
                 setEditingAdId(null);
                 setIsAddingAd(false);
-                setFormAd({ title: '', media_url: '', media_type: 'image', positions: [], link_url: '', duration: 5 });
+                setFormAd({ title: '', media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
             } else {
                 alert(error);
             }
@@ -114,7 +115,7 @@ const Settings = () => {
             const { error } = await addAd(formAd);
             if (!error) {
                 setIsAddingAd(false);
-                setFormAd({ title: '', media_url: '', media_type: 'image', positions: [], link_url: '', duration: 5 });
+                setFormAd({ title: '', media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
             } else {
                 alert(error);
             }
@@ -128,6 +129,7 @@ const Settings = () => {
             media_url: ad.media_url,
             media_type: ad.media_type,
             positions: ad.positions || [],
+            object_position: ad.object_position || 'center',
             link_url: ad.link_url || '',
             duration: ad.duration || 5
         });
@@ -299,7 +301,7 @@ const Settings = () => {
                                         setIsAddingAd(!isAddingAd);
                                         if (isAddingAd) {
                                             setEditingAdId(null);
-                                            setFormAd({ title: '', media_url: '', media_type: 'image', positions: [], link_url: '', duration: 5 });
+                                            setFormAd({ title: '', media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
                                         }
                                     }}
                                     className="bg-accent/10 text-accent hover:bg-accent hover:text-white px-4 py-2 rounded-xl transition-all flex items-center gap-2 text-[0.65rem] font-black uppercase tracking-widest"
@@ -313,9 +315,9 @@ const Settings = () => {
                                 <div className="mb-6 rounded-2xl overflow-hidden glass-panel border-accent/20 border p-2">
                                     <div className="aspect-video w-full bg-black/40 rounded-xl overflow-hidden relative">
                                         {formAd.media_type === 'video' ? (
-                                            <video src={formAd.media_url} controls className="w-full h-full object-cover" />
+                                            <video src={formAd.media_url} controls className="w-full h-full object-cover" style={{ objectPosition: formAd.object_position }} />
                                         ) : (
-                                            <img src={formAd.media_url} alt="Preview" className="w-full h-full object-cover" />
+                                            <img src={formAd.media_url} alt="Preview" className="w-full h-full object-cover" style={{ objectPosition: formAd.object_position }} />
                                         )}
                                         <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[0.6rem] font-black text-white uppercase tracking-widest border border-white/10">
                                             Preview {editingAdId ? 'Original' : 'Novo'}
@@ -421,6 +423,21 @@ const Settings = () => {
                                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-accent" min={1}
                                                 />
                                             </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Foco da Imagem (Vertical)</label>
+                                                <div className="flex gap-2 bg-black/40 p-1.5 rounded-xl border border-white/5">
+                                                    {[
+                                                        { id: 'top', label: 'Topo' },
+                                                        { id: 'center', label: 'Centro' },
+                                                        { id: 'bottom', label: 'Base' }
+                                                    ].map(opt => (
+                                                        <button key={opt.id} type="button" onClick={() => setFormAd({ ...formAd, object_position: opt.id as any })}
+                                                            className={`flex-1 py-1.5 rounded-lg text-[0.55rem] font-black uppercase tracking-widest transition-all ${formAd.object_position === opt.id ? 'bg-primary text-white' : 'text-slate-500 hover:text-slate-300'}`}>
+                                                            {opt.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div className="space-y-2">
@@ -489,7 +506,7 @@ const Settings = () => {
                                                     <Video size={24} />
                                                 </div>
                                             ) : (
-                                                <img src={ad.media_url} alt={ad.title} className="w-full h-full object-cover" />
+                                                <img src={ad.media_url} alt={ad.title} className="w-full h-full object-cover" style={{ objectPosition: ad.object_position || 'center' }} />
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">

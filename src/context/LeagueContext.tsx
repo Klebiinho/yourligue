@@ -101,6 +101,7 @@ export type Ad = {
     media_url: string;
     media_type: 'image' | 'video' | 'gif';
     positions: string[];
+    object_position?: 'center' | 'top' | 'bottom';
     link_url?: string;
     duration: number;
     active: boolean;
