@@ -118,6 +118,30 @@ const MatchControl = () => {
     const handleAssist = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live') addEvent(matchId, { type: 'assist', teamId, playerId, minute: currentMinute }); };
     const handleGolContra = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live') addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); };
     const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { if (matchId && match?.status === 'live') addEvent(matchId, { type, teamId, playerId, minute: currentMinute }); };
+    const handlePeriodChange = async (newPeriod: string) => {
+        if (!matchId || !match) return;
+        
+        let newTimer = localSeconds;
+        let newStatus = match.status;
+
+        // Real-time functional logic
+        if (newPeriod === '1º Tempo' && localSeconds > 60) {
+            if (window.confirm('Deseja zerar o cronômetro para o início do 1º tempo?')) {
+                newTimer = 0;
+            }
+        } else if (newPeriod === 'Intervalo') {
+            newStatus = 'scheduled'; // Auto-pause at halftime
+        } else if (newPeriod === '2º Tempo' && localSeconds < (match.halfLength || 45) * 60) {
+            newTimer = (match.halfLength || 45) * 60;
+        } else if (newPeriod === 'Pênaltis') {
+            newStatus = 'scheduled'; // Stop main clock for penalties
+        }
+
+        setPeriod(newPeriod);
+        setLocalSeconds(newTimer);
+        await updateMatch(matchId, { period: newPeriod, status: newStatus, timer: newTimer });
+    };
+
     const handleSubstitution = (teamId: string, playerInId: string, playerOutId: string) => {
         if (matchId && match?.status === 'live') {
             const limit = league?.substitutionsLimit || 5;
@@ -169,7 +193,9 @@ const MatchControl = () => {
                         </div>
                         <div className="bg-black/50 px-4 py-1.5 rounded-xl flex items-center gap-2 border border-white/[0.05] shadow-inner">
                             <div className={`w-1.5 h-1.5 rounded-full ${timerRunning ? 'bg-danger animate-pulse shadow-[0_0_8px_rgba(239,68,68,1)]' : 'bg-slate-700'}`} />
-                            <span className="font-mono text-base sm:text-xl font-black text-white tracking-[0.1em]">{formatTime(localSeconds)}</span>
+                            <span className="font-mono text-base sm:text-xl font-black text-white tracking-[0.1em]">
+                                {period === 'Pênaltis' ? 'PEN' : formatTime(localSeconds)}
+                            </span>
                             {(match.extraTime || 0) > 0 && (
                                 <span className="text-danger font-black text-xs sm:text-sm animate-pulse ml-1">+{match.extraTime}</span>
                             )}
@@ -332,17 +358,16 @@ const MatchControl = () => {
                                 <Settings2 size={16} className="text-primary" /> Painel Técnico
                             </h3>
                             <div className="grid grid-cols-2 gap-4 mb-5">
-                                <div className="space-y-1.5">
-                                    <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Etapa</label>
-                                    <select value={period} onChange={e => setPeriod(e.target.value)}
-                                        className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs font-bold focus:border-primary outline-none appearance-none cursor-pointer h-10">
-                                        <option className="bg-[#07070a]">1º Tempo</option>
-                                        <option className="bg-[#07070a]">Intervalo</option>
-                                        <option className="bg-[#07070a]">2º Tempo</option>
-                                        <option className="bg-[#07070a]">Prorrogação</option>
-                                        <option className="bg-[#07070a]">Pênaltis</option>
-                                        <option className="bg-[#07070a]">Fim de Jogo</option>
-                                    </select>
+                                <div className="col-span-2 space-y-1.5">
+                                    <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Etapa Atual</label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        {['1º Tempo', 'Intervalo', '2º Tempo', 'Pênaltis'].map(p => (
+                                            <button key={p} onClick={() => handlePeriodChange(p)}
+                                                className={`py-2 px-1 rounded-lg text-[0.6rem] font-black uppercase tracking-tight transition-all border ${period === p ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}>
+                                                {p}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Duração (min)</label>
