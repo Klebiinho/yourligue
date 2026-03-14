@@ -562,6 +562,17 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     const p = (payload.new || payload.old) as any;
                     if (p && teamsRef.current.some(t => t.id === p.team_id)) debouncedRefresh();
                 })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'ads', filter: `league_id=eq.${league.id}` }, (payload) => {
+                    console.log('Realtime: Ad change detected', payload);
+                    // Single update or delete from state
+                    if (payload.eventType === 'INSERT') {
+                        setAds(prev => [...prev, payload.new as Ad]);
+                    } else if (payload.eventType === 'UPDATE') {
+                        setAds(prev => prev.map(a => a.id === (payload.new as Ad).id ? payload.new as Ad : a));
+                    } else if (payload.eventType === 'DELETE') {
+                        setAds(prev => prev.filter(a => a.id === (payload.old as any).id));
+                    }
+                })
                 .subscribe();
 
             return () => {
