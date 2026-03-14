@@ -8,7 +8,7 @@ import AdBanner from '../components/AdBanner';
 const MatchControl = () => {
     const { matchId } = useParams<{ matchId: string }>();
     const navigate = useNavigate();
-    const { league, matches, teams, endMatch, addEvent, removeEvent, updateMatch, isPublicView, isAdmin } = useLeague();
+    const { league, matches, teams, endMatch, addEvent, removeEvent, updateMatch, isPublicView, isAdmin, isPlayerOnPitch } = useLeague();
 
     const match = matches.find((m: Match) => m.id === matchId);
     const homeTeam = teams.find((t: Team) => t.id === match?.homeTeamId);
@@ -36,22 +36,6 @@ const MatchControl = () => {
         }
     }, [match?.halfLength, match?.extraTime, match?.period]);
 
-    const isPlayerOnPitch = (playerId: string) => {
-        if (!match || !homeTeam || !awayTeam) return false;
-        
-        const p = [...homeTeam.players, ...awayTeam.players].find(pl => pl.id === playerId);
-        if (!p) return false;
-        
-        const { isRedCarded } = getPlayerStatus(playerId);
-        if (isRedCarded) return false;
-
-        const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === playerId).length;
-        const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === playerId).length;
-        
-        // If it's a reserve, they are on pitch if they entered more times than they left
-        // If it's a starter, they are on pitch if they left less or equal times than they entered (starts at 0-0, so 0<=0 is true)
-        return p.isReserve ? (subIns > subOuts) : (subOuts <= subIns);
-    };
 
     const getPlayerStatus = (playerId: string) => {
         const playerEvents = match?.events.filter((e: MatchEvent) => e.playerId === playerId) || [];
@@ -243,7 +227,7 @@ const MatchControl = () => {
                         <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1 no-scrollbar">
                             {/* Dynamic Grouping */}
                             {(() => {
-                                const onPitch = team.players.filter(p => isPlayerOnPitch(p.id));
+                                const onPitch = team.players.filter(p => isPlayerOnPitch(match, p.id));
                                 const offPitch = team.players.filter(p => !onPitch.some(op => op.id === p.id));
 
                                 return (
@@ -496,7 +480,7 @@ const MatchControl = () => {
                                             if (isRedCarded) return false;
 
                                             // Determine if player is currently on the pitch
-                                            if (isPlayerOnPitch(p.id)) return false;
+                                            if (isPlayerOnPitch(match, p.id)) return false;
 
                                             // If return is EXPLICITLY forbidden, once subbed out, they stay out
                                             // We use explicit check against false to allow return if setting is missing or true
@@ -523,7 +507,7 @@ const MatchControl = () => {
                                     {(submittingPlayer.teamId === homeTeam.id ? homeTeam : awayTeam).players.filter(p => {
                                         const { isRedCarded } = getPlayerStatus(p.id);
                                         if (isRedCarded) return false;
-                                        if (isPlayerOnPitch(p.id)) return false;
+                                        if (isPlayerOnPitch(match, p.id)) return false;
                                         if (league?.allowSubstitutionReturn === false) {
                                             const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === p.id).length;
                                             if (subOuts > 0) return false;

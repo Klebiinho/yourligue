@@ -137,6 +137,7 @@ interface LeagueContextType {
     updatePlayer: (teamId: string, playerId: string, data: Partial<Player>) => Promise<{ error: string | null }>;
     removePlayer: (teamId: string, playerId: string) => Promise<void>;
     toggleCaptain: (teamId: string, playerId: string) => Promise<void>;
+    isPlayerOnPitch: (match: Match, playerId: string) => boolean;
 
     // Match actions
     createMatch: (data: { homeTeamId: string; awayTeamId: string; scheduledAt?: string; location?: string; youtubeLiveId?: string }) => Promise<{ error: string | null; matchId?: string }>;
@@ -851,7 +852,20 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
         if (error) return { error: error.message };
         if (data) {
-            setRawTeams(prev => prev.map(t => t.id === teamId ? { ...t, players: [...t.players, mapDBPlayer(data)] } : t));
+            const newPlayer = mapDBPlayer(data);
+            setRawTeams(prev => prev.map(t => {
+                if (t.id === teamId) {
+                    const updatedPlayers = [...t.players, newPlayer];
+                    // Se for o primeiro titular e não houver capitão, torna-o capitão
+                    const hasCaptain = updatedPlayers.some(p => p.isCaptain);
+                    if (!hasCaptain && !newPlayer.isReserve) {
+                        newPlayer.isCaptain = true;
+                        supabase.from('players').update({ is_captain: true }).eq('id', newPlayer.id).then();
+                    }
+                    return { ...t, players: updatedPlayers };
+                }
+                return t;
+            }));
         }
         return { error: null };
     };
@@ -876,10 +890,19 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             }
         }
 
-        // Lógica de Capitão: se este player virar capitão, desmarca outros
+        // Regra do Capitão Titular: Capitão SEMPRE deve ser Titular
         if (data.isCaptain) {
+            data.isReserve = false; 
             for (const p of team.players) {
                 if (p.isCaptain && p.id !== playerId) await supabase.from('players').update({ is_captain: false }).eq('id', p.id);
+            }
+        } else if (data.isReserve === true && player.isCaptain) {
+            // Se o atual capitão está sendo movido para reserva, ele perde o posto
+            // e precisamos passar para outro titular
+            const otherStarter = team.players.find(p => p.id !== playerId && !p.isReserve);
+            if (otherStarter) {
+                await supabase.from('players').update({ is_captain: true }).eq('id', otherStarter.id);
+                // O estado local será atualizado no setRawTeams abaixo
             }
         }
 
@@ -899,8 +922,14 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 ...t, 
                 players: t.players.map(p => {
                     if (p.id === playerId) return { ...p, ...data };
-                    // Se marcamos um novo capitão, desmarcamos os outros localmente
+                    // Se marcamos um novo capitão, desmarcamos os outros
                     if (data.isCaptain && p.id !== playerId) return { ...p, isCaptain: false };
+                    // Se o capitão virou reserva, passamos a braçadeira
+                    if (data.isReserve === true && player.isCaptain && !p.isReserve && p.id !== playerId) {
+                         // Só passa para o primeiro starter que encontrar se ninguém mais for capitão agora
+                         const willHaveCaptain = t.players.some(pl => pl.id === playerId ? data.isCaptain : pl.isCaptain);
+                         if (!willHaveCaptain) return { ...p, isCaptain: true };
+                    }
                     return p;
                 }) 
               }
@@ -910,22 +939,58 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const removePlayer = async (teamId: string, playerId: string) => {
+        const team = rawTeams.find(t => t.id === teamId);
+        const player = team?.players.find(p => p.id === playerId);
+        const wasCaptain = player?.isCaptain;
+
         await supabase.from('players').delete().eq('id', playerId);
-        setRawTeams(prev => prev.map(t => t.id === teamId ? { ...t, players: t.players.filter(p => p.id !== playerId) } : t));
+        
+        setRawTeams(prev => prev.map(t => {
+            if (t.id === teamId) {
+                const updatedPlayers = t.players.filter(p => p.id !== playerId);
+                // Se o removido era o capitão, precisamos de um novo entre os titulares
+                if (wasCaptain && updatedPlayers.length > 0) {
+                    const starter = updatedPlayers.find(p => !p.isReserve) || updatedPlayers[0];
+                    if (starter) {
+                        starter.isCaptain = true;
+                        supabase.from('players').update({ is_captain: true }).eq('id', starter.id).then();
+                    }
+                }
+                return { ...t, players: updatedPlayers };
+            }
+            return t;
+        }));
     };
 
     const toggleCaptain = async (teamId: string, playerId: string) => {
         const team = rawTeams.find(t => t.id === teamId);
         if (!team) return;
         const pl = team.players.find(p => p.id === playerId);
-        const newVal = !pl?.isCaptain;
-        // Optimization: bulk update handled by DB trigger would be better but for consistency:
+        if (!pl) return;
+
+        const newVal = !pl.isCaptain;
+        
+        // Se for para desativar o único capitão, não permitimos (sempre deve ter um)
+        if (!newVal && team.players.filter(p => p.isCaptain).length <= 1) return;
+
+        // Se for ativar, garantimos que seja titular
+        let updatedReserve = pl.isReserve;
+        if (newVal) {
+            updatedReserve = false;
+            await supabase.from('players').update({ is_reserve: false }).eq('id', playerId);
+        }
+
         for (const p of team.players) {
             if (p.isCaptain && p.id !== playerId) await supabase.from('players').update({ is_captain: false }).eq('id', p.id);
         }
         await supabase.from('players').update({ is_captain: newVal }).eq('id', playerId);
+        
         setRawTeams(prev => prev.map(t => t.id === teamId
-            ? { ...t, players: t.players.map(p => ({ ...p, isCaptain: p.id === playerId ? newVal : false })) }
+            ? { ...t, players: t.players.map(p => ({ 
+                ...p, 
+                isCaptain: p.id === playerId ? newVal : false,
+                isReserve: p.id === playerId ? updatedReserve : p.isReserve 
+            })) }
             : t
         ));
     };
@@ -1001,6 +1066,28 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     
     const updateTimer = async (matchId: string, time: number) => updateMatch(matchId, { timer: time });
 
+    const isPlayerOnPitch = (match: Match, playerId: string) => {
+        const teamId = [...rawTeams].find(t => t.players.some(p => p.id === playerId))?.id;
+        if (!teamId) return false;
+        
+        const team = rawTeams.find(t => t.id === teamId);
+        const player = team?.players.find(p => p.id === playerId);
+        if (!player) return false;
+
+        // Check cards
+        const redCards = match.events.filter(e => e.type === 'red_card' && e.playerId === playerId).length;
+        if (redCards > 0) return false;
+
+        const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === playerId).length;
+        const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === playerId).length;
+
+        if (player.isReserve) {
+            return subIns > subOuts;
+        } else {
+            return subOuts <= subIns;
+        }
+    };
+
     const addEvent = async (matchId: string, event: Omit<MatchEvent, 'id'>) => {
         const { data } = await supabase.from('match_events').insert({
             match_id: matchId, type: event.type, team_id: event.teamId,
@@ -1024,6 +1111,32 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 home_score: scoringTeamIsHome ? match.homeScore + 1 : match.homeScore,
                 away_score: !scoringTeamIsHome ? match.awayScore + 1 : match.awayScore,
             }).eq('id', matchId);
+        }
+
+        // Lógica de Transferência de Braçadeira (Substituição ou Vermelho do Capitão)
+        if (event.type === 'substitution' || event.type === 'red_card') {
+            const team = rawTeams.find(t => t.id === event.teamId);
+            const match = rawMatches.find(m => m.id === matchId);
+            if (!team || !match) return;
+            
+            const pId = event.type === 'substitution' ? event.playerOutId : event.playerId;
+            const player = team.players.find(p => p.id === pId);
+
+            if (player?.isCaptain) {
+                let newCaptainId = '';
+                if (event.type === 'substitution') {
+                    newCaptainId = event.playerId as string; // O que entra herda a braçadeira
+                } else {
+                    // No vermelho, passa para outro que esteja em campo
+                    // Precisamos considerar o evento que acabamos de adicionar (o vermelho)
+                    const onPitch = team.players.filter(p => p.id !== player.id && isPlayerOnPitch({ ...match, events: [...match.events, mapped] }, p.id));
+                    if (onPitch.length > 0) newCaptainId = onPitch[0].id;
+                }
+
+                if (newCaptainId) {
+                    await toggleCaptain(team.id, newCaptainId);
+                }
+            }
         }
     };
 
@@ -1229,7 +1342,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             createLeague, updateLeague, deleteLeague, selectLeague, generateGroups,
             followLeague, unfollowLeague, searchLeagues,
             addTeam, updateTeam, deleteTeam,
-            addPlayer, updatePlayer, removePlayer, toggleCaptain,
+            addPlayer, updatePlayer, removePlayer, toggleCaptain, isPlayerOnPitch,
             createMatch, updateMatch, deleteMatch, startMatch, pauseMatch, endMatch, updateTimer,
             addEvent, removeEvent,
             generateBracket, updateBracket, loadLeagues, isPublicView, isAdmin, loadPublicLeague,
