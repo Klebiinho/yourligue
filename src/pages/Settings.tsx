@@ -3,7 +3,7 @@ import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
 import TeamLogo from '../components/TeamLogo';
 import { useNavigate } from 'react-router-dom';
-import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Upload, Link as LinkIcon, Check, Edit2 } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Check, Edit2, Smartphone } from 'lucide-react';
 
 const AD_POSITIONS = [
     { id: 'top', label: 'Topo da Página' },
@@ -307,7 +307,7 @@ const Settings = () => {
                                         setIsAddingAd(!isAddingAd);
                                         if (isAddingAd) {
                                             setEditingAdId(null);
-                                            setFormAd({ title: '', media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
+                                            setFormAd({ title: '', desktop_media_url: '', mobile_media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
                                         }
                                     }}
                                     className="bg-accent/10 text-accent hover:bg-accent hover:text-white px-4 py-2 rounded-xl transition-all flex items-center gap-2 text-[0.65rem] font-black uppercase tracking-widest"
