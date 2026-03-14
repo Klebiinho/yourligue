@@ -36,6 +36,23 @@ const MatchControl = () => {
         }
     }, [match?.halfLength, match?.extraTime, match?.period]);
 
+    const isPlayerOnPitch = (playerId: string) => {
+        if (!match || !homeTeam || !awayTeam) return false;
+        
+        const p = [...homeTeam.players, ...awayTeam.players].find(pl => pl.id === playerId);
+        if (!p) return false;
+        
+        const { isRedCarded } = getPlayerStatus(playerId);
+        if (isRedCarded) return false;
+
+        const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === playerId).length;
+        const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === playerId).length;
+        
+        // If it's a reserve, they are on pitch if they entered more times than they left
+        // If it's a starter, they are on pitch if they left less or equal times than they entered (starts at 0-0, so 0<=0 is true)
+        return p.isReserve ? (subIns > subOuts) : (subOuts <= subIns);
+    };
+
     const getPlayerStatus = (playerId: string) => {
         const playerEvents = match?.events.filter((e: MatchEvent) => e.playerId === playerId) || [];
         const yellowCards = playerEvents.filter((e: MatchEvent) => e.type === 'yellow_card').length;
@@ -118,10 +135,12 @@ const MatchControl = () => {
     const handleGolContra = (teamId: string, playerId: string) => { if (matchId) addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); };
     const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { if (matchId) addEvent(matchId, { type, teamId, playerId, minute: currentMinute }); };
     const handleSubstitution = (teamId: string, playerInId: string, playerOutId: string) => {
-        if (matchId && league) {
+        if (matchId) {
+            const limit = league?.substitutionsLimit || 5;
             const teamSubstitutions = (match?.events || []).filter(e => e.type === 'substitution' && e.teamId === teamId).length;
-            if (teamSubstitutions >= (league.substitutionsLimit || 5)) {
-                alert(`Limite de ${league.substitutionsLimit || 5} substituições atingido para este time!`);
+            
+            if (teamSubstitutions >= limit) {
+                alert(`Limite de ${limit} substituições atingido para este time!`);
                 return;
             }
             addEvent(matchId, { type: 'substitution', teamId, playerId: playerInId, playerOutId, minute: currentMinute });
@@ -224,13 +243,7 @@ const MatchControl = () => {
                         <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1 no-scrollbar">
                             {/* Dynamic Grouping */}
                             {(() => {
-                                const onPitch = team.players.filter(p => {
-                                    const { isRedCarded } = getPlayerStatus(p.id);
-                                    if (isRedCarded) return false;
-                                    const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === p.id).length;
-                                    const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === p.id).length;
-                                    return p.isReserve ? (subIns > subOuts) : (subOuts <= subIns);
-                                });
+                                const onPitch = team.players.filter(p => isPlayerOnPitch(p.id));
                                 const offPitch = team.players.filter(p => !onPitch.some(op => op.id === p.id));
 
                                 return (
@@ -478,20 +491,17 @@ const MatchControl = () => {
                                     {(submittingPlayer.teamId === homeTeam.id ? homeTeam : awayTeam).players
                                         .filter(p => {
                                             if (p.id === submittingPlayer.playerOutId) return false;
+                                            
                                             const { isRedCarded } = getPlayerStatus(p.id);
                                             if (isRedCarded) return false;
 
                                             // Determine if player is currently on the pitch
-                                            const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === p.id).length;
-                                            const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === p.id).length;
-                                            
-                                            const isOriginalStarter = !p.isReserve;
-                                            const isOnPitch = isOriginalStarter ? (subOuts <= subIns) : (subIns > subOuts);
+                                            if (isPlayerOnPitch(p.id)) return false;
 
-                                            if (isOnPitch) return false;
-
-                                            // If return is not allowed, once subbed out, they stay out
-                                            if (league && !league.allowSubstitutionReturn) {
+                                            // If return is EXPLICITLY forbidden, once subbed out, they stay out
+                                            // We use explicit check against false to allow return if setting is missing or true
+                                            if (league?.allowSubstitutionReturn === false) {
+                                                const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === p.id).length;
                                                 if (subOuts > 0) return false;
                                             }
 
@@ -513,15 +523,14 @@ const MatchControl = () => {
                                     {(submittingPlayer.teamId === homeTeam.id ? homeTeam : awayTeam).players.filter(p => {
                                         const { isRedCarded } = getPlayerStatus(p.id);
                                         if (isRedCarded) return false;
-                                        const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === p.id).length;
-                                        const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === p.id).length;
-                                        const isOriginalIn = !p.isReserve;
-                                        const isOnPitch = isOriginalIn ? (subOuts <= subIns) : (subIns > subOuts);
-                                        if (isOnPitch) return false;
-                                        if (league && !league.allowSubstitutionReturn && subOuts > 0) return false;
+                                        if (isPlayerOnPitch(p.id)) return false;
+                                        if (league?.allowSubstitutionReturn === false) {
+                                            const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === p.id).length;
+                                            if (subOuts > 0) return false;
+                                        }
                                         return p.id !== submittingPlayer.playerOutId;
                                     }).length === 0 && (
-                                        <p className="text-center py-6 text-slate-600 text-[0.65rem] uppercase font-black uppercase tracking-widest italic">Nenhum jogador disponível para entrar</p>
+                                        <p className="text-center py-6 text-slate-600 text-[0.65rem] uppercase font-black tracking-widest italic">Nenhum jogador disponível para entrar</p>
                                     )}
                                 </div>
                             </div>

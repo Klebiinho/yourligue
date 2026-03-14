@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
 import TeamLogo from '../components/TeamLogo';
@@ -35,6 +35,23 @@ const Settings = () => {
     const [allowSubstitutionReturn, setAllowSubstitutionReturn] = useState(league?.allowSubstitutionReturn ?? true);
     const [saved, setSaved] = useState(false);
     const [copied, setCopied] = useState(false);
+
+    // Sync state with league data when it loads
+    useEffect(() => {
+        if (league) {
+            setName(league.name ?? '');
+            setLogo(league.logo ?? '');
+            setMaxTeams(String(league.maxTeams ?? 16));
+            setPointsForWin(String(league.pointsForWin ?? 3));
+            setPointsForDraw(String(league.pointsForDraw ?? 1));
+            setPointsForLoss(String(league.pointsForLoss ?? 0));
+            setHalfLength(String(league.defaultHalfLength ?? 45));
+            setPlayersPerTeam(String(league.playersPerTeam ?? 5));
+            setReserveLimit(String(league.reserveLimitPerTeam ?? 5));
+            setSubstitutionsLimit(String(league.substitutionsLimit ?? 5));
+            setAllowSubstitutionReturn(league.allowSubstitutionReturn ?? true);
+        }
+    }, [league]);
 
     // Ads Management State
     const { ads, addAd, updateAd, deleteAd } = useLeague();
