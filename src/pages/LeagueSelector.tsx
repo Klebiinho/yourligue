@@ -233,7 +233,8 @@ const LeagueSelector = () => {
                                     name: newName, logo: '', maxTeams: 16,
                                     pointsForWin: 3, pointsForDraw: 1, pointsForLoss: 0,
                                     defaultHalfLength: 45, playersPerTeam: 5, reserveLimitPerTeam: 5,
-                                    substitutionsLimit: 5
+                                    substitutionsLimit: 5,
+                                    allowSubstitutionReturn: true
                                 });
                                 if (!res.error) {
                                     setNewName(''); setShowCreate(false); navigate('/');
