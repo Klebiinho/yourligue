@@ -137,6 +137,14 @@ const MatchControl = () => {
             }
         }
 
+        if (period === 'Prorrogação' && match.homeScore === match.awayScore) {
+            if (window.confirm('O empate persiste. Deseja iniciar a disputa de Pênaltis? \n\n(Clique em Cancelar para finalizar a partida como empate)')) {
+                setTimerRunning(false);
+                handlePeriodChange('Pênaltis');
+                return;
+            }
+        }
+
         if (window.confirm('Deseja realmente finalizar a partida definitivamente?')) {
             setTimerRunning(false);
             endMatch(matchId, localSeconds);
