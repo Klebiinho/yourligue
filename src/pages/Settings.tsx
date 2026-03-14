@@ -33,6 +33,7 @@ const Settings = () => {
     const [reserveLimit, setReserveLimit] = useState(String(league?.reserveLimitPerTeam ?? 5));
     const [substitutionsLimit, setSubstitutionsLimit] = useState(String(league?.substitutionsLimit ?? 5));
     const [allowSubstitutionReturn, setAllowSubstitutionReturn] = useState(league?.allowSubstitutionReturn ?? true);
+    const [hasOvertime, setHasOvertime] = useState(league?.hasOvertime ?? true);
     const [saved, setSaved] = useState(false);
     const [copied, setCopied] = useState(false);
 
@@ -50,6 +51,7 @@ const Settings = () => {
             setReserveLimit(String(league.reserveLimitPerTeam ?? 5));
             setSubstitutionsLimit(String(league.substitutionsLimit ?? 5));
             setAllowSubstitutionReturn(league.allowSubstitutionReturn ?? true);
+            setHasOvertime(league.hasOvertime ?? true);
         }
     }, [league]);
 
@@ -100,7 +102,8 @@ const Settings = () => {
             playersPerTeam: parseInt(playersPerTeam) || 5,
             reserveLimitPerTeam: parseInt(reserveLimit) || 5,
             substitutionsLimit: parseInt(substitutionsLimit) || 5,
-            allowSubstitutionReturn
+            allowSubstitutionReturn,
+            hasOvertime
         });
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
@@ -316,7 +319,24 @@ const Settings = () => {
                                 </div>
                             </div>
 
-                            {/* Point System */}
+                             {/* Overtime Rule Toggle */}
+                             <div className="space-y-4 bg-black/10 p-6 rounded-3xl border border-white/5">
+                                 <div className="flex items-center justify-between">
+                                     <div className="space-y-1">
+                                         <h3 className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                             <Clock size={14} className="text-primary" /> Tempo Extra em Empates
+                                         </h3>
+                                         <p className="text-[0.6rem] text-slate-600 font-bold uppercase tracking-widest">Em mata-mata, haverá prorrogação antes dos pênaltis?</p>
+                                     </div>
+                                     <button type="button" onClick={() => setHasOvertime(!hasOvertime)}
+                                         className={`flex items-center gap-3 px-4 py-2 rounded-xl border transition-all font-black text-[0.6rem] uppercase tracking-widest ${hasOvertime ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-white/5 border-white/10 text-slate-500'}`}>
+                                         {hasOvertime ? <Check size={14} strokeWidth={4} /> : <X size={14} strokeWidth={4} />}
+                                         {hasOvertime ? 'Prorrogação + Pênaltis' : 'Pênaltis Direto'}
+                                     </button>
+                                 </div>
+                             </div>
+
+                             {/* Point System */}
                             <div className="space-y-6 bg-black/10 p-8 rounded-3xl border border-white/5">
                                 <h3 className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                                     <Target size={14} className="text-primary" /> Sistema de Pontuação (Draft)

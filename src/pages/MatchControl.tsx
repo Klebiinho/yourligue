@@ -128,10 +128,18 @@ const MatchControl = () => {
         }
 
         if (period === '2º Tempo' && match.homeScore === match.awayScore) {
-            if (window.confirm('A partida terminou empatada. Deseja iniciar a Prorrogação?')) {
-                setTimerRunning(false);
-                handlePeriodChange('Prorrogação');
-                return;
+            if (league?.hasOvertime) {
+                if (window.confirm('A partida terminou empatada. Deseja iniciar a Prorrogação?')) {
+                    setTimerRunning(false);
+                    handlePeriodChange('Prorrogação');
+                    return;
+                }
+            } else {
+                if (window.confirm('A partida terminou empatada. Deseja iniciar a disputa de Pênaltis?')) {
+                    setTimerRunning(false);
+                    handlePeriodChange('Pênaltis');
+                    return;
+                }
             }
         }
 
@@ -263,7 +271,7 @@ const MatchControl = () => {
                                 <StopCircle size={16} strokeWidth={3} />
                                 {period === '1º Tempo' ? 'Fim 1º Tempo' : 
                                  period === 'Intervalo' ? 'Iniciar 2º Tempo' : 
-                                 (period === '2º Tempo' && match.homeScore === match.awayScore) ? 'Ir p/ Prorrogação' :
+                                 (period === '2º Tempo' && match.homeScore === match.awayScore) ? (league?.hasOvertime ? 'Ir p/ Prorrogação' : 'Ir p/ Pênaltis') :
                                  (period === 'Prorrogação' && match.homeScore === match.awayScore) ? 'Ir p/ Pênaltis' :
                                  'Finalizar Jogo'}
                             </button>

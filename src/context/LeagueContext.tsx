@@ -92,6 +92,7 @@ export type League = {
     reserveLimitPerTeam: number;
     substitutionsLimit: number;
     allowSubstitutionReturn: boolean;
+    hasOvertime: boolean;
     slug: string;
     userId: string;
 };
@@ -369,6 +370,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
                     substitutionsLimit: l.substitutions_limit || 5,
                     allowSubstitutionReturn: l.allow_substitution_return ?? true,
+                    hasOvertime: l.has_overtime ?? true,
                     slug: l.slug || '',
                     userId: l.user_id
                 }));
@@ -392,6 +394,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                             playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
                             substitutionsLimit: l.substitutions_limit || 5,
                             allowSubstitutionReturn: l.allow_substitution_return ?? true,
+                            hasOvertime: l.has_overtime ?? true,
                             slug: l.slug || '',
                             userId: l.user_id
                         };
@@ -433,6 +436,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
                 substitutionsLimit: l.substitutions_limit || 5,
                 allowSubstitutionReturn: l.allow_substitution_return ?? true,
+                hasOvertime: l.has_overtime ?? true,
                 slug: l.slug || '',
                 userId: l.user_id
             }));
@@ -467,6 +471,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     playersPerTeam: data.players_per_team || 5, reserveLimitPerTeam: data.reserve_limit_per_team || 5,
                     substitutionsLimit: data.substitutions_limit || 5,
                     allowSubstitutionReturn: data.allow_substitution_return ?? true,
+                    hasOvertime: data.has_overtime ?? true,
                     slug: data.slug || '',
                     userId: data.user_id
                 };
@@ -755,6 +760,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
             substitutions_limit: data.substitutionsLimit,
             allow_substitution_return: data.allowSubstitutionReturn ?? true,
+            has_overtime: data.hasOvertime ?? true,
             slug
         }).select().single();
         if (error) {
@@ -770,6 +776,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 playersPerTeam: row.players_per_team || 5, reserveLimitPerTeam: row.reserve_limit_per_team || 5,
                 substitutionsLimit: row.substitutions_limit || 5,
                 allowSubstitutionReturn: row.allow_substitution_return ?? true,
+                hasOvertime: row.has_overtime ?? true,
                 slug: row.slug || '',
                 userId: row.user_id
             };
@@ -788,7 +795,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
             players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
             substitutions_limit: data.substitutionsLimit,
-            allow_substitution_return: data.allowSubstitutionReturn
+            allow_substitution_return: data.allowSubstitutionReturn,
+            has_overtime: data.hasOvertime
         };
 
         if (data.name && data.name !== league.name) {
