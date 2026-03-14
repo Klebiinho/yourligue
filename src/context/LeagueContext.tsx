@@ -173,8 +173,8 @@ interface LeagueContextType {
     // Ads
     ads: Ad[];
     addAd: (ad: Omit<Ad, 'id' | 'league_id' | 'active'>) => Promise<{ error: string | null }>;
-    updateAd: (id: string, ad: Partial<Ad>) => Promise<void>;
-    deleteAd: (id: string) => Promise<void>;
+    updateAd: (id: string, ad: Partial<Ad>) => Promise<{ error: string | null }>;
+    deleteAd: (id: string) => Promise<{ error: string | null }>;
 }
 
 const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
@@ -965,15 +965,23 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const updateAd = async (id: string, updates: Partial<Ad>) => {
-        if (!league) return;
+        if (!league) return { error: 'No league selected' };
         const { error } = await supabase.from('ads').update(updates).eq('id', id);
-        if (!error) setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+        if (!error) {
+            setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+            return { error: null };
+        }
+        return { error: error.message };
     };
 
     const deleteAd = async (id: string) => {
-        if (!league) return;
+        if (!league) return { error: 'No league selected' };
         const { error } = await supabase.from('ads').delete().eq('id', id);
-        if (!error) setAds(prev => prev.filter(a => a.id !== id));
+        if (!error) {
+            setAds(prev => prev.filter(a => a.id !== id));
+            return { error: null };
+        }
+        return { error: error.message };
     };
 
     useEffect(() => {

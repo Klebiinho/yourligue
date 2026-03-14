@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
-import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Upload, Link as LinkIcon, Check } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import { useNavigate } from 'react-router-dom';
+import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Upload, Link as LinkIcon, Check, Edit2 } from 'lucide-react';
 
 const Settings = () => {
     const { league, updateLeague, isAdmin } = useLeague();
@@ -29,12 +29,13 @@ const Settings = () => {
         title: '',
         media_url: '',
         media_type: 'image' as 'image' | 'video' | 'gif',
-        position: 'top' as 'top' | 'side' | 'between' | 'halftime' | 'overlay',
+        position: 'top' as 'top' | 'side' | 'between' | 'halftime' | 'overlay' | 'home_stats' | 'teams_list' | 'matches_filter' | 'live_top' | 'standings_info' | 'panel_stats',
         link_url: '',
         duration: 5
     });
     const [adInputMethod, setAdInputMethod] = useState<'file' | 'url'>('file');
     const [selectedAds, setSelectedAds] = useState<string[]>([]);
+    const [editingAdId, setEditingAdId] = useState<string | null>(null);
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -44,8 +45,9 @@ const Settings = () => {
     const handleAdMediaFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            const type = file.type.startsWith('video/') ? 'video' : file.type === 'image/gif' ? 'gif' : 'image';
             const r = new FileReader();
-            r.onloadend = () => setFormAd(prev => ({ ...prev, media_url: r.result as string }));
+            r.onloadend = () => setFormAd(prev => ({ ...prev, media_url: r.result as string, media_type: type as any }));
             r.readAsDataURL(file);
         }
     };
@@ -82,13 +84,39 @@ const Settings = () => {
 
     const handleAdSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const { error } = await addAd(formAd);
-        if (!error) {
-            setIsAddingAd(false);
-            setFormAd({ title: '', media_url: '', media_type: 'image', position: 'top', link_url: '', duration: 5 });
+        if (editingAdId) {
+            const { error } = await updateAd(editingAdId, formAd);
+            if (!error) {
+                setEditingAdId(null);
+                setIsAddingAd(false);
+                setFormAd({ title: '', media_url: '', media_type: 'image', position: 'top', link_url: '', duration: 5 });
+            } else {
+                alert(error);
+            }
         } else {
-            alert(error);
+            const { error } = await addAd(formAd);
+            if (!error) {
+                setIsAddingAd(false);
+                setFormAd({ title: '', media_url: '', media_type: 'image', position: 'top', link_url: '', duration: 5 });
+            } else {
+                alert(error);
+            }
         }
+    };
+
+    const startEditAd = (ad: any) => {
+        setEditingAdId(ad.id);
+        setFormAd({
+            title: ad.title,
+            media_url: ad.media_url,
+            media_type: ad.media_type,
+            position: ad.position,
+            link_url: ad.link_url || '',
+            duration: ad.duration || 5
+        });
+        setIsAddingAd(true);
+        setAdInputMethod(ad.media_url.startsWith('http') ? 'url' : 'file');
+        window.scrollTo({ top: 300, behavior: 'smooth' }); // Scroll to form
     };
 
     const handleSwitchLeague = () => navigate('/leagues');
@@ -250,13 +278,34 @@ const Settings = () => {
                                     <p className="text-slate-500 text-xs mt-1 uppercase font-bold tracking-widest">Monetize ou destaque parceiros na sua liga</p>
                                 </div>
                                 <button
-                                    onClick={() => setIsAddingAd(!isAddingAd)}
+                                    onClick={() => {
+                                        setIsAddingAd(!isAddingAd);
+                                        if (isAddingAd) {
+                                            setEditingAdId(null);
+                                            setFormAd({ title: '', media_url: '', media_type: 'image', position: 'top', link_url: '', duration: 5 });
+                                        }
+                                    }}
                                     className="bg-accent/10 text-accent hover:bg-accent hover:text-white px-4 py-2 rounded-xl transition-all flex items-center gap-2 text-[0.65rem] font-black uppercase tracking-widest"
                                 >
                                     {isAddingAd ? <X size={16} /> : <Plus size={16} />}
                                     {isAddingAd ? 'Cancelar' : 'Nova Prop'}
                                 </button>
                             </div>
+
+                            {formAd.media_url && isAddingAd && (
+                                <div className="mb-6 rounded-2xl overflow-hidden glass-panel border-accent/20 border p-2">
+                                    <div className="aspect-video w-full bg-black/40 rounded-xl overflow-hidden relative">
+                                        {formAd.media_type === 'video' ? (
+                                            <video src={formAd.media_url} controls className="w-full h-full object-contain" />
+                                        ) : (
+                                            <img src={formAd.media_url} alt="Preview" className="w-full h-full object-contain" />
+                                        )}
+                                        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[0.6rem] font-black text-white uppercase tracking-widest border border-white/10">
+                                            Preview {editingAdId ? 'Original' : 'Novo'}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {isAddingAd && (
                                 <div className="bg-black/40 border border-white/10 rounded-3xl p-8 mb-8 animate-scale-in">
@@ -353,7 +402,7 @@ const Settings = () => {
                                         </div>
 
                                         <button type="submit" className="w-full bg-accent text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest hover:brightness-110 transition-all shadow-lg shadow-accent/20">
-                                            Adicionar Propaganda
+                                            {editingAdId ? 'Salvar Alterações' : 'Adicionar Propaganda'}
                                         </button>
                                     </form>
                                 </div>
@@ -428,8 +477,16 @@ const Settings = () => {
                                             <button
                                                 onClick={() => updateAd(ad.id, { active: !ad.active })}
                                                 className={`p-2 rounded-lg transition-all ${ad.active ? 'text-accent bg-accent/10' : 'text-slate-600 bg-white/5'}`}
+                                                title={ad.active ? 'Desativar' : 'Ativar'}
                                             >
                                                 <Monitor size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => startEditAd(ad)}
+                                                className="p-2 rounded-lg text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all"
+                                                title="Editar"
+                                            >
+                                                <Edit2 size={14} />
                                             </button>
                                             <button
                                                 onClick={() => deleteAd(ad.id)}
