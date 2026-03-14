@@ -27,6 +27,15 @@ const MatchControl = () => {
         setShowOverlay(true);
     }, [period]);
 
+    // Sincronizar estados locais com dados do banco (Realtime)
+    useEffect(() => {
+        if (match) {
+            setHalfLength(match.halfLength || 45);
+            setExtraTime(match.extraTime || 0);
+            setPeriod(match.period || '1º Tempo');
+        }
+    }, [match?.halfLength, match?.extraTime, match?.period]);
+
     const getPlayerStatus = (playerId: string) => {
         const playerEvents = match?.events.filter((e: MatchEvent) => e.playerId === playerId) || [];
         const yellowCards = playerEvents.filter((e: MatchEvent) => e.type === 'yellow_card').length;
@@ -50,23 +59,14 @@ const MatchControl = () => {
         let interval: number;
         
         const updateTimerDisplay = () => {
-            if (!match) {
-                console.log('Timer Sync: No match data yet');
-                return;
-            }
+            if (!match) return;
 
             if (match.status === 'live') {
                 const lastUpdateStr = match.updatedAt || new Date().toISOString();
                 const lastUpdate = new Date(lastUpdateStr).getTime();
                 const now = Date.now();
                 const diffInSeconds = Math.max(0, Math.floor((now - lastUpdate) / 1000));
-                
                 const calculatedSeconds = (match.timer || 0) + diffInSeconds;
-                
-                // Debug log (remove later)
-                if (calculatedSeconds % 10 === 0) {
-                    console.log('Timer Sync:', { status: match.status, dbTimer: match.timer, diff: diffInSeconds, total: calculatedSeconds, updatedAt: lastUpdateStr });
-                }
 
                 setLocalSeconds(calculatedSeconds);
                 setTimerRunning(true);
@@ -167,6 +167,9 @@ const MatchControl = () => {
                         <div className="bg-black/50 px-4 py-1.5 rounded-xl flex items-center gap-2 border border-white/[0.05] shadow-inner">
                             <div className={`w-1.5 h-1.5 rounded-full ${timerRunning ? 'bg-danger animate-pulse shadow-[0_0_8px_rgba(239,68,68,1)]' : 'bg-slate-700'}`} />
                             <span className="font-mono text-base sm:text-xl font-black text-white tracking-[0.1em]">{formatTime(localSeconds)}</span>
+                            {(match.extraTime || 0) > 0 && (
+                                <span className="text-danger font-black text-xs sm:text-sm animate-pulse ml-1">+{match.extraTime}</span>
+                            )}
                         </div>
                         <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">{period}</span>
                     </div>
@@ -338,7 +341,16 @@ const MatchControl = () => {
                             </div>
                             <div className="space-y-1.5 mb-5">
                                 <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Acréscimos (min)</label>
-                                <input type="number" value={extraTime} onChange={e => setExtraTime(parseInt(e.target.value))}
+                                <div className="flex gap-1.5 mb-2">
+                                    {[1, 2, 3, 4, 5].map(v => (
+                                        <button key={v} onClick={() => setExtraTime(v)} 
+                                            className={`flex-1 py-1.5 rounded-lg text-[0.65rem] font-black transition-all ${extraTime === v ? 'bg-primary text-white' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}>
+                                            +{v}
+                                        </button>
+                                    ))}
+                                    <button onClick={() => setExtraTime(0)} className="flex-1 py-1.5 rounded-lg text-[0.65rem] font-black bg-white/5 text-slate-500 hover:bg-white/10">0</button>
+                                </div>
+                                <input type="number" value={extraTime} onChange={e => setExtraTime(parseInt(e.target.value) || 0)}
                                     className="w-full bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 text-white text-center text-xl font-black focus:border-primary outline-none" />
                             </div>
                             <button onClick={handleSaveTimeSettings} className="w-full bg-white/5 border border-white/10 text-white font-black py-3 rounded-xl uppercase tracking-widest text-[0.65rem] hover:bg-white/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
