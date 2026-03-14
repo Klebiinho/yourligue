@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Users } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
@@ -21,6 +21,8 @@ const MatchControl = () => {
     const [period, setPeriod] = useState(match?.period || '1º Tempo');
     const [submittingPlayer, setSubmittingPlayer] = useState<{ teamId: string, playerOutId: string } | null>(null);
     const [showOverlay, setShowOverlay] = useState(true);
+    const [penaltyPickers, setPenaltyPickers] = useState<{ [teamId: string]: string[] }>({});
+    const [confirmedPenaltyShooters, setConfirmedPenaltyShooters] = useState<string[]>([]);
     const { startMatch, pauseMatch } = useLeague();
 
     useEffect(() => {
@@ -202,6 +204,25 @@ const MatchControl = () => {
         }
     };
 
+    const togglePenaltyShooter = (playerId: string, teamId: string) => {
+        setPenaltyPickers(prev => {
+            const current = prev[teamId] || [];
+            if (current.includes(playerId)) {
+                return { ...prev, [teamId]: current.filter(id => id !== playerId) };
+            }
+            return { ...prev, [teamId]: [...current, playerId] };
+        });
+    };
+
+    const confirmShooters = () => {
+        const allSelected = (penaltyPickers[homeTeam.id] || []).concat(penaltyPickers[awayTeam.id] || []);
+        if (allSelected.length === 0) {
+            alert('Selecione os batedores antes de confirmar!');
+            return;
+        }
+        setConfirmedPenaltyShooters(allSelected);
+    };
+
 
     return (
         <div className="animate-fade-in relative pb-10">
@@ -306,6 +327,69 @@ const MatchControl = () => {
                             {(() => {
                                 const onPitch = team.players.filter(p => isPlayerOnPitch(match, p.id));
                                 const offPitch = team.players.filter(p => !onPitch.some(op => op.id === p.id));
+                                const isPenaltySelection = period === 'Pênaltis' && !confirmedPenaltyShooters.includes(team.players[0]?.id) && isAdmin && !isPublicView;
+
+                                if (isPenaltySelection) {
+                                    return (
+                                        <div className="space-y-4">
+                                            <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl mb-4">
+                                                <h3 className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em] mb-1">Seleção de Batedores</h3>
+                                                <p className="text-[0.6rem] text-slate-500 font-bold uppercase tracking-widest">Selecione os jogadores elegíveis para as cobranças</p>
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {team.players.map((player: Player) => {
+                                                    const { isRedCarded } = getPlayerStatus(player.id);
+                                                    const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === player.id).length;
+                                                    const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === player.id).length;
+                                                    // const wasSubbedOut = subOuts > subIns;
+                                                    const onPitch = isPlayerOnPitch(match, player.id);
+                                                    
+                                                    // REGRA: Expulsos NUNCA batem. 
+                                                    // Se Retorno Proibido: Apenas quem terminou em campo bate.
+                                                    // Se Retorno Permitido: Todos (exceto expulsos) podem bater.
+                                                    const isEligible = !isRedCarded && (league?.allowSubstitutionReturn || onPitch);
+                                                    const isSelected = (penaltyPickers[team.id] || []).includes(player.id);
+
+                                                    return (
+                                                        <button 
+                                                            key={player.id} 
+                                                            disabled={!isEligible}
+                                                            onClick={() => togglePenaltyShooter(player.id, team.id)}
+                                                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${
+                                                                isSelected 
+                                                                ? 'bg-primary border-primary text-white shadow-lg' 
+                                                                : isEligible 
+                                                                    ? 'bg-white/5 border-white/10 hover:border-white/20' 
+                                                                    : 'bg-danger/5 border-danger/10 opacity-30 cursor-not-allowed'
+                                                            }`}
+                                                        >
+                                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${isSelected ? 'bg-white/20' : 'bg-black/20 group-hover:bg-black/40'}`}>
+                                                                #{player.number}
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <div className="text-[0.7rem] font-black uppercase tracking-tight">{player.name}</div>
+                                                                {!isEligible && (
+                                                                    <div className="text-[0.5rem] font-black uppercase tracking-tighter opacity-60">
+                                                                        {isRedCarded ? 'Expulso' : 'Substituído'}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            {isSelected && <Check size={16} strokeWidth={4} />}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            {idx === 1 && (
+                                                <button 
+                                                    onClick={confirmShooters}
+                                                    className="w-full mt-6 py-4 rounded-2xl bg-accent text-white font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <Check size={18} strokeWidth={3} /> Confirmar Batedores e Iniciar
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+                                }
 
                                 return (
                                     <>
