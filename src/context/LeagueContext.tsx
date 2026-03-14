@@ -224,8 +224,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             // Only clear current league if we are NOT in public view mode
             if (!isPublicView) {
                 setLeague(null);
+                setLoading(false);
             }
-            setLoading(false);
+            // In public view, loadPublicLeague will handle setLoading(false)
             return;
         }
         loadLeagues();
@@ -233,57 +234,63 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const loadLeagues = async () => {
         if (!user) return;
+        console.log('LeagueContext: loadLeagues iniciado', { hasUser: !!user });
         // SILENT REFRESH: Only show active loading if we don't have leagues yet
         if (leagues.length === 0) setLoading(true);
 
-        // Load owned leagues
-        const { data: ownedData } = await supabase
-            .from('leagues')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: true });
+        try {
+            // Load owned leagues
+            const { data: ownedData } = await supabase
+                .from('leagues')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: true });
 
-        // Load followed leagues
-        const { data: followsData } = await supabase
-            .from('followed_leagues')
-            .select('leagues(*)')
-            .eq('user_id', user.id);
+            // Load followed leagues
+            const { data: followsData } = await supabase
+                .from('followed_leagues')
+                .select('leagues(*)')
+                .eq('user_id', user.id);
 
-        if (ownedData) {
-            const mapped: League[] = ownedData.map(l => ({
-                id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
-                pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
-                pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
-                playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
-                substitutionsLimit: l.substitutions_limit || 5, slug: l.slug || '',
-                userId: l.user_id
-            }));
-            setLeagues(mapped);
-            if (mapped.length > 0 && !league && !isPublicView) {
-                const saved = localStorage.getItem('selectedLeagueId');
-                const found = saved ? mapped.find(l => l.id === saved) : null;
-                setLeague(found ?? mapped[0]);
+            if (ownedData) {
+                const mapped: League[] = ownedData.map(l => ({
+                    id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
+                    pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
+                    pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
+                    playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
+                    substitutionsLimit: l.substitutions_limit || 5, slug: l.slug || '',
+                    userId: l.user_id
+                }));
+                setLeagues(mapped);
+                if (mapped.length > 0 && !league && !isPublicView) {
+                    const saved = localStorage.getItem('selectedLeagueId');
+                    const found = saved ? mapped.find(l => l.id === saved) : null;
+                    setLeague(found ?? mapped[0]);
+                }
             }
-        }
 
-        if (followsData) {
-            const mapped: League[] = followsData
-                .filter(f => f.leagues)
-                .map(f => {
-                    const l = f.leagues as any;
-                    return {
-                        id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
-                        pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
-                        pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
-                        playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
-                        substitutionsLimit: l.substitutions_limit || 5, slug: l.slug || '',
-                        userId: l.user_id
-                    };
-                });
-            setFollowedLeagues(mapped);
+            if (followsData) {
+                const mapped: League[] = followsData
+                    .filter(f => f.leagues)
+                    .map(f => {
+                        const l = f.leagues as any;
+                        return {
+                            id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
+                            pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
+                            pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
+                            playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
+                            substitutionsLimit: l.substitutions_limit || 5, slug: l.slug || '',
+                            userId: l.user_id
+                        };
+                    });
+                setFollowedLeagues(mapped);
+            }
+        } catch (err) {
+            console.error('LeagueContext: Erro em loadLeagues:', err);
+        } finally {
+            console.log('LeagueContext: loadLeagues finalizado');
+            setLoading(false);
         }
-
-        setLoading(false);
     };
 
     const followLeague = async (leagueId: string) => {
@@ -326,6 +333,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
         setIsPublicView(true);
 
+        console.log('LeagueContext: loadPublicLeague iniciado para:', slugOrId);
         try {
             // Try slug first
             let { data, error } = await supabase.from('leagues').select('*').eq('slug', slugOrId).single();
@@ -356,6 +364,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             setLeague(null);
             return false;
         } finally {
+            console.log('LeagueContext: loadPublicLeague finalizado');
             setLoading(false);
         }
     }, []);
