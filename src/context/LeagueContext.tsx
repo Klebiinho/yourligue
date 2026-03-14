@@ -133,7 +133,7 @@ interface LeagueContextType {
 
     // Player actions
     addPlayer: (teamId: string, player: Omit<Player, 'id' | 'stats'>) => Promise<{ error: string | null }>;
-    updatePlayer: (teamId: string, playerId: string, data: Partial<Player>) => Promise<void>;
+    updatePlayer: (teamId: string, playerId: string, data: Partial<Player>) => Promise<{ error: string | null }>;
     removePlayer: (teamId: string, playerId: string) => Promise<void>;
     toggleCaptain: (teamId: string, playerId: string) => Promise<void>;
 
@@ -807,14 +807,35 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     // ── Player CRUD ────────────────────────────────────────────
     const addPlayer = async (teamId: string, player: Omit<Player, 'id' | 'stats'>) => {
         const team = rawTeams.find(t => t.id === teamId);
-        if (team?.players.some(p => p.number === player.number)) {
+        if (!team || !league) return { error: 'Time ou liga não encontrados' };
+
+        // Validação de número único no time
+        if (team.players.some(p => p.number === player.number)) {
             return { error: `O número ${player.number} já está sendo usado neste time.` };
         }
+
+        // Validação de limites (Titulares / Reservas)
+        const currentStarters = team.players.filter(p => !p.isReserve).length;
+        const currentReserves = team.players.filter(p => p.isReserve).length;
+
+        if (!player.isReserve && currentStarters >= (league.playersPerTeam || 5)) {
+            return { error: `O limite de titulares (${league.playersPerTeam}) já foi atingido. Inscreva-o como Reserva.` };
+        }
+        if (player.isReserve && currentReserves >= (league.reserveLimitPerTeam || 5)) {
+            return { error: `O limite de reservas (${league.reserveLimitPerTeam}) já foi atingido.` };
+        }
+
         const { data, error } = await supabase.from('players').insert({
-            team_id: teamId, name: player.name, number: player.number,
-            position: player.position, photo: player.photo || '',
-            is_captain: player.isCaptain || false, is_reserve: player.isReserve || false
+            team_id: teamId, 
+            league_id: league.id, 
+            name: player.name, 
+            number: player.number,
+            position: player.position, 
+            photo: player.photo || '',
+            is_captain: player.isCaptain || false, 
+            is_reserve: player.isReserve || false
         }).select().single();
+
         if (error) return { error: error.message };
         if (data) {
             setRawTeams(prev => prev.map(t => t.id === teamId ? { ...t, players: [...t.players, mapDBPlayer(data)] } : t));
@@ -823,14 +844,56 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const updatePlayer = async (teamId: string, playerId: string, data: Partial<Player>) => {
-        await supabase.from('players').update({
-            name: data.name, number: data.number, position: data.position,
-            photo: data.photo, is_captain: data.isCaptain, is_reserve: data.isReserve
+        const team = rawTeams.find(t => t.id === teamId);
+        const player = team?.players.find(p => p.id === playerId);
+        if (!team || !player || !league) return { error: 'Dados insuficientes' };
+
+        // Validação de limites se estiver alterando o status de reserva
+        if (data.isReserve !== undefined && data.isReserve !== player.isReserve) {
+            if (!data.isReserve) { // Tentando se tornar Titular
+                const startersCount = team.players.filter(p => !p.isReserve).length;
+                if (startersCount >= (league.playersPerTeam || 5)) {
+                    return { error: `Não é possível tornar este jogador Titular. Limite de ${league.playersPerTeam} atingido.` };
+                }
+            } else { // Tentando se tornar Reserva
+                const reservesCount = team.players.filter(p => p.isReserve).length;
+                if (reservesCount >= (league.reserveLimitPerTeam || 5)) {
+                    return { error: `Não é possível tornar este jogador Reserva. Limite de ${league.reserveLimitPerTeam} atingido.` };
+                }
+            }
+        }
+
+        // Lógica de Capitão: se este player virar capitão, desmarca outros
+        if (data.isCaptain) {
+            for (const p of team.players) {
+                if (p.isCaptain && p.id !== playerId) await supabase.from('players').update({ is_captain: false }).eq('id', p.id);
+            }
+        }
+
+        const { error } = await supabase.from('players').update({
+            name: data.name, 
+            number: data.number, 
+            position: data.position,
+            photo: data.photo, 
+            is_captain: data.isCaptain, 
+            is_reserve: data.isReserve
         }).eq('id', playerId);
+
+        if (error) return { error: error.message };
+
         setRawTeams(prev => prev.map(t => t.id === teamId
-            ? { ...t, players: t.players.map(p => p.id === playerId ? { ...p, ...data } : p) }
+            ? { 
+                ...t, 
+                players: t.players.map(p => {
+                    if (p.id === playerId) return { ...p, ...data };
+                    // Se marcamos um novo capitão, desmarcamos os outros localmente
+                    if (data.isCaptain && p.id !== playerId) return { ...p, isCaptain: false };
+                    return p;
+                }) 
+              }
             : t
         ));
+        return { error: null };
     };
 
     const removePlayer = async (teamId: string, playerId: string) => {

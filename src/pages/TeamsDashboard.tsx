@@ -52,7 +52,8 @@ const TeamsDashboard = () => {
         e.preventDefault();
         if (!selectedTeamId) return;
         if (isEditingPlayer) {
-            await updatePlayer(selectedTeamId, isEditingPlayer, formPlayer);
+            const { error } = await updatePlayer(selectedTeamId, isEditingPlayer, formPlayer);
+            if (error) { alert(error); return; }
             setIsEditingPlayer(null);
         } else {
             const { error } = await addPlayer(selectedTeamId, formPlayer);
