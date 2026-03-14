@@ -221,93 +221,107 @@ const MatchControl = () => {
                             </div>
                         </div>
 
-                        <div className="space-y-2 max-h-[500px] md:max-h-[600px] overflow-y-auto pr-1 no-scrollbar">
-                            <h3 className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Titulares</h3>
-                            {team.players.filter(p => !p.isReserve).length === 0 ? (
-                                <p className="text-center text-slate-600 text-[0.65rem] uppercase tracking-widest py-4 font-black">Nenhum titular</p>
-                            ) : (
-                                team.players.filter(p => !p.isReserve).map((player: Player) => {
-                                    const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
-                                    // Check if substituted out
-                                    const isSubbedOut = match.events.some(e => e.type === 'substitution' && e.playerOutId === player.id);
+                        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1 no-scrollbar">
+                            {/* Dynamic Grouping */}
+                            {(() => {
+                                const onPitch = team.players.filter(p => {
+                                    const { isRedCarded } = getPlayerStatus(p.id);
+                                    if (isRedCarded) return false;
+                                    const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === p.id).length;
+                                    const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === p.id).length;
+                                    return p.isReserve ? (subIns > subOuts) : (subOuts <= subIns);
+                                });
+                                const offPitch = team.players.filter(p => !onPitch.some(op => op.id === p.id));
 
-                                    return (
-                                        <div key={player.id} className={`flex items-center gap-2 p-3 rounded-xl border transition-all duration-300 ${isRedCarded || isSubbedOut ? 'bg-danger/5 border-danger/15 opacity-50' : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05]'
-                                            }`}>
-                                            <div className="relative flex-none">
-                                                <TeamLogo src={player.photo} size={36} />
-                                                {player.isCaptain && <Crown size={12} className="absolute -top-1 -right-1 text-warning fill-warning/20" />}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="font-black text-white text-[0.7rem] truncate font-outfit uppercase leading-tight">
-                                                    #{player.number} {player.name}
-                                                </h4>
-                                                <div className="flex items-center gap-1 mt-1 h-3.5">
-                                                    {Array.from({ length: yellowCards }).map((_, i) => (
-                                                        <div key={i} className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm" />
-                                                    ))}
-                                                    {isRedCarded && <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm" />}
-                                                    {isSubbedOut && <span className="text-[0.5rem] text-danger font-black uppercase tracking-tighter">SAIU</span>}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                {!isSubbedOut && !isPublicView && isAdmin && (
-                                                    <div className={`flex items-center gap-1 transition-all ${isRedCarded ? 'opacity-20 pointer-events-none' : ''}`}>
-                                                        <button onClick={() => handleGol(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90" title="Gol"><Target size={14} /></button>
-                                                        <button onClick={() => handleAssist(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90" title="Assistência"><Award size={14} /></button>
-                                                        <button onClick={() => handleGolContra(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90" title="Gol Contra"><XCircle size={14} /></button>
-                                                        <button onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary hover:text-white transition-all active:scale-90" title="Substituir"><ArrowLeftRight size={14} /></button>
-                                                        <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs" title="Amarelo">🟨</button>
-                                                        <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs" title="Vermelho">🟥</button>
-                                                    </div>
-                                                )}
-                                                {!isPublicView && isAdmin && (isRedCarded || yellowCards > 0) && (
-                                                    <button onClick={() => handleUndoLastCard(player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/10 text-warning hover:bg-warning hover:text-black transition-all shadow-md" title="Anular Cartão">
-                                                        <Trash2 size={12} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })
-                            )}
-
-                            <h3 className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest mt-6 mb-2 px-1">Reservas</h3>
-                            {team.players.filter(p => p.isReserve).length === 0 ? (
-                                <p className="text-center text-slate-600 text-[0.65rem] uppercase tracking-widest py-4 font-black">Nenhum reserva</p>
-                            ) : (
-                                team.players.filter(p => p.isReserve).map((player: Player) => {
-                                    const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
-                                    const isSubbedIn = match.events.some(e => e.type === 'substitution' && e.playerId === player.id);
-
-                                    return (
-                                        <div key={player.id} className={`flex items-center gap-2 p-3 rounded-xl border transition-all duration-300 ${isSubbedIn ? 'bg-accent/5 border-accent/15' : 'bg-white/[0.02] border-white/[0.04] opacity-75'}`}>
-                                            <div className="relative flex-none">
-                                                <TeamLogo src={player.photo} size={36} />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="font-black text-white text-[0.7rem] truncate font-outfit uppercase leading-tight">
-                                                    #{player.number} {player.name}
-                                                </h4>
-                                                <div className="flex items-center gap-1 mt-1 h-3.5">
-                                                    {isSubbedIn && <span className="text-[0.5rem] text-accent font-black uppercase tracking-tighter">ENTROU</span>}
-                                                    {Array.from({ length: yellowCards }).map((_, i) => (
-                                                        <div key={i} className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm" />
-                                                    ))}
-                                                    {isRedCarded && <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm" />}
-                                                </div>
-                                            </div>
-                                            {isSubbedIn && !isRedCarded && !isPublicView && isAdmin && (
-                                                <div className="flex items-center gap-1">
-                                                    <button onClick={() => handleGol(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90" title="Gol"><Target size={14} /></button>
-                                                    <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs" title="Amarelo">🟨</button>
-                                                    <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs" title="Vermelho">🟥</button>
-                                                </div>
+                                return (
+                                    <>
+                                        <div className="space-y-2">
+                                            <h3 className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest mb-2 px-1 flex items-center justify-between">
+                                                <span>Em Campo</span>
+                                                <span className="text-primary bg-primary/10 px-2 py-0.5 rounded-md">{onPitch.length}</span>
+                                            </h3>
+                                            {onPitch.length === 0 ? (
+                                                <p className="text-center text-slate-600 text-[0.65rem] uppercase tracking-widest py-4 font-black bg-white/[0.01] rounded-xl border border-dashed border-white/5">Ninguém em campo</p>
+                                            ) : (
+                                                onPitch.map((player: Player) => {
+                                                    const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
+                                                    return (
+                                                        <div key={player.id} className="flex items-center gap-2 p-3 rounded-xl border bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05] transition-all duration-300">
+                                                            <div className="relative flex-none">
+                                                                <TeamLogo src={player.photo} size={36} />
+                                                                {player.isCaptain && <Crown size={12} className="absolute -top-1 -right-1 text-warning fill-warning/20" />}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <h4 className="font-black text-white text-[0.7rem] truncate font-outfit uppercase leading-tight">
+                                                                    #{player.number} {player.name}
+                                                                </h4>
+                                                                <div className="flex items-center gap-1 mt-1 h-3.5">
+                                                                    {Array.from({ length: yellowCards }).map((_, i) => (
+                                                                        <div key={i} className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm" />
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-1">
+                                                                {!isPublicView && isAdmin && (
+                                                                    <div className="flex items-center gap-1">
+                                                                        <button onClick={() => handleGol(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90" title="Gol"><Target size={14} /></button>
+                                                                        <button onClick={() => handleAssist(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90" title="Assistência"><Award size={14} /></button>
+                                                                        <button onClick={() => handleGolContra(team.id, player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90" title="Gol Contra"><XCircle size={14} /></button>
+                                                                        <button onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary hover:text-white transition-all active:scale-90" title="Substituir"><ArrowLeftRight size={14} /></button>
+                                                                        <button onClick={() => handleCartao(team.id, player.id, 'yellow_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs" title="Amarelo">🟨</button>
+                                                                        <button onClick={() => handleCartao(team.id, player.id, 'red_card')} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs" title="Vermelho">🟥</button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })
                                             )}
                                         </div>
-                                    );
-                                })
-                            )}
+
+                                        <div className="space-y-2 mt-6">
+                                            <h3 className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Banco / Fora</h3>
+                                            {offPitch.map((player: Player) => {
+                                                const { isRedCarded, yellowCards } = getPlayerStatus(player.id);
+                                                const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === player.id).length;
+                                                const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === player.id).length;
+                                                const wasSubbedOut = subOuts > subIns;
+
+                                                return (
+                                                    <div key={player.id} className={`flex items-center gap-2 p-3 rounded-xl border transition-all duration-300 ${isRedCarded ? 'bg-danger/10 border-danger/20 opacity-40' : wasSubbedOut ? 'bg-primary/5 border-primary/10 opacity-70' : 'bg-white/[0.01] border-white/[0.02] opacity-50'}`}>
+                                                        <div className="relative flex-none">
+                                                            <TeamLogo src={player.photo} size={36} />
+                                                            {isRedCarded && <XCircle size={12} className="absolute -top-1 -right-1 text-danger fill-danger/20" />}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <h4 className="font-black text-white text-[0.7rem] truncate font-outfit uppercase leading-tight">
+                                                                #{player.number} {player.name}
+                                                            </h4>
+                                                            <div className="flex items-center gap-1 mt-1 h-3.5">
+                                                                {isRedCarded ? (
+                                                                    <span className="text-[0.45rem] font-black text-danger uppercase tracking-tighter">Expulso</span>
+                                                                ) : wasSubbedOut ? (
+                                                                    <span className="text-[0.45rem] font-black text-primary uppercase tracking-tighter">Substituído</span>
+                                                                ) : (
+                                                                    <span className="text-[0.45rem] font-black text-slate-600 uppercase tracking-tighter">No Banco</span>
+                                                                )}
+                                                                {Array.from({ length: yellowCards }).map((_, i) => (
+                                                                    <div key={i} className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20" />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        {!isPublicView && isAdmin && (isRedCarded || yellowCards > 0) && (
+                                                            <button onClick={() => handleUndoLastCard(player.id)} className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 text-warning/50 hover:text-warning transition-all" title="Anular Cartão">
+                                                                <Trash2 size={12} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                );
+                            })()}
                         </div>
                     </section>
                 ))}
