@@ -421,21 +421,32 @@ const Teams = () => {
 
                                                     {/* Actions: always visible on mobile, hover on desktop */}
                                                     {!isPublicView && isAdmin && (
-                                                        <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                        <div className="flex items-center gap-1.5 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                             {swappingPlayerId && swappingPlayerId !== player.id && (
-                                                                <div className="animate-pulse flex items-center gap-1 mr-2 px-2 py-1 rounded-md bg-primary/10 text-primary text-[0.55rem] font-bold uppercase tracking-tighter">
+                                                                <div className="animate-pulse flex items-center gap-1 mr-1 px-2 py-1 rounded-md bg-primary/10 text-primary text-[0.55rem] font-bold uppercase tracking-tighter">
                                                                     <ArrowDownUp size={10} /> Trocar
                                                                 </div>
                                                             )}
-                                                            <button onClick={(e) => { e.stopPropagation(); toggleCaptain(currentTeam.id, player.id); }}
-                                                                className={`p-2 rounded-lg transition-all ${player.isCaptain ? 'bg-warning/20 text-warning' : 'bg-white/5 text-slate-600 hover:text-warning hover:bg-white/10'}`}>
-                                                                <Crown size={13} strokeWidth={player.isCaptain ? 3 : 2} />
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); toggleCaptain(currentTeam.id, player.id); }}
+                                                                className={`p-2.5 sm:p-2 rounded-xl transition-all ${player.isCaptain ? 'bg-warning/20 text-warning' : 'bg-white/5 text-slate-500 hover:text-warning hover:bg-white/10'}`}
+                                                                title="Tornar Capitão"
+                                                            >
+                                                                <Crown size={16} className="sm:w-[13px] sm:h-[13px]" strokeWidth={player.isCaptain ? 3 : 2} />
                                                             </button>
-                                                            <button onClick={() => startEdit(player)} className="p-2 bg-white/5 text-slate-600 rounded-lg hover:text-white hover:bg-white/10 transition-all">
-                                                                <Edit2 size={13} />
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); startEdit(player); }} 
+                                                                className="p-2.5 sm:p-2 bg-white/5 text-slate-500 rounded-xl hover:text-white hover:bg-white/10 transition-all"
+                                                                title="Editar Atleta"
+                                                            >
+                                                                <Edit2 size={16} className="sm:w-[13px] sm:h-[13px]" />
                                                             </button>
-                                                            <button onClick={() => removePlayer(currentTeam.id, player.id)} className="p-2 bg-danger/10 text-danger rounded-lg hover:bg-danger hover:text-white transition-all">
-                                                                <Trash2 size={13} />
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); removePlayer(currentTeam.id, player.id); }} 
+                                                                className="p-2.5 sm:p-2 bg-danger/10 text-danger rounded-xl hover:bg-danger hover:text-white transition-all"
+                                                                title="Excluir Atleta"
+                                                            >
+                                                                <Trash2 size={16} className="sm:w-[13px] sm:h-[13px]" />
                                                             </button>
                                                         </div>
                                                     )}

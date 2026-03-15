@@ -386,19 +386,19 @@ const TeamsDashboard = () => {
                 </div>
 
                 {/* Actions Section */}
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100 pr-1">
+                <div className="flex items-center gap-1.5 md:opacity-0 md:group-hover:opacity-100 transition-all pr-1">
                     <button onClick={(e) => { e.stopPropagation(); toggleCaptain(teamId, p.id); }}
-                        className={`p-2 rounded-xl transition-all ${isStar ? 'bg-warning/20 text-warning shadow-lg shadow-warning/10' : 'text-slate-600 hover:text-white hover:bg-white/10'}`}
+                        className={`p-2.5 sm:p-2 rounded-xl transition-all ${isStar ? 'bg-warning/20 text-warning shadow-lg shadow-warning/10' : 'text-slate-500 hover:text-white hover:bg-white/10'}`}
                         title="Destaque/Capitão">
-                        <Star size={14} fill={isStar ? "currentColor" : "none"} />
+                        <Star size={16} className="sm:w-[14px] sm:h-[14px]" fill={isStar ? "currentColor" : "none"} />
                     </button>
                     <button onClick={(e) => { e.stopPropagation(); setIsEditingPlayer(p.id); setFormPlayer({ name: p.name, number: p.number, position: p.position, isCaptain: p.isCaptain || false, isReserve: p.isReserve || false, photo: p.photo || '' }); setIsAddingPlayer(true); }}
-                        className="p-2 rounded-xl text-slate-600 hover:text-white hover:bg-white/10 transition-all">
-                        <Edit2 size={14} />
+                        className="p-2.5 sm:p-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/10 transition-all">
+                        <Edit2 size={16} className="sm:w-[14px] sm:h-[14px]" />
                     </button>
                     <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Excluir ${p.name}?`)) removePlayer(teamId, p.id); }}
-                        className="p-2 rounded-xl text-danger/40 hover:text-danger hover:bg-danger/10 transition-all">
-                        <Trash2 size={14} />
+                        className="p-2.5 sm:p-2 rounded-xl text-danger/60 hover:text-danger hover:bg-danger/10 transition-all">
+                        <Trash2 size={16} className="sm:w-[14px] sm:h-[14px]" />
                     </button>
                 </div>
             </div>
