@@ -393,111 +393,105 @@ const MatchControl = () => {
                             {(() => {
                                 const onPitch = team.players.filter(p => isPlayerOnPitch(match, p.id));
                                 const offPitch = team.players.filter(p => !onPitch.some(op => op.id === p.id));
-                                 const isPenaltySelection = period === 'Sel. Batedores' && isAdmin && !isPublicView;
-                                 const isShootout = period === 'Pênaltis' && isAdmin && !isPublicView;
+                                const isPenaltySelection = period === 'Sel. Batedores' && isAdmin && !isPublicView;
+                                const isShootout = period === 'Pênaltis' && isAdmin && !isPublicView;
 
-                                 if (isPenaltySelection) {
-                                     const currentList = penaltyPickers[team.id] || [];
-                                     return (
-                                         <div className="space-y-4">
-                                             <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl mb-4 text-center">
-                                                 <h3 className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em] mb-1">Ordem dos Batedores</h3>
-                                                 <p className="text-[0.6rem] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">Clique para adicionar ou remover da lista</p>
-                                             </div>
-                                             <div className="grid grid-cols-1 gap-2">
-                                                 {team.players.map((player: Player) => {
-                                                     const { isRedCarded } = getPlayerStatus(player.id);
-                                                     const onPitch = isPlayerOnPitch(match, player.id);
-                                                     const isEligible = !isRedCarded && (league?.allowSubstitutionReturn || onPitch);
-                                                     const orderIndex = currentList.indexOf(player.id);
-                                                     const isSelected = orderIndex !== -1;
+                                if (isPenaltySelection) {
+                                    const currentList = penaltyPickers[team.id] || [];
+                                    return (
+                                        <div className="space-y-4">
+                                            <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl mb-4 text-center">
+                                                <h3 className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em] mb-1">Ordem dos Batedores</h3>
+                                                <p className="text-[0.6rem] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">Clique para adicionar ou remover da lista</p>
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {team.players.map((player: Player) => {
+                                                    const { isRedCarded } = getPlayerStatus(player.id);
+                                                    const onPitch = isPlayerOnPitch(match, player.id);
+                                                    const isEligible = !isRedCarded && (league?.allowSubstitutionReturn || onPitch);
+                                                    const orderIndex = currentList.indexOf(player.id);
+                                                    const isSelected = orderIndex !== -1;
 
-                                                     return (
-                                                         <button key={player.id} disabled={!isEligible} onClick={() => togglePenaltyShooter(player.id, team.id)}
-                                                             className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${isSelected ? 'bg-primary border-primary text-white shadow-lg' : isEligible ? 'bg-white/5 border-white/10 hover:border-white/20' : 'bg-danger/5 border-danger/10 opacity-30 cursor-not-allowed'}`}>
-                                                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${isSelected ? 'bg-white/20' : 'bg-black/20 group-hover:bg-black/40'}`}>
-                                                                 {isSelected ? `${orderIndex + 1}º` : `#${player.number}`}
-                                                             </div>
-                                                             <div className="flex-1">
-                                                                 <div className="text-[0.7rem] font-black uppercase tracking-tight">{player.name}</div>
-                                                                 {!isEligible && <div className="text-[0.5rem] font-black uppercase tracking-tighter opacity-60">{isRedCarded ? 'Expulso' : 'Substituído'}</div>}
-                                                             </div>
-                                                             {isSelected && <Check size={16} strokeWidth={4} />}
-                                                         </button>
-                                                     );
-                                                 })}
-                                             </div>
-                                             {idx === 1 && (
-                                                 <button onClick={() => { confirmShooters(); handlePeriodChange('Pênaltis'); }}
-                                                     className="w-full mt-6 py-4 rounded-2xl bg-accent text-white font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2">
-                                                     <Check size={18} strokeWidth={3} /> Confirmar & Iniciar Pênaltis
-                                                 </button>
-                                             )}
-                                         </div>
-                                     );
-                                 }
+                                                    return (
+                                                        <button key={player.id} disabled={!isEligible} onClick={() => togglePenaltyShooter(player.id, team.id)}
+                                                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${isSelected ? 'bg-primary border-primary text-white shadow-lg' : isEligible ? 'bg-white/5 border-white/10 hover:border-white/20' : 'bg-danger/5 border-danger/10 opacity-30 cursor-not-allowed'}`}>
+                                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${isSelected ? 'bg-white/20' : 'bg-black/20 group-hover:bg-black/40'}`}>
+                                                                {isSelected ? `${orderIndex + 1}º` : `#${player.number}`}
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <div className="text-[0.7rem] font-black uppercase tracking-tight">{player.name}</div>
+                                                                {!isEligible && <div className="text-[0.5rem] font-black uppercase tracking-tighter opacity-60">{isRedCarded ? 'Expulso' : 'Substituído'}</div>}
+                                                            </div>
+                                                            {isSelected && <Check size={16} strokeWidth={4} />}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                }
 
-                                 if (isShootout) {
-                                     const shootersIds = idx === 0 ? confirmedPenaltyShooters.home : confirmedPenaltyShooters.away;
-                                     const shootoutEvents = match.events.filter(e => e.type.startsWith('penalty_shootout_'));
-                                     const isHomeTurn = shootoutEvents.length % 2 === 0;
-                                     const isMyTurn = (idx === 0 && isHomeTurn) || (idx === 1 && !isHomeTurn);
-                                     
-                                     const allKicked = shootersIds.every(id => shootoutEvents.some(e => e.playerId === id));
-                                     const hasShooters = shootersIds.length > 0;
+                                if (isShootout) {
+                                    const shootersIds = idx === 0 ? confirmedPenaltyShooters.home : confirmedPenaltyShooters.away;
+                                    const shootoutEvents = match.events.filter(e => e.type.startsWith('penalty_shootout_'));
+                                    const isHomeTurn = shootoutEvents.length % 2 === 0;
+                                    const isMyTurn = (idx === 0 && isHomeTurn) || (idx === 1 && !isHomeTurn);
+                                    
+                                    const allKicked = shootersIds.every(id => shootoutEvents.some(e => e.playerId === id));
+                                    const hasShooters = shootersIds.length > 0;
 
-                                     return (
-                                         <div className="space-y-3">
-                                             <div className={`p-4 rounded-2xl mb-2 text-center border transition-all ${isMyTurn ? 'bg-accent/10 border-accent/40 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 opacity-50'}`}>
-                                                 <h3 className={`text-[0.65rem] font-black uppercase tracking-[0.2em] mb-1 ${isMyTurn ? 'text-accent' : 'text-slate-500'}`}>
-                                                     {isMyTurn ? 'Sua Vez de Bater' : 'Aguardando Adversário'}
-                                                 </h3>
-                                                 {isMyTurn && allKicked && hasShooters && (
-                                                     <button onClick={() => handlePeriodChange('Sel. Batedores')}
-                                                         className="mt-2 text-[0.55rem] font-black text-white bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full uppercase tracking-widest transition-all">
-                                                         + Adicionar Batedores
-                                                     </button>
-                                                 )}
-                                             </div>
-                                             {shootersIds.map((pid: string, sIdx: number) => {
-                                                 const player = team.players.find(p => p.id === pid);
-                                                 if (!player) return null;
-                                                 const event = shootoutEvents.find(e => e.playerId === pid);
-                                                 const hasKicked = !!event;
-                                                 const isCurrentTaker = isMyTurn && shootersIds.findIndex(id => !shootoutEvents.some(e => e.playerId === id)) === sIdx;
+                                    return (
+                                        <div className="space-y-3">
+                                            <div className={`p-4 rounded-2xl mb-2 text-center border transition-all ${isMyTurn ? 'bg-accent/10 border-accent/40 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 opacity-50'}`}>
+                                                <h3 className={`text-[0.65rem] font-black uppercase tracking-[0.2em] mb-1 ${isMyTurn ? 'text-accent' : 'text-slate-500'}`}>
+                                                    {isMyTurn ? 'Sua Vez de Bater' : 'Aguardando Adversário'}
+                                                </h3>
+                                                {isMyTurn && allKicked && hasShooters && (
+                                                    <button onClick={() => handlePeriodChange('Sel. Batedores')}
+                                                        className="mt-2 text-[0.55rem] font-black text-white bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full uppercase tracking-widest transition-all">
+                                                        + Adicionar Batedores
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {shootersIds.map((pid: string, sIdx: number) => {
+                                                const player = team.players.find(p => p.id === pid);
+                                                if (!player) return null;
+                                                const event = shootoutEvents.find(e => e.playerId === pid);
+                                                const hasKicked = !!event;
+                                                const isCurrentTaker = isMyTurn && shootersIds.findIndex(id => !shootoutEvents.some(e => e.playerId === id)) === sIdx;
 
-                                                 return (
-                                                     <div key={pid} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${hasKicked ? 'opacity-40 bg-black/20 border-white/5' : isCurrentTaker ? 'bg-white/5 border-primary shadow-lg scale-[1.02]' : 'bg-white/[0.02] border-white/10'}`}>
-                                                         <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs bg-black/20 text-white">
-                                                             {sIdx + 1}º
-                                                         </div>
-                                                         <div className="flex-1 text-[0.75rem] font-black text-white uppercase truncate">
-                                                             {player.name}
-                                                         </div>
-                                                         <div className="flex items-center gap-2">
-                                                             {hasKicked ? (
-                                                                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-black ${event?.type === 'penalty_shootout_goal' ? 'text-accent' : 'text-danger'}`}>
-                                                                     {event?.type === 'penalty_shootout_goal' ? <Target size={20} /> : <XCircle size={20} />}
-                                                                 </div>
-                                                             ) : (
-                                                                 <>
-                                                                     <button disabled={match.status !== 'live' || !isCurrentTaker} onClick={() => handleGol(team.id, player.id)} 
-                                                                         className="w-10 h-10 rounded-lg bg-accent text-white flex items-center justify-center active:scale-90 disabled:opacity-20 shadow-lg shadow-accent/20 hover:brightness-110 transition-all">
-                                                                         <Target size={18} strokeWidth={3} />
-                                                                     </button>
-                                                                     <button disabled={match.status !== 'live' || !isCurrentTaker} onClick={() => handleMiss(team.id, player.id)} 
-                                                                         className="w-10 h-10 rounded-lg bg-danger text-white flex items-center justify-center font-black text-lg active:scale-90 disabled:opacity-20 shadow-lg shadow-danger/20 hover:brightness-110 transition-all">
-                                                                         X
-                                                                     </button>
-                                                                 </>
-                                                             )}
-                                                         </div>
-                                                     </div>
-                                                 );
-                                             })}
-                                         </div>
-                                     );
-                                 }
+                                                return (
+                                                    <div key={pid} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${hasKicked ? 'opacity-40 bg-black/20 border-white/5' : isCurrentTaker ? 'bg-white/5 border-primary shadow-lg scale-[1.02]' : 'bg-white/[0.02] border-white/10'}`}>
+                                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs bg-black/20 text-white">
+                                                            {sIdx + 1}º
+                                                        </div>
+                                                        <div className="flex-1 text-[0.75rem] font-black text-white uppercase truncate">
+                                                            {player.name}
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            {hasKicked ? (
+                                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-black ${event?.type === 'penalty_shootout_goal' ? 'text-accent' : 'text-danger'}`}>
+                                                                    {event?.type === 'penalty_shootout_goal' ? <Target size={20} /> : <XCircle size={20} />}
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <button disabled={match.status !== 'live' || !isCurrentTaker} onClick={() => handleGol(team.id, player.id)} 
+                                                                        className="w-10 h-10 rounded-lg bg-accent text-white flex items-center justify-center active:scale-90 disabled:opacity-20 shadow-lg shadow-accent/20 hover:brightness-110 transition-all">
+                                                                        <Target size={18} strokeWidth={3} />
+                                                                    </button>
+                                                                    <button disabled={match.status !== 'live' || !isCurrentTaker} onClick={() => handleMiss(team.id, player.id)} 
+                                                                        className="w-10 h-10 rounded-lg bg-danger text-white flex items-center justify-center font-black text-lg active:scale-90 disabled:opacity-20 shadow-lg shadow-danger/20 hover:brightness-110 transition-all">
+                                                                        X
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                }
 
                                 return (
                                     <>
@@ -599,6 +593,26 @@ const MatchControl = () => {
                         </div>
                     </section>
                 ))}
+
+                {/* Confirmation Card for Penalties Phase */}
+                {period === 'Sel. Batedores' && isAdmin && !isPublicView && (
+                    <div className="lg:col-span-2">
+                        <div className="glass-panel p-6 flex flex-col md:flex-row items-center justify-between gap-6 border-t-2 border-accent/20">
+                            <div className="flex-1 text-center md:text-left">
+                                <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1 flex items-center justify-center md:justify-start gap-2">
+                                    <Check className="text-accent" size={20} /> Ordem dos Batedores
+                                </h3>
+                                <p className="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider">
+                                    Verifique as listas acima antes de iniciar a disputa oficial.
+                                </p>
+                            </div>
+                            <button onClick={() => { confirmShooters(); handlePeriodChange('Pênaltis'); }}
+                                className="w-full md:w-auto px-12 py-5 rounded-2xl bg-accent text-white font-black text-xs uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(16,185,129,0.2)] hover:shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3">
+                                <Play fill="currentColor" size={18} /> Iniciar Disputa de Pênaltis
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Right: Settings + Event Log */}
                 <div className="space-y-4 md:space-y-6 lg:col-span-2 xl:col-span-1">
@@ -757,12 +771,9 @@ const MatchControl = () => {
                                             
                                             const { isRedCarded } = getPlayerStatus(p.id);
                                             if (isRedCarded) return false;
-
-                                            // Determine if player is currently on the pitch
+                                            
                                             if (isPlayerOnPitch(match, p.id)) return false;
 
-                                            // If return is EXPLICITLY forbidden, once subbed out, they stay out
-                                            // We use explicit check against false to allow return if setting is missing or true
                                             if (league?.allowSubstitutionReturn === false) {
                                                 const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === p.id).length;
                                                 if (subOuts > 0) return false;
