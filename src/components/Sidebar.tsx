@@ -20,7 +20,7 @@ const navItems = [
 
 
 const Sidebar = () => {
-    const { league, isPublicView, isAdmin, setShowAuthModal } = useLeague();
+    const { league, isPublicView, setIsPublicView, isAdmin, setShowAuthModal } = useLeague();
     const { user } = useAuth();
     const navigate = useNavigate();
     const [moreOpen, setMoreOpen] = useState(false);
@@ -72,6 +72,23 @@ const Sidebar = () => {
                                     </div>
                                     <ArrowLeftRight size={16} className="text-slate-600 flex-none group-hover:rotate-180 transition-transform duration-500" />
                                 </button>
+
+                                {isPublicView && isAdmin && (
+                                    <button onClick={() => {
+                                        setIsPublicView(false);
+                                        navigate('/');
+                                        setMoreOpen(false);
+                                    }}
+                                        className="w-full flex items-center gap-4 px-5 py-4 bg-accent/10 hover:bg-accent/20 transition-all border-b border-white/[0.05] group">
+                                        <div className="w-10 h-10 rounded-2xl bg-accent flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg shadow-accent/20 animate-pulse">
+                                            <Settings size={20} />
+                                        </div>
+                                        <div className="flex-1 text-left">
+                                            <p className="text-xs font-black text-accent font-outfit uppercase tracking-wide leading-tight">Mudar para Modo Gestor</p>
+                                            <p className="text-[0.55rem] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Gerenciar Liga / Configurações</p>
+                                        </div>
+                                    </button>
+                                )}
 
                                 {/* Secondary nav items in grid */}
                                 <div className="grid grid-cols-3 divide-x divide-y divide-white/[0.05]">
@@ -179,6 +196,21 @@ const Sidebar = () => {
                     <p className="text-[0.55rem] font-black text-slate-700 uppercase tracking-[0.2em] px-3 py-2">
                         {(isPublicView || !isAdmin) ? 'Acompanhamento' : 'Menu Principal'}
                     </p>
+                    {isPublicView && isAdmin && (
+                        <div className="px-3 py-2">
+                            <button
+                                onClick={() => {
+                                    setIsPublicView(false);
+                                    navigate('/');
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-3 bg-accent/20 text-accent border border-accent/30 rounded-xl hover:bg-accent/30 transition-all font-black text-xs uppercase tracking-widest shadow-lg shadow-accent/10 group"
+                            >
+                                <Settings size={18} className="group-hover:rotate-90 transition-transform duration-500" />
+                                <span>Modo Gestor</span>
+                            </button>
+                        </div>
+                    )}
+                    
                     {filteredNavItems.map(({ to, icon: Icon, label }) => (
                         <NavLink
                             key={to}

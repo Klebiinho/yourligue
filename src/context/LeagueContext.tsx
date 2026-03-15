@@ -164,6 +164,7 @@ interface LeagueContextType {
 
     loadLeagues: () => Promise<void>;
     isPublicView: boolean;
+    setIsPublicView: (val: boolean) => void;
     isAdmin: boolean;
     loadPublicLeague: (id: string) => Promise<boolean>;
     followLeague: (leagueId: string) => Promise<void>;
@@ -956,7 +957,10 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const selectLeague = (id: string) => {
         const found = leagues.find(l => l.id === id);
-        if (found) setLeague(found);
+        if (found) {
+            setLeague(found);
+            setIsPublicView(false);
+        }
     };
 
     // ── Team CRUD ──────────────────────────────────────────────
@@ -1592,7 +1596,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             addPlayer, updatePlayer, removePlayer, toggleCaptain, reorderPlayers, isPlayerOnPitch,
             createMatch, updateMatch, deleteMatch, startMatch, pauseMatch, endMatch, updateTimer,
             addEvent, removeEvent,
-            generateBracket, updateBracket, loadLeagues, isPublicView, isAdmin, loadPublicLeague,
+            generateBracket, updateBracket, loadLeagues, isPublicView, setIsPublicView, isAdmin, loadPublicLeague,
             userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
             showAuthModal, setShowAuthModal,
             supportCounts, notifications, clearNotification, leagueBasePath,
