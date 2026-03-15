@@ -760,8 +760,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     break;
 
                 case 'user_team_interactions':
-                    // Refresh support counts silently
+                    // Refresh support counts and personal interactions
                     loadSupportCounts(league.id);
+                    loadUserInteractions(league.id);
                     break;
             }
         });
@@ -1515,69 +1516,87 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
         if (!league) return;
 
-        // 1. If it's a toggle off (same team, same type), we handle it first
-        const { data: existingSame } = await supabase.from('user_team_interactions')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('team_id', teamId)
-            .eq('interaction_type', type)
-            .maybeSingle();
+        // --- Optimistic Update ---
+        const oldInteractions = [...userInteractions];
+        let newInteractions = [...userInteractions];
 
-        if (existingSame) {
-            await supabase.from('user_team_interactions').delete().eq('id', existingSame.id);
+        // Helper to find existing of same type in this league
+        const existingOfType = oldInteractions.filter(i => i.leagueId === league.id && i.interactionType === type);
+        const existingExact = oldInteractions.find(i => i.teamId === teamId && i.interactionType === type);
+
+        if (existingExact) {
+            // Toggle OFF: Remove this specific interaction
+            newInteractions = newInteractions.filter(i => i.id !== existingExact.id);
+        } else {
+            // Toggle ON or Switch: 
+            if (type === 'supporting') {
+                // Rule: Only 1 supporting per league. Remove others first.
+                newInteractions = newInteractions.filter(i => !(i.leagueId === league.id && i.interactionType === 'supporting'));
+                // Rule: Cannot support and rival the same team
+                newInteractions = newInteractions.filter(i => !(i.teamId === teamId && i.interactionType === 'rival'));
+            } else if (type === 'rival') {
+                // Rule: Cannot support and rival the same team
+                newInteractions = newInteractions.filter(i => !(i.teamId === teamId && i.interactionType === 'supporting'));
+            }
+            
+            // Add the new one optimistically
+            newInteractions.push({
+                id: 'temp-' + Date.now(),
+                teamId,
+                leagueId: league.id,
+                interactionType: type
+            });
+        }
+
+        setUserInteractions(newInteractions);
+
+        try {
+            // 1. If it's a toggle off (exact match found above)
+            if (existingExact) {
+                await supabase.from('user_team_interactions').delete().eq('id', existingExact.id);
+            } else {
+                // 2. Rules Implementation (Cleanup in DB)
+                if (type === 'supporting') {
+                    // Delete any existing supporting in this league
+                    if (existingOfType.length > 0) {
+                        await supabase.from('user_team_interactions')
+                            .delete()
+                            .eq('user_id', user.id)
+                            .eq('league_id', league.id)
+                            .eq('interaction_type', 'supporting');
+                    }
+
+                    // Delete rival for same team if exists
+                    await supabase.from('user_team_interactions')
+                        .delete()
+                        .eq('user_id', user.id)
+                        .eq('team_id', teamId)
+                        .eq('interaction_type', 'rival');
+                } else if (type === 'rival') {
+                    // Delete support for same team if exists
+                    await supabase.from('user_team_interactions')
+                        .delete()
+                        .eq('user_id', user.id)
+                        .eq('team_id', teamId)
+                        .eq('interaction_type', 'supporting');
+                }
+
+                // 3. Insert new interaction
+                await supabase.from('user_team_interactions').insert({
+                    user_id: user.id,
+                    league_id: league.id,
+                    team_id: teamId,
+                    interaction_type: type
+                });
+            }
+        } catch (error) {
+            console.error('Error interacting with team:', error);
+            setUserInteractions(oldInteractions); // Rollback on error
+        } finally {
+            // Final refresh to ensure sync with DB (IDs etc)
             loadUserInteractions(league.id);
             loadSupportCounts(league.id);
-            return;
         }
-
-        // 2. Rules Implementation
-        if (type === 'supporting') {
-            // Rule: Only 1 supporting per league
-            const { data: otherSupport } = await supabase.from('user_team_interactions')
-                .select('id')
-                .eq('user_id', user.id)
-                .eq('league_id', league.id)
-                .eq('interaction_type', 'supporting');
-            
-            if (otherSupport && otherSupport.length > 0) {
-                await supabase.from('user_team_interactions').delete().in('id', otherSupport.map(s => s.id));
-            }
-
-            // Rule: Cannot support and rival the same team
-            const { data: sameRival } = await supabase.from('user_team_interactions')
-                .select('id')
-                .eq('user_id', user.id)
-                .eq('team_id', teamId)
-                .eq('interaction_type', 'rival')
-                .maybeSingle();
-            
-            if (sameRival) {
-                await supabase.from('user_team_interactions').delete().eq('id', sameRival.id);
-            }
-        } else if (type === 'rival') {
-            // Rule: Cannot support and rival the same team
-            const { data: sameSupport } = await supabase.from('user_team_interactions')
-                .select('id')
-                .eq('user_id', user.id)
-                .eq('team_id', teamId)
-                .eq('interaction_type', 'supporting')
-                .maybeSingle();
-            
-            if (sameSupport) {
-                await supabase.from('user_team_interactions').delete().eq('id', sameSupport.id);
-            }
-        }
-
-        // 3. Insert new interaction
-        await supabase.from('user_team_interactions').insert({
-            user_id: user.id,
-            league_id: league.id,
-            team_id: teamId,
-            interaction_type: type
-        });
-
-        loadUserInteractions(league.id);
-        loadSupportCounts(league.id);
     };
 
     const removeInteraction = async (interactionId: string) => {

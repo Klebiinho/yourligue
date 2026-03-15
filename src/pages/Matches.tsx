@@ -68,7 +68,7 @@ const Matches = () => {
         navigate(`${leagueBasePath}/match/${id}`);
     };
 
-    const myTeamIds = userInteractions.map((i: any) => i.teamId);
+    const myTeamIds = userInteractions.filter(i => i.interactionType === 'supporting').map((i: any) => i.teamId);
     const filteredMatches = matches
         .filter((m: any) => {
             if (tab === 'all') return true;
