@@ -631,18 +631,21 @@ const Settings = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {ads.map(ad => (
                                     <div key={ad.id}
-                                        onClick={() => {
-                                            if (selectedAds.includes(ad.id)) setSelectedAds(selectedAds.filter(id => id !== ad.id));
-                                            else setSelectedAds([...selectedAds, ad.id]);
-                                        }}
-                                        className={`glass-panel p-5 flex items-center gap-4 relative group transition-all cursor-pointer border-2 ${selectedAds.includes(ad.id) ? 'border-primary bg-primary/[0.03]' : 'border-transparent hover:border-white/5'}`}>
+                                        className={`glass-panel p-4 sm:p-5 flex items-center gap-3 sm:gap-4 relative group transition-all border-2 ${selectedAds.includes(ad.id) ? 'border-primary bg-primary/[0.03]' : 'border-transparent hover:border-white/5'}`}>
 
-                                        {/* Selection Indicator */}
-                                        <div className={`absolute top-3 left-3 w-4 h-4 rounded border flex items-center justify-center transition-all z-10 ${selectedAds.includes(ad.id) ? 'bg-primary border-primary text-white' : 'bg-black/40 border-white/10 opacity-0 group-hover:opacity-100'}`}>
-                                            {selectedAds.includes(ad.id) && <Check size={10} strokeWidth={4} />}
-                                        </div>
+                                        {/* Selection Toggle */}
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (selectedAds.includes(ad.id)) setSelectedAds(selectedAds.filter(id => id !== ad.id));
+                                                else setSelectedAds([...selectedAds, ad.id]);
+                                            }}
+                                            className={`absolute top-2 left-2 w-5 h-5 rounded-lg border flex items-center justify-center transition-all z-10 ${selectedAds.includes(ad.id) ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-black/60 border-white/10 text-transparent hover:border-white/30'}`}
+                                        >
+                                            <Check size={12} strokeWidth={4} />
+                                        </button>
 
-                                        <div className="w-16 h-16 rounded-xl overflow-hidden bg-black/30 border border-white/5 flex-none ml-2">
+                                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-black/30 border border-white/5 flex-none ml-5">
                                             {ad.media_type === 'video' ? (
                                                 <div className="w-full h-full flex items-center justify-center bg-accent/20 text-accent">
                                                     <Video size={24} />
@@ -662,24 +665,29 @@ const Settings = () => {
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                        <div className="flex items-center gap-1.5 sm:gap-2 flex-none" onClick={e => e.stopPropagation()}>
                                             <button
                                                 onClick={() => updateAd(ad.id, { active: !ad.active })}
-                                                className={`p-2 rounded-lg transition-all ${ad.active ? 'text-accent bg-accent/10' : 'text-slate-600 bg-white/5'}`}
+                                                className={`p-3 sm:p-2 rounded-lg transition-all ${ad.active ? 'text-accent bg-accent/10 border border-accent/20' : 'text-slate-600 bg-white/5 border border-white/10'}`}
                                                 title={ad.active ? 'Desativar' : 'Ativar'}
                                             >
                                                 <Monitor size={14} />
                                             </button>
                                             <button
                                                 onClick={() => startEditAd(ad)}
-                                                className="p-2 rounded-lg text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all"
+                                                className="p-3 sm:p-2 rounded-lg text-primary bg-primary/10 hover:bg-primary hover:text-white border border-primary/20 transition-all font-bold"
                                                 title="Editar"
                                             >
                                                 <Edit2 size={14} />
                                             </button>
                                             <button
-                                                onClick={() => deleteAd(ad.id)}
-                                                className="p-2 rounded-lg text-danger bg-danger/10 opacity-0 group-hover:opacity-100 transition-all"
+                                                onClick={() => {
+                                                    if (window.confirm('Excluir esta propaganda?')) {
+                                                        deleteAd(ad.id);
+                                                    }
+                                                }}
+                                                className="p-3 sm:p-2 rounded-lg text-danger bg-danger/10 hover:bg-danger hover:text-white border border-danger/20 transition-all font-bold"
+                                                title="Excluir"
                                             >
                                                 <Trash2 size={14} />
                                             </button>
