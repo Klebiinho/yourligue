@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
 import TeamLogo from '../components/TeamLogo';
@@ -76,6 +76,17 @@ const Settings = () => {
     const [selectedAds, setSelectedAds] = useState<string[]>([]);
     const [editingAdId, setEditingAdId] = useState<string | null>(null);
     const [isSavingAd, setIsSavingAd] = useState(false);
+    const adSectionRef = useRef<HTMLDivElement>(null);
+
+    // Scroll to ad section when starting to add or edit
+    useEffect(() => {
+        if (isAddingAd) {
+            // Small delay to ensure the form is rendered and layout has updated
+            setTimeout(() => {
+                adSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }, [isAddingAd, editingAdId]);
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -249,7 +260,6 @@ const Settings = () => {
         setFormAd(adData);
         setIsAddingAd(true);
         setAdInputMethod(adData.desktop_media_url?.startsWith('http') ? 'url' : 'file');
-        window.scrollTo({ top: 300, behavior: 'smooth' });
     };
 
     const handleSwitchLeague = () => navigate('/leagues');
@@ -447,7 +457,7 @@ const Settings = () => {
                         </form>
 
                         {/* Ads Management Section */}
-                        <div className="mt-20 border-t border-white/5 pt-12">
+                        <div ref={adSectionRef} className="mt-20 border-t border-white/5 pt-12">
                             <div className="flex items-center justify-between mb-8">
                                 <div>
                                     <h2 className="text-xl font-black text-white font-outfit uppercase tracking-widest flex items-center gap-3">
