@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Bell, BellOff, Music, Skull } from 'lucide-react';
+import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Bell, BellOff, Heart, Wind } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
@@ -264,13 +264,13 @@ const Dashboard = () => {
                                                         onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'supporting'); }}
                                                         className={`p-1 rounded-md transition-all ${userInteractions.some(i => i.teamId === team.id && i.interactionType === 'supporting') ? 'text-primary bg-primary/20' : 'text-slate-600 hover:text-primary hover:bg-white/5'}`}
                                                     >
-                                                        <Music size={10} strokeWidth={3} />
+                                                        <Heart size={10} strokeWidth={3} fill={userInteractions.some(i => i.teamId === team.id && i.interactionType === 'supporting') ? 'currentColor' : 'none'} />
                                                     </button>
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'rival'); }}
                                                         className={`p-1 rounded-md transition-all ${userInteractions.some(i => i.teamId === team.id && i.interactionType === 'rival') ? 'text-danger bg-danger/20' : 'text-slate-600 hover:text-danger hover:bg-white/5'}`}
                                                     >
-                                                        <Skull size={10} strokeWidth={3} />
+                                                        <Wind size={10} strokeWidth={3} />
                                                     </button>
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'favorite'); }}

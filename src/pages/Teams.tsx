@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague, type Player } from '../context/LeagueContext';
-import { Shield, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, Star, PlusCircle, GripVertical, ArrowDownUp, Heart, Skull, Music } from 'lucide-react';
+import { Shield, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, Star, PlusCircle, GripVertical, ArrowDownUp, Heart, Wind } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
@@ -247,7 +247,7 @@ const Teams = () => {
                                                     className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[0.65rem] font-black uppercase tracking-widest transition-all border ${userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'supporting') ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
                                                     title="Torcer por este time"
                                                 >
-                                                    <Music size={14} className={userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'supporting') ? 'animate-bounce' : ''} /> Torcer
+                                                    <Heart size={14} className={userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'supporting') ? 'animate-bounce' : ''} fill={userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'supporting') ? 'currentColor' : 'none'} /> Torcer
                                                 </button>
                                                 
                                                 <button 
@@ -255,7 +255,7 @@ const Teams = () => {
                                                     className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[0.65rem] font-black uppercase tracking-widest transition-all border ${userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'rival') ? 'bg-danger text-white border-danger shadow-lg shadow-danger/20' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
                                                     title="Secar este time"
                                                 >
-                                                    <Skull size={14} /> Secar
+                                                    <Wind size={14} /> Secar
                                                 </button>
 
                                                 <button 
