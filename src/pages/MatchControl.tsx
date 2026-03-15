@@ -576,7 +576,7 @@ const MatchControl = () => {
                                                 <p className="text-center text-slate-600 text-[0.65rem] uppercase tracking-widest py-4 font-black bg-white/[0.01] rounded-xl border border-dashed border-white/5">Ninguém em campo</p>
                                             ) : (
                                                 onPitch.map((player: Player) => {
-                                                    const { yellowCards } = getPlayerStatus(player.id);
+                                                    const { yellowCards, isRedCarded } = getPlayerStatus(player.id);
                                                     return (
                                                         <div key={player.id} className="flex items-center gap-2 p-3 rounded-xl border bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05] transition-all duration-300">
                                                             <div className="relative flex-none">
@@ -588,33 +588,30 @@ const MatchControl = () => {
                                                                     #{player.number} {player.name}
                                                                 </h4>
                                                                 <div className="flex items-center gap-1 mt-1 h-3.5">
-                                                                    {yellowCards === 1 ? (
-                                                                        <div className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm" />
-                                                                    ) : yellowCards >= 2 ? (
-                                                                        <>
-                                                                            <div className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 opacity-40" />
-                                                                            <div className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 opacity-40" />
-                                                                            <span className="text-[0.6rem] ml-1">🟥</span>
-                                                                        </>
-                                                                    ) : null}
+                                                                    {Array.from({ length: yellowCards }).map((_, i) => (
+                                                                        <div key={i} className={`w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm ${isRedCarded ? 'opacity-40' : ''}`} />
+                                                                    ))}
+                                                                    {isRedCarded && (
+                                                                        <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm ml-0.5" />
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                             <div className="flex items-center gap-1">
                                                                 {!isPublicView && isAdmin && (
                                                                     <div className="flex items-center gap-1">
-                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || yellowCards >= 2} onClick={() => handleGol(team.id, player.id)} 
+                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleGol(team.id, player.id)} 
                                                                             className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Gol"><Target size={14} /></button>
-                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || yellowCards >= 2} onClick={() => handleAssist(team.id, player.id)} 
+                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleAssist(team.id, player.id)} 
                                                                             className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Assistência"><Award size={14} /></button>
-                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || yellowCards >= 2} onClick={() => handleGolContra(team.id, player.id)} 
+                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleGolContra(team.id, player.id)} 
                                                                             className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Gol Contra"><XCircle size={14} /></button>
                                                                         
-                                                                        <button disabled={match.status !== 'live' && !period.includes('Intervalo') || yellowCards >= 2} onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} 
+                                                                        <button disabled={match.status !== 'live' && !period.includes('Intervalo') || isRedCarded} onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} 
                                                                             className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Substituir"><ArrowLeftRight size={14} /></button>
                                                                         
-                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || yellowCards >= 2} onClick={() => handleCartao(team.id, player.id, 'yellow_card')} 
+                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleCartao(team.id, player.id, 'yellow_card')} 
                                                                             className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs disabled:cursor-not-allowed disabled:opacity-30`} title="Amarelo">🟨</button>
-                                                                         <button disabled={match.status !== 'live' || period.includes('Intervalo') || yellowCards >= 2} onClick={() => handleCartao(team.id, player.id, 'red_card')} 
+                                                                         <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleCartao(team.id, player.id, 'red_card')} 
                                                                             className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs disabled:cursor-not-allowed disabled:opacity-30`} title="Vermelho">🟥</button>
                                                                     </div>
                                                                 )}
@@ -645,13 +642,13 @@ const MatchControl = () => {
                                                             </h4>
                                                             <div className="flex items-center gap-1 mt-1 h-3.5">
                                                                 {isRedCarded ? (
-                                                                    <span className="text-[0.45rem] font-black text-danger uppercase tracking-tighter">Expulso</span>
+                                                                    <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm" />
                                                                 ) : wasSubbedOut ? (
                                                                     <span className="text-[0.45rem] font-black text-primary uppercase tracking-tighter">Substituído</span>
                                                                 ) : (
                                                                     <span className="text-[0.45rem] font-black text-slate-600 uppercase tracking-tighter">No Banco</span>
                                                                 )}
-                                                                {Array.from({ length: yellowCards }).map((_, i) => (
+                                                                {!isRedCarded && Array.from({ length: yellowCards }).map((_, i) => (
                                                                     <div key={i} className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20" />
                                                                 ))}
                                                             </div>
