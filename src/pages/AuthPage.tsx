@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Trophy, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 
 /* Google "G" SVG icon */
 const GoogleIcon = () => (
@@ -64,8 +64,8 @@ const AuthPage = () => {
             <div className="w-full max-w-[420px] flex flex-col gap-8 animate-fade-in relative z-10">
                 {/* Logo Section */}
                 <div className="text-center">
-                    <div className="inline-flex bg-gradient-to-br from-primary to-[#4c1d95] p-5 rounded-3xl mb-5 shadow-[0_12px_40px_rgba(109,40,217,0.4)]">
-                        <Trophy size={40} className="text-white" />
+                    <div className="inline-flex mb-5">
+                        <img src="/logo.png" alt="YourLigue" className="w-32 h-32 object-contain drop-shadow-[0_0_20px_rgba(109,40,217,0.3)]" />
                     </div>
                     <h1 className="text-3xl md:text-5xl font-outfit font-black mb-2 tracking-tighter text-white uppercase">
                         YourLigue

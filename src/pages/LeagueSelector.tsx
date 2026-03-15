@@ -66,11 +66,11 @@ const LeagueSelector = () => {
                 {/* Header Card */}
                 <div className="glass-panel p-6 md:p-8 mb-6 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xl overflow-hidden relative">
                     <div className="absolute top-0 right-0 p-4 opacity-5">
-                        <Trophy size={120} strokeWidth={1} />
+                        <img src="/logo.png" alt="" className="w-32 h-32 object-contain" />
                     </div>
                     <div className="flex items-center gap-5 relative z-10">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-[#a855f7] flex items-center justify-center shadow-[0_8px_25px_rgba(109,40,217,0.4)] transform hover:rotate-6 transition-transform">
-                            <Shield size={32} className="text-white" />
+                        <div className="flex items-center justify-center transform hover:rotate-6 transition-transform">
+                            <img src="/logo.png" alt="YourLigue" className="w-16 h-16 object-contain drop-shadow-[0_8px_25px_rgba(109,40,217,0.4)]" />
                         </div>
                         <div className="text-center sm:text-left">
                             <h1 className="text-2xl md:text-3xl font-outfit font-black text-white uppercase tracking-tight leading-none mb-1">Central de Ligas</h1>

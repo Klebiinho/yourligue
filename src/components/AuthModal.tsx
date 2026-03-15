@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLeague } from '../context/LeagueContext';
-import { Trophy, Mail, Lock, User, Eye, EyeOff, X } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, X } from 'lucide-react';
 
 /* Google "G" SVG icon */
 const GoogleIcon = () => (
@@ -69,8 +69,8 @@ const AuthModal = () => {
 
                 {/* Logo Section */}
                 <div className="text-center mb-6">
-                    <div className="inline-flex bg-gradient-to-br from-primary to-[#4c1d95] p-3.5 rounded-2xl mb-3 shadow-[0_8px_20px_rgba(109,40,217,0.3)]">
-                        <Trophy size={28} className="text-white" />
+                    <div className="inline-flex mb-3">
+                        <img src="/logo.png" alt="YourLigue" className="w-16 h-16 object-contain drop-shadow-[0_0_15px_rgba(109,40,217,0.25)]" />
                     </div>
                     <h2 className="text-xl font-outfit font-extrabold text-white tracking-tight">
                         {mode === 'login' ? 'Bem-vindo de volta' : 'Crie sua conta'}
@@ -184,7 +184,7 @@ const AuthModal = () => {
                 </form>
 
                 <p className="text-center text-slate-600 text-[0.55rem] font-bold uppercase tracking-widest mt-6">
-                    Championship Manager © 2026
+                    YourLigue © 2026
                 </p>
             </div>
         </div>

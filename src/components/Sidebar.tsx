@@ -175,7 +175,7 @@ const Sidebar = () => {
                 >
                     <div className="relative flex-none">
                         <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-60 transition-opacity" />
-                        <TeamLogo src={league?.logo} size={40} fallbackIcon={<Trophy size={18} className="text-primary" />} />
+                        <TeamLogo src={league?.logo} size={40} fallbackIcon={<img src="/logo.png" className="w-6 h-6 object-contain opacity-50" />} />
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
@@ -184,7 +184,7 @@ const Sidebar = () => {
                             </h2>
                         </div>
                         <p className="text-[0.6rem] text-slate-600 font-bold uppercase tracking-[0.15em] mt-0.5">
-                            {(isPublicView || !isAdmin) ? <span className="text-accent">MODO ESPECTADOR</span> : 'Championship Manager'}
+                            {(isPublicView || !isAdmin) ? <span className="text-accent">MODO ESPECTADOR</span> : 'YourLigue'}
                         </p>
                     </div>
                 </div>
