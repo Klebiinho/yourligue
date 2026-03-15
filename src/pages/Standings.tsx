@@ -67,21 +67,21 @@ const Standings = () => {
                     </div>
                 ) : (
                     <>
-                        <div className="overflow-x-auto no-scrollbar">
-                            <table className="w-full border-collapse min-w-[800px] table-fixed">
+                        <div className="overflow-x-auto no-scrollbar scroll-smooth">
+                            <table className="w-full border-collapse min-w-[700px] table-auto">
                                 <thead>
                                     <tr className="bg-white/[0.02] text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-white/[0.05]">
-                                        <th className="w-16 px-4 py-5 text-center">#</th>
-                                        <th className="w-auto px-4 py-5 text-left">Clube</th>
-                                        <th className="w-20 px-4 py-5 text-center text-white border-x border-white/[0.03]">Pts</th>
-                                        <th className="w-16 px-4 py-5 text-center">PJ</th>
-                                        <th className="w-16 px-4 py-5 text-center text-accent/80">V</th>
-                                        <th className="w-16 px-4 py-5 text-center">E</th>
-                                        <th className="w-16 px-4 py-5 text-center text-danger/80">D</th>
+                                        <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center sticky left-0 z-30 bg-[#0d0d14]/95 backdrop-blur-md">#</th>
+                                        <th className="min-w-[160px] sm:w-auto px-4 py-5 text-left sticky left-12 sm:left-16 z-30 bg-[#0d0d14]/95 backdrop-blur-md">Clube</th>
+                                        <th className="w-16 sm:w-20 px-2 sm:px-4 py-5 text-center text-white border-x border-white/[0.03]">Pts</th>
+                                        <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center">PJ</th>
+                                        <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center text-accent/80">V</th>
+                                        <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center">E</th>
+                                        <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center text-danger/80">D</th>
                                         <th className="w-20 px-4 py-5 text-center hidden md:table-cell">GP</th>
                                         <th className="w-20 px-4 py-5 text-center hidden md:table-cell">GC</th>
                                         <th className="w-20 px-4 py-5 text-center">SG</th>
-                                        <th className="w-36 px-4 py-5 text-center">Últimos Jogos</th>
+                                        <th className="w-32 sm:w-36 px-4 py-5 text-center">Últimos</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/[0.04]">
@@ -96,8 +96,8 @@ const Standings = () => {
                                                 onClick={() => navigate(`${leagueBasePath}/teams/${team.id}`)}
                                                 className={`group hover:bg-white/[0.06] transition-all duration-300 relative cursor-pointer ${isTop ? 'bg-primary/[0.03]' : isZone ? 'bg-danger/[0.02]' : ''} ${isMyTeam ? 'bg-accent/[0.05]' : ''}`}>
                                                 {/* Position # */}
-                                                <td className="px-4 py-4.5 text-center">
-                                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black font-outfit text-xs transition-all duration-500 group-hover:scale-110 mx-auto ${
+                                                <td className="px-2 sm:px-4 py-4 sm:py-4.5 text-center sticky left-0 z-20 transition-colors group-hover:bg-white/5 bg-[#0a0a0f] border-r border-white/5">
+                                                    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center font-black font-outfit text-[0.65rem] sm:text-xs transition-all duration-500 group-hover:scale-110 mx-auto ${
                                                         isTop ? 'bg-primary text-white shadow-[0_0_20px_rgba(109,40,217,0.4)] rotate-3' :
                                                         i < 3 ? 'bg-white/10 text-white' : 'text-slate-600'
                                                     }`}>
@@ -106,10 +106,10 @@ const Standings = () => {
                                                 </td>
 
                                                 {/* Club Name & Logo */}
-                                                <td className="px-4 py-4.5">
-                                                    <div className="flex items-center gap-4">
+                                                <td className="px-3 sm:px-4 py-4 sm:py-4.5 sticky left-7 sm:left-16 z-20 group-hover:bg-white/5 bg-[#0a0a0f] border-r border-white/5">
+                                                    <div className="flex items-center gap-2 sm:gap-4 min-w-[130px]">
                                                         <div className="relative flex-none transform transition-transform group-hover:scale-110">
-                                                            <TeamLogo src={team.logo} size={38} className="shadow-lg" />
+                                                            <TeamLogo src={team.logo} size={32} className="shadow-lg sm:w-[38px] sm:h-[38px]" />
                                                             {isTop && (
                                                                 <div className="absolute -top-1.5 -right-1.5 bg-warning text-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg animate-bounce-slow border-2 border-slate-900">
                                                                     <Trophy size={10} strokeWidth={4} />
@@ -157,13 +157,13 @@ const Standings = () => {
                                                 </td>
 
                                                 {/* Core Stats */}
-                                                <td className="px-4 py-4.5 text-center border-x border-white/[0.03] bg-white/[0.01]">
-                                                    <span className="font-black font-outfit text-xl text-primary drop-shadow-[0_0_10px_rgba(109,40,217,0.2)]">{team.stats.points}</span>
+                                                <td className="px-2 sm:px-4 py-4 sm:py-4.5 text-center border-r border-white/[0.03] bg-white/[0.01]">
+                                                    <span className="font-black font-outfit text-lg sm:text-xl text-primary drop-shadow-[0_0_10px_rgba(109,40,217,0.2)]">{team.stats.points}</span>
                                                 </td>
-                                                <td className="px-4 py-4.5 text-center font-bold text-slate-400 text-sm">{team.stats.matches}</td>
-                                                <td className="px-4 py-4.5 text-center font-bold text-accent text-sm">{team.stats.wins}</td>
-                                                <td className="px-4 py-4.5 text-center font-bold text-slate-500 text-sm">{team.stats.draws}</td>
-                                                <td className="px-4 py-4.5 text-center font-bold text-danger text-sm">{team.stats.losses}</td>
+                                                <td className="px-2 sm:px-4 py-4 sm:py-4.5 text-center font-bold text-slate-400 text-[0.7rem] sm:text-sm">{team.stats.matches}</td>
+                                                <td className="px-2 sm:px-4 py-4 sm:py-4.5 text-center font-bold text-accent text-[0.7rem] sm:text-sm">{team.stats.wins}</td>
+                                                <td className="px-2 sm:px-4 py-4 sm:py-4.5 text-center font-bold text-slate-500 text-[0.7rem] sm:text-sm">{team.stats.draws}</td>
+                                                <td className="px-2 sm:px-4 py-4 sm:py-4.5 text-center font-bold text-danger text-[0.7rem] sm:text-sm">{team.stats.losses}</td>
                                                 
                                                 {/* Goals */}
                                                 <td className="px-4 py-4.5 text-center text-slate-600 hidden md:table-cell text-xs font-bold uppercase">{team.stats.goalsFor}</td>
