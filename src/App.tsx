@@ -18,6 +18,7 @@ import AuthModal from './components/AuthModal.tsx';
 import NotificationTray from './components/NotificationTray.tsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.tsx';
 import TermsOfService from './pages/TermsOfService.tsx';
+import MatchOverlay from './pages/MatchOverlay.tsx';
 
 
 const LoadingScreen = () => (
@@ -182,6 +183,7 @@ const App = () => (
         <Routes>
           <Route path="/privacidade" element={<PrivacyPolicy />} />
           <Route path="/termos" element={<TermsOfService />} />
+          <Route path="/match/:matchId/overlay" element={<MatchOverlay />} />
           <Route path="/view/:slug/*" element={<AppRouter />} />
           <Route path="/*" element={<AppRouter />} />
         </Routes>
