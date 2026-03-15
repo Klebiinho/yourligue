@@ -3,7 +3,7 @@ import { useLeague } from '../context/LeagueContext';
 import { ExternalLink, Play, X } from 'lucide-react';
 
 interface AdBannerProps {
-    position: 'top' | 'side' | 'between' | 'halftime' | 'overlay' | 'home_stats' | 'teams_list' | 'matches_filter' | 'live_top' | 'standings_info' | 'panel_stats';
+    position: 'top' | 'side' | 'between' | 'halftime' | 'overlay' | 'home_stats' | 'teams_list' | 'matches_filter' | 'live_top' | 'standings_info' | 'panel_stats' | 'home_highlight';
     className?: string;
     onClose?: () => void;
 }
@@ -35,7 +35,11 @@ const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
     if (positionAds.length === 0) return null;
 
     const ad = positionAds[currentIndex];
-    const activeMediaUrl = (isMobile && ad.mobile_media_url) ? ad.mobile_media_url : ad.desktop_media_url;
+    const activeMediaUrl = (position === 'home_highlight' && ad.square_media_url) 
+        ? ad.square_media_url 
+        : (isMobile && ad.mobile_media_url) 
+            ? ad.mobile_media_url 
+            : ad.desktop_media_url;
 
     const renderMedia = () => {
         if (ad.media_type === 'video') {
@@ -80,7 +84,8 @@ const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
         matches_filter: "w-full h-32 sm:h-40 mb-8",
         live_top: "w-full h-32 sm:h-40 mb-8",
         standings_info: "w-full h-32 sm:h-40 mb-8",
-        panel_stats: "w-full h-32 sm:h-40 mb-8"
+        panel_stats: "w-full h-32 sm:h-40 mb-8",
+        home_highlight: "w-full aspect-square mb-6"
     };
 
     const Content = (

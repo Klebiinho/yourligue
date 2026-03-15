@@ -105,6 +105,7 @@ export type Ad = {
     title: string;
     desktop_media_url: string;
     mobile_media_url?: string;
+    square_media_url?: string;
     media_type: 'image' | 'video' | 'gif';
     positions: string[];
     object_position?: 'center' | 'top' | 'bottom';
