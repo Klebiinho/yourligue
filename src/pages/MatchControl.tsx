@@ -119,16 +119,16 @@ const MatchControl = () => {
             return;
         }
 
-        if (period === 'Intervalo' || period === 'Intervalo (OT)' || period === 'Intervalo (OT2)') {
+        if (period.includes('Intervalo')) {
             let next = '2º Tempo';
             if (period === 'Intervalo (OT)') next = '1º Prorrog.';
             if (period === 'Intervalo (OT2)') next = '2º Prorrog.';
             
             if (window.confirm(`Encerrar intervalo e iniciar o ${next}?`)) {
                 let startTime = 0;
-                if (next === '2º Tempo') startTime = (match?.halfLength || 45) * 60;
-                if (next === '1º Prorrog.') startTime = (match?.halfLength || 45) * 120;
-                if (next === '2º Prorrog.') startTime = (match?.halfLength || 45) * 120 + 900; // +15min
+                if (next === '2º Tempo') startTime = (league?.defaultHalfLength || 45) * 60;
+                if (next === '1º Prorrog.') startTime = ((league?.defaultHalfLength || 45) * 2) * 60;
+                if (next === '2º Prorrog.') startTime = ((league?.defaultHalfLength || 45) * 2 + (league?.overtimeHalfLength || 15)) * 60;
 
                 handlePeriodChange(next);
                 setTimerRunning(true);
@@ -233,7 +233,7 @@ const MatchControl = () => {
     };
 
     const handleSubstitution = (teamId: string, playerInId: string, playerOutId: string) => {
-        if (matchId && (match?.status === 'live' || period === 'Intervalo')) {
+        if (matchId && (match?.status === 'live' || period.includes('Intervalo'))) {
             const limit = league?.substitutionsLimit || 5;
             const teamSubstitutions = (match?.events || []).filter(e => e.type === 'substitution' && e.teamId === teamId).length;
             
@@ -602,19 +602,19 @@ const MatchControl = () => {
                                                             <div className="flex items-center gap-1">
                                                                 {!isPublicView && isAdmin && (
                                                                     <div className="flex items-center gap-1">
-                                                                        <button disabled={match.status !== 'live' || period === 'Intervalo' || yellowCards >= 2} onClick={() => handleGol(team.id, player.id)} 
+                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || yellowCards >= 2} onClick={() => handleGol(team.id, player.id)} 
                                                                             className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Gol"><Target size={14} /></button>
-                                                                        <button disabled={match.status !== 'live' || period === 'Intervalo' || yellowCards >= 2} onClick={() => handleAssist(team.id, player.id)} 
+                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || yellowCards >= 2} onClick={() => handleAssist(team.id, player.id)} 
                                                                             className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Assistência"><Award size={14} /></button>
-                                                                        <button disabled={match.status !== 'live' || period === 'Intervalo' || yellowCards >= 2} onClick={() => handleGolContra(team.id, player.id)} 
+                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || yellowCards >= 2} onClick={() => handleGolContra(team.id, player.id)} 
                                                                             className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Gol Contra"><XCircle size={14} /></button>
                                                                         
-                                                                        <button disabled={match.status !== 'live' && period !== 'Intervalo' || yellowCards >= 2} onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} 
+                                                                        <button disabled={match.status !== 'live' && !period.includes('Intervalo') || yellowCards >= 2} onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} 
                                                                             className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Substituir"><ArrowLeftRight size={14} /></button>
                                                                         
-                                                                        <button disabled={match.status !== 'live' || period === 'Intervalo' || yellowCards >= 2} onClick={() => handleCartao(team.id, player.id, 'yellow_card')} 
+                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || yellowCards >= 2} onClick={() => handleCartao(team.id, player.id, 'yellow_card')} 
                                                                             className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs disabled:cursor-not-allowed disabled:opacity-30`} title="Amarelo">🟨</button>
-                                                                        <button disabled={match.status !== 'live' || period === 'Intervalo' || yellowCards >= 2} onClick={() => handleCartao(team.id, player.id, 'red_card')} 
+                                                                         <button disabled={match.status !== 'live' || period.includes('Intervalo') || yellowCards >= 2} onClick={() => handleCartao(team.id, player.id, 'red_card')} 
                                                                             className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs disabled:cursor-not-allowed disabled:opacity-30`} title="Vermelho">🟥</button>
                                                                     </div>
                                                                 )}
