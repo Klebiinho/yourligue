@@ -426,12 +426,24 @@ const MatchControl = () => {
                                 <div className="p-4 bg-red-600/10 rounded-xl border border-red-600/20 text-center">
                                     <p className="text-[0.65rem] text-red-400 font-bold uppercase tracking-wide mb-3">Nenhuma Live ativa no YouTube</p>
                                     <button 
-                                        onClick={async () => {
-                                            if (window.confirm("Deseja criar uma nova live para esta partida agora?")) {
-                                                await startMatch(match.id, localSeconds, true);
+                                        onClick={async (e) => {
+                                            const btn = e.currentTarget;
+                                            if (!isYtAuthenticated) {
+                                                alert("Por favor, conecte sua conta do YouTube primeiro.");
+                                                return;
+                                            }
+                                            if (window.confirm("Deseja criar uma nova live para esta partida agora? Isso pode levar alguns segundos.")) {
+                                                btn.disabled = true;
+                                                btn.innerText = "Criando Live...";
+                                                try {
+                                                    await startMatch(match.id, localSeconds, true);
+                                                } finally {
+                                                    btn.disabled = false;
+                                                    btn.innerHTML = "Iniciar Transmissão agora";
+                                                }
                                             }
                                         }}
-                                        className="bg-red-600/20 text-red-500 px-4 py-2 rounded-lg text-[0.6rem] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2 mx-auto"
+                                        className="bg-red-600/20 text-red-500 px-4 py-2 rounded-lg text-[0.6rem] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <Video size={14} />
                                         Iniciar Transmissão agora

@@ -1321,8 +1321,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         const match = rawMatches.find(m => m.id === matchId);
         let youtubeLiveId = match?.youtubeLiveId;
 
-        // Create YouTube Live ONLY if requested, authenticated, and scheduled
-        if (shouldStartLive && isYtAuthenticated && match && match.status === 'scheduled' && !youtubeLiveId) {
+        // Create YouTube Live ONLY if requested, authenticated, and match is not finished
+        if (shouldStartLive && isYtAuthenticated && match && match.status !== 'finished' && !youtubeLiveId) {
             const ht = rawTeams.find(t => t.id === match.homeTeamId);
             const at = rawTeams.find(t => t.id === match.awayTeamId);
             const title = `${league?.name} - ${ht?.name} x ${at?.name}`;
