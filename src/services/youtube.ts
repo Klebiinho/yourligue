@@ -119,6 +119,10 @@ export class YouTubeService {
             })
         });
         const broadcast = await broadcastResponse.json();
+        if (!broadcast.id) {
+            console.error('YouTube Broadcast Creation Failed:', broadcast);
+            throw new Error(broadcast.error?.message || 'Failed to create broadcast');
+        }
 
         // 2. Create Stream
         const streamResponse = await fetch('https://www.googleapis.com/youtube/v3/liveStreams?part=snippet,cdn', {
@@ -132,13 +136,17 @@ export class YouTubeService {
                     title: title + ' Stream'
                 },
                 cdn: {
-                    frameRate: '30fps',
+                    frameRate: '60fps',
                     ingestionType: 'rtmp',
                     resolution: '720p'
                 }
             })
         });
         const stream = await streamResponse.json();
+        if (!stream.id) {
+            console.error('YouTube Stream Creation Failed:', stream);
+            throw new Error(stream.error?.message || 'Failed to create stream');
+        }
 
         // 3. Bind Broadcast to Stream
         await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts/bind?id=${broadcast.id}&part=id,contentDetails&streamId=${stream.id}`, {
