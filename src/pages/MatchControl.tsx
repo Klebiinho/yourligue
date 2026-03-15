@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const MatchControl = () => {
     const { matchId } = useParams<{ matchId: string }>();
     const navigate = useNavigate();
-    const { league, matches, teams, endMatch, addEvent, removeEvent, updateMatch, isPublicView, isAdmin, isPlayerOnPitch } = useLeague();
+    const { 
+        league, matches, teams, endMatch, addEvent, removeEvent, 
+        updateMatch, isPublicView, isAdmin, isPlayerOnPitch,
+        currentYtLiveStream
+    } = useLeague();
 
     const match = matches.find((m: Match) => m.id === matchId);
     const homeTeam = teams.find((t: Team) => t.id === match?.homeTeamId);
@@ -24,6 +28,13 @@ const MatchControl = () => {
     const [penaltyPickers, setPenaltyPickers] = useState<{ [teamId: string]: string[] }>({});
     const [confirmedPenaltyShooters, setConfirmedPenaltyShooters] = useState<{ home: string[], away: string[] }>({ home: [], away: [] });
     const { startMatch, pauseMatch } = useLeague();
+    const [showYtSetup, setShowYtSetup] = useState(false);
+
+    useEffect(() => {
+        if (currentYtLiveStream) {
+            setShowYtSetup(true);
+        }
+    }, [currentYtLiveStream]);
 
     useEffect(() => {
         setShowOverlay(true);
@@ -304,6 +315,76 @@ const MatchControl = () => {
 
             {isPublicView && (period.includes('Intervalo') || match.status === 'scheduled') && showOverlay && (
                 <AdBanner position="overlay" onClose={() => setShowOverlay(false)} />
+            )}
+
+            {/* YouTube Stream Setup Modal */}
+            {!isPublicView && isAdmin && currentYtLiveStream && showYtSetup && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+                    <div className="glass-panel p-6 max-w-lg w-full border-primary/30 shadow-[0_0_50px_rgba(109,40,217,0.2)]">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-red-600/20 rounded-xl flex items-center justify-center text-red-500">
+                                    <Video size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-white font-black uppercase text-sm tracking-widest leading-none">Configurar Transmissão</h3>
+                                    <p className="text-slate-500 text-[0.65rem] font-bold uppercase tracking-wide mt-1">Ao vivo no YouTube</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowYtSetup(false)} className="text-slate-500 hover:text-white transition-colors">
+                                <XCircle size={24} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-2">URL do Servidor (RTMP)</label>
+                                <div className="flex gap-2">
+                                    <input 
+                                        readOnly 
+                                        value={currentYtLiveStream.rtmpUrl} 
+                                        className="bg-black/40 border border-white/5 flex-1 px-3 py-2 rounded-lg text-xs font-mono text-slate-300" 
+                                    />
+                                    <button 
+                                        onClick={() => { navigator.clipboard.writeText(currentYtLiveStream.rtmpUrl); alert('URL Copiada!'); }}
+                                        className="bg-primary/20 text-primary p-2 rounded-lg hover:bg-primary/30 transition-all"
+                                    >
+                                        <Check size={16} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-2">Chave de Transmissão</label>
+                                <div className="flex gap-2">
+                                    <input 
+                                        readOnly 
+                                        type="password"
+                                        value={currentYtLiveStream.streamKey} 
+                                        className="bg-black/40 border border-white/5 flex-1 px-3 py-2 rounded-lg text-xs font-mono text-slate-300" 
+                                    />
+                                    <button 
+                                        onClick={() => { navigator.clipboard.writeText(currentYtLiveStream.streamKey); alert('Chave Copiada!'); }}
+                                        className="bg-primary/20 text-primary p-2 rounded-lg hover:bg-primary/30 transition-all"
+                                    >
+                                        <Check size={16} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <p className="text-[0.65rem] text-slate-500 italic text-center px-4">
+                                Insira esses dados no seu aplicativo de transmissão (OBS, PRISM, Larix Broadcaster) para começar a enviar o vídeo.
+                            </p>
+                            
+                            <button 
+                                onClick={() => setShowYtSetup(false)}
+                                className="w-full py-3 bg-white/5 border border-white/10 rounded-xl font-black text-[0.65rem] uppercase tracking-[0.2em] text-white hover:bg-white/10 transition-all mt-2"
+                            >
+                                Entendi, fechar painel
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
             {/* Back Button */}
             <button onClick={() => navigate('/matches')} className="flex items-center gap-2 text-slate-500 hover:text-white text-xs font-black uppercase tracking-widest mb-6 transition-colors group">

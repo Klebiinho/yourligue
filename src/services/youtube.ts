@@ -106,7 +106,7 @@ export class YouTubeService {
                     description: description
                 },
                 status: {
-                    privacyStatus: 'unlisted', // Default to unlisted for safety
+                    privacyStatus: 'public',
                     selfDeclaredMadeForKids: false
                 },
                 contentDetails: {
