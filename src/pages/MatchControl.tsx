@@ -701,29 +701,35 @@ const MatchControl = () => {
                                          ))}
                                      </div>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Duração (min)</label>
-                                    <input type="number" value={halfLength} onChange={e => setHalfLength(parseInt(e.target.value))}
-                                        className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm font-bold focus:border-primary outline-none h-10" />
-                                </div>
+                                {period !== 'Sel. Batedores' && period !== 'Pênaltis' && (
+                                    <>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Duração (min)</label>
+                                            <input type="number" value={halfLength} onChange={e => setHalfLength(parseInt(e.target.value))}
+                                                className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm font-bold focus:border-primary outline-none h-10" />
+                                        </div>
+                                        <div className="col-span-2 space-y-1.5 mb-5">
+                                            <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Acréscimos (min)</label>
+                                            <div className="flex gap-1.5 mb-2">
+                                                {[1, 2, 3, 4, 5].map(v => (
+                                                    <button key={v} onClick={() => setExtraTime(v)} 
+                                                        className={`flex-1 py-1.5 rounded-lg text-[0.65rem] font-black transition-all ${extraTime === v ? 'bg-primary text-white' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}>
+                                                        +{v}
+                                                    </button>
+                                                ))}
+                                                <button onClick={() => setExtraTime(0)} className="flex-1 py-1.5 rounded-lg text-[0.65rem] font-black bg-white/5 text-slate-500 hover:bg-white/10">0</button>
+                                            </div>
+                                            <input type="number" value={extraTime} onChange={e => setExtraTime(parseInt(e.target.value) || 0)}
+                                                className="w-full bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 text-white text-center text-xl font-black focus:border-primary outline-none" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <button onClick={handleSaveTimeSettings} className="w-full bg-white/5 border border-white/10 text-white font-black py-3 rounded-xl uppercase tracking-widest text-[0.65rem] hover:bg-white/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                                                <Clock size={14} strokeWidth={3} /> Salvar Cronograma
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
                             </div>
-                            <div className="space-y-1.5 mb-5">
-                                <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Acréscimos (min)</label>
-                                <div className="flex gap-1.5 mb-2">
-                                    {[1, 2, 3, 4, 5].map(v => (
-                                        <button key={v} onClick={() => setExtraTime(v)} 
-                                            className={`flex-1 py-1.5 rounded-lg text-[0.65rem] font-black transition-all ${extraTime === v ? 'bg-primary text-white' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}>
-                                            +{v}
-                                        </button>
-                                    ))}
-                                    <button onClick={() => setExtraTime(0)} className="flex-1 py-1.5 rounded-lg text-[0.65rem] font-black bg-white/5 text-slate-500 hover:bg-white/10">0</button>
-                                </div>
-                                <input type="number" value={extraTime} onChange={e => setExtraTime(parseInt(e.target.value) || 0)}
-                                    className="w-full bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 text-white text-center text-xl font-black focus:border-primary outline-none" />
-                            </div>
-                            <button onClick={handleSaveTimeSettings} className="w-full bg-white/5 border border-white/10 text-white font-black py-3 rounded-xl uppercase tracking-widest text-[0.65rem] hover:bg-white/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-                                <Clock size={14} strokeWidth={3} /> Salvar Cronograma
-                            </button>
                         </section>
                     ) : (
                         <div className="glass-panel p-6 bg-primary/5 border-primary/20 border">
