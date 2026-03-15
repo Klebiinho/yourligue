@@ -82,16 +82,60 @@ const Settings = () => {
         if (file) { const r = new FileReader(); r.onloadend = () => setLogo(r.result as string); r.readAsDataURL(file); }
     };
 
+    const optimizeImage = (base64: string, maxWidth = 1200, maxHeight = 1200): Promise<string> => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = base64;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height *= maxWidth / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width *= maxHeight / height;
+                        height = maxHeight;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
+                // Use JPEG for better compression than PNG (base64 size reduced by ~5-10x)
+                resolve(canvas.toDataURL('image/jpeg', 0.8));
+            };
+        });
+    };
+
     const handleAdMediaFile = (e: React.ChangeEvent<HTMLInputElement>, target: 'desktop' | 'mobile' | 'square') => {
         const file = e.target.files?.[0];
         if (file) {
-            const type = file.type.startsWith('video/') ? 'video' : file.type === 'image/gif' ? 'gif' : 'image';
+            const isVideo = file.type.startsWith('video/');
+            const isGif = file.type === 'image/gif';
+            const type = isVideo ? 'video' : isGif ? 'gif' : 'image';
+            
             const r = new FileReader();
-            r.onloadend = () => setFormAd(prev => ({
-                ...prev,
-                [target === 'desktop' ? 'desktop_media_url' : target === 'mobile' ? 'mobile_media_url' : 'square_media_url']: r.result as string,
-                media_type: type as any
-            }));
+            r.onloadend = async () => {
+                let finalData = r.result as string;
+                
+                // If it's a standard image (not gif/video), we optimize it to prevent 'Load failed' on mobile
+                if (type === 'image') {
+                    console.log('Optimizing image for mobile...');
+                    finalData = await optimizeImage(finalData);
+                }
+
+                setFormAd(prev => ({
+                    ...prev,
+                    [target === 'desktop' ? 'desktop_media_url' : target === 'mobile' ? 'mobile_media_url' : 'square_media_url']: finalData,
+                    media_type: type as any
+                }));
+            };
             r.readAsDataURL(file);
         }
     };
@@ -162,8 +206,6 @@ const Settings = () => {
                     setIsSavingAd(false);
                     return;
                 }
-
-                alert('Enviando campos: ' + Object.keys(updates).join(', '));
 
                 const { error } = await updateAd(editingAdId, updates);
                 if (!error) {
