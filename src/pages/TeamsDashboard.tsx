@@ -373,8 +373,14 @@ const TeamsDashboard = () => {
                                     <TrendingUp size={10} /> {p.stats.goals}
                                 </span>
                             )}
-                            {(p.stats?.yellowCards || 0) > 0 && <span className="w-1.5 h-2.5 bg-warning rounded-sm" />}
-                            {(p.stats?.redCards || 0) > 0 && <span className="w-1.5 h-2.5 bg-danger rounded-sm" />}
+                            {(p.stats?.yellowCards || 0) > 0 && (
+                                <div className="flex gap-0.5">
+                                    {Array.from({ length: p.stats?.yellowCards || 0 }).map((_, i) => (
+                                        <div key={i} className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm" />
+                                    ))}
+                                </div>
+                            )}
+                            {(p.stats?.redCards || 0) > 0 && <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm" />}
                         </div>
                     </div>
                 </div>
