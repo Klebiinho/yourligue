@@ -509,11 +509,17 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         console.log('LeagueContext: loadPublicLeague iniciado para:', slugOrId);
         try {
             // Try slug first
-            let { data, error } = await supabase.from('leagues').select('*').eq('slug', slugOrId).single();
+            let { data, error } = await supabase.from('leagues').select(`
+                *,
+                follower_count:followed_leagues(count)
+            `).eq('slug', slugOrId).single();
 
             // If not found (or error) and looks like UUID, try ID
             if ((!data || error) && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId)) {
-                const { data: idData } = await supabase.from('leagues').select('*').eq('id', slugOrId).single();
+                const { data: idData } = await supabase.from('leagues').select(`
+                    *,
+                    follower_count:followed_leagues(count)
+                `).eq('id', slugOrId).single();
                 data = idData;
             }
 
@@ -528,7 +534,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     allowSubstitutionReturn: data.allow_substitution_return ?? true,
                     hasOvertime: data.has_overtime ?? true,
                     slug: data.slug || '',
-                    userId: data.user_id
+                    userId: data.user_id,
+                    follower_count: data.follower_count
                 };
                 setLeague(lg);
                 return true;
