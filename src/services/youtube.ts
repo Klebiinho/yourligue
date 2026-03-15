@@ -118,6 +118,12 @@ export class YouTubeService {
                 }
             })
         });
+        
+        if (broadcastResponse.status === 401) {
+            this.logOut();
+            throw new Error('Sua sessão do YouTube expirou. Por favor, faça login novamente.');
+        }
+
         const broadcast = await broadcastResponse.json();
         if (!broadcast.id) {
             console.error('YouTube Broadcast Creation Failed:', broadcast);
@@ -142,6 +148,12 @@ export class YouTubeService {
                 }
             })
         });
+
+        if (streamResponse.status === 401) {
+            this.logOut();
+            throw new Error('Sua sessão do YouTube expirou. Por favor, faça login novamente.');
+        }
+
         const stream = await streamResponse.json();
         if (!stream.id) {
             console.error('YouTube Stream Creation Failed:', stream);
@@ -149,13 +161,18 @@ export class YouTubeService {
         }
 
         // 3. Bind Broadcast to Stream
-        await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts/bind?id=${broadcast.id}&part=id,contentDetails&streamId=${stream.id}`, {
+        const bindRes = await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts/bind?id=${broadcast.id}&part=id,contentDetails&streamId=${stream.id}`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${this.accessToken}`,
                 'Content-Type': 'application/json'
             }
         });
+
+        if (bindRes.status === 401) {
+            this.logOut();
+            throw new Error('Sua sessão do YouTube expirou. Por favor, faça login novamente.');
+        }
 
         return {
             broadcastId: broadcast.id,
