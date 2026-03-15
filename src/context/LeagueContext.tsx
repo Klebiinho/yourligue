@@ -152,7 +152,7 @@ interface LeagueContextType {
     createMatch: (data: { homeTeamId: string; awayTeamId: string; scheduledAt?: string; location?: string; youtubeLiveId?: string }) => Promise<{ error: string | null; matchId?: string }>;
     updateMatch: (matchId: string, data: Partial<Match>) => Promise<void>;
     deleteMatch: (matchId: string) => Promise<void>;
-    startMatch: (matchId: string, currentTimer: number) => Promise<void>;
+    startMatch: (matchId: string, currentTimer: number, shouldStartLive?: boolean) => Promise<void>;
     pauseMatch: (matchId: string, currentTimer: number) => Promise<void>;
     endMatch: (matchId: string, currentTimer: number) => Promise<void>;
     updateTimer: (matchId: string, time: number) => Promise<void>;
@@ -1305,12 +1305,12 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         setRawMatches((prev: Match[]) => prev.filter(m => m.id !== matchId));
     };
 
-    const startMatch = async (matchId: string, currentTimer: number = 0) => {
+    const startMatch = async (matchId: string, currentTimer: number = 0, shouldStartLive = false) => {
         const match = rawMatches.find(m => m.id === matchId);
         let youtubeLiveId = match?.youtubeLiveId;
 
-        // Auto-create YouTube Live if authenticated and first start
-        if (isYtAuthenticated && match && match.status === 'scheduled' && !youtubeLiveId) {
+        // Create YouTube Live ONLY if requested, authenticated, and scheduled
+        if (shouldStartLive && isYtAuthenticated && match && match.status === 'scheduled' && !youtubeLiveId) {
             const ht = rawTeams.find(t => t.id === match.homeTeamId);
             const at = rawTeams.find(t => t.id === match.awayTeamId);
             const title = `${league?.name} - ${ht?.name} x ${at?.name}`;

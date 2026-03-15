@@ -11,7 +11,7 @@ const MatchControl = () => {
     const { 
         league, matches, teams, endMatch, addEvent, removeEvent, 
         updateMatch, isPublicView, isAdmin, isPlayerOnPitch,
-        currentYtLiveStream
+        currentYtLiveStream, isYtAuthenticated
     } = useLeague();
 
     const match = matches.find((m: Match) => m.id === matchId);
@@ -96,11 +96,17 @@ const MatchControl = () => {
     }, [match?.id, match?.status, match?.timer, match?.updatedAt]);
 
     const handleToggleTimer = async () => {
-        if (!matchId) return;
+        if (!matchId || !match) return;
+        
         if (timerRunning) {
             await pauseMatch(matchId, localSeconds);
         } else {
-            await startMatch(matchId, localSeconds);
+            let shouldStartLive = false;
+            // Ask for live stream only when starting from 0 and authenticated with YouTube, if not already live
+            if (localSeconds === 0 && isYtAuthenticated && !match.youtubeLiveId) {
+                shouldStartLive = window.confirm("Deseja iniciar uma Transmissão Ao Vivo no YouTube para esta partida?");
+            }
+            await startMatch(matchId, localSeconds, shouldStartLive);
         }
     };
 
