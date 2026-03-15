@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Swords, Trophy, Settings, BarChart2, GitBranch, ArrowLeftRight, Grid3x3, X, Signal, Home } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, Trophy, Settings, BarChart2, GitBranch, ArrowLeftRight, Grid3x3, X, Signal, Home, Shield } from 'lucide-react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
 import TeamLogo from './TeamLogo';
@@ -259,23 +259,25 @@ const Sidebar = () => {
                 </nav>
 
                 {/* Footer */}
-                {!isPublicView && isAdmin && (
-                    <div className="p-3 border-t border-white/[0.05]">
+                <div className="p-3 border-t border-white/[0.05] space-y-1">
+                    {!isPublicView && isAdmin && (
                         <button
-                            onClick={() => {
-                                if (!user) {
-                                    setShowAuthModal(true);
-                                } else {
-                                    navigate('/leagues');
-                                }
-                            }}
-                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:text-white hover:bg-white/5 w-full transition-all group font-bold text-[0.8rem] tracking-wide"
+                            onClick={() => navigate('/leagues')}
+                            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:text-white hover:bg-white/5 w-full transition-all group font-bold text-[0.75rem] tracking-wide"
                         >
-                            <ArrowLeftRight size={16} className="group-hover:rotate-180 transition-transform duration-500 flex-none" />
+                            <ArrowLeftRight size={14} className="group-hover:rotate-180 transition-transform duration-500 flex-none" />
                             <span>Trocar Liga</span>
                         </button>
-                    </div>
-                )}
+                    )}
+                    
+                    <button
+                        onClick={() => navigate('/privacidade')}
+                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:text-primary hover:bg-primary/5 w-full transition-all group font-bold text-[0.75rem] tracking-wide"
+                    >
+                        <Shield size={14} className="flex-none" />
+                        <span>Privacidade</span>
+                    </button>
+                </div>
             </aside >
         </>
     );

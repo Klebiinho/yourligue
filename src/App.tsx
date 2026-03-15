@@ -16,6 +16,7 @@ import MatchControl from './pages/MatchControl.tsx';
 import LiveMatches from './pages/LiveMatches.tsx';
 import AuthModal from './components/AuthModal.tsx';
 import NotificationTray from './components/NotificationTray.tsx';
+import PrivacyPolicy from './pages/PrivacyPolicy.tsx';
 
 
 const LoadingScreen = () => (
@@ -178,6 +179,7 @@ const App = () => (
     <AuthProvider>
       <LeagueProvider>
         <Routes>
+          <Route path="/privacidade" element={<PrivacyPolicy />} />
           <Route path="/view/:slug/*" element={<AppRouter />} />
           <Route path="/*" element={<AppRouter />} />
         </Routes>
