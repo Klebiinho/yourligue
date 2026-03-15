@@ -27,7 +27,7 @@ const MatchControl = () => {
     const [showOverlay, setShowOverlay] = useState(true);
     const [penaltyPickers, setPenaltyPickers] = useState<{ [teamId: string]: string[] }>({});
     const [confirmedPenaltyShooters, setConfirmedPenaltyShooters] = useState<{ home: string[], away: string[] }>({ home: [], away: [] });
-    const { startMatch, pauseMatch } = useLeague();
+    const { startMatch, pauseMatch, loading: leagueLoading } = useLeague();
     const [showYtSetup, setShowYtSetup] = useState(false);
 
     useEffect(() => {
@@ -117,6 +117,15 @@ const MatchControl = () => {
             await startMatch(matchId, localSeconds, shouldStartLive);
         }
     };
+
+    if (leagueLoading && !match) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500 gap-4">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                <p className="font-outfit font-black uppercase tracking-widest text-xs">Carregando Partida...</p>
+            </div>
+        );
+    }
 
     if (!match || !homeTeam || !awayTeam) return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500 gap-4 opacity-75">
