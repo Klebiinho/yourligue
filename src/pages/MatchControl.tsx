@@ -375,6 +375,20 @@ const MatchControl = () => {
                                 return round > 5 ? `MORTE SÚBITA (${round}º)` : `Cobrança ${round} de 5`;
                             })() : period === 'Sel. Batedores' ? 'Seleção de Batedores' : period}
                         </span>
+                        
+                        {match.youtubeLiveId && (
+                            <div className="flex justify-center mt-3">
+                                <a 
+                                    href={`https://youtube.com/live/${match.youtubeLiveId}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-red-600/10 border border-red-600/20 rounded-full text-red-500 hover:bg-red-600/20 transition-all group"
+                                >
+                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                                    <span className="text-[0.55rem] font-black uppercase tracking-widest">LIVE YouTube</span>
+                                </a>
+                            </div>
+                        )}
                     </div>
 
                     {/* Away Team */}

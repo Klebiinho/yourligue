@@ -20,7 +20,7 @@ const AD_POSITIONS = [
 ];
 
 const Settings = () => {
-    const { league, updateLeague, isAdmin } = useLeague();
+    const { league, updateLeague, isAdmin, ytLogin, ytLogout, isYtAuthenticated } = useLeague();
     const { user, signOut } = useAuth();
     const navigate = useNavigate();
     const [name, setName] = useState(league?.name ?? '');
@@ -866,6 +866,41 @@ const Settings = () => {
                                 Versão 2.4.0-PRO • Tailwind UI
                             </p>
                         </div>
+                    </div>
+
+                    {/* YouTube Integration */}
+                    <div className="glass-panel p-8 bg-black/40 border border-primary/20 relative overflow-hidden group">
+                        <div className="absolute -right-4 -top-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                            <Video size={160} />
+                        </div>
+                        <h2 className="text-xl font-black text-white font-outfit uppercase tracking-widest mb-4 flex items-center gap-3">
+                            <Video size={22} className="text-red-500" /> YouTube Live
+                        </h2>
+                        <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                            Conecte seu canal para criar lives automáticas ao iniciar cada jogo. O título seguirá o padrão: Liga - Time A x Time B.
+                        </p>
+                        
+                        {!isYtAuthenticated ? (
+                            <button
+                                onClick={ytLogin}
+                                className="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-lg shadow-red-600/20"
+                            >
+                                <Video size={18} /> Conectar YouTube
+                            </button>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-xl text-green-500">
+                                    <CheckCircle2 size={18} />
+                                    <span className="text-xs font-bold uppercase tracking-wider">Canal Conectado</span>
+                                </div>
+                                <button
+                                    onClick={ytLogout}
+                                    className="w-full bg-white/5 hover:bg-red-500/10 hover:text-red-500 text-slate-400 px-6 py-3 rounded-xl font-bold text-[0.7rem] uppercase tracking-widest transition-all border border-white/10"
+                                >
+                                    Desconectar YouTube
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Share League */}
