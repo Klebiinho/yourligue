@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useLeague, type Player } from '../context/LeagueContext';
-import { Shield, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, Star, PlusCircle, GripVertical, ArrowDownUp } from 'lucide-react';
+import { Shield, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, Star, PlusCircle, GripVertical, ArrowDownUp, Heart, Skull, Music } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const Teams = () => {
-    const { league, teams, addTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain, reorderPlayers, isPublicView, isAdmin } = useLeague();
+    const { league, teams, addTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain, reorderPlayers, isPublicView, isAdmin, interactWithTeam, userInteractions, supportCounts } = useLeague();
     const [activeTeamId, setActiveTeamId] = useState<string | null>(teams[0]?.id ?? null);
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLogo, setNewTeamLogo] = useState('');
@@ -221,25 +221,53 @@ const Teams = () => {
                         <div className="glass-panel overflow-hidden">
                             {/* Team Hero */}
                             <div className="p-4 sm:p-6 bg-gradient-to-r from-primary/10 to-transparent border-b border-white/[0.05]">
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className="relative group flex-none">
-                                            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <TeamLogo src={currentTeam.logo} size={64} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h2 className="font-outfit font-black text-white uppercase text-lg sm:text-2xl md:text-3xl tracking-tight leading-none truncate">{currentTeam.name}</h2>
-                                            <div className="flex items-center gap-4 mt-2">
-                                                <div className="flex items-center gap-1.5 text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">
-                                                    <Users size={12} className="text-primary" /> {currentTeam.players.length} Jogadores
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">
-                                                    <Check size={12} className="text-accent" /> Ativo
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between w-full">
+                                        <div className="flex items-center gap-4">
+                                            <div className="relative group flex-none">
+                                                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                <TeamLogo src={currentTeam.logo} size={64} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h2 className="font-outfit font-black text-white uppercase text-lg sm:text-2xl md:text-3xl tracking-tight leading-none truncate">{currentTeam.name}</h2>
+                                                <div className="flex items-center gap-4 mt-2">
+                                                    <div className="flex items-center gap-1.5 text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">
+                                                        <Users size={12} className="text-primary" /> {currentTeam.players.length} Jogadores
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">
+                                                        <Heart size={12} className="text-danger" /> {supportCounts[currentTeam.id] || 0} Torcedores
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {isPublicView && (
+                                            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                                                <button 
+                                                    onClick={() => interactWithTeam(currentTeam.id, 'supporting')}
+                                                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[0.65rem] font-black uppercase tracking-widest transition-all border ${userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'supporting') ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
+                                                    title="Torcer por este time"
+                                                >
+                                                    <Music size={14} className={userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'supporting') ? 'animate-bounce' : ''} /> Torcer
+                                                </button>
+                                                
+                                                <button 
+                                                    onClick={() => interactWithTeam(currentTeam.id, 'rival')}
+                                                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[0.65rem] font-black uppercase tracking-widest transition-all border ${userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'rival') ? 'bg-danger text-white border-danger shadow-lg shadow-danger/20' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
+                                                    title="Secar este time"
+                                                >
+                                                    <Skull size={14} /> Secar
+                                                </button>
+
+                                                <button 
+                                                    onClick={() => interactWithTeam(currentTeam.id, 'favorite')}
+                                                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[0.65rem] font-black uppercase tracking-widest transition-all border ${userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'favorite') ? 'bg-warning text-black border-warning shadow-lg shadow-warning/20' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
+                                                    title="Favoritar este time"
+                                                >
+                                                    <Star size={14} fill={userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'favorite') ? 'currentColor' : 'none'} /> Favoritar
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
                             </div>
 
                             {/* PREMIUM PLAYER FORM (Same as Dashboard) */}

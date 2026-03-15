@@ -28,7 +28,7 @@ const Sidebar = () => {
 
     // Filter nav items: if it's public view OR user is not an admin, show only base items
     const filteredNavItems = (isPublicView || !isAdmin)
-        ? navItems.filter(item => ['/', '/live', '/matches', '/standings', '/bracket'].includes(item.to))
+        ? navItems.filter(item => ['/', '/live', '/matches', '/standings', '/bracket', '/teams'].includes(item.to))
         : navItems;
 
     const primaryItems = filteredNavItems.slice(0, 4);

@@ -69,6 +69,7 @@ const PublicLayout = () => (
           <Route path="live" element={<LiveMatches />} />
           <Route path="standings" element={<Standings />} />
           <Route path="bracket" element={<Bracket />} />
+          <Route path="teams" element={<Teams />} />
           <Route path="match/:matchId" element={<MatchControl />} />
 
           <Route path="*" element={<Navigate to="." replace />} />

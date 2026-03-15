@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Bell, BellOff } from 'lucide-react';
+import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Bell, BellOff, Heart, Music, Skull } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
@@ -8,7 +8,7 @@ import AdBanner from '../components/AdBanner';
 import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
-    const { league, teams, matches, loading, isPublicView, isAdmin, leagueBasePath, followedLeagues, followLeague, unfollowLeague, setShowAuthModal } = useLeague();
+    const { league, teams, matches, loading, isPublicView, isAdmin, leagueBasePath, followedLeagues, followLeague, unfollowLeague, setShowAuthModal, userInteractions, interactWithTeam } = useLeague();
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -256,6 +256,29 @@ const Dashboard = () => {
                                                 <span className="font-black text-primary text-sm sm:text-base font-outfit leading-none">{pts}</span>
                                                 <span className="text-[0.5rem] text-slate-700 font-black uppercase">pts</span>
                                             </div>
+
+                                            {isPublicView && (
+                                                <div className="flex gap-1 items-center pl-2 border-l border-white/5">
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'supporting'); }}
+                                                        className={`p-1 rounded-md transition-all ${userInteractions.some(i => i.teamId === team.id && i.interactionType === 'supporting') ? 'text-primary bg-primary/20' : 'text-slate-600 hover:text-primary hover:bg-white/5'}`}
+                                                    >
+                                                        <Music size={10} strokeWidth={3} />
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'rival'); }}
+                                                        className={`p-1 rounded-md transition-all ${userInteractions.some(i => i.teamId === team.id && i.interactionType === 'rival') ? 'text-danger bg-danger/20' : 'text-slate-600 hover:text-danger hover:bg-white/5'}`}
+                                                    >
+                                                        <Skull size={10} strokeWidth={3} />
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'favorite'); }}
+                                                        className={`p-1 rounded-md transition-all ${userInteractions.some(i => i.teamId === team.id && i.interactionType === 'favorite') ? 'text-warning bg-warning/20' : 'text-slate-600 hover:text-warning hover:bg-white/5'}`}
+                                                    >
+                                                        <Star size={10} strokeWidth={3} fill={userInteractions.some(i => i.teamId === team.id && i.interactionType === 'favorite') ? 'currentColor' : 'none'} />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })
