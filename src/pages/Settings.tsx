@@ -163,6 +163,8 @@ const Settings = () => {
                     return;
                 }
 
+                alert('Enviando campos: ' + Object.keys(updates).join(', '));
+
                 const { error } = await updateAd(editingAdId, updates);
                 if (!error) {
                     setEditingAdId(null);
