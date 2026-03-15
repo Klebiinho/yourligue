@@ -160,9 +160,22 @@ const MatchControl = () => {
         }
     };
 
-    const handleGol = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && period !== 'Intervalo') addEvent(matchId, { type: 'goal', teamId, playerId, minute: currentMinute }); };
-    const handleAssist = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && period !== 'Intervalo') addEvent(matchId, { type: 'assist', teamId, playerId, minute: currentMinute }); };
-    const handleGolContra = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && period !== 'Intervalo') addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); };
+    const handleGol = (teamId: string, playerId: string) => { 
+        if (!matchId || !match || match.status !== 'live' || period === 'Intervalo') return;
+        
+        if (period === 'Pênaltis') {
+            addEvent(matchId, { type: 'penalty_goal', teamId, playerId, minute: 121 });
+        } else {
+            addEvent(matchId, { type: 'goal', teamId, playerId, minute: currentMinute });
+        }
+    };
+    const handleMiss = (teamId: string, playerId: string) => {
+        if (matchId && match?.status === 'live' && period === 'Pênaltis') {
+            addEvent(matchId, { type: 'penalty_miss', teamId, playerId, minute: 121 });
+        }
+    };
+    const handleAssist = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && period !== 'Intervalo' && period !== 'Pênaltis') addEvent(matchId, { type: 'assist', teamId, playerId, minute: currentMinute }); };
+    const handleGolContra = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && period !== 'Intervalo' && period !== 'Pênaltis') addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); };
     const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { if (matchId && match?.status === 'live' && period !== 'Intervalo') addEvent(matchId, { type, teamId, playerId, minute: currentMinute }); };
     const handlePeriodChange = async (newPeriod: string) => {
         if (!matchId || !match) return;
@@ -254,20 +267,51 @@ const MatchControl = () => {
                     {/* Score */}
                     <div className="flex flex-col items-center gap-2 flex-none px-2 sm:px-4">
                         <div className="flex items-center gap-2 sm:gap-4 font-outfit font-black text-3xl sm:text-5xl md:text-6xl">
-                            <span className="text-primary drop-shadow-[0_0_20px_rgba(109,40,217,0.5)]">{match.homeScore}</span>
-                            <span className="text-slate-700 text-xl sm:text-3xl">–</span>
-                            <span className="text-accent drop-shadow-[0_0_20px_rgba(16,185,129,0.4)]">{match.awayScore}</span>
+                            {period === 'Pênaltis' ? (
+                                <>
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-primary/50 text-xl sm:text-2xl">{match.homeScore}</span>
+                                        <span className="text-primary drop-shadow-[0_0_20px_rgba(109,40,217,0.5)]">({match.events.filter(e => e.type === 'penalty_goal' && e.teamId === match.homeTeamId).length})</span>
+                                    </div>
+                                    <span className="text-slate-700 text-xl sm:text-3xl">–</span>
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-accent/50 text-xl sm:text-2xl">{match.awayScore}</span>
+                                        <span className="text-accent drop-shadow-[0_0_20px_rgba(16,185,129,0.4)]">({match.events.filter(e => e.type === 'penalty_goal' && e.teamId === match.awayTeamId).length})</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="text-primary drop-shadow-[0_0_20px_rgba(109,40,217,0.5)]">{match.homeScore}</span>
+                                    <span className="text-slate-700 text-xl sm:text-3xl">–</span>
+                                    <span className="text-accent drop-shadow-[0_0_20px_rgba(16,185,129,0.4)]">{match.awayScore}</span>
+                                </>
+                            )}
                         </div>
                         <div className="bg-black/50 px-4 py-1.5 rounded-xl flex items-center gap-2 border border-white/[0.05] shadow-inner">
                             <div className={`w-1.5 h-1.5 rounded-full ${timerRunning ? 'bg-danger animate-pulse shadow-[0_0_8px_rgba(239,68,68,1)]' : 'bg-slate-700'}`} />
                             <span className="font-mono text-base sm:text-xl font-black text-white tracking-[0.1em]">
-                                {period === 'Pênaltis' ? 'PEN' : formatTime(localSeconds)}
+                                {period === 'Pênaltis' ? 'PÊNALTIS' : formatTime(localSeconds)}
                             </span>
-                            {(match.extraTime || 0) > 0 && (
+                            {period !== 'Pênaltis' && (match.extraTime || 0) > 0 && (
                                 <span className="text-danger font-black text-xs sm:text-sm animate-pulse ml-1">+{match.extraTime}</span>
                             )}
                         </div>
-                        <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">{period}</span>
+                        {period === 'Pênaltis' && (
+                            <div className="flex gap-4 mt-2">
+                                <div className="flex gap-1">
+                                    {match.events.filter(e => e.teamId === match.homeTeamId && (e.type === 'penalty_goal' || e.type === 'penalty_miss')).map((e, i) => (
+                                        <div key={i} className={`w-2 h-2 rounded-full ${e.type === 'penalty_goal' ? 'bg-accent' : 'bg-danger'}`} />
+                                    ))}
+                                </div>
+                                <div className="w-px h-2 bg-white/10" />
+                                <div className="flex gap-1">
+                                    {match.events.filter(e => e.teamId === match.awayTeamId && (e.type === 'penalty_goal' || e.type === 'penalty_miss')).map((e, i) => (
+                                        <div key={i} className={`w-2 h-2 rounded-full ${e.type === 'penalty_goal' ? 'bg-accent' : 'bg-danger'}`} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">{period === 'Pênaltis' ? 'Disputa de Penais' : period}</span>
                     </div>
 
                     {/* Away Team */}
