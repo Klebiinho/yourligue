@@ -328,45 +328,70 @@ const TeamsDashboard = () => {
     );
 
     function renderPlayerCard(p: any, teamId: string) {
+        const isStar = p.isCaptain;
         return (
-            <div key={p.id} className="group flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:border-white/[0.15] hover:bg-white/[0.06] transition-all duration-300">
+            <div key={p.id} className={`group relative flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 border ${
+                isStar 
+                ? 'bg-warning/[0.03] border-warning/20 shadow-[0_0_20px_rgba(234,179,8,0.05)]' 
+                : 'bg-white/[0.03] border-white/[0.05] hover:border-white/[0.12] hover:bg-white/[0.05]'
+            }`}>
+                {/* Avatar Section */}
                 <div className="relative flex-none">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black font-outfit border-2 text-sm shadow-inner transition-colors ${p.photo ? 'bg-transparent overflow-hidden' : (p.isCaptain ? 'border-warning bg-warning/20 text-warning' : 'border-white/10 bg-white/5 text-slate-500')}`}>
-                        <TeamLogo src={p.photo} size={48} />
-                        {!p.photo && p.number}
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden border-2 transition-all duration-500 ${
+                        isStar ? 'border-warning/40 bg-warning/10 shadow-[0_0_15px_rgba(234,179,8,0.2)]' : 'border-white/10 bg-black/40'
+                    }`}>
+                        {p.photo ? (
+                            <img src={p.photo} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        ) : (
+                            <ShieldCheck size={24} className={isStar ? 'text-warning/60' : 'text-slate-700'} strokeWidth={1.5} />
+                        )}
                     </div>
-                    {p.isCaptain && <Crown size={14} className="absolute -top-1.5 -right-1.5 text-warning fill-warning/30 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />}
+                    {isStar && (
+                        <div className="absolute -top-2 -right-2 bg-warning text-black w-6 h-6 rounded-lg flex items-center justify-center shadow-[0_4px_10px_rgba(234,179,8,0.4)] transform -rotate-12 group-hover:rotate-0 transition-transform">
+                            <Crown size={14} fill="currentColor" />
+                        </div>
+                    )}
                 </div>
 
+                {/* Info Section */}
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-bold text-white uppercase tracking-tight text-xs sm:text-sm truncate">
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="font-outfit font-black text-white uppercase tracking-tight text-xs sm:text-sm truncate">
                             {p.name}
                         </span>
-                        <span className="text-[0.55rem] font-bold px-1.5 py-0.5 rounded-md bg-black/40 text-slate-500 border border-white/5 flex-none">{p.position}</span>
+                        <span className={`text-[0.55rem] font-black px-2 py-0.5 rounded flex-none uppercase tracking-widest ${
+                            isStar ? 'bg-warning/20 text-warning' : 'bg-white/10 text-slate-500'
+                        }`}>
+                            {p.position}
+                        </span>
                     </div>
                     <div className="flex items-center gap-3">
-                        <span className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest">Nº {p.number}</span>
-                        <div className="flex items-center gap-1">
-                            {p.stats?.goals > 0 && <span className="text-[0.6rem] font-black text-accent uppercase">⚽ {p.stats.goals}</span>}
-                            {p.stats?.yellowCards > 0 && <span className="w-2 h-3 bg-warning rounded-[2px]" />}
-                            {p.stats?.redCards > 0 && <span className="w-2 h-3 bg-danger rounded-[2px]" />}
+                        <span className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest bg-black/40 px-1.5 py-0.5 rounded">Nº {p.number}</span>
+                        <div className="flex items-center gap-2">
+                            {(p.stats?.goals || 0) > 0 && (
+                                <span className="flex items-center gap-1 text-[0.6rem] font-black text-accent uppercase">
+                                    <TrendingUp size={10} /> {p.stats.goals}
+                                </span>
+                            )}
+                            {(p.stats?.yellowCards || 0) > 0 && <span className="w-1.5 h-2.5 bg-warning rounded-sm" />}
+                            {(p.stats?.redCards || 0) > 0 && <span className="w-1.5 h-2.5 bg-danger rounded-sm" />}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
-                    <button onClick={() => toggleCaptain(teamId, p.id)}
-                        className={`p-2 rounded-xl transition-all ${p.isCaptain ? 'bg-warning/20 text-warning shadow-inner' : 'text-slate-600 hover:text-white hover:bg-white/10'}`}
-                        title="Tornar Capitão">
-                        <Star size={14} fill={p.isCaptain ? "currentColor" : "none"} />
+                {/* Actions Section */}
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100 pr-1">
+                    <button onClick={(e) => { e.stopPropagation(); toggleCaptain(teamId, p.id); }}
+                        className={`p-2 rounded-xl transition-all ${isStar ? 'bg-warning/20 text-warning shadow-lg shadow-warning/10' : 'text-slate-600 hover:text-white hover:bg-white/10'}`}
+                        title="Destaque/Capitão">
+                        <Star size={14} fill={isStar ? "currentColor" : "none"} />
                     </button>
-                    <button onClick={() => { setIsEditingPlayer(p.id); setFormPlayer({ name: p.name, number: p.number, position: p.position, isCaptain: p.isCaptain || false, isReserve: p.isReserve || false, photo: p.photo || '' }); setIsAddingPlayer(true); }}
-                        className="p-2 rounded-xl text-slate-600 hover:text-white hover:bg-white/10 transition-all" title="Editar">
+                    <button onClick={(e) => { e.stopPropagation(); setIsEditingPlayer(p.id); setFormPlayer({ name: p.name, number: p.number, position: p.position, isCaptain: p.isCaptain || false, isReserve: p.isReserve || false, photo: p.photo || '' }); setIsAddingPlayer(true); }}
+                        className="p-2 rounded-xl text-slate-600 hover:text-white hover:bg-white/10 transition-all">
                         <Edit2 size={14} />
                     </button>
-                    <button onClick={() => { if (window.confirm(`Excluir ${p.name}?`)) removePlayer(teamId, p.id); }}
-                        className="p-2 rounded-xl text-danger/40 hover:text-danger hover:bg-danger/10 transition-all" title="Excluir">
+                    <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Excluir ${p.name}?`)) removePlayer(teamId, p.id); }}
+                        className="p-2 rounded-xl text-danger/40 hover:text-danger hover:bg-danger/10 transition-all">
                         <Trash2 size={14} />
                     </button>
                 </div>
