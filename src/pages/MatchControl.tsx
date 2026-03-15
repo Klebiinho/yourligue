@@ -11,7 +11,7 @@ const MatchControl = () => {
     const { 
         league, matches, teams, endMatch, addEvent, removeEvent, 
         updateMatch, isPublicView, isAdmin, isPlayerOnPitch,
-        currentYtLiveStream, isYtAuthenticated
+        currentYtLiveStream, isYtAuthenticated, recoverStreamDetails
     } = useLeague();
 
     const match = matches.find((m: Match) => m.id === matchId);
@@ -94,6 +94,14 @@ const MatchControl = () => {
         interval = window.setInterval(updateTimerDisplay, 1000);
         return () => clearInterval(interval);
     }, [match?.id, match?.status, match?.timer, match?.updatedAt]);
+
+    const handleOpenYtSetup = async () => {
+        if (!currentYtLiveStream && match?.youtubeLiveId && isYtAuthenticated) {
+            // Try to recover stream key/rtmp if missing
+            await recoverStreamDetails(match.youtubeLiveId);
+        }
+        setShowYtSetup(true);
+    };
 
     const handleToggleTimer = async () => {
         if (!matchId || !match) return;
@@ -324,7 +332,7 @@ const MatchControl = () => {
             )}
 
             {/* YouTube Stream Setup Modal */}
-            {!isPublicView && isAdmin && currentYtLiveStream && showYtSetup && (
+            {!isPublicView && isAdmin && showYtSetup && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
                     <div className="glass-panel p-6 max-w-lg w-full border-primary/30 shadow-[0_0_50px_rgba(109,40,217,0.2)]">
                         <div className="flex items-center justify-between mb-6">
@@ -343,40 +351,54 @@ const MatchControl = () => {
                         </div>
 
                         <div className="space-y-4">
-                            <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-2">URL do Servidor (RTMP)</label>
-                                <div className="flex gap-2">
-                                    <input 
-                                        readOnly 
-                                        value={currentYtLiveStream.rtmpUrl} 
-                                        className="bg-black/40 border border-white/5 flex-1 px-3 py-2 rounded-lg text-xs font-mono text-slate-300" 
-                                    />
-                                    <button 
-                                        onClick={() => { navigator.clipboard.writeText(currentYtLiveStream.rtmpUrl); alert('URL Copiada!'); }}
-                                        className="bg-primary/20 text-primary p-2 rounded-lg hover:bg-primary/30 transition-all"
-                                    >
-                                        <Check size={16} />
-                                    </button>
-                                </div>
-                            </div>
+                            {currentYtLiveStream ? (
+                                <>
+                                    <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-2">URL do Servidor (RTMP)</label>
+                                        <div className="flex gap-2">
+                                            <input 
+                                                readOnly 
+                                                value={currentYtLiveStream.rtmpUrl} 
+                                                className="bg-black/40 border border-white/5 flex-1 px-3 py-2 rounded-lg text-xs font-mono text-slate-300" 
+                                            />
+                                            <button 
+                                                onClick={() => { navigator.clipboard.writeText(currentYtLiveStream.rtmpUrl); alert('URL Copiada!'); }}
+                                                className="bg-primary/20 text-primary p-2 rounded-lg hover:bg-primary/30 transition-all"
+                                            >
+                                                <Check size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
 
-                            <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-2">Chave de Transmissão</label>
-                                <div className="flex gap-2">
-                                    <input 
-                                        readOnly 
-                                        type="password"
-                                        value={currentYtLiveStream.streamKey} 
-                                        className="bg-black/40 border border-white/5 flex-1 px-3 py-2 rounded-lg text-xs font-mono text-slate-300" 
-                                    />
+                                    <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-2">Chave de Transmissão</label>
+                                        <div className="flex gap-2">
+                                            <input 
+                                                readOnly 
+                                                type="password"
+                                                value={currentYtLiveStream.streamKey} 
+                                                className="bg-black/40 border border-white/5 flex-1 px-3 py-2 rounded-lg text-xs font-mono text-slate-300" 
+                                            />
+                                            <button 
+                                                onClick={() => { navigator.clipboard.writeText(currentYtLiveStream.streamKey); alert('Chave Copiada!'); }}
+                                                className="bg-primary/20 text-primary p-2 rounded-lg hover:bg-primary/30 transition-all"
+                                            >
+                                                <Check size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : match?.youtubeLiveId ? (
+                                <div className="p-4 bg-white/5 rounded-xl border border-white/10 text-center">
+                                    <p className="text-[0.65rem] text-slate-400 font-bold uppercase tracking-wide mb-3">YouTube detectado, mas detalhes pendentes...</p>
                                     <button 
-                                        onClick={() => { navigator.clipboard.writeText(currentYtLiveStream.streamKey); alert('Chave Copiada!'); }}
-                                        className="bg-primary/20 text-primary p-2 rounded-lg hover:bg-primary/30 transition-all"
+                                        onClick={() => recoverStreamDetails(match.youtubeLiveId!)}
+                                        className="bg-primary/20 text-primary px-4 py-2 rounded-lg text-[0.6rem] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all"
                                     >
-                                        <Check size={16} />
+                                        Carregar Chaves do YouTube
                                     </button>
                                 </div>
-                            </div>
+                            ) : null}
 
                             <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
                                 <label className="text-[0.6rem] font-black text-primary uppercase tracking-widest block mb-2">Link do Placar (Overlay Widget)</label>
@@ -453,11 +475,11 @@ const MatchControl = () => {
                         </div>
                         {isAdmin && (currentYtLiveStream || match.youtubeLiveId) && (
                             <button 
-                                onClick={() => setShowYtSetup(true)}
+                                onClick={handleOpenYtSetup}
                                 className="flex items-center gap-2 px-3 py-1 bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-lg border border-red-500/20 transition-all active:scale-95"
                             >
                                 <Video size={12} strokeWidth={3} />
-                                <span className="text-[0.55rem] font-black uppercase tracking-[0.1em]">Configurar Live</span>
+                                <span className="text-[0.55rem] font-black uppercase tracking-[0.1em]">Configurar Live / Widget</span>
                             </button>
                         )}
                         <div className="bg-black/50 px-4 py-1.5 rounded-xl flex items-center gap-2 border border-white/[0.05] shadow-inner">

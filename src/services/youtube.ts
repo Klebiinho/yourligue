@@ -155,4 +155,31 @@ export class YouTubeService {
             rtmpUrl: stream.cdn.ingestionInfo.ingestionAddress
         };
     }
+
+    public async getBroadcastDetails(broadcastId: string) {
+        if (!this.accessToken) throw new Error('Not authenticated');
+
+        // 1. Get Broadcast to find bound stream
+        const bRes = await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts?part=contentDetails&id=${broadcastId}`, {
+            headers: { 'Authorization': `Bearer ${this.accessToken}` }
+        });
+        const bData = await bRes.json();
+        const streamId = bData.items?.[0]?.contentDetails?.boundStreamId;
+
+        if (!streamId) return null;
+
+        // 2. Get Stream details
+        const sRes = await fetch(`https://www.googleapis.com/youtube/v3/liveStreams?part=cdn&id=${streamId}`, {
+            headers: { 'Authorization': `Bearer ${this.accessToken}` }
+        });
+        const sData = await sRes.json();
+        const stream = sData.items?.[0];
+
+        if (!stream) return null;
+
+        return {
+            streamKey: stream.cdn.ingestionInfo.streamName,
+            rtmpUrl: stream.cdn.ingestionInfo.ingestionAddress
+        };
+    }
 }

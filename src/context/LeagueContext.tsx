@@ -198,6 +198,7 @@ interface LeagueContextType {
     ytLogout: () => void;
     isYtAuthenticated: boolean;
     currentYtLiveStream: { streamKey: string, rtmpUrl: string } | null;
+    recoverStreamDetails: (broadcastId: string) => Promise<void>;
 }
 
 // ─── Mappings (DB to Frontend) ──────────────────────────────
@@ -350,6 +351,17 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const ytLogout = () => ytService.logOut();
     const isYtAuthenticated = !!ytToken;
+    const recoverStreamDetails = async (broadcastId: string) => {
+        if (!isYtAuthenticated) return;
+        try {
+            const details = await ytService.getBroadcastDetails(broadcastId);
+            if (details) {
+                setCurrentYtLiveStream(details);
+            }
+        } catch (err) {
+            console.error('Failed to recover stream details:', err);
+        }
+    };
 
     const matches = useMemo(() => rawMatches, [rawMatches]);
     const [loading, setLoading] = useState(true);
@@ -1676,7 +1688,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             showAuthModal, setShowAuthModal,
             supportCounts, notifications, clearNotification, leagueBasePath,
             ads, addAd, updateAd, deleteAd, reorderAds,
-            ytToken, ytLogin, ytLogout, isYtAuthenticated, currentYtLiveStream
+            ytToken, ytLogin, ytLogout, isYtAuthenticated, currentYtLiveStream, recoverStreamDetails
         }}>
             {children}
         </LeagueContext.Provider>
