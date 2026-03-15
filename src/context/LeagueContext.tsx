@@ -1492,32 +1492,43 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const addAd = async (ad: Omit<Ad, 'id' | 'league_id' | 'active'>) => {
         if (!league) return { error: 'No league selected' };
         console.log('[LeagueContext] Adding Ad:', ad);
-        const { data, error } = await supabase.from('ads').insert([
-            { ...ad, league_id: league.id, active: true }
-        ]).select('id, title, desktop_media_url, mobile_media_url, square_media_url, media_type, positions, object_position, link_url, duration, active, league_id, created_at').single();
-        
-        if (error) {
-            console.error('[LeagueContext] Add Ad Error:', error);
-            return { error: error.message };
+        try {
+            const { data, error } = await supabase.from('ads').insert([
+                { ...ad, league_id: league.id, active: true }
+            ]).select('id').single();
+            
+            if (error) {
+                console.error('[LeagueContext] Add Ad Error:', error);
+                return { error: error.message };
+            }
+            // Realtime will handle the full update if identity is full, 
+            // but for now we'll just return success and let the local fetch/state handle it
+            console.log('[LeagueContext] Add Ad Success:', data);
+            return { error: null };
+        } catch (err: any) {
+            console.error('[LeagueContext] Add Ad Exception:', err);
+            return { error: err.message || 'Erro de rede ao adicionar propaganda' };
         }
-        console.log('[LeagueContext] Add Ad Success:', data);
-        setAds(prev => [...prev, data as Ad]);
-        return { error: null };
     };
 
     const updateAd = async (id: string, updates: Partial<Ad>) => {
         if (!league) return { error: 'No league selected' };
         console.log('[LeagueContext] Updating Ad:', id, updates);
-        // Explicitly select only ID to keep response tiny on mobile
-        const { error } = await supabase.from('ads').update(updates).eq('id', id).select('id');
-        
-        if (error) {
-            console.error('[LeagueContext] Update Ad Error:', error);
-            return { error: error.message || JSON.stringify(error) };
+        try {
+            // Explicitly select only ID to keep response tiny on mobile
+            const { error } = await supabase.from('ads').update(updates).eq('id', id).select('id');
+            
+            if (error) {
+                console.error('[LeagueContext] Update Ad Error:', error);
+                return { error: error.message || JSON.stringify(error) };
+            }
+            console.log('[LeagueContext] Update Ad Success');
+            setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+            return { error: null };
+        } catch (err: any) {
+            console.error('[LeagueContext] Update Ad Exception:', err);
+            return { error: err.message || 'Erro de rede ao atualizar propaganda' };
         }
-        console.log('[LeagueContext] Update Ad Success');
-        setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
-        return { error: null };
     };
 
     const deleteAd = async (id: string) => {

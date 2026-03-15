@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS ads (
     title TEXT NOT NULL,
     desktop_media_url TEXT NOT NULL,
     mobile_media_url TEXT,
+    square_media_url TEXT,
     media_type TEXT DEFAULT 'image',
     positions TEXT[] DEFAULT '{}',
     object_position TEXT DEFAULT 'center',
@@ -166,6 +167,6 @@ CREATE POLICY "Users manage their follows" ON followed_leagues FOR ALL TO authen
 
 -- 4. REALTIME CONFIG
 DROP PUBLICATION IF EXISTS supabase_realtime;
-CREATE PUBLICATION supabase_realtime FOR TABLE matches, match_events, teams, players, brackets, user_team_interactions;
+CREATE PUBLICATION supabase_realtime FOR TABLE matches, match_events, teams, players, brackets, user_team_interactions, ads;
 ALTER TABLE matches REPLICA IDENTITY FULL;
 ALTER TABLE match_events REPLICA IDENTITY FULL;
