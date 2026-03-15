@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, us
 import type { ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
+import { YouTubeService } from '../services/youtube';
 
 // ─── Types ───────────────────────────────────────────────────
 export type Player = {
@@ -190,6 +191,12 @@ interface LeagueContextType {
     updateAd: (id: string, ad: Partial<Ad>) => Promise<{ error: string | null }>;
     deleteAd: (id: string) => Promise<{ error: string | null }>;
     reorderAds: (reorderedAds: Ad[]) => Promise<void>;
+
+    // YouTube
+    ytToken: string | null;
+    ytLogin: () => Promise<void>;
+    ytLogout: () => void;
+    isYtAuthenticated: boolean;
 }
 
 // ─── Mappings (DB to Frontend) ──────────────────────────────
@@ -316,7 +323,32 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 stats: { matches: teamMatches.length, wins, draws, losses, goalsFor, goalsAgainst, points, form: form.reverse() }
             };
         });
+        });
     }, [rawTeams, rawMatches]);
+    
+    // ── YouTube Integration ─────────────────────────────────────
+    const ytService = YouTubeService.getInstance();
+    const [ytToken, setYtToken] = useState<string | null>(sessionStorage.getItem('yt_access_token'));
+
+    useEffect(() => {
+        const clientId = import.meta.env.VITE_YOUTUBE_CLIENT_ID;
+        if (clientId) {
+            ytService.init(clientId).then(() => {
+                ytService.subscribeAuth(token => setYtToken(token));
+            }).catch(err => console.error('YouTube Init Error:', err));
+        }
+    }, []);
+
+    const ytLogin = async () => {
+        try {
+            await ytService.logIn();
+        } catch (err) {
+            console.error('YouTube Login Error:', err);
+        }
+    };
+
+    const ytLogout = () => ytService.logOut();
+    const isYtAuthenticated = !!ytToken;
 
     const matches = useMemo(() => rawMatches, [rawMatches]);
     const [loading, setLoading] = useState(true);
@@ -1273,8 +1305,27 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const startMatch = async (matchId: string, currentTimer: number = 0) => {
+        const match = rawMatches.find(m => m.id === matchId);
+        let youtubeLiveId = match?.youtubeLiveId;
+
+        // Auto-create YouTube Live if authenticated and first start
+        if (isYtAuthenticated && match && match.status === 'scheduled' && !youtubeLiveId) {
+            const ht = rawTeams.find(t => t.id === match.homeTeamId);
+            const at = rawTeams.find(t => t.id === match.awayTeamId);
+            const title = `${league?.name} - ${ht?.name} x ${at?.name}`;
+            
+            try {
+                const result = await ytService.createLiveBroadcast(title, `Assista ao vivo: ${title}`);
+                if (result.broadcastId) {
+                    youtubeLiveId = result.broadcastId;
+                }
+            } catch (err) {
+                console.error('Failed to create YouTube Live broadcast:', err);
+            }
+        }
+
         // Ao iniciar/retomar, salvamos o tempo atual e o Supabase cuidará do updated_at (agora)
-        return updateMatch(matchId, { status: 'live', timer: currentTimer });
+        return updateMatch(matchId, { status: 'live', timer: currentTimer, youtubeLiveId });
     };
     
     const pauseMatch = async (matchId: string, currentTimer: number) => {
@@ -1619,7 +1670,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
             showAuthModal, setShowAuthModal,
             supportCounts, notifications, clearNotification, leagueBasePath,
-            ads, addAd, updateAd, deleteAd, reorderAds
+            ads, addAd, updateAd, deleteAd, reorderAds,
+            ytToken, ytLogin, ytLogout, isYtAuthenticated
         }}>
             {children}
         </LeagueContext.Provider>
