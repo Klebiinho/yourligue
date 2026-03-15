@@ -323,8 +323,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 stats: { matches: teamMatches.length, wins, draws, losses, goalsFor, goalsAgainst, points, form: form.reverse() }
             };
         });
-        });
-    }, [rawTeams, rawMatches]);
+    }, [rawTeams, rawMatches, league]);
     
     // ── YouTube Integration ─────────────────────────────────────
     const ytService = YouTubeService.getInstance();
