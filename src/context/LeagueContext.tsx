@@ -27,7 +27,7 @@ export type Team = {
 
 export type MatchEvent = {
     id: string;
-    type: 'goal' | 'assist' | 'yellow_card' | 'red_card' | 'substitution' | 'foul' | 'penalty_goal' | 'penalty_miss' | 'own_goal';
+    type: 'goal' | 'assist' | 'yellow_card' | 'red_card' | 'substitution' | 'foul' | 'penalty_goal' | 'penalty_miss' | 'own_goal' | 'penalty_shootout_goal' | 'penalty_shootout_miss';
     teamId: string;
     playerId: string;
     playerOutId?: string; // For substitutions

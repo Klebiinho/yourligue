@@ -119,38 +119,46 @@ const MatchControl = () => {
             return;
         }
 
-        if (period === 'Intervalo') {
-            if (window.confirm('Iniciar o 2º tempo agora?')) {
-                const startTime = (match?.halfLength || 45) * 60;
-                handlePeriodChange('2º Tempo');
+        if (period === 'Intervalo' || period === 'Intervalo (OT)' || period === 'Intervalo (OT2)') {
+            let next = '2º Tempo';
+            if (period === 'Intervalo (OT)') next = '1º Prorrog.';
+            if (period === 'Intervalo (OT2)') next = '2º Prorrog.';
+            
+            if (window.confirm(`Encerrar intervalo e iniciar o ${next}?`)) {
+                let startTime = 0;
+                if (next === '2º Tempo') startTime = (match?.halfLength || 45) * 60;
+                if (next === '1º Prorrog.') startTime = (match?.halfLength || 45) * 120;
+                if (next === '2º Prorrog.') startTime = (match?.halfLength || 45) * 120 + 900; // +15min
+
+                handlePeriodChange(next);
                 setTimerRunning(true);
                 startMatch(matchId, startTime);
             }
             return;
         }
 
-        if (period === '2º Tempo' && match.homeScore === match.awayScore) {
-            if (league?.hasOvertime) {
-                if (window.confirm('A partida terminou empatada. Deseja iniciar a Prorrogação?')) {
+        if (period === '2º Tempo' || period === '2º Prorrog.') {
+            if (match.homeScore === match.awayScore) {
+                if (period === '2º Tempo' && league?.hasOvertime) {
+                    if (window.confirm('A partida terminou empatada. Deseja iniciar a Prorrogação?')) {
+                        setTimerRunning(false);
+                        handlePeriodChange('Intervalo (OT)');
+                        return;
+                    }
+                } else if (window.confirm('O empate persiste. Deseja iniciar a disputa de Pênaltis?')) {
                     setTimerRunning(false);
-                    handlePeriodChange('Prorrogação');
-                    return;
-                }
-            } else {
-                if (window.confirm('A partida terminou empatada. Deseja iniciar a disputa de Pênaltis?')) {
-                    setTimerRunning(false);
-                    handlePeriodChange('Pênaltis');
+                    handlePeriodChange('Sel. Batedores');
                     return;
                 }
             }
         }
 
-        if (period === 'Prorrogação' && match.homeScore === match.awayScore) {
-            if (window.confirm('O empate persiste. Deseja iniciar a disputa de Pênaltis?')) {
+        if (period === '1º Prorrog.') {
+            if (window.confirm('Encerrar 1º tempo da Prorrogação e iniciar o Intervalo?')) {
                 setTimerRunning(false);
-                handlePeriodChange('Pênaltis');
-                return;
+                handlePeriodChange('Intervalo (OT2)');
             }
+            return;
         }
 
         if (window.confirm('Deseja realmente finalizar a partida definitivamente?')) {
@@ -161,22 +169,22 @@ const MatchControl = () => {
     };
 
     const handleGol = (teamId: string, playerId: string) => { 
-        if (!matchId || !match || match.status !== 'live' || period === 'Intervalo') return;
+        if (!matchId || !match || match.status !== 'live' || (period.includes('Intervalo') && period !== 'Pênaltis')) return;
         
         if (period === 'Pênaltis') {
-            addEvent(matchId, { type: 'penalty_goal', teamId, playerId, minute: 121 });
+            addEvent(matchId, { type: 'penalty_shootout_goal', teamId, playerId, minute: 121 });
         } else {
             addEvent(matchId, { type: 'goal', teamId, playerId, minute: currentMinute });
         }
     };
     const handleMiss = (teamId: string, playerId: string) => {
         if (matchId && match?.status === 'live' && period === 'Pênaltis') {
-            addEvent(matchId, { type: 'penalty_miss', teamId, playerId, minute: 121 });
+            addEvent(matchId, { type: 'penalty_shootout_miss', teamId, playerId, minute: 121 });
         }
     };
-    const handleAssist = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && period !== 'Intervalo' && period !== 'Pênaltis') addEvent(matchId, { type: 'assist', teamId, playerId, minute: currentMinute }); };
-    const handleGolContra = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && period !== 'Intervalo' && period !== 'Pênaltis') addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); };
-    const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { if (matchId && match?.status === 'live' && period !== 'Intervalo') addEvent(matchId, { type, teamId, playerId, minute: currentMinute }); };
+    const handleAssist = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && !period.includes('Intervalo') && period !== 'Pênaltis') addEvent(matchId, { type: 'assist', teamId, playerId, minute: currentMinute }); };
+    const handleGolContra = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && !period.includes('Intervalo') && period !== 'Pênaltis') addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); };
+    const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { if (matchId && match?.status === 'live' && !period.includes('Intervalo')) addEvent(matchId, { type, teamId, playerId, minute: currentMinute }); };
     const handlePeriodChange = async (newPeriod: string) => {
         if (!matchId || !match) return;
         
@@ -188,14 +196,16 @@ const MatchControl = () => {
             if (window.confirm('Deseja zerar o cronômetro para o início do 1º tempo?')) {
                 newTimer = 0;
             }
-        } else if (newPeriod === 'Intervalo') {
-            newStatus = 'scheduled'; // Auto-pause at halftime
+        } else if (newPeriod.includes('Intervalo')) {
+            newStatus = 'scheduled'; // Auto-pause
         } else if (newPeriod === '2º Tempo' && localSeconds < (match.halfLength || 45) * 60) {
             newTimer = (match.halfLength || 45) * 60;
-        } else if (newPeriod === 'Prorrogação' && localSeconds < (match.halfLength || 45) * 120) {
+        } else if (newPeriod === '1º Prorrog.' && localSeconds < (match.halfLength || 45) * 120) {
             newTimer = (match.halfLength || 45) * 120;
-        } else if (newPeriod === 'Pênaltis') {
-            newStatus = 'scheduled'; // Stop main clock for penalties
+        } else if (newPeriod === '2º Prorrog.' && localSeconds < (match.halfLength || 45) * 120 + 900) {
+            newTimer = (match.halfLength || 45) * 120 + 900;
+        } else if (newPeriod === 'Sel. Batedores' || newPeriod === 'Pênaltis') {
+            newStatus = 'scheduled'; // Stop main clock
         }
 
         setPeriod(newPeriod);
@@ -241,11 +251,11 @@ const MatchControl = () => {
         <div className="animate-fade-in relative pb-10">
             {isPublicView && <AdBanner position="top" />}
 
-            {isPublicView && period === 'Intervalo' && (
+            {isPublicView && period.includes('Intervalo') && (
                 <AdBanner position="halftime" className="z-[60]" />
             )}
 
-            {isPublicView && (period === 'Intervalo' || match.status === 'scheduled') && showOverlay && (
+            {isPublicView && (period.includes('Intervalo') || match.status === 'scheduled') && showOverlay && (
                 <AdBanner position="overlay" onClose={() => setShowOverlay(false)} />
             )}
             {/* Back Button */}
@@ -270,13 +280,13 @@ const MatchControl = () => {
                             {period === 'Pênaltis' ? (
                                 <>
                                     <div className="flex flex-col items-center">
-                                        <span className="text-primary/50 text-xl sm:text-2xl">{match.homeScore}</span>
-                                        <span className="text-primary drop-shadow-[0_0_20px_rgba(109,40,217,0.5)]">({match.events.filter(e => e.type === 'penalty_goal' && e.teamId === match.homeTeamId).length})</span>
+                                        <span className="text-primary/50 text-[0.45em] leading-none mb-1">{match.homeScore}</span>
+                                        <span className="text-primary drop-shadow-[0_0_20px_rgba(109,40,217,0.5)]">({match.events.filter(e => e.type === 'penalty_shootout_goal' && e.teamId === match.homeTeamId).length})</span>
                                     </div>
                                     <span className="text-slate-700 text-xl sm:text-3xl">–</span>
                                     <div className="flex flex-col items-center">
-                                        <span className="text-accent/50 text-xl sm:text-2xl">{match.awayScore}</span>
-                                        <span className="text-accent drop-shadow-[0_0_20px_rgba(16,185,129,0.4)]">({match.events.filter(e => e.type === 'penalty_goal' && e.teamId === match.awayTeamId).length})</span>
+                                        <span className="text-accent/50 text-[0.45em] leading-none mb-1">{match.awayScore}</span>
+                                        <span className="text-accent drop-shadow-[0_0_20px_rgba(16,185,129,0.4)]">({match.events.filter(e => e.type === 'penalty_shootout_goal' && e.teamId === match.awayTeamId).length})</span>
                                     </div>
                                 </>
                             ) : (
@@ -290,28 +300,30 @@ const MatchControl = () => {
                         <div className="bg-black/50 px-4 py-1.5 rounded-xl flex items-center gap-2 border border-white/[0.05] shadow-inner">
                             <div className={`w-1.5 h-1.5 rounded-full ${timerRunning ? 'bg-danger animate-pulse shadow-[0_0_8px_rgba(239,68,68,1)]' : 'bg-slate-700'}`} />
                             <span className="font-mono text-base sm:text-xl font-black text-white tracking-[0.1em]">
-                                {period === 'Pênaltis' ? 'PÊNALTIS' : formatTime(localSeconds)}
+                                {period === 'Pênaltis' || period === 'Sel. Batedores' ? 'PÊNALTIS' : formatTime(localSeconds)}
                             </span>
-                            {period !== 'Pênaltis' && (match.extraTime || 0) > 0 && (
+                            {period !== 'Pênaltis' && period !== 'Sel. Batedores' && (match.extraTime || 0) > 0 && (
                                 <span className="text-danger font-black text-xs sm:text-sm animate-pulse ml-1">+{match.extraTime}</span>
                             )}
                         </div>
                         {period === 'Pênaltis' && (
-                            <div className="flex gap-4 mt-2">
-                                <div className="flex gap-1">
-                                    {match.events.filter(e => e.teamId === match.homeTeamId && (e.type === 'penalty_goal' || e.type === 'penalty_miss')).map((e, i) => (
-                                        <div key={i} className={`w-2 h-2 rounded-full ${e.type === 'penalty_goal' ? 'bg-accent' : 'bg-danger'}`} />
+                            <div className="flex gap-4 mt-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+                                <div className="flex gap-1.5">
+                                    {match.events.filter(e => e.teamId === match.homeTeamId && (e.type === 'penalty_shootout_goal' || e.type === 'penalty_shootout_miss')).map((e, i) => (
+                                        <div key={i} className={`w-2.5 h-2.5 rounded-full ${e.type === 'penalty_shootout_goal' ? 'bg-accent shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-danger shadow-[0_0_8px_rgba(239,68,68,0.6)]'}`} />
                                     ))}
                                 </div>
-                                <div className="w-px h-2 bg-white/10" />
-                                <div className="flex gap-1">
-                                    {match.events.filter(e => e.teamId === match.awayTeamId && (e.type === 'penalty_goal' || e.type === 'penalty_miss')).map((e, i) => (
-                                        <div key={i} className={`w-2 h-2 rounded-full ${e.type === 'penalty_goal' ? 'bg-accent' : 'bg-danger'}`} />
+                                <div className="w-px h-3 bg-white/10" />
+                                <div className="flex gap-1.5">
+                                    {match.events.filter(e => e.teamId === match.awayTeamId && (e.type === 'penalty_shootout_goal' || e.type === 'penalty_shootout_miss')).map((e, i) => (
+                                        <div key={i} className={`w-2.5 h-2.5 rounded-full ${e.type === 'penalty_shootout_goal' ? 'bg-accent shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-danger shadow-[0_0_8px_rgba(239,68,68,0.6)]'}`} />
                                     ))}
                                 </div>
                             </div>
                         )}
-                        <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">{period === 'Pênaltis' ? 'Disputa de Penais' : period}</span>
+                        <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">
+                            {period === 'Pênaltis' || period === 'Sel. Batedores' ? 'Decisão por Penais' : period}
+                        </span>
                     </div>
 
                     {/* Away Team */}
@@ -331,15 +343,19 @@ const MatchControl = () => {
                                     }`}>
                                 {timerRunning ? <><Pause size={16} strokeWidth={3} />Pausar</> : <><Play size={16} fill="currentColor" />Iniciar</>}
                             </button>
-                            <button onClick={handleEndMatch}
-                                className="flex-1 sm:flex-none px-4 sm:px-8 py-3 rounded-xl bg-danger/10 border border-danger/20 text-danger font-black text-[0.65rem] uppercase tracking-[0.15em] hover:bg-danger hover:text-white transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
-                                <StopCircle size={16} strokeWidth={3} />
-                                {period === '1º Tempo' ? 'Fim 1º Tempo' : 
-                                 period === 'Intervalo' ? 'Iniciar 2º Tempo' : 
-                                 (period === '2º Tempo' && match.homeScore === match.awayScore) ? (league?.hasOvertime ? 'Ir p/ Prorrogação' : 'Ir p/ Pênaltis') :
-                                 (period === 'Prorrogação' && match.homeScore === match.awayScore) ? 'Ir p/ Pênaltis' :
-                                 'Finalizar Jogo'}
-                            </button>
+                             <button onClick={handleEndMatch}
+                                 className="flex-1 sm:flex-none px-4 sm:px-8 py-3 rounded-xl bg-danger/10 border border-danger/20 text-danger font-black text-[0.65rem] uppercase tracking-[0.15em] hover:bg-danger hover:text-white transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                                 <StopCircle size={16} strokeWidth={3} />
+                                 {period === '1º Tempo' ? 'Fim 1º Tempo' : 
+                                  period === 'Intervalo' ? 'Iniciar 2º Tempo' : 
+                                  period === '2º Tempo' ? (match.homeScore === match.awayScore ? (league?.hasOvertime ? 'Ir p/ Interv. Prorrog.' : 'Ir p/ Sel. Pênaltis') : 'Finalizar Jogo') :
+                                  period === 'Intervalo (OT)' ? 'Iniciar 1º Prorrog.' :
+                                  period === '1º Prorrog.' ? 'Fim 1º Prorrog.' :
+                                  period === 'Intervalo (OT2)' ? 'Iniciar 2º Prorrog.' :
+                                  period === '2º Prorrog.' ? (match.homeScore === match.awayScore ? 'Ir p/ Sel. Pênaltis' : 'Finalizar Jogo') :
+                                  period === 'Sel. Batedores' ? 'Iniciar Pênaltis' :
+                                  'Finalizar Jogo'}
+                             </button>
                         </>
                     ) : (
                         <div className="text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.2em] py-2">
@@ -371,69 +387,74 @@ const MatchControl = () => {
                             {(() => {
                                 const onPitch = team.players.filter(p => isPlayerOnPitch(match, p.id));
                                 const offPitch = team.players.filter(p => !onPitch.some(op => op.id === p.id));
-                                const isPenaltySelection = period === 'Pênaltis' && !confirmedPenaltyShooters.includes(team.players[0]?.id) && isAdmin && !isPublicView;
+                                 const isPenaltySelection = period === 'Sel. Batedores' && isAdmin && !isPublicView;
+                                 const isShootout = period === 'Pênaltis' && isAdmin && !isPublicView;
 
-                                if (isPenaltySelection) {
-                                    return (
-                                        <div className="space-y-4">
-                                            <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl mb-4">
-                                                <h3 className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em] mb-1">Seleção de Batedores</h3>
-                                                <p className="text-[0.6rem] text-slate-500 font-bold uppercase tracking-widest">Selecione os jogadores elegíveis para as cobranças</p>
-                                            </div>
-                                            <div className="grid grid-cols-1 gap-2">
-                                                {team.players.map((player: Player) => {
-                                                    const { isRedCarded } = getPlayerStatus(player.id);
-                                                    // const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === player.id).length;
-                                                    // const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === player.id).length;
-                                                    // const wasSubbedOut = subOuts > subIns;
-                                                    const onPitch = isPlayerOnPitch(match, player.id);
-                                                    
-                                                    // REGRA: Expulsos NUNCA batem. 
-                                                    // Se Retorno Proibido: Apenas quem terminou em campo bate.
-                                                    // Se Retorno Permitido: Todos (exceto expulsos) podem bater.
-                                                    const isEligible = !isRedCarded && (league?.allowSubstitutionReturn || onPitch);
-                                                    const isSelected = (penaltyPickers[team.id] || []).includes(player.id);
+                                 if (isPenaltySelection) {
+                                     return (
+                                         <div className="space-y-4">
+                                             <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl mb-4 text-center">
+                                                 <h3 className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em] mb-1">Seleção de Batedores</h3>
+                                                 <p className="text-[0.6rem] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">Escolha os jogadores para participar das cobranças</p>
+                                             </div>
+                                             <div className="grid grid-cols-1 gap-2">
+                                                 {team.players.map((player: Player) => {
+                                                     const { isRedCarded } = getPlayerStatus(player.id);
+                                                     const onPitch = isPlayerOnPitch(match, player.id);
+                                                     const isEligible = !isRedCarded && (league?.allowSubstitutionReturn || onPitch);
+                                                     const isSelected = (penaltyPickers[team.id] || []).includes(player.id);
 
-                                                    return (
-                                                        <button 
-                                                            key={player.id} 
-                                                            disabled={!isEligible}
-                                                            onClick={() => togglePenaltyShooter(player.id, team.id)}
-                                                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${
-                                                                isSelected 
-                                                                ? 'bg-primary border-primary text-white shadow-lg' 
-                                                                : isEligible 
-                                                                    ? 'bg-white/5 border-white/10 hover:border-white/20' 
-                                                                    : 'bg-danger/5 border-danger/10 opacity-30 cursor-not-allowed'
-                                                            }`}
-                                                        >
-                                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${isSelected ? 'bg-white/20' : 'bg-black/20 group-hover:bg-black/40'}`}>
-                                                                #{player.number}
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <div className="text-[0.7rem] font-black uppercase tracking-tight">{player.name}</div>
-                                                                {!isEligible && (
-                                                                    <div className="text-[0.5rem] font-black uppercase tracking-tighter opacity-60">
-                                                                        {isRedCarded ? 'Expulso' : 'Substituído'}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            {isSelected && <Check size={16} strokeWidth={4} />}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                            {idx === 1 && (
-                                                <button 
-                                                    onClick={confirmShooters}
-                                                    className="w-full mt-6 py-4 rounded-2xl bg-accent text-white font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
-                                                >
-                                                    <Check size={18} strokeWidth={3} /> Confirmar Batedores e Iniciar
-                                                </button>
-                                            )}
-                                        </div>
-                                    );
-                                }
+                                                     return (
+                                                         <button key={player.id} disabled={!isEligible} onClick={() => togglePenaltyShooter(player.id, team.id)}
+                                                             className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${isSelected ? 'bg-primary border-primary text-white shadow-lg' : isEligible ? 'bg-white/5 border-white/10 hover:border-white/20' : 'bg-danger/5 border-danger/10 opacity-30 cursor-not-allowed'}`}>
+                                                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${isSelected ? 'bg-white/20' : 'bg-black/20 group-hover:bg-black/40'}`}>#{player.number}</div>
+                                                             <div className="flex-1">
+                                                                 <div className="text-[0.7rem] font-black uppercase tracking-tight">{player.name}</div>
+                                                                 {!isEligible && <div className="text-[0.5rem] font-black uppercase tracking-tighter opacity-60">{isRedCarded ? 'Expulso' : 'Substituído'}</div>}
+                                                             </div>
+                                                             {isSelected && <Check size={16} strokeWidth={4} />}
+                                                         </button>
+                                                     );
+                                                 })}
+                                             </div>
+                                             {idx === 1 && (
+                                                 <button onClick={() => { confirmShooters(); handlePeriodChange('Pênaltis'); }}
+                                                     className="w-full mt-6 py-4 rounded-2xl bg-accent text-white font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2">
+                                                     <Check size={18} strokeWidth={3} /> Confirmar & Iniciar Pênaltis
+                                                 </button>
+                                             )}
+                                         </div>
+                                     );
+                                 }
+
+                                 if (isShootout) {
+                                     const shooters = team.players.filter(p => confirmedPenaltyShooters.includes(p.id));
+                                     return (
+                                         <div className="space-y-3">
+                                             <div className="bg-accent/10 border border-accent/20 p-4 rounded-2xl mb-2">
+                                                 <h3 className="text-[0.65rem] font-black text-accent uppercase tracking-[0.2em] mb-1 text-center">Batedores Confirmados</h3>
+                                             </div>
+                                             {shooters.map((player: Player) => (
+                                                 <div key={player.id} className="flex items-center gap-3 p-3 rounded-xl border bg-white/[0.02] border-white/10 hover:bg-white/[0.04] transition-all group">
+                                                     <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs bg-black/20 text-white group-hover:bg-black/40">#{player.number}</div>
+                                                     <div className="flex-1 text-[0.75rem] font-black text-white uppercase truncate">{player.name}</div>
+                                                     {!isPublicView && isAdmin && (
+                                                         <div className="flex items-center gap-2">
+                                                             <button disabled={match.status !== 'live'} onClick={() => handleGol(team.id, player.id)} 
+                                                                 className="w-10 h-10 rounded-lg bg-accent text-white flex items-center justify-center active:scale-90 disabled:opacity-30 shadow-lg shadow-accent/20 hover:brightness-110 transition-all">
+                                                                 <Target size={18} strokeWidth={3} />
+                                                             </button>
+                                                             <button disabled={match.status !== 'live'} onClick={() => handleMiss(team.id, player.id)} 
+                                                                 className="w-10 h-10 rounded-lg bg-danger text-white flex items-center justify-center font-black text-lg active:scale-90 disabled:opacity-30 shadow-lg shadow-danger/20 hover:brightness-110 transition-all">
+                                                                 X
+                                                             </button>
+                                                         </div>
+                                                     )}
+                                                 </div>
+                                             ))}
+                                         </div>
+                                     );
+                                 }
 
                                 return (
                                     <>
@@ -547,14 +568,14 @@ const MatchControl = () => {
                             <div className="grid grid-cols-2 gap-4 mb-5">
                                 <div className="col-span-2 space-y-1.5">
                                     <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Etapa Atual</label>
-                                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                                        {['1º Tempo', 'Intervalo', '2º Tempo', 'Prorrogação', 'Pênaltis'].map(p => (
-                                            <button key={p} onClick={() => handlePeriodChange(p)}
-                                                className={`py-2 px-1 rounded-lg text-[0.6rem] font-black uppercase tracking-tight transition-all border ${period === p ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}>
-                                                {p === 'Prorrogação' ? 'Prorrog.' : p}
-                                            </button>
-                                        ))}
-                                    </div>
+                                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                         {['1º Tempo', 'Intervalo', '2º Tempo', 'Intervalo (OT)', '1º Prorrog.', 'Intervalo (OT2)', '2º Prorrog.', 'Sel. Batedores', 'Pênaltis'].map(p => (
+                                             <button key={p} onClick={() => handlePeriodChange(p)}
+                                                 className={`py-2 px-1 rounded-lg text-[0.6rem] font-black uppercase tracking-tight transition-all border ${period === p ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}>
+                                                 {p.includes('Intervalo') ? 'Interv.' : p === 'Sel. Batedores' ? 'Sel. Bat.' : p}
+                                             </button>
+                                         ))}
+                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Duração (min)</label>
@@ -616,20 +637,23 @@ const MatchControl = () => {
                             ) : (
                                 [...match.events].reverse().map((event) => {
                                     const p = [...homeTeam.players, ...awayTeam.players].find(pl => pl.id === event.playerId);
-                                    const colorMap: Record<string, string> = {
-                                        goal: 'text-accent',
-                                        penalty_goal: 'text-accent',
-                                        own_goal: 'text-danger',
-                                        assist: 'text-warning',
-                                        yellow_card: 'text-warning',
-                                        red_card: 'text-danger',
-                                        substitution: 'text-primary',
-                                    };
-                                    const labelMap: Record<string, string> = {
-                                        goal: '⚽ Gol', penalty_goal: '⚽ Pênalti', own_goal: '🔴 Gol Contra',
-                                        yellow_card: '🟨 Amarelo', red_card: '🟥 Vermelho', assist: '🅰️ Assistência',
-                                        substitution: '🔄 Subst.',
-                                    };
+                                     const colorMap: Record<string, string> = {
+                                         goal: 'text-accent',
+                                         penalty_goal: 'text-accent',
+                                         penalty_shootout_goal: 'text-accent',
+                                         penalty_shootout_miss: 'text-danger',
+                                         own_goal: 'text-danger',
+                                         assist: 'text-warning',
+                                         yellow_card: 'text-warning',
+                                         red_card: 'text-danger',
+                                         substitution: 'text-primary',
+                                     };
+                                     const labelMap: Record<string, string> = {
+                                         goal: '⚽ Gol', penalty_goal: '⚽ Pênalti', own_goal: '🔴 Gol Contra',
+                                         penalty_shootout_goal: '✅ Pênalti (Decisão)', penalty_shootout_miss: '❌ Pênalti (Perdido)',
+                                         yellow_card: '🟨 Amarelo', red_card: '🟥 Vermelho', assist: '🅰️ Assistência',
+                                         substitution: '🔄 Subst.',
+                                     };
                                     const pOut = event.playerOutId ? [...homeTeam.players, ...awayTeam.players].find(pl => pl.id === event.playerOutId) : null;
                                     return (
                                         <div key={event.id} className="group flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] transition-all">
