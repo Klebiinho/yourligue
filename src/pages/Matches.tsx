@@ -64,7 +64,9 @@ const Matches = () => {
         navigate(`${leagueBasePath}/match/${id}`);
     };
 
-    const filteredMatches = matches.filter(m => tab === 'all' || m.status === tab);
+    const filteredMatches = matches
+        .filter(m => tab === 'all' || m.status === tab)
+        .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
     const formatDate = (dt?: string) => dt ? new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 
     const tabConfig = [

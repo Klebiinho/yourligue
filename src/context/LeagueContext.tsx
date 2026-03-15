@@ -529,7 +529,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         // Fetch everything in parallel
         const [teamsRes, matchesRes, bracketsRes] = await Promise.all([
             supabase.from('teams').select('*, players(*)').eq('league_id', leagueId).order('created_at'),
-            supabase.from('matches').select('*, match_events(*)').eq('league_id', leagueId).order('created_at'),
+            supabase.from('matches').select('*, match_events(*)').eq('league_id', leagueId).order('updated_at', { ascending: false }).order('created_at', { ascending: false }),
             supabase.from('brackets').select('*').eq('league_id', leagueId).order('match_order')
         ]);
 
