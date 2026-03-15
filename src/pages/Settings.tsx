@@ -491,7 +491,7 @@ const Settings = () => {
                                             </div>
 
                                             <div className="space-y-4">
-                                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block">Banner Mobile (800x320)</label>
+                                                <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block">Banner Mobile (1200x380)</label>
                                                 {adInputMethod === 'file' ? (
                                                     <label className={`w-full bg-white/5 border-2 border-dashed rounded-xl px-4 py-4 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${formAd.mobile_media_url ? 'border-accent/40 bg-accent/5' : 'border-white/10 hover:border-white/20'}`}>
                                                         <Smartphone size={16} className={formAd.mobile_media_url ? 'text-accent' : 'text-slate-500'} />
