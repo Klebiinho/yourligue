@@ -13,19 +13,30 @@ const MatchOverlay = () => {
     const homeTeam = teams.find(t => t.id === match?.homeTeamId);
     const awayTeam = teams.find(t => t.id === match?.awayTeamId);
 
-    // Sincronização do Cronômetro
+    // ── SMART TIMER CALCULATION ──
     useEffect(() => {
         let interval: any;
-        if (match?.status === 'live') {
-            const start = Date.now() - (match.timer * 1000);
-            interval = window.setInterval(() => {
-                setLocalSeconds(Math.floor((Date.now() - start) / 1000));
-            }, 1000);
-        } else {
-            setLocalSeconds(match?.timer || 0);
-        }
+        
+        const updateTimerDisplay = () => {
+            if (!match) return;
+
+            if (match.status === 'live') {
+                const lastUpdateStr = match.updatedAt || new Date().toISOString();
+                const lastUpdate = new Date(lastUpdateStr).getTime();
+                const now = Date.now();
+                const diffInSeconds = Math.max(0, Math.floor((now - lastUpdate) / 1000));
+                const calculatedSeconds = (match.timer || 0) + diffInSeconds;
+
+                setLocalSeconds(calculatedSeconds);
+            } else {
+                setLocalSeconds(match.timer || 0);
+            }
+        };
+
+        updateTimerDisplay();
+        interval = window.setInterval(updateTimerDisplay, 1000);
         return () => window.clearInterval(interval);
-    }, [match?.status, match?.timer]);
+    }, [match?.id, match?.status, match?.timer, match?.updatedAt]);
 
     const formatTime = (totalSeconds: number) => {
         const mins = Math.floor(totalSeconds / 60);
