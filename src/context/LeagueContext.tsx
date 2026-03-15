@@ -674,6 +674,20 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     }
                     break;
 
+                case 'ads':
+                    if (eventType === 'DELETE') {
+                        setAds(prev => prev.filter(a => a.id !== row.id));
+                    } else {
+                        setAds(prev => {
+                            const exists = prev.some(a => a.id === row.id);
+                            if (exists) {
+                                return prev.map(a => a.id === row.id ? { ...a, ...row } : a);
+                            }
+                            return [...prev, row as Ad];
+                        });
+                    }
+                    break;
+
                 case 'user_team_interactions':
                     // Refresh support counts silently
                     loadSupportCounts(league.id);
@@ -1480,7 +1494,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         console.log('[LeagueContext] Adding Ad:', ad);
         const { data, error } = await supabase.from('ads').insert([
             { ...ad, league_id: league.id, active: true }
-        ]).select().single();
+        ]).select('id, title, desktop_media_url, mobile_media_url, square_media_url, media_type, positions, object_position, link_url, duration, active, league_id, created_at').single();
         
         if (error) {
             console.error('[LeagueContext] Add Ad Error:', error);
@@ -1494,11 +1508,12 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const updateAd = async (id: string, updates: Partial<Ad>) => {
         if (!league) return { error: 'No league selected' };
         console.log('[LeagueContext] Updating Ad:', id, updates);
-        const { error } = await supabase.from('ads').update(updates).eq('id', id);
+        // Explicitly select only ID to keep response tiny on mobile
+        const { error } = await supabase.from('ads').update(updates).eq('id', id).select('id');
         
         if (error) {
             console.error('[LeagueContext] Update Ad Error:', error);
-            return { error: error.message };
+            return { error: error.message || JSON.stringify(error) };
         }
         console.log('[LeagueContext] Update Ad Success');
         setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));

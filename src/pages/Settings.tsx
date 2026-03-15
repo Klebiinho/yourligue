@@ -733,7 +733,10 @@ const Settings = () => {
                                         </div>
                                         <div className="flex items-center gap-1.5 sm:gap-2 flex-none" onClick={e => e.stopPropagation()}>
                                             <button
-                                                onClick={() => updateAd(ad.id, { active: !ad.active })}
+                                                onClick={async () => {
+                                                    const { error } = await updateAd(ad.id, { active: !ad.active });
+                                                    if (error) alert('❌ Erro ao mudar status: ' + error);
+                                                }}
                                                 className={`p-3 sm:p-2 rounded-lg transition-all ${ad.active ? 'text-accent bg-accent/10 border border-accent/20' : 'text-slate-600 bg-white/5 border border-white/10'}`}
                                                 title={ad.active ? 'Desativar' : 'Ativar'}
                                             >
