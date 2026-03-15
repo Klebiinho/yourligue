@@ -360,7 +360,7 @@ const MatchControl = () => {
                             {period === 'Pênaltis' ? (() => {
                                 const count = match.events.filter(e => e.type.startsWith('penalty_shootout_')).length;
                                 const round = Math.floor(count / 2) + 1;
-                                return round > 5 ? `Alternadas (${round}º)` : `Cobrança ${round} de 5`;
+                                return round > 5 ? `MORTE SÚBITA (${round}º)` : `Cobrança ${round} de 5`;
                             })() : period === 'Sel. Batedores' ? 'Seleção de Batedores' : period}
                         </span>
                     </div>
