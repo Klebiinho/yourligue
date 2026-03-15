@@ -17,29 +17,39 @@ const MatchOverlay = () => {
     // Bootstrap: Se entrar direto no overlay via link, precisamos carregar a liga
     useEffect(() => {
         const bootstrap = async () => {
-            if (!matchId || match) return;
+            // Se já temos tudo (match e times), não precisamos de bootstrap
+            if (!matchId || (match && homeTeam && awayTeam)) return;
             
-            console.log('[Overlay] Bootstrap iniciada para match:', matchId);
-            // Buscar o league_id desta match para carregar os dados
-            const { data, error } = await supabase
-                .from('matches')
-                .select('league_id')
-                .eq('id', matchId)
-                .single();
-            
-            if (error) {
-                console.error('[Overlay] Erro ao buscar liga da partida:', error);
-                return;
-            }
+            console.log('[Overlay] Bootstrap verificando match:', matchId);
 
-            if (data?.league_id) {
-                console.log('[Overlay] Liga identificada:', data.league_id, '- Carregando dados públicos...');
-                const success = await loadPublicLeague(data.league_id);
-                console.log('[Overlay] Carregamento público finalizado. Sucesso:', success);
+            // Se não temos a match, buscamos a liga dela para carregar os dados
+            if (!match) {
+                console.log('[Overlay] Match não encontrada localmente. Buscando liga via matches table...');
+                const { data, error } = await supabase
+                    .from('matches')
+                    .select('league_id')
+                    .eq('id', matchId)
+                    .single();
+                
+                if (error) {
+                    console.error('[Overlay] Erro ao buscar liga da partida:', error);
+                    return;
+                }
+
+                if (data?.league_id) {
+                    console.log('[Overlay] Liga identificada:', data.league_id, '- Chamando loadPublicLeague...');
+                    await loadPublicLeague(data.league_id);
+                }
             }
         };
         bootstrap();
-    }, [matchId, !!match, loadPublicLeague]);
+    }, [matchId, !!match, !!homeTeam, !!awayTeam, loadPublicLeague]);
+
+    useEffect(() => {
+        if (match) {
+            console.log('[Overlay] Partida sincronizada:', match.id, `- Placar: ${match.homeScore} x ${match.awayScore}`);
+        }
+    }, [!!match]);
 
     // ── SMART TIMER CALCULATION ──
     useEffect(() => {
@@ -97,10 +107,20 @@ const MatchOverlay = () => {
         return (
             <div className="min-h-screen w-screen bg-transparent flex items-start justify-start p-6" data-state="loading">
                 {transparencyStyles}
-                <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
-                    <div className="text-[0.6rem] text-white font-black uppercase tracking-[0.2em] flex items-center gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                        SINCRONIZANDO PLACAR...
+                <div className="bg-black/80 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 shadow-2xl">
+                    <div className="flex flex-col gap-4">
+                        <div className="text-[0.65rem] text-white font-black uppercase tracking-[0.25em] flex items-center gap-3">
+                            <div className="w-2.5 h-2.5 bg-primary rounded-full animate-ping" />
+                            SINCRONIZANDO PLACAR...
+                        </div>
+                        <div className="flex gap-2 w-48">
+                            <div className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${match ? 'bg-primary' : 'bg-white/10'}`} />
+                            <div className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${homeTeam && awayTeam ? 'bg-primary' : 'bg-white/10'}`} />
+                        </div>
+                        <div className="text-[0.5rem] text-white/40 font-bold uppercase flex justify-between">
+                            <span>{match ? 'Partida ✓' : 'Buscando Partida...'}</span>
+                            <span>{homeTeam && awayTeam ? 'Times ✓' : 'Buscando Times...'}</span>
+                        </div>
                     </div>
                 </div>
             </div>
