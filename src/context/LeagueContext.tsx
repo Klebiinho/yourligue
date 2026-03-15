@@ -1418,11 +1418,12 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 else newHomeScore++;
             }
 
-            // Sync timer to current "live" time during event add
+            // Sync timer to current "live" time during event add to avoid jumps
             let finalTimer = m.timer;
             if (m.status === 'live') {
-                const lastUpdate = new Date(m.updatedAt || new Date().toISOString()).getTime();
-                const diffInSeconds = Math.max(0, Math.floor((Date.now() - lastUpdate) / 1000));
+                const now = Date.now();
+                const lastUpdate = new Date(m.updatedAt || now).getTime();
+                const diffInSeconds = Math.max(0, Math.floor((now - lastUpdate) / 1000));
                 finalTimer = (m.timer || 0) + diffInSeconds;
             }
 
@@ -1436,21 +1437,36 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             };
         }));
 
-        // Update score in DB
+        // Update score AND timer in DB to keep everything snapped
         if (event.type === 'goal' || event.type === 'penalty_goal' || event.type === 'own_goal') {
+            const currentMatch = rawMatches.find(m => m.id === matchId);
+            
+            // Recalculate precisely for DB and Broadcast
+            let finalTimer = currentMatch?.timer || 0;
+            if (currentMatch?.status === 'live') {
+                const now = Date.now();
+                const lastUpdate = new Date(currentMatch.updatedAt || now).getTime();
+                const diffInSeconds = Math.max(0, Math.floor((now - lastUpdate) / 1000));
+                finalTimer = (currentMatch.timer || 0) + diffInSeconds;
+            }
+
             await supabase.from('matches').update({
                 home_score: newHomeScore,
                 away_score: newAwayScore,
+                timer: finalTimer
             }).eq('id', matchId);
 
-            // BROADCAST results immediately
+            // BROADCAST full state immediately
             supabase.channel(`league-central-${league?.id}`).send({
                 type: 'broadcast',
                 event: 'match-update',
                 payload: {
                     matchId,
+                    timer: finalTimer,
                     homeScore: newHomeScore,
                     awayScore: newAwayScore,
+                    status: currentMatch?.status || 'live',
+                    period: currentMatch?.period || '1T',
                     updatedAt: new Date().toISOString()
                 }
             });
