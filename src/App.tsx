@@ -90,6 +90,7 @@ const AppRouter = () => {
   useEffect(() => {
     const fetchLeague = async () => {
       if (slug) {
+        setNotFound(false); // Reset on every slug change to avoid flickering
         try {
           const success = await loadPublicLeague(slug);
           if (!success) setNotFound(true);
@@ -100,14 +101,6 @@ const AppRouter = () => {
     };
     fetchLeague();
   }, [slug, loadPublicLeague]);
-
-  useEffect(() => {
-    if (!leagueLoading && slug && !league) {
-      setNotFound(true);
-    } else if (league) {
-      setNotFound(false);
-    }
-  }, [leagueLoading, slug, league]);
 
   // Clean sensitive hash fragments (from OAuth) AFTER login is successful
   useEffect(() => {
