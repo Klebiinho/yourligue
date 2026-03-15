@@ -1393,84 +1393,83 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const addEvent = async (matchId: string, event: Omit<MatchEvent, 'id'>) => {
-        const { data } = await supabase.from('match_events').insert({
+        // 1. Get current match state safely
+        const m = rawMatches.find(x => String(x.id) === String(matchId));
+        if (!m) {
+            console.error('[LeagueContext] Partida não encontrada para addEvent:', matchId);
+            return;
+        }
+
+        // 2. SNAPSHOT TIMER: Calculate current running time to use as new 0-base
+        const now = Date.now();
+        let snapshotTimer = m.timer || 0;
+        if (m.status === 'live') {
+            const lastUpdate = new Date(m.updatedAt || now).getTime();
+            const diffInSeconds = Math.max(0, Math.floor((now - lastUpdate) / 1000));
+            snapshotTimer += diffInSeconds;
+        }
+
+        // 3. Persist Event
+        const { data, error } = await supabase.from('match_events').insert({
             match_id: matchId, type: event.type, team_id: event.teamId,
             player_id: event.playerId, player_out_id: event.playerOutId, minute: event.minute
         }).select().single();
-        if (!data) return;
         
-        const mapped = mapDBEvent(data);
+        if (error || !data) {
+            console.error('[LeagueContext] Erro ao salvar evento:', error);
+            return;
+        }
         
-        let newHomeScore = 0;
-        let newAwayScore = 0;
+        const mappedEvent = mapDBEvent(data);
+        
+        // 4. Calculate New Scores
+        let newHomeScore = m.homeScore || 0;
+        let newAwayScore = m.awayScore || 0;
+        if (event.type === 'goal' || event.type === 'penalty_goal') {
+            if (String(event.teamId) === String(m.homeTeamId)) newHomeScore++;
+            else newAwayScore++;
+        } else if (event.type === 'own_goal') {
+            if (String(event.teamId) === String(m.homeTeamId)) newAwayScore++;
+            else newHomeScore++;
+        }
 
-        setRawMatches(prev => prev.map(m => {
-            if (m.id !== matchId) return m;
-            
-            newHomeScore = m.homeScore;
-            newAwayScore = m.awayScore;
+        const newMatchState = {
+            ...m,
+            homeScore: newHomeScore,
+            awayScore: newAwayScore,
+            timer: snapshotTimer,
+            updatedAt: new Date(now).toISOString(),
+            events: [...m.events, mappedEvent]
+        };
 
-            if (event.type === 'goal' || event.type === 'penalty_goal') {
-                if (event.teamId === m.homeTeamId) newHomeScore++;
-                else newAwayScore++;
-            } else if (event.type === 'own_goal') {
-                if (event.teamId === m.homeTeamId) newAwayScore++;
-                else newHomeScore++;
-            }
+        // 5. Update Local State (Optimistic)
+        setRawMatches(prev => prev.map(x => String(x.id) === String(matchId) ? newMatchState : x));
 
-            // Sync timer to current "live" time during event add to avoid jumps
-            let finalTimer = m.timer;
-            if (m.status === 'live') {
-                const now = Date.now();
-                const lastUpdate = new Date(m.updatedAt || now).getTime();
-                const diffInSeconds = Math.max(0, Math.floor((now - lastUpdate) / 1000));
-                finalTimer = (m.timer || 0) + diffInSeconds;
-            }
+        // 6. Sync with Database
+        const isScoreChange = event.type === 'goal' || event.type === 'penalty_goal' || event.type === 'own_goal';
+        
+        const updateData: any = { timer: snapshotTimer };
+        if (isScoreChange) {
+            updateData.home_score = newHomeScore;
+            updateData.away_score = newAwayScore;
+        }
 
-            return {
-                ...m,
-                events: [...m.events, mapped],
+        await supabase.from('matches').update(updateData).eq('id', matchId);
+
+        // 7. BROADCAST for Overlays (Critical for low latency sync)
+        supabase.channel(`league-central-${league?.id}`).send({
+            type: 'broadcast',
+            event: 'match-update',
+            payload: {
+                matchId,
+                timer: snapshotTimer,
                 homeScore: newHomeScore,
                 awayScore: newAwayScore,
-                timer: finalTimer || 0,
-                updatedAt: new Date().toISOString()
-            };
-        }));
-
-        // Update score AND timer in DB to keep everything snapped
-        if (event.type === 'goal' || event.type === 'penalty_goal' || event.type === 'own_goal') {
-            const currentMatch = rawMatches.find(m => m.id === matchId);
-            
-            // Recalculate precisely for DB and Broadcast
-            let finalTimer = currentMatch?.timer || 0;
-            if (currentMatch?.status === 'live') {
-                const now = Date.now();
-                const lastUpdate = new Date(currentMatch.updatedAt || now).getTime();
-                const diffInSeconds = Math.max(0, Math.floor((now - lastUpdate) / 1000));
-                finalTimer = (currentMatch.timer || 0) + diffInSeconds;
+                status: m.status,
+                period: m.period,
+                updatedAt: newMatchState.updatedAt
             }
-
-            await supabase.from('matches').update({
-                home_score: newHomeScore,
-                away_score: newAwayScore,
-                timer: finalTimer
-            }).eq('id', matchId);
-
-            // BROADCAST full state immediately
-            supabase.channel(`league-central-${league?.id}`).send({
-                type: 'broadcast',
-                event: 'match-update',
-                payload: {
-                    matchId,
-                    timer: finalTimer,
-                    homeScore: newHomeScore,
-                    awayScore: newAwayScore,
-                    status: currentMatch?.status || 'live',
-                    period: currentMatch?.period || '1T',
-                    updatedAt: new Date().toISOString()
-                }
-            });
-        }
+        });
 
         // Lógica de Transferência de Braçadeira (Substituição ou Vermelho do Capitão)
         if (event.type === 'substitution' || event.type === 'red_card') {
@@ -1488,7 +1487,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 } else {
                     // No vermelho, passa para outro que esteja em campo
                     // Precisamos considerar o evento que acabamos de adicionar (o vermelho)
-                    const onPitch = team.players.filter(p => p.id !== player.id && isPlayerOnPitch({ ...match, events: [...match.events, mapped] }, p.id));
+                    const onPitch = team.players.filter(p => p.id !== player.id && isPlayerOnPitch({ ...m, events: [...m.events, mappedEvent] }, p.id));
                     if (onPitch.length > 0) newCaptainId = onPitch[0].id;
                 }
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2 } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
@@ -30,6 +30,8 @@ const MatchControl = () => {
     const [confirmedPenaltyShooters, setConfirmedPenaltyShooters] = useState<{ home: string[], away: string[] }>({ home: [], away: [] });
     const { startMatch, pauseMatch, loading: leagueLoading } = useLeague();
     const [showYtSetup, setShowYtSetup] = useState(false);
+    const [showFinishModal, setShowFinishModal] = useState(false);
+    const [finishedMatchVideoUrl, setFinishedMatchVideoUrl] = useState(match?.youtubeLiveId || '');
 
     useEffect(() => {
         if (currentYtLiveStream) {
@@ -217,11 +219,29 @@ const MatchControl = () => {
             return;
         }
 
-        if (window.confirm('Deseja realmente finalizar a partida definitivamente?')) {
-            setTimerRunning(false);
-            endMatch(matchId, localSeconds);
-            navigate('/');
+        setShowFinishModal(true);
+    };
+
+    const confirmFinalFinish = async () => {
+        if (!matchId) return;
+        
+        setTimerRunning(false);
+        
+        let videoId = finishedMatchVideoUrl;
+        try {
+            if (videoId.includes('youtube.com') || videoId.includes('youtu.be')) {
+                const url = new URL(videoId);
+                videoId = url.searchParams.get('v') || url.pathname.split('/').pop() || videoId;
+            }
+        } catch { }
+
+        await endMatch(matchId, localSeconds);
+        if (videoId) {
+            await updateMatch(matchId, { youtubeLiveId: videoId });
         }
+        
+        setShowFinishModal(false);
+        navigate('/matches');
     };
 
     const handleGol = (teamId: string, playerId: string) => { 
@@ -1087,6 +1107,65 @@ const MatchControl = () => {
                                         <p className="text-center py-6 text-slate-600 text-[0.65rem] uppercase font-black tracking-widest italic">Nenhum jogador disponível para entrar</p>
                                     )}
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* End Match Confirmation Modal */}
+            {showFinishModal && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in">
+                    <div className="glass-panel w-full max-w-lg p-6 md:p-10 border-danger/30 shadow-[0_0_80px_rgba(239,68,68,0.2)]">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-14 h-14 bg-danger/20 rounded-2xl flex items-center justify-center text-danger">
+                                <StopCircle size={32} />
+                            </div>
+                            <div>
+                                <h2 className="text-xl md:text-2xl font-black font-outfit uppercase tracking-wider text-white">Finalizar Partida</h2>
+                                <p className="text-slate-500 text-[0.65rem] font-bold uppercase tracking-widest mt-1">Isso encerrará o cronômetro e salvará o placar final</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+                                <div className="flex items-center justify-center gap-6 font-outfit font-black text-4xl mb-4">
+                                    <span className="text-primary">{match.homeScore}</span>
+                                    <span className="text-slate-800 text-xl">✕</span>
+                                    <span className="text-accent">{match.awayScore}</span>
+                                </div>
+                                <p className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest italic">Confirma que este é o placar final?</p>
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <Video size={14} className="text-red-500" /> Gravação do Jogo (YouTube URL)
+                                </label>
+                                <input 
+                                    type="text"
+                                    placeholder="Ex: https://youtube.com/watch?v=..."
+                                    value={finishedMatchVideoUrl}
+                                    onChange={(e) => setFinishedMatchVideoUrl(e.target.value)}
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-slate-700 focus:border-primary outline-none transition-all text-sm font-bold"
+                                />
+                                <p className="text-[0.55rem] text-slate-600 font-bold uppercase tracking-tight italic">
+                                    Deixe em branco se não houver vídeo. Se você transmitiu ao vivo pelo app, o link já deve estar acima.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                                <button 
+                                    onClick={confirmFinalFinish}
+                                    className="flex-1 bg-danger text-white font-black py-4 rounded-xl shadow-[0_10px_30px_rgba(239,68,68,0.3)] hover:brightness-110 active:scale-95 transition-all uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-2"
+                                >
+                                    <CheckCircle2 size={16} /> Finalizar Definitivamente
+                                </button>
+                                <button 
+                                    onClick={() => setShowFinishModal(false)}
+                                    className="px-8 py-4 rounded-xl border border-white/10 text-slate-500 font-bold hover:bg-white/5 transition-all text-xs uppercase tracking-widest"
+                                >
+                                    Voltar
+                                </button>
                             </div>
                         </div>
                     </div>
