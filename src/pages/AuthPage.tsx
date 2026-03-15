@@ -67,10 +67,10 @@ const AuthPage = () => {
                     <div className="inline-flex bg-gradient-to-br from-primary to-[#4c1d95] p-5 rounded-3xl mb-5 shadow-[0_12px_40px_rgba(109,40,217,0.4)]">
                         <Trophy size={40} className="text-white" />
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-outfit font-extrabold mb-2 tracking-tight">
-                        Championship Manager
+                    <h1 className="text-3xl md:text-5xl font-outfit font-black mb-2 tracking-tighter text-white uppercase">
+                        YourLigue
                     </h1>
-                    <p className="text-slate-400 text-sm md:text-base font-medium">Gerencie seu campeonato com estilo</p>
+                    <p className="text-slate-400 text-sm md:text-base font-medium tracking-wide uppercase">Gerencie seu campeonato com estilo</p>
                 </div>
 
                 {/* Main Card */}
@@ -183,9 +183,16 @@ const AuthPage = () => {
                     </form>
                 </div>
 
-                <p className="text-center text-slate-500 text-xs font-medium">
-                    Championship Manager © 2026 · Todos os direitos reservados
-                </p>
+                <div className="flex flex-col gap-4 text-center">
+                    <p className="text-slate-500 text-[0.65rem] font-black uppercase tracking-[0.2em]">
+                        YourLigue © 2026 · Todos os direitos reservados
+                    </p>
+                    <div className="flex items-center justify-center gap-6">
+                        <a href="/privacidade" className="text-slate-600 hover:text-primary transition-colors text-[0.6rem] font-bold uppercase tracking-widest">Política de Privacidade</a>
+                        <div className="w-1 h-1 bg-slate-800 rounded-full" />
+                        <a href="/termos" className="text-slate-600 hover:text-primary transition-colors text-[0.6rem] font-bold uppercase tracking-widest">Termos de Serviço</a>
+                    </div>
+                </div>
             </div>
         </div>
     );
