@@ -22,7 +22,7 @@ const MatchControl = () => {
     const [submittingPlayer, setSubmittingPlayer] = useState<{ teamId: string, playerOutId: string } | null>(null);
     const [showOverlay, setShowOverlay] = useState(true);
     const [penaltyPickers, setPenaltyPickers] = useState<{ [teamId: string]: string[] }>({});
-    const [confirmedPenaltyShooters, setConfirmedPenaltyShooters] = useState<string[]>([]);
+    const [confirmedPenaltyShooters, setConfirmedPenaltyShooters] = useState<{ home: string[], away: string[] }>({ home: [], away: [] });
     const { startMatch, pauseMatch } = useLeague();
 
     useEffect(() => {
@@ -238,12 +238,14 @@ const MatchControl = () => {
     };
 
     const confirmShooters = () => {
-        const allSelected = (penaltyPickers[homeTeam.id] || []).concat(penaltyPickers[awayTeam.id] || []);
-        if (allSelected.length === 0) {
-            alert('Selecione os batedores antes de confirmar!');
+        const homeList = penaltyPickers[homeTeam.id] || [];
+        const awayList = penaltyPickers[awayTeam.id] || [];
+        
+        if (homeList.length === 0 || awayList.length === 0) {
+            alert('Selecione batedores para AMBOS os times antes de confirmar!');
             return;
         }
-        setConfirmedPenaltyShooters(allSelected);
+        setConfirmedPenaltyShooters({ home: homeList, away: awayList });
     };
 
 
@@ -322,7 +324,11 @@ const MatchControl = () => {
                             </div>
                         )}
                         <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">
-                            {period === 'Pênaltis' || period === 'Sel. Batedores' ? 'Decisão por Penais' : period}
+                            {period === 'Pênaltis' ? (() => {
+                                const count = match.events.filter(e => e.type.startsWith('penalty_shootout_')).length;
+                                const round = Math.floor(count / 2) + 1;
+                                return round > 5 ? `Alternadas (${round}º)` : `Cobrança ${round} de 5`;
+                            })() : period === 'Sel. Batedores' ? 'Seleção de Batedores' : period}
                         </span>
                     </div>
 
@@ -391,23 +397,27 @@ const MatchControl = () => {
                                  const isShootout = period === 'Pênaltis' && isAdmin && !isPublicView;
 
                                  if (isPenaltySelection) {
+                                     const currentList = penaltyPickers[team.id] || [];
                                      return (
                                          <div className="space-y-4">
                                              <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl mb-4 text-center">
-                                                 <h3 className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em] mb-1">Seleção de Batedores</h3>
-                                                 <p className="text-[0.6rem] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">Escolha os jogadores para participar das cobranças</p>
+                                                 <h3 className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em] mb-1">Ordem dos Batedores</h3>
+                                                 <p className="text-[0.6rem] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">Clique para adicionar ou remover da lista</p>
                                              </div>
                                              <div className="grid grid-cols-1 gap-2">
                                                  {team.players.map((player: Player) => {
                                                      const { isRedCarded } = getPlayerStatus(player.id);
                                                      const onPitch = isPlayerOnPitch(match, player.id);
                                                      const isEligible = !isRedCarded && (league?.allowSubstitutionReturn || onPitch);
-                                                     const isSelected = (penaltyPickers[team.id] || []).includes(player.id);
+                                                     const orderIndex = currentList.indexOf(player.id);
+                                                     const isSelected = orderIndex !== -1;
 
                                                      return (
                                                          <button key={player.id} disabled={!isEligible} onClick={() => togglePenaltyShooter(player.id, team.id)}
                                                              className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${isSelected ? 'bg-primary border-primary text-white shadow-lg' : isEligible ? 'bg-white/5 border-white/10 hover:border-white/20' : 'bg-danger/5 border-danger/10 opacity-30 cursor-not-allowed'}`}>
-                                                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${isSelected ? 'bg-white/20' : 'bg-black/20 group-hover:bg-black/40'}`}>#{player.number}</div>
+                                                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${isSelected ? 'bg-white/20' : 'bg-black/20 group-hover:bg-black/40'}`}>
+                                                                 {isSelected ? `${orderIndex + 1}º` : `#${player.number}`}
+                                                             </div>
                                                              <div className="flex-1">
                                                                  <div className="text-[0.7rem] font-black uppercase tracking-tight">{player.name}</div>
                                                                  {!isEligible && <div className="text-[0.5rem] font-black uppercase tracking-tighter opacity-60">{isRedCarded ? 'Expulso' : 'Substituído'}</div>}
@@ -428,30 +438,63 @@ const MatchControl = () => {
                                  }
 
                                  if (isShootout) {
-                                     const shooters = team.players.filter(p => confirmedPenaltyShooters.includes(p.id));
+                                     const shootersIds = idx === 0 ? confirmedPenaltyShooters.home : confirmedPenaltyShooters.away;
+                                     const shootoutEvents = match.events.filter(e => e.type.startsWith('penalty_shootout_'));
+                                     const isHomeTurn = shootoutEvents.length % 2 === 0;
+                                     const isMyTurn = (idx === 0 && isHomeTurn) || (idx === 1 && !isHomeTurn);
+                                     
+                                     const allKicked = shootersIds.every(id => shootoutEvents.some(e => e.playerId === id));
+                                     const hasShooters = shootersIds.length > 0;
+
                                      return (
                                          <div className="space-y-3">
-                                             <div className="bg-accent/10 border border-accent/20 p-4 rounded-2xl mb-2">
-                                                 <h3 className="text-[0.65rem] font-black text-accent uppercase tracking-[0.2em] mb-1 text-center">Batedores Confirmados</h3>
+                                             <div className={`p-4 rounded-2xl mb-2 text-center border transition-all ${isMyTurn ? 'bg-accent/10 border-accent/40 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 opacity-50'}`}>
+                                                 <h3 className={`text-[0.65rem] font-black uppercase tracking-[0.2em] mb-1 ${isMyTurn ? 'text-accent' : 'text-slate-500'}`}>
+                                                     {isMyTurn ? 'Sua Vez de Bater' : 'Aguardando Adversário'}
+                                                 </h3>
+                                                 {isMyTurn && allKicked && hasShooters && (
+                                                     <button onClick={() => handlePeriodChange('Sel. Batedores')}
+                                                         className="mt-2 text-[0.55rem] font-black text-white bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full uppercase tracking-widest transition-all">
+                                                         + Adicionar Batedores
+                                                     </button>
+                                                 )}
                                              </div>
-                                             {shooters.map((player: Player) => (
-                                                 <div key={player.id} className="flex items-center gap-3 p-3 rounded-xl border bg-white/[0.02] border-white/10 hover:bg-white/[0.04] transition-all group">
-                                                     <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs bg-black/20 text-white group-hover:bg-black/40">#{player.number}</div>
-                                                     <div className="flex-1 text-[0.75rem] font-black text-white uppercase truncate">{player.name}</div>
-                                                     {!isPublicView && isAdmin && (
-                                                         <div className="flex items-center gap-2">
-                                                             <button disabled={match.status !== 'live'} onClick={() => handleGol(team.id, player.id)} 
-                                                                 className="w-10 h-10 rounded-lg bg-accent text-white flex items-center justify-center active:scale-90 disabled:opacity-30 shadow-lg shadow-accent/20 hover:brightness-110 transition-all">
-                                                                 <Target size={18} strokeWidth={3} />
-                                                             </button>
-                                                             <button disabled={match.status !== 'live'} onClick={() => handleMiss(team.id, player.id)} 
-                                                                 className="w-10 h-10 rounded-lg bg-danger text-white flex items-center justify-center font-black text-lg active:scale-90 disabled:opacity-30 shadow-lg shadow-danger/20 hover:brightness-110 transition-all">
-                                                                 X
-                                                             </button>
+                                             {shootersIds.map((pid: string, sIdx: number) => {
+                                                 const player = team.players.find(p => p.id === pid);
+                                                 if (!player) return null;
+                                                 const event = shootoutEvents.find(e => e.playerId === pid);
+                                                 const hasKicked = !!event;
+                                                 const isCurrentTaker = isMyTurn && shootersIds.findIndex(id => !shootoutEvents.some(e => e.playerId === id)) === sIdx;
+
+                                                 return (
+                                                     <div key={pid} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${hasKicked ? 'opacity-40 bg-black/20 border-white/5' : isCurrentTaker ? 'bg-white/5 border-primary shadow-lg scale-[1.02]' : 'bg-white/[0.02] border-white/10'}`}>
+                                                         <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs bg-black/20 text-white">
+                                                             {sIdx + 1}º
                                                          </div>
-                                                     )}
-                                                 </div>
-                                             ))}
+                                                         <div className="flex-1 text-[0.75rem] font-black text-white uppercase truncate">
+                                                             {player.name}
+                                                         </div>
+                                                         <div className="flex items-center gap-2">
+                                                             {hasKicked ? (
+                                                                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-black ${event?.type === 'penalty_shootout_goal' ? 'text-accent' : 'text-danger'}`}>
+                                                                     {event?.type === 'penalty_shootout_goal' ? <Target size={20} /> : <XCircle size={20} />}
+                                                                 </div>
+                                                             ) : (
+                                                                 <>
+                                                                     <button disabled={match.status !== 'live' || !isCurrentTaker} onClick={() => handleGol(team.id, player.id)} 
+                                                                         className="w-10 h-10 rounded-lg bg-accent text-white flex items-center justify-center active:scale-90 disabled:opacity-20 shadow-lg shadow-accent/20 hover:brightness-110 transition-all">
+                                                                         <Target size={18} strokeWidth={3} />
+                                                                     </button>
+                                                                     <button disabled={match.status !== 'live' || !isCurrentTaker} onClick={() => handleMiss(team.id, player.id)} 
+                                                                         className="w-10 h-10 rounded-lg bg-danger text-white flex items-center justify-center font-black text-lg active:scale-90 disabled:opacity-20 shadow-lg shadow-danger/20 hover:brightness-110 transition-all">
+                                                                         X
+                                                                     </button>
+                                                                 </>
+                                                             )}
+                                                         </div>
+                                                     </div>
+                                                 );
+                                             })}
                                          </div>
                                      );
                                  }
