@@ -75,6 +75,7 @@ const Settings = () => {
     const [adInputMethod, setAdInputMethod] = useState<'file' | 'url'>('file');
     const [selectedAds, setSelectedAds] = useState<string[]>([]);
     const [editingAdId, setEditingAdId] = useState<string | null>(null);
+    const [isSavingAd, setIsSavingAd] = useState(false);
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -130,47 +131,62 @@ const Settings = () => {
 
     const handleAdSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('--- AD SUBMIT START ---');
-        console.log('Form data:', formAd);
-        console.log('Editing ID:', editingAdId);
-
+        if (isSavingAd) return;
+        
         if (formAd.positions.length === 0) {
             alert('⚠️ Selecione pelo menos um local para exibir a propaganda.');
             return;
         }
 
+        setIsSavingAd(true);
         try {
             if (editingAdId) {
-                console.log('Calling updateAd...');
-                const { error } = await updateAd(editingAdId, formAd);
+                // Determine only changed fields to reduce payload size on mobile
+                const originalAd = ads.find(a => a.id === editingAdId);
+                const updates: any = {};
+                
+                Object.keys(formAd).forEach(key => {
+                    const k = key as keyof typeof formAd;
+                    if (Array.isArray(formAd[k])) {
+                        if (JSON.stringify(formAd[k]) !== JSON.stringify(originalAd?.[k])) {
+                            updates[k] = formAd[k];
+                        }
+                    } else if (formAd[k] !== originalAd?.[k]) {
+                        updates[k] = formAd[k];
+                    }
+                });
+
+                if (Object.keys(updates).length === 0) {
+                    setIsAddingAd(false);
+                    setEditingAdId(null);
+                    setIsSavingAd(false);
+                    return;
+                }
+
+                const { error } = await updateAd(editingAdId, updates);
                 if (!error) {
-                    console.log('Update Success');
                     setEditingAdId(null);
                     setFormAd({ title: '', desktop_media_url: '', mobile_media_url: '', square_media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
                     setIsAddingAd(false);
-                    alert('✅ PROPAGANDA ATUALIZADA!\nAs mudanças foram salvas no sistema.');
+                    alert('✅ PROPAGANDA ATUALIZADA!');
                 } else {
-                    console.error('Update Failed:', error);
                     alert('❌ ERRO AO ATUALIZAR:\n' + error);
                 }
             } else {
-                console.log('Calling addAd...');
                 const { error } = await addAd(formAd);
                 if (!error) {
-                    console.log('Add Success');
                     setFormAd({ title: '', desktop_media_url: '', mobile_media_url: '', square_media_url: '', media_type: 'image', positions: [], object_position: 'center', link_url: '', duration: 5 });
                     setIsAddingAd(false);
                     alert('✅ NOVA PROPAGANDA ADICIONADA!');
                 } else {
-                    console.error('Add Failed:', error);
                     alert('❌ ERRO AO ADICIONAR:\n' + error);
                 }
             }
         } catch (err: any) {
-            console.error('Unexpected Error:', err);
-            alert('❌ OCORREU UM ERRO INESPERADO.\nVeja o console para mais detalhes.');
+            alert('❌ OCORREU UM ERRO INESPERADO.\n' + (err.message || err));
+        } finally {
+            setIsSavingAd(false);
         }
-        console.log('--- AD SUBMIT END ---');
     };
 
     const startEditAd = (ad: any) => {
@@ -590,8 +606,15 @@ const Settings = () => {
                                             />
                                         </div>
 
-                                        <button type="submit" className="w-full bg-accent text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest hover:brightness-110 transition-all shadow-lg shadow-accent/20">
-                                            {editingAdId ? 'Salvar Alterações da Prop' : 'Confirmar Propaganda'}
+                                        <button type="submit" disabled={isSavingAd} className={`w-full py-4 rounded-xl font-black uppercase text-xs tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${isSavingAd ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : 'bg-accent text-white hover:brightness-110 shadow-accent/20'}`}>
+                                            {isSavingAd ? (
+                                                <>
+                                                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                                    Salvando...
+                                                </>
+                                            ) : (
+                                                editingAdId ? 'Salvar Alterações da Prop' : 'Confirmar Propaganda'
+                                            )}
                                         </button>
                                     </form>
                                 </div>
