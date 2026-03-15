@@ -161,6 +161,13 @@ const MatchControl = () => {
             return;
         }
 
+        if (period === 'Sel. Batedores') {
+            if (confirmShooters()) {
+                handlePeriodChange('Pênaltis');
+            }
+            return;
+        }
+
         if (window.confirm('Deseja realmente finalizar a partida definitivamente?')) {
             setTimerRunning(false);
             endMatch(matchId, localSeconds);
@@ -243,9 +250,10 @@ const MatchControl = () => {
         
         if (homeList.length === 0 || awayList.length === 0) {
             alert('Selecione batedores para AMBOS os times antes de confirmar!');
-            return;
+            return false;
         }
         setConfirmedPenaltyShooters({ home: homeList, away: awayList });
+        return true;
     };
 
 
@@ -399,22 +407,24 @@ const MatchControl = () => {
             {isPublicView && <AdBanner position="between" className="mt-4" />}
 
             {/* ── MAIN GRID ──────────────────────────────────────────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-                {/* Team Player Controls */}
-                {[homeTeam, awayTeam].map((team, idx) => (
-                    <section key={team.id} className="glass-panel p-4 md:p-6">
-                        <div className="flex items-center gap-3 mb-5 border-b border-white/[0.05] pb-4">
-                            <TeamLogo src={team.logo} size={40} />
-                            <div className="flex-1 min-w-0">
-                                <h2 className="text-sm font-black text-white font-outfit uppercase tracking-wide truncate">{team.name}</h2>
-                                <span className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">{idx === 0 ? 'Mandante' : 'Visitante'}</span>
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
+                
+                {/* Left Area: Teams and Potential Confirmation Card */}
+                <div className="xl:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 content-start">
+                    {[homeTeam, awayTeam].map((team, idx) => (
+                        <section key={team.id} className="glass-panel p-4 md:p-6 h-fit">
+                            <div className="flex items-center gap-3 mb-5 border-b border-white/[0.05] pb-4">
+                                <TeamLogo src={team.logo} size={40} />
+                                <div className="flex-1 min-w-0">
+                                    <h2 className="text-sm font-black text-white font-outfit uppercase tracking-wide truncate">{team.name}</h2>
+                                    <span className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest">{idx === 0 ? 'Mandante' : 'Visitante'}</span>
+                                </div>
+                                <div className={`px-3 py-1.5 rounded-xl font-black font-outfit text-lg flex-none ${idx === 0 ? 'bg-primary/20 text-primary' : 'bg-accent/20 text-accent'}`}>
+                                    {idx === 0 ? match.homeScore : match.awayScore}
+                                </div>
                             </div>
-                            <div className={`px-3 py-1.5 rounded-xl font-black font-outfit text-lg flex-none ${idx === 0 ? 'bg-primary/20 text-primary' : 'bg-accent/20 text-accent'}`}>
-                                {idx === 0 ? match.homeScore : match.awayScore}
-                            </div>
-                        </div>
 
-                        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1 no-scrollbar">
+                            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1 no-scrollbar">
                             {/* Dynamic Grouping */}
                             {(() => {
                                 const onPitch = team.players.filter(p => isPlayerOnPitch(match, p.id));
@@ -644,7 +654,7 @@ const MatchControl = () => {
                     </section>
                 ))}
 
-                {/* Confirmation Card for Penalties Phase */}
+                {/* Confirmation Card for Penalties Phase - now properly placed in the grid */}
                 {period === 'Sel. Batedores' && isAdmin && !isPublicView && (
                     <div className="lg:col-span-2">
                         <div className="glass-panel p-6 flex flex-col md:flex-row items-center justify-between gap-6 border-t-2 border-accent/20">
@@ -656,16 +666,17 @@ const MatchControl = () => {
                                     Verifique as listas acima antes de iniciar a disputa oficial.
                                 </p>
                             </div>
-                            <button onClick={() => { confirmShooters(); handlePeriodChange('Pênaltis'); }}
+                            <button onClick={() => { if(confirmShooters()) handlePeriodChange('Pênaltis'); }}
                                 className="w-full md:w-auto px-12 py-5 rounded-2xl bg-accent text-white font-black text-xs uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(16,185,129,0.2)] hover:shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3">
                                 <Play fill="currentColor" size={18} /> Iniciar Disputa de Pênaltis
                             </button>
                         </div>
                     </div>
                 )}
+                </div>
 
-                {/* Right: Settings + Event Log */}
-                <div className="space-y-4 md:space-y-6 lg:col-span-2 xl:col-span-1">
+                {/* Right Area: Settings + Event Log (now column 3 on XL) */}
+                <div className="space-y-4 md:space-y-6">
                     {/* Technical Panel - conditionally rendered or read-only */}
                     {!isPublicView && isAdmin ? (
                         <section className="glass-panel p-4 md:p-6">
