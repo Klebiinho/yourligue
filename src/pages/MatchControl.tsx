@@ -407,7 +407,22 @@ const MatchControl = () => {
                                         Carregar Chaves do YouTube
                                     </button>
                                 </div>
-                            ) : null}
+                            ) : (
+                                <div className="p-4 bg-red-600/10 rounded-xl border border-red-600/20 text-center">
+                                    <p className="text-[0.65rem] text-red-400 font-bold uppercase tracking-wide mb-3">Nenhuma Live ativa no YouTube</p>
+                                    <button 
+                                        onClick={async () => {
+                                            if (window.confirm("Deseja criar uma nova live para esta partida agora?")) {
+                                                await startMatch(match.id, localSeconds, true);
+                                            }
+                                        }}
+                                        className="bg-red-600/20 text-red-500 px-4 py-2 rounded-lg text-[0.6rem] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2 mx-auto"
+                                    >
+                                        <Video size={14} />
+                                        Iniciar Transmissão agora
+                                    </button>
+                                </div>
+                            )}
 
                             <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
                                 <label className="text-[0.6rem] font-black text-primary uppercase tracking-widest block mb-2">Link do Placar (Overlay Widget)</label>
@@ -482,12 +497,12 @@ const MatchControl = () => {
                                 </>
                             )}
                         </div>
-                        {isAdmin && (currentYtLiveStream || match.youtubeLiveId) && (
+                        {isAdmin && (
                             <button 
                                 onClick={handleOpenYtSetup}
-                                className="flex items-center gap-2 px-3 py-1 bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-lg border border-red-500/20 transition-all active:scale-95"
+                                className="flex items-center gap-2 px-3 py-1.5 bg-primary/20 hover:bg-primary/30 text-primary rounded-lg border border-primary/20 transition-all active:scale-95 mt-1"
                             >
-                                <Video size={12} strokeWidth={3} />
+                                <Settings2 size={12} strokeWidth={3} />
                                 <span className="text-[0.55rem] font-black uppercase tracking-[0.1em]">Configurar Live / Widget</span>
                             </button>
                         )}
