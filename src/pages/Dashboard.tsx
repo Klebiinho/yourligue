@@ -220,7 +220,6 @@ const Dashboard = () => {
                 {/* ── COLUNA DIREITA ─────────────────────────────────────────── */}
                 <div className={`${activeTab === 'matches' ? 'hidden md:block' : 'block'} space-y-5 md:space-y-6 lg:border-l lg:border-white/5 lg:pl-6`}>
                     {isPublicView && <AdBanner position="side" />}
-                    {isPublicView && <AdBanner position="home_highlight" />}
 
                     {/* ── CLASSIFICAÇÃO ──────────────────────────────────────── */}
                     <div className={`${activeTab === 'standings' || activeTab === 'matches' ? 'block' : 'hidden md:block'} space-y-4`}>
