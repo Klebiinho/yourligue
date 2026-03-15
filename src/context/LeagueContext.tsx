@@ -674,16 +674,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     }
                     break;
 
-                case 'ads':
-                    if (eventType === 'DELETE') {
-                        setAds(prev => prev.filter(a => a.id !== row.id));
-                    } else {
-                        setAds(prev => prev.some(a => a.id === row.id)
-                            ? prev.map(a => a.id === row.id ? (row as Ad) : a)
-                            : [...prev, row as Ad]);
-                    }
-                    break;
-
                 case 'user_team_interactions':
                     // Refresh support counts silently
                     loadSupportCounts(league.id);

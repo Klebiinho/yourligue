@@ -185,22 +185,20 @@ const Settings = () => {
         setIsSavingAd(true);
         try {
             if (editingAdId) {
-                // Determine only changed fields to reduce payload size on mobile
+                // Optimized payload: send only changed fields
                 const originalAd = ads.find(a => a.id === editingAdId);
                 const updates: any = {};
                 
-                Object.keys(formAd).forEach(key => {
-                    const k = key as keyof typeof formAd;
-                    if (Array.isArray(formAd[k])) {
-                        if (JSON.stringify(formAd[k]) !== JSON.stringify(originalAd?.[k])) {
+                if (originalAd) {
+                    Object.keys(formAd).forEach(key => {
+                        const k = key as keyof typeof formAd;
+                        if (JSON.stringify(formAd[k]) !== JSON.stringify(originalAd[k])) {
                             updates[k] = formAd[k];
                         }
-                    } else if (formAd[k] !== originalAd?.[k]) {
-                        updates[k] = formAd[k];
-                    }
-                });
+                    });
+                }
 
-                if (Object.keys(updates).length === 0) {
+                if (Object.keys(updates).length === 0 && originalAd) {
                     setIsAddingAd(false);
                     setEditingAdId(null);
                     setIsSavingAd(false);
@@ -214,7 +212,7 @@ const Settings = () => {
                     setIsAddingAd(false);
                     alert('✅ PROPAGANDA ATUALIZADA!');
                 } else {
-                    alert('❌ ERRO AO ATUALIZAR:\n' + error);
+                    alert('❌ ERRO AO ATUALIZAR:\n' + (typeof error === 'string' ? error : JSON.stringify(error)));
                 }
             } else {
                 const { error } = await addAd(formAd);
@@ -223,11 +221,12 @@ const Settings = () => {
                     setIsAddingAd(false);
                     alert('✅ NOVA PROPAGANDA ADICIONADA!');
                 } else {
-                    alert('❌ ERRO AO ADICIONAR:\n' + error);
+                    alert('❌ ERRO AO ADICIONAR:\n' + (typeof error === 'string' ? error : JSON.stringify(error)));
                 }
             }
         } catch (err: any) {
-            alert('❌ OCORREU UM ERRO INESPERADO.\n' + (err.message || err));
+            console.error('Submit error:', err);
+            alert('❌ ERRO DE CONEXÃO:\nVerifique sua internet ou tente novamente.');
         } finally {
             setIsSavingAd(false);
         }
