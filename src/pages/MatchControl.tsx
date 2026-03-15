@@ -43,6 +43,23 @@ const MatchControl = () => {
         setShowOverlay(true);
     }, [period]);
 
+    // Persist shooters across refreshes
+    useEffect(() => {
+        if (!matchId || (!confirmedPenaltyShooters.home.length && !confirmedPenaltyShooters.away.length)) return;
+        localStorage.setItem(`yl_shooters_${matchId}`, JSON.stringify(confirmedPenaltyShooters));
+    }, [confirmedPenaltyShooters, matchId]);
+
+    useEffect(() => {
+        if (!matchId) return;
+        const saved = localStorage.getItem(`yl_shooters_${matchId}`);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (parsed.home || parsed.away) setConfirmedPenaltyShooters(parsed);
+            } catch (e) { console.error('Failed to load saved shooters'); }
+        }
+    }, [matchId]);
+
     // Sincronizar estados locais com dados do banco (Realtime)
     useEffect(() => {
         if (match) {
@@ -245,8 +262,12 @@ const MatchControl = () => {
     };
 
     const handleGol = (teamId: string, playerId: string) => { 
-        if (!matchId || !match || match.status !== 'live' || (period.includes('Intervalo') && period !== 'Pênaltis')) return;
+        if (!matchId || !match || (period.includes('Intervalo') && period !== 'Pênaltis')) return;
         
+        // Em pênaltis, permitimos salvar mesmo com status 'scheduled' (pause) pois o relógio principal para mas a disputa continua
+        const canSave = match.status === 'live' || period === 'Pênaltis';
+        if (!canSave) return;
+
         if (period === 'Pênaltis') {
             addEvent(matchId, { type: 'penalty_shootout_goal', teamId, playerId, minute: 121 });
         } else {
@@ -254,7 +275,7 @@ const MatchControl = () => {
         }
     };
     const handleMiss = (teamId: string, playerId: string) => {
-        if (matchId && match?.status === 'live' && period === 'Pênaltis') {
+        if (matchId && (match?.status === 'live' || period === 'Pênaltis') && period === 'Pênaltis') {
             addEvent(matchId, { type: 'penalty_shootout_miss', teamId, playerId, minute: 121 });
         }
     };
@@ -729,9 +750,22 @@ const MatchControl = () => {
                                                 </div>
                                             ) : (
                                                 <div className={`p-4 rounded-2xl mb-2 text-center border transition-all ${isMyTurn ? 'bg-accent/10 border-accent/40 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 opacity-50'}`}>
-                                                    <h3 className={`text-[0.65rem] font-black uppercase tracking-[0.2em] mb-1 ${isMyTurn ? 'text-accent' : 'text-slate-500'}`}>
-                                                        {isMyTurn ? 'Sua Vez de Bater' : 'Aguardando Adversário'}
-                                                    </h3>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <h3 className={`text-[0.65rem] font-black uppercase tracking-[0.2em] ${isMyTurn ? 'text-accent' : 'text-slate-500'}`}>
+                                                            {isMyTurn ? 'Sua Vez de Bater' : 'Aguardando Adversário'}
+                                                        </h3>
+                                                        <button 
+                                                            onClick={async () => {
+                                                                if (window.confirm("Isso apagará TODAS as cobranças feitas até agora. Deseja reiniciar a disputa?")) {
+                                                                    const toDelete = match.events.filter(e => e.type.startsWith('penalty_shootout_'));
+                                                                    for (const e of toDelete) await removeEvent(matchId!, e.id);
+                                                                }
+                                                            }}
+                                                            className="text-[0.5rem] font-black text-danger hover:underline uppercase"
+                                                        >
+                                                            Reiniciar Disputa
+                                                        </button>
+                                                    </div>
                                                     {isMyTurn && myKicksCount >= shootersIds.length && shootersIds.length > 0 && (
                                                         <p className="text-[0.5rem] text-slate-500 font-bold uppercase tracking-widest animate-pulse">
                                                             Reiniciando fila de batedores...
@@ -770,11 +804,11 @@ const MatchControl = () => {
                                                         <div className="flex items-center gap-2">
                                                             {isCurrentTaker && (
                                                                 <>
-                                                                    <button disabled={match.status !== 'live'} onClick={() => handleGol(team.id, player.id)} 
+                                                                    <button onClick={() => handleGol(team.id, player.id)} 
                                                                         className="w-10 h-10 rounded-lg bg-accent text-white flex items-center justify-center active:scale-90 disabled:opacity-20 shadow-lg shadow-accent/20 hover:brightness-110 transition-all">
                                                                         <Target size={18} strokeWidth={3} />
                                                                     </button>
-                                                                    <button disabled={match.status !== 'live'} onClick={() => handleMiss(team.id, player.id)} 
+                                                                    <button onClick={() => handleMiss(team.id, player.id)} 
                                                                         className="w-10 h-10 rounded-lg bg-danger text-white flex items-center justify-center font-black text-lg active:scale-90 disabled:opacity-20 shadow-lg shadow-danger/20 hover:brightness-110 transition-all">
                                                                         X
                                                                     </button>
