@@ -299,7 +299,7 @@ const Matches = () => {
                                         isFinished ? 'bg-accent/15 text-accent' : 'bg-warning/15 text-warning'
                                         }`}>
                                         {isLive ? <Signal size={10} /> : isFinished ? <CheckCircle2 size={10} /> : <Clock size={10} />}
-                                        {isLive ? 'Em curso' : isFinished ? 'Finalizada' : 'Agendada'}
+                                        {isLive ? 'Em curso' : isFinished ? (hasShootout ? 'Finalizada (Pênaltis)' : 'Finalizada') : 'Agendada'}
                                     </div>
 
                                     {/* Buttons */}
