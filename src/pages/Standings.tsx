@@ -1,107 +1,159 @@
 import { useLeague } from '../context/LeagueContext';
-import { Trophy, Info, Medal, TrendingUp } from 'lucide-react';
+import { Trophy, Info, Medal, TrendingUp, Heart } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const Standings = () => {
-    const { league, teams, matches, isPublicView } = useLeague();
+    const { teams, matches, isPublicView, userInteractions } = useLeague();
 
+    // The stats are already calculated and sorted in LeagueContext useMemo
     const sortedTeams = [...teams].sort((a, b) => {
-        const pts = (t: typeof teams[0]) =>
-            t.stats.wins * (league?.pointsForWin ?? 3) +
-            t.stats.draws * (league?.pointsForDraw ?? 1) +
-            t.stats.losses * (league?.pointsForLoss ?? 0);
-        const sgA = a.stats.goalsFor - a.stats.goalsAgainst;
-        const sgB = b.stats.goalsFor - b.stats.goalsAgainst;
-        return pts(b) - pts(a) || sgB - sgA || b.stats.goalsFor - a.stats.goalsFor;
+        return b.stats.points - a.stats.points || 
+               (b.stats.goalsFor - b.stats.goalsAgainst) - (a.stats.goalsFor - a.stats.goalsAgainst) || 
+               b.stats.goalsFor - a.stats.goalsFor;
     });
 
     const totalFinished = matches.filter(m => m.status === 'finished').length;
+    const myTeamId = userInteractions.find(i => i.interactionType === 'supporting')?.teamId;
 
     return (
-        <div className="animate-fade-in">
+        <div className="animate-fade-in max-w-[1200px] mx-auto pb-12">
             {isPublicView && <AdBanner position="top" />}
-            {/* Header */}
-            <header className="mb-8">
-                <h1 className="text-2xl sm:text-3xl md:text-5xl font-outfit font-extrabold tracking-tight mb-2 uppercase flex items-center gap-3">
-                    <Trophy size={36} className="text-warning drop-shadow-[0_0_15px_rgba(234,179,8,0.4)]" strokeWidth={2.5} />
-                    Tabela da Liga
-                </h1>
-                <p className="text-slate-400 text-sm md:text-base flex items-center gap-2">
-                    <Medal size={16} className="text-primary" />
-                    {totalFinished} partidas concluídas
-                </p>
+            
+            {/* Header Section */}
+            <header className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+                <div>
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="p-3 rounded-2xl bg-warning/10 border border-warning/20 shadow-[0_0_30px_rgba(234,179,8,0.15)]">
+                            <Trophy size={32} className="text-warning" strokeWidth={2.5} />
+                        </div>
+                        <h1 className="text-3xl md:text-5xl font-outfit font-black tracking-tight uppercase text-white">
+                            Tabela <span className="text-primary italic">da Liga</span>
+                        </h1>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <p className="text-slate-500 text-xs md:text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                            <Medal size={14} className="text-primary" />
+                            {totalFinished} Partidas Concluídas
+                        </p>
+                        <div className="w-1 h-1 rounded-full bg-slate-800" />
+                        <p className="text-slate-500 text-xs md:text-sm font-black uppercase tracking-[0.2em]">
+                            {teams.length} Clubes Participantes
+                        </p>
+                    </div>
+                </div>
+                
+                {myTeamId && (
+                    <div className="glass-panel px-6 py-3 border-primary/20 flex items-center gap-4 bg-primary/5 animate-pulse-subtle">
+                        <Heart size={18} className="text-primary fill-primary/20" />
+                        <div>
+                            <span className="block text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Apoiando</span>
+                            <span className="block text-sm font-black text-white uppercase truncate max-w-[150px]">
+                                {teams.find(t => t.id === myTeamId)?.name}
+                            </span>
+                        </div>
+                    </div>
+                )}
             </header>
 
-            {/* Table Card */}
-            <section className="glass-panel overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
+            {/* Main Table Container */}
+            <section className="glass-panel overflow-hidden border-white/[0.05] shadow-[0_32px_64px_rgba(0,0,0,0.5)] bg-slate-950/40 backdrop-blur-xl">
                 {sortedTeams.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-24 text-slate-500 gap-6 opacity-40">
-                        <Trophy size={70} strokeWidth={1} />
-                        <h3 className="text-lg font-outfit font-black uppercase tracking-widest text-center px-4">Nenhum time cadastrado ainda</h3>
+                    <div className="flex flex-col items-center justify-center py-32 text-slate-600 gap-6 opacity-40">
+                        <Trophy size={80} strokeWidth={1} />
+                        <h3 className="text-xl font-outfit font-black uppercase tracking-[0.3em] text-center px-4">Nenhum time cadastrado</h3>
                     </div>
                 ) : (
                     <>
-                        {/* Scrollable Table */}
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse min-w-[420px]">
+                        <div className="overflow-x-auto no-scrollbar">
+                            <table className="w-full border-collapse min-w-[800px] table-fixed">
                                 <thead>
-                                    <tr className="bg-white/[0.03] text-[0.6rem] font-black text-slate-500 uppercase tracking-widest border-b border-white/[0.05]">
-                                        <th className="px-3 sm:px-5 py-4 text-center w-12">#</th>
-                                        <th className="px-3 sm:px-5 py-4 text-left">Clube</th>
-
-                                        <th className="px-2 sm:px-4 py-4 text-center text-white font-outfit">Pts</th>
-                                        <th className="px-2 sm:px-3 py-4 text-center">PJ</th>
-                                        <th className="px-2 sm:px-3 py-4 text-center text-accent">V</th>
-                                        <th className="px-2 sm:px-3 py-4 text-center">E</th>
-                                        <th className="px-2 sm:px-3 py-4 text-center text-danger">D</th>
-                                        <th className="px-2 sm:px-3 py-4 text-center hidden sm:table-cell">GP</th>
-                                        <th className="px-2 sm:px-3 py-4 text-center hidden sm:table-cell">GC</th>
-                                        <th className="px-2 sm:px-3 py-4 text-center">SG</th>
+                                    <tr className="bg-white/[0.02] text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-white/[0.05]">
+                                        <th className="w-16 px-4 py-5 text-center">#</th>
+                                        <th className="w-auto px-4 py-5 text-left">Clube</th>
+                                        <th className="w-20 px-4 py-5 text-center text-white border-x border-white/[0.03]">Pts</th>
+                                        <th className="w-16 px-4 py-5 text-center">PJ</th>
+                                        <th className="w-16 px-4 py-5 text-center text-accent/80">V</th>
+                                        <th className="w-16 px-4 py-5 text-center">E</th>
+                                        <th className="w-16 px-4 py-5 text-center text-danger/80">D</th>
+                                        <th className="w-20 px-4 py-5 text-center hidden md:table-cell">GP</th>
+                                        <th className="w-20 px-4 py-5 text-center hidden md:table-cell">GC</th>
+                                        <th className="w-20 px-4 py-5 text-center">SG</th>
+                                        <th className="w-36 px-4 py-5 text-center">Últimos Jogos</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/[0.04]">
                                     {sortedTeams.map((team, i) => {
-                                        const pts = team.stats.wins * (league?.pointsForWin ?? 3) + team.stats.draws * (league?.pointsForDraw ?? 1) + team.stats.losses * (league?.pointsForLoss ?? 0);
                                         const sg = team.stats.goalsFor - team.stats.goalsAgainst;
-                                        const isTop = i === 0 && pts > 0;
-                                        const isZone = i >= sortedTeams.length - 3 && sortedTeams.length > 4;
+                                        const isTop = i === 0 && team.stats.points > 0;
+                                        const isZone = i >= sortedTeams.length - 3 && sortedTeams.length > 5;
+                                        const isMyTeam = team.id === myTeamId;
 
-                                        return (                                            <tr key={team.id} className={`group hover:bg-white/[0.04] transition-all duration-300 ${isTop ? 'bg-primary/[0.04]' : isZone ? 'bg-danger/[0.03]' : ''}`}>
-                                                {/* Position */}
-                                                <td className="px-3 sm:px-5 py-4 text-center">
-                                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black font-outfit text-xs transition-transform group-hover:scale-110 mx-auto ${isTop ? 'bg-primary text-white shadow-lg shadow-primary/30' :
+                                        return (
+                                            <tr key={team.id} className={`group hover:bg-white/[0.03] transition-all duration-300 relative ${isTop ? 'bg-primary/[0.03]' : isZone ? 'bg-danger/[0.02]' : ''} ${isMyTeam ? 'bg-accent/[0.05]' : ''}`}>
+                                                {/* Position # */}
+                                                <td className="px-4 py-4.5 text-center">
+                                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black font-outfit text-xs transition-all duration-500 group-hover:scale-110 mx-auto ${
+                                                        isTop ? 'bg-primary text-white shadow-[0_0_20px_rgba(109,40,217,0.4)] rotate-3' :
                                                         i < 3 ? 'bg-white/10 text-white' : 'text-slate-600'
-                                                        }`}>
+                                                    }`}>
                                                         {i + 1}
                                                     </div>
                                                 </td>
-                                                {/* Club Name */}
-                                                <td className="px-3 sm:px-5 py-4">
-                                                    <div className="flex items-center gap-2 sm:gap-3">
-                                                        <div className="relative flex-none">
-                                                            <TeamLogo src={team.logo} size={34} />
+
+                                                {/* Club Name & Logo */}
+                                                <td className="px-4 py-4.5">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="relative flex-none transform transition-transform group-hover:scale-110">
+                                                            <TeamLogo src={team.logo} size={38} className="shadow-lg" />
                                                             {isTop && (
-                                                                <div className="absolute -top-1 -right-1 bg-warning text-black w-4 h-4 rounded-full flex items-center justify-center">
-                                                                    <Trophy size={9} strokeWidth={4} />
+                                                                <div className="absolute -top-1.5 -right-1.5 bg-warning text-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg animate-bounce-slow border-2 border-slate-900">
+                                                                    <Trophy size={10} strokeWidth={4} />
+                                                                </div>
+                                                            )}
+                                                            {isMyTeam && (
+                                                                <div className="absolute -bottom-1 -left-1 text-accent drop-shadow-sm">
+                                                                    <Heart size={14} fill="currentColor" strokeWidth={0} />
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        <span className="font-outfit font-black text-white uppercase tracking-wide truncate max-w-[100px] sm:max-w-none text-xs sm:text-sm">
-                                                            {team.name}
-                                                        </span>
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className={`font-outfit font-black uppercase tracking-wider truncate text-sm sm:text-base leading-none mb-1 ${isMyTeam ? 'text-accent' : 'text-white'}`}>
+                                                                {team.name}
+                                                            </span>
+                                                            {isMyTeam && <span className="text-[0.55rem] font-black text-accent/50 uppercase tracking-[0.2em]">Meu Time</span>}
+                                                        </div>
                                                     </div>
                                                 </td>
-                                                {/* Stats */}
-                                                <td className="px-2 sm:px-4 py-4 text-center font-black font-outfit text-base sm:text-lg text-primary">{pts}</td>
-                                                <td className="px-2 sm:px-3 py-4 text-center font-bold text-slate-400 text-xs sm:text-sm">{team.stats.matches}</td>
-                                                <td className="px-2 sm:px-3 py-4 text-center font-bold text-accent text-xs sm:text-sm">{team.stats.wins}</td>
-                                                <td className="px-2 sm:px-3 py-4 text-center font-bold text-slate-500 text-xs sm:text-sm">{team.stats.draws}</td>
-                                                <td className="px-2 sm:px-3 py-4 text-center font-bold text-danger text-xs sm:text-sm">{team.stats.losses}</td>
-                                                <td className="px-2 sm:px-3 py-4 text-center text-slate-500 hidden sm:table-cell text-xs">{team.stats.goalsFor}</td>
-                                                <td className="px-2 sm:px-3 py-4 text-center text-slate-500 hidden sm:table-cell text-xs">{team.stats.goalsAgainst}</td>
-                                                <td className={`px-2 sm:px-3 py-4 text-center font-black font-outfit text-xs sm:text-sm ${sg > 0 ? 'text-accent' : sg < 0 ? 'text-danger' : 'text-slate-600'}`}>
+
+                                                {/* Core Stats */}
+                                                <td className="px-4 py-4.5 text-center border-x border-white/[0.03] bg-white/[0.01]">
+                                                    <span className="font-black font-outfit text-xl text-primary drop-shadow-[0_0_10px_rgba(109,40,217,0.2)]">{team.stats.points}</span>
+                                                </td>
+                                                <td className="px-4 py-4.5 text-center font-bold text-slate-400 text-sm">{team.stats.matches}</td>
+                                                <td className="px-4 py-4.5 text-center font-bold text-accent text-sm">{team.stats.wins}</td>
+                                                <td className="px-4 py-4.5 text-center font-bold text-slate-500 text-sm">{team.stats.draws}</td>
+                                                <td className="px-4 py-4.5 text-center font-bold text-danger text-sm">{team.stats.losses}</td>
+                                                
+                                                {/* Goals */}
+                                                <td className="px-4 py-4.5 text-center text-slate-600 hidden md:table-cell text-xs font-bold uppercase">{team.stats.goalsFor}</td>
+                                                <td className="px-4 py-4.5 text-center text-slate-600 hidden md:table-cell text-xs font-bold uppercase">{team.stats.goalsAgainst}</td>
+                                                <td className={`px-4 py-4.5 text-center font-black font-outfit text-sm ${sg > 0 ? 'text-accent' : sg < 0 ? 'text-danger' : 'text-slate-700'}`}>
                                                     {sg > 0 ? `+${sg}` : sg}
+                                                </td>
+
+                                                {/* Recent Form Tracker */}
+                                                <td className="px-4 py-4.5">
+                                                    <div className="flex items-center justify-center gap-1.5">
+                                                        {team.stats.form.map((res, idx) => (
+                                                            <div key={idx} className={`w-2.5 h-2.5 rounded-full flex items-center justify-center text-[0.4rem] font-black shadow-sm transform transition-all hover:scale-150 ${
+                                                                res === 'W' ? 'bg-accent text-white shadow-accent/20' : 
+                                                                res === 'D' ? 'bg-slate-500 text-white' : 
+                                                                'bg-danger text-white shadow-danger/20'
+                                                            }`} title={res === 'W' ? 'Vitória' : res === 'D' ? 'Empate' : 'Derrota'} />
+                                                        ))}
+                                                        {team.stats.form.length === 0 && <span className="text-[0.5rem] font-black text-slate-700 uppercase tracking-widest italic">—</span>}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
@@ -110,20 +162,32 @@ const Standings = () => {
                             </table>
                         </div>
 
-                        {/* Legend */}
-                        <div className="bg-black/30 px-4 sm:px-6 py-4 border-t border-white/[0.05] flex flex-wrap items-center gap-x-6 gap-y-2">
-                            <div className="flex items-center gap-2 text-[0.6rem] font-black text-slate-600 uppercase tracking-widest">
-                                <div className="w-3 h-3 bg-primary/20 rounded border border-primary/30" />
-                                <span>Classificação</span>
+                        {/* Footer Information / Legend */}
+                        <div className="bg-black/40 px-6 py-5 border-t border-white/[0.05] flex flex-wrap items-center justify-between gap-6">
+                            <div className="flex flex-wrap items-center gap-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-3.5 h-3.5 bg-primary/20 rounded-md border border-primary/40 shadow-[0_0_10px_rgba(109,40,217,0.1)]" />
+                                    <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.2em]">Classificação</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-3.5 h-3.5 bg-danger/20 rounded-md border border-danger/40 shadow-[0_0_10px_rgba(239,68,68,0.1)]" />
+                                    <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.2em]">Zona Crítica</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-3.5 h-3.5 bg-accent/20 rounded-md border border-accent/40" />
+                                    <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.2em]">Meu Time</span>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2 text-[0.6rem] font-black text-slate-600 uppercase tracking-widest">
-                                <div className="w-3 h-3 bg-danger/20 rounded border border-danger/30" />
-                                <span>Zona de Queda</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-auto italic">
-                                <Info size={11} className="text-primary flex-none" />
-                                <span className="hidden sm:inline">Critérios: PTS &gt; SG &gt; GP</span>
-                                <TrendingUp size={11} className="text-accent flex-none" />
+
+                            <div className="flex items-center gap-6">
+                                <div className="flex items-center gap-2 text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.1em] italic">
+                                    <Info size={14} className="text-primary opacity-60" />
+                                    <span>Critérios: Pts &gt; SG &gt; GP</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.1em] italic">
+                                    <TrendingUp size={14} className="text-accent opacity-60" />
+                                    <span>Atualização Realtime</span>
+                                </div>
                             </div>
                         </div>
                     </>
@@ -131,8 +195,8 @@ const Standings = () => {
             </section>
 
             {isPublicView && (
-                <div className="mt-8">
-                    <AdBanner position="standings_info" />
+                <div className="mt-12 group">
+                    <AdBanner position="standings_info" className="transition-all group-hover:brightness-110" />
                 </div>
             )}
         </div>

@@ -22,7 +22,7 @@ export type Team = {
     logo: string;
     group_name?: string;
     players: Player[];
-    stats: { matches: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number };
+    stats: { matches: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number; points: number; form: ('W' | 'D' | 'L')[] };
 };
 
 export type MatchEvent = {
@@ -234,7 +234,7 @@ const mapDBTeam = (t: any): Team => {
         logo: t.logo || '',
         group_name: t.group_name || '',
         players,
-        stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 }
+        stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0, form: [] as ('W' | 'D' | 'L')[] }
     };
 };
 
@@ -265,10 +265,17 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         
         return rawTeams.map(t => {
             const teamMatches = rawMatches.filter(
-                m => m.status === 'finished' && (m.homeTeamId === t.id || m.awayTeamId === t.id)
+                m => (m.status === 'finished' || m.status === 'live') && (m.homeTeamId === t.id || m.awayTeamId === t.id)
             );
             
             let wins = 0, draws = 0, losses = 0, goalsFor = 0, goalsAgainst = 0;
+            const form: ('W' | 'D' | 'L')[] = [];
+
+            // Sort team matches by date to get form
+            const sortedTeamMatches = [...teamMatches].sort((a, b) => 
+                new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
+            );
+
             teamMatches.forEach(m => {
                 const isHome = m.homeTeamId === t.id;
                 const gf = isHome ? m.homeScore : m.awayScore;
@@ -276,6 +283,17 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 goalsFor += gf; goalsAgainst += ga;
                 if (gf > ga) wins++; else if (gf === ga) draws++; else losses++;
             });
+
+            sortedTeamMatches.slice(0, 5).forEach(m => {
+                const isHome = m.homeTeamId === t.id;
+                const gf = isHome ? m.homeScore : m.awayScore;
+                const ga = isHome ? m.awayScore : m.homeScore;
+                if (gf > ga) form.push('W');
+                else if (gf === ga) form.push('D');
+                else form.push('L');
+            });
+
+            const points = wins * (league?.pointsForWin ?? 3) + draws * (league?.pointsForDraw ?? 1) + losses * (league?.pointsForLoss ?? 0);
 
             return {
                 ...t,
@@ -289,7 +307,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                         redCards: allEvents.filter(e => e.playerId === p.id && e.type === 'red_card').length,
                     }
                 })),
-                stats: { matches: teamMatches.length, wins, draws, losses, goalsFor, goalsAgainst }
+                stats: { matches: teamMatches.length, wins, draws, losses, goalsFor, goalsAgainst, points, form: form.reverse() }
             };
         });
     }, [rawTeams, rawMatches]);

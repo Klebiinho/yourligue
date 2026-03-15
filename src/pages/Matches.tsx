@@ -260,62 +260,69 @@ const Matches = () => {
                                     </div>
 
                                     {/* Center */}
-                                    <div className="flex flex-col items-center gap-1 flex-none min-w-[56px] sm:min-w-[80px]">
+                                    <div className="flex flex-col items-center gap-2 flex-none min-w-[70px] sm:min-w-[100px]">
                                         {(isLive || isFinished) ? (
-                                            <div className="flex items-center gap-1 sm:gap-3 font-outfit font-black text-xl sm:text-3xl relative">
-                                                {hasShootout && <span className="absolute -top-3 -left-3 text-[0.6rem] text-primary/60">{homePenaltyScore}</span>}
-                                                <span className={isLive ? 'text-primary' : 'text-white'}>{match.homeScore}</span>
-                                                <span className="text-slate-700 text-xs">✕</span>
-                                                <span className={isLive ? 'text-accent' : 'text-white'}>{match.awayScore}</span>
-                                                {hasShootout && <span className="absolute -top-3 -right-3 text-[0.6rem] text-accent/60">{awayPenaltyScore}</span>}
+                                            <div className="flex items-center gap-2 sm:gap-4 font-outfit font-black text-2xl sm:text-4xl relative">
+                                                <div className="flex flex-col items-center">
+                                                    {hasShootout && <span className="text-[0.6rem] text-primary/80 font-black mb-1 leading-none">{homePenaltyScore}</span>}
+                                                    <span className={isLive ? 'text-primary' : 'text-white'}>{match.homeScore}</span>
+                                                </div>
+                                                <span className="text-slate-800 text-xs sm:text-sm mt-auto pb-1 sm:pb-2">✕</span>
+                                                <div className="flex flex-col items-center">
+                                                    {hasShootout && <span className="text-[0.6rem] text-accent/80 font-black mb-1 leading-none">{awayPenaltyScore}</span>}
+                                                    <span className={isLive ? 'text-accent' : 'text-white'}>{match.awayScore}</span>
+                                                </div>
                                             </div>
                                         ) : (
-                                            <div className="text-[0.65rem] font-black text-slate-600 uppercase tracking-widest font-outfit">VS</div>
+                                            <div className="text-[0.7rem] font-black text-slate-700 uppercase tracking-[0.2em] font-outfit bg-white/5 px-3 py-1 rounded-lg border border-white/5">VS</div>
                                         )}
                                         {isLive && (
-                                            <div className="flex items-center gap-1 bg-danger/10 border border-danger/20 px-2 py-0.5 rounded-md">
-                                                <span className="w-1 h-1 bg-danger rounded-full animate-pulse flex-none" />
-                                                <span className="text-[0.45rem] sm:text-[0.5rem] font-black text-danger uppercase tracking-widest whitespace-nowrap">Ao Vivo</span>
+                                            <div className="flex items-center gap-1.5 bg-danger/10 border border-danger/20 px-2.5 py-1 rounded-full animate-pulse-subtle">
+                                                <span className="w-1.5 h-1.5 bg-danger rounded-full" />
+                                                <span className="text-[0.5rem] font-black text-danger uppercase tracking-widest whitespace-nowrap">Ao Vivo</span>
                                             </div>
                                         )}
                                         {!isLive && !isFinished && match.scheduledAt && (
-                                            <div className="flex items-center gap-0.5 text-[0.45rem] sm:text-[0.5rem] text-slate-600 font-bold whitespace-nowrap">
-                                                <Calendar size={8} className="flex-none" />{formatDate(match.scheduledAt)}
+                                            <div className="flex flex-col items-center gap-0.5 text-[0.45rem] sm:text-[0.55rem] text-slate-600 font-black whitespace-nowrap uppercase tracking-widest">
+                                                <div className="flex items-center gap-1"><Calendar size={10} className="flex-none text-primary/40" /> {formatDate(match.scheduledAt).split(',')[0]}</div>
+                                                <div className="flex items-center gap-1"><Clock size={10} className="flex-none text-primary/40" /> {formatDate(match.scheduledAt).split(',')[1]}</div>
                                             </div>
                                         )}
                                     </div>
 
                                     {/* Away */}
-                                    <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
-                                        <TeamLogo src={at?.logo} size={38} />
-                                        <span className="text-[0.55rem] sm:text-[0.65rem] font-black text-white uppercase tracking-wide w-full text-center font-outfit line-clamp-2 leading-tight">{at?.name}</span>
+                                    <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                                        <div className="transform transition-transform group-hover:scale-110 duration-500">
+                                            <TeamLogo src={at?.logo} size={42} className="shadow-lg" />
+                                        </div>
+                                        <span className="text-[0.6rem] sm:text-[0.7rem] font-black text-white uppercase tracking-wider w-full text-center font-outfit line-clamp-1 leading-tight">{at?.name}</span>
                                     </div>
                                 </div>
 
                                 {/* Action Row */}
-                                <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/[0.05] gap-2">
+                                <div className="flex items-center justify-between mt-5 pt-4 border-t border-white/[0.05] gap-3">
                                     {/* Status Badge */}
-                                    <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[0.55rem] font-black uppercase tracking-widest flex-none ${isLive ? 'bg-danger/15 text-danger' :
-                                        isFinished ? 'bg-accent/15 text-accent' : 'bg-warning/15 text-warning'
+                                    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[0.6rem] font-black uppercase tracking-widest flex-none border ${isLive ? 'bg-danger/10 text-danger border-danger/20 shadow-[0_4px_15px_rgba(239,68,68,0.1)]' :
+                                        isFinished ? 'bg-primary/10 text-primary border-primary/20' : 'bg-slate-900 text-slate-500 border-white/5'
                                         }`}>
-                                        {isLive ? <Signal size={10} /> : isFinished ? <CheckCircle2 size={10} /> : <Clock size={10} />}
-                                        {isLive ? 'Em curso' : isFinished ? (hasShootout ? 'Finalizada (Pênaltis)' : 'Finalizada') : 'Agendada'}
+                                        {isLive ? <Signal size={12} className="animate-pulse" /> : isFinished ? <CheckCircle2 size={12} /> : <Clock size={12} />}
+                                        {isLive ? 'Partida em curso' : isFinished ? (hasShootout ? 'Pênaltis Finalizados' : 'Partida Encerrada') : 'Agendada'}
                                     </div>
 
                                     {/* Buttons */}
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-2">
                                         {!isPublicView && isAdmin && match.status === 'scheduled' && (
-                                            <button onClick={() => handleEdit(match)} className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-slate-500 hover:text-white hover:bg-white/10 transition-all">
-                                                <Edit2 size={14} />
+                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(match); }} className="p-3 rounded-xl bg-white/5 border border-white/5 text-slate-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all group/btn">
+                                                <Edit2 size={16} className="transition-transform group-hover/btn:rotate-12" />
                                             </button>
                                         )}
                                         <button onClick={() => handleEnter(match.id, match.status)}
-                                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-[0.6rem] uppercase tracking-widest transition-all active:scale-95 ${isLive ? 'bg-accent text-white shadow-[0_4px_15px_rgba(16,185,129,0.3)] hover:brightness-110' :
-                                                isFinished ? 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10' :
-                                                    'bg-primary text-white shadow-[0_4px_15px_rgba(109,40,217,0.3)] hover:brightness-110'
+                                            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-[0.65rem] uppercase tracking-[0.15em] transition-all active:scale-95 shadow-xl ${isLive ? 'bg-accent text-white shadow-accent/20 hover:shadow-accent/40' :
+                                                isFinished ? 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20' :
+                                                    'bg-primary text-white shadow-primary/20 hover:shadow-primary/40'
                                                 }`}>
-                                            <Play size={12} fill="currentColor" />
-                                            {(isPublicView || !isAdmin) ? 'Ver Detalhes' : (isLive ? 'Gerenciar' : isFinished ? 'Ver' : 'Iniciar')}
+                                            <Play size={12} fill="currentColor" className={isLive ? 'animate-pulse' : ''} />
+                                            {(isPublicView || !isAdmin) ? 'Ver Detalhes' : (isLive ? 'Gerenciar' : isFinished ? 'Súmula' : 'Iniciar')}
                                         </button>
                                         {!isPublicView && isAdmin && (
                                             <button onClick={() => handleDelete(match.id)} className="p-2.5 rounded-xl bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all border border-danger/10">
