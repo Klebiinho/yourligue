@@ -1287,26 +1287,38 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             scheduled_at: data.scheduledAt, location: data.location
         }).eq('id', matchId);
         
+        const currentMatch = rawMatches.find(m => m.id === matchId);
+        let finalTimer = data.timer;
+        
+        // If match is live and we are not explicitly changing the timer, "freeze" the current live time as a new base
+        if (currentMatch && currentMatch.status === 'live' && finalTimer === undefined) {
+            const lastUpdate = new Date(currentMatch.updatedAt || new Date().toISOString()).getTime();
+            const diffInSeconds = Math.max(0, Math.floor((Date.now() - lastUpdate) / 1000));
+            finalTimer = (currentMatch.timer || 0) + diffInSeconds;
+        }
+
+        const effectiveData = { ...data, timer: finalTimer ?? currentMatch?.timer ?? 0 };
+
         // Optimistic update with current time to keep timer sync smooth
         setRawMatches((prev: Match[]) => prev.map(m => m.id === matchId ? { 
             ...m, 
-            ...data,
+            ...effectiveData,
             updatedAt: new Date().toISOString() 
         } : m));
 
         // BROADCAST for other users (low latency)
-        const match = matchesRef.current.find(m => m.id === matchId);
-        if (match) {
+        if (currentMatch) {
             supabase.channel(`league-central-${league?.id}`).send({
                 type: 'broadcast',
                 event: 'match-update',
                 payload: {
                     matchId,
-                    timer: data.timer ?? match.timer,
-                    homeScore: data.homeScore ?? match.homeScore,
-                    awayScore: data.awayScore ?? match.awayScore,
-                    period: data.period ?? match.period,
-                    status: data.status ?? match.status
+                    timer: effectiveData.timer ?? currentMatch.timer,
+                    homeScore: effectiveData.homeScore ?? currentMatch.homeScore,
+                    awayScore: effectiveData.awayScore ?? currentMatch.awayScore,
+                    period: effectiveData.period ?? currentMatch.period,
+                    status: effectiveData.status ?? currentMatch.status,
+                    updatedAt: new Date().toISOString()
                 }
             });
         }
@@ -1405,11 +1417,20 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 else newHomeScore++;
             }
 
+            // Sync timer to current "live" time during event add
+            let finalTimer = m.timer;
+            if (m.status === 'live') {
+                const lastUpdate = new Date(m.updatedAt || new Date().toISOString()).getTime();
+                const diffInSeconds = Math.max(0, Math.floor((Date.now() - lastUpdate) / 1000));
+                finalTimer = (m.timer || 0) + diffInSeconds;
+            }
+
             return {
                 ...m,
                 events: [...m.events, mapped],
                 homeScore: newHomeScore,
                 awayScore: newAwayScore,
+                timer: finalTimer || 0,
                 updatedAt: new Date().toISOString()
             };
         }));
