@@ -372,6 +372,26 @@ const MatchControl = () => {
                                 </div>
                             </div>
 
+                            <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
+                                <label className="text-[0.6rem] font-black text-primary uppercase tracking-widest block mb-2">Link do Placar (Overlay Widget)</label>
+                                <div className="flex gap-2">
+                                    <input 
+                                        readOnly 
+                                        value={`${window.location.origin}/match/${matchId}/overlay`} 
+                                        className="bg-black/40 border border-primary/10 flex-1 px-3 py-2 rounded-lg text-[0.65rem] font-mono text-white" 
+                                    />
+                                    <button 
+                                        onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/match/${matchId}/overlay`); alert('Link do Placar Copiado!'); }}
+                                        className="bg-primary text-white p-2 rounded-lg hover:bg-primary-hover transition-all shadow-lg shadow-primary/20"
+                                    >
+                                        <Check size={16} />
+                                    </button>
+                                </div>
+                                <p className="text-[0.55rem] text-primary/70 font-bold uppercase tracking-tight mt-2">
+                                    Cole este link no "Web Widget" ou "Browser Source" do seu app de live.
+                                </p>
+                            </div>
+
                             <p className="text-[0.65rem] text-slate-500 italic text-center px-4">
                                 Insira esses dados no seu aplicativo de transmissão (OBS, PRISM, Larix Broadcaster) para começar a enviar o vídeo.
                             </p>
@@ -425,6 +445,15 @@ const MatchControl = () => {
                                 </>
                             )}
                         </div>
+                        {isAdmin && (currentYtLiveStream || match.youtubeLiveId) && (
+                            <button 
+                                onClick={() => setShowYtSetup(true)}
+                                className="flex items-center gap-2 px-3 py-1 bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-lg border border-red-500/20 transition-all active:scale-95"
+                            >
+                                <Video size={12} strokeWidth={3} />
+                                <span className="text-[0.55rem] font-black uppercase tracking-[0.1em]">Configurar Live</span>
+                            </button>
+                        )}
                         <div className="bg-black/50 px-4 py-1.5 rounded-xl flex items-center gap-2 border border-white/[0.05] shadow-inner">
                             <div className={`w-1.5 h-1.5 rounded-full ${timerRunning ? 'bg-danger animate-pulse shadow-[0_0_8px_rgba(239,68,68,1)]' : 'bg-slate-700'}`} />
                             <span className="font-mono text-base sm:text-xl font-black text-white tracking-[0.1em]">
