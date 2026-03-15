@@ -2,16 +2,37 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLeague, type Match } from '../context/LeagueContext';
 import TeamLogo from '../components/TeamLogo';
+import { supabase } from '../lib/supabase';
 
 const MatchOverlay = () => {
     const { matchId } = useParams<{ matchId: string }>();
-    const { matches, teams } = useLeague();
+    const { matches, teams, loadPublicLeague } = useLeague();
     const match = matches.find((m: Match) => m.id === matchId);
     
     const [localSeconds, setLocalSeconds] = useState(match?.timer || 0);
 
     const homeTeam = teams.find(t => t.id === match?.homeTeamId);
     const awayTeam = teams.find(t => t.id === match?.awayTeamId);
+
+    // Bootstrap: Se entrar direto no overlay via link, precisamos carregar a liga
+    useEffect(() => {
+        const bootstrap = async () => {
+            if (!matchId || match) return;
+            
+            // Buscar o league_id desta match para carregar os dados
+            const { data, error } = await supabase
+                .from('matches')
+                .select('league_id')
+                .eq('id', matchId)
+                .single();
+            
+            if (!error && data?.league_id) {
+                console.log('Bootstrapping overlay for league:', data.league_id);
+                loadPublicLeague(data.league_id);
+            }
+        };
+        bootstrap();
+    }, [matchId, !!match, loadPublicLeague]);
 
     // ── SMART TIMER CALCULATION ──
     useEffect(() => {
