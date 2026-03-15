@@ -79,7 +79,7 @@ const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
         between: "w-full h-32 sm:h-44 my-10",
         halftime: "w-full aspect-video max-w-3xl mx-auto my-10",
         overlay: "fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-6",
-        home_stats: "w-full h-32 sm:h-40 mb-8",
+        home_stats: "w-full aspect-[3/1] sm:aspect-[6/1] mb-8",
         teams_list: "w-full h-32 sm:h-40 mb-8",
         matches_filter: "w-full h-32 sm:h-40 mb-8",
         live_top: "w-full h-32 sm:h-40 mb-8",

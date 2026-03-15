@@ -108,6 +108,8 @@ const Dashboard = () => {
                 </div>
             </header>
 
+            {isPublicView && <AdBanner position="home_stats" />}
+
             {/* ── Stats Row ─────────────────────────────────────────────── */}
             <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 {stats.map((stat, i) => (

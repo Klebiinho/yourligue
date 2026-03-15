@@ -7,7 +7,7 @@ import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, Use
 
 const AD_POSITIONS = [
     { id: 'top', label: 'Topo da Página' },
-    { id: 'home_stats', label: 'Home (Cards)' },
+    { id: 'home_stats', label: 'Home (Banner 1200x200)' },
     { id: 'teams_list', label: 'Times (Lista)' },
     { id: 'matches_filter', label: 'Partidas (Filtro)' },
     { id: 'live_top', label: 'Ao Vivo (Topo)' },
