@@ -1336,8 +1336,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                         rtmpUrl: result.rtmpUrl
                     });
                 }
-            } catch (err) {
+            } catch (err: any) {
                 console.error('Failed to create YouTube Live broadcast:', err);
+                alert("Aviso: Não foi possível iniciar a Live no YouTube.\n\nMotivo: " + (err.message || "Erro desconhecido") + "\n\nO jogo será iniciado sem transmissão ao vivo.");
             }
         }
 

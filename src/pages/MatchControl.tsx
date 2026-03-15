@@ -11,7 +11,8 @@ const MatchControl = () => {
     const { 
         league, matches, teams, endMatch, addEvent, removeEvent, 
         updateMatch, isPublicView, isAdmin, isPlayerOnPitch,
-        currentYtLiveStream, isYtAuthenticated, recoverStreamDetails
+        currentYtLiveStream, isYtAuthenticated, recoverStreamDetails,
+        ytLogin
     } = useLeague();
 
     const match = matches.find((m: Match) => m.id === matchId);
@@ -110,11 +111,25 @@ const MatchControl = () => {
             await pauseMatch(matchId, localSeconds);
         } else {
             let shouldStartLive = false;
-            // Ask for live stream only when starting from 0 and authenticated with YouTube, if not already live
-            if (localSeconds === 0 && isYtAuthenticated && !match.youtubeLiveId) {
-                shouldStartLive = window.confirm("Deseja iniciar uma Transmissão Ao Vivo no YouTube para esta partida?");
+            
+            // Re-verify if we should ask for live
+            if (localSeconds === 0 && !match.youtubeLiveId) {
+                if (isYtAuthenticated) {
+                    shouldStartLive = window.confirm("Deseja iniciar uma Transmissão Ao Vivo no YouTube para esta partida?\n\nIsso criará automaticamente uma live no seu canal e pegará as chaves para o seu app de stream.");
+                } else {
+                    if (window.confirm("Você não está conectado ao YouTube. Deseja conectar agora para transmitir esta partida ao vivo?")) {
+                        await ytLogin();
+                        // After login, we don't start immediately to let them confirm again or simply start without live
+                        return;
+                    }
+                }
             }
-            await startMatch(matchId, localSeconds, shouldStartLive);
+            
+            try {
+                await startMatch(matchId, localSeconds, shouldStartLive);
+            } catch (err: any) {
+                alert("Erro ao iniciar partida: " + (err.message || "Tente novamente"));
+            }
         }
     };
 
