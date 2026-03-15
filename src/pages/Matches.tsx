@@ -242,6 +242,11 @@ const Matches = () => {
                         const at = teams.find(t => t.id === match.awayTeamId);
                         const isLive = match.status === 'live';
                         const isFinished = match.status === 'finished';
+                        
+                        const homePenaltyScore = (match.events || []).filter(e => e.type === 'penalty_shootout_goal' && e.teamId === match.homeTeamId).length;
+                        const awayPenaltyScore = (match.events || []).filter(e => e.type === 'penalty_shootout_goal' && e.teamId === match.awayTeamId).length;
+                        const hasShootout = (match.events || []).some(e => e.type.startsWith('penalty_shootout_'));
+
                         return (
                             <div key={match.id} className={`glass-panel p-4 sm:p-5 border transition-all duration-300 ${isLive ? 'border-danger/25 bg-danger/[0.03] shadow-[0_0_30px_rgba(239,68,68,0.05)]' :
                                 isFinished ? 'border-white/[0.04]' : 'border-white/[0.04] hover:border-white/[0.08]'
@@ -257,10 +262,12 @@ const Matches = () => {
                                     {/* Center */}
                                     <div className="flex flex-col items-center gap-1 flex-none min-w-[56px] sm:min-w-[80px]">
                                         {(isLive || isFinished) ? (
-                                            <div className="flex items-center gap-1.5 sm:gap-3 font-outfit font-black text-xl sm:text-3xl">
+                                            <div className="flex items-center gap-1 sm:gap-3 font-outfit font-black text-xl sm:text-3xl relative">
+                                                {hasShootout && <span className="absolute -top-3 -left-3 text-[0.6rem] text-primary/60">{homePenaltyScore}</span>}
                                                 <span className={isLive ? 'text-primary' : 'text-white'}>{match.homeScore}</span>
                                                 <span className="text-slate-700 text-xs">✕</span>
                                                 <span className={isLive ? 'text-accent' : 'text-white'}>{match.awayScore}</span>
+                                                {hasShootout && <span className="absolute -top-3 -right-3 text-[0.6rem] text-accent/60">{awayPenaltyScore}</span>}
                                             </div>
                                         ) : (
                                             <div className="text-[0.65rem] font-black text-slate-600 uppercase tracking-widest font-outfit">VS</div>

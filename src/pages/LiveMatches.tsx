@@ -57,16 +57,25 @@ const LiveMatches = () => {
                                             <span className="text-[0.65rem] font-black text-white text-center uppercase tracking-wider">{ht?.name}</span>
                                         </div>
 
-                                        <div className="flex flex-col items-center gap-2">
-                                            <div className="text-3xl font-black font-outfit text-white flex items-center gap-4">
-                                                <span className="text-primary">{match.homeScore}</span>
-                                                <span className="text-white/20 text-sm">VS</span>
-                                                <span className="text-accent">{match.awayScore}</span>
-                                            </div>
-                                            <div className="bg-black/40 px-3 py-1 rounded-full text-[0.5rem] font-black text-slate-500 uppercase tracking-widest">
-                                                {match.period || 'Em jogo'}
-                                            </div>
-                                        </div>
+                                        {(() => {
+                                            const hps = (match.events || []).filter(e => e.type === 'penalty_shootout_goal' && e.teamId === match.homeTeamId).length;
+                                            const aps = (match.events || []).filter(e => e.type === 'penalty_shootout_goal' && e.teamId === match.awayTeamId).length;
+                                            const hasPS = (match.events || []).some(e => e.type.startsWith('penalty_shootout_'));
+                                            return (
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <div className="text-3xl font-black font-outfit text-white flex items-center gap-4 relative">
+                                                        {hasPS && <span className="absolute -top-3 -left-3 text-[0.6rem] text-primary/60">{hps}</span>}
+                                                        <span className="text-primary">{match.homeScore}</span>
+                                                        <span className="text-white/20 text-sm">VS</span>
+                                                        <span className="text-accent">{match.awayScore}</span>
+                                                        {hasPS && <span className="absolute -top-3 -right-3 text-[0.6rem] text-accent/60">{aps}</span>}
+                                                    </div>
+                                                    <div className="bg-black/40 px-3 py-1 rounded-full text-[0.5rem] font-black text-slate-500 uppercase tracking-widest">
+                                                        {match.period || 'Em jogo'}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
 
                                         <div className="flex flex-col items-center gap-2 flex-1">
                                             <TeamLogo src={at?.logo} size={50} />
@@ -111,11 +120,20 @@ const LiveMatches = () => {
                                         <span className="text-[0.65rem] font-black text-white/70 uppercase truncate">{ht?.name}</span>
                                     </div>
 
-                                    <div className="flex items-center gap-3 px-4 py-1.5 bg-black/40 rounded-xl border border-white/[0.03]">
-                                        <span className="font-black text-sm text-white">{match.homeScore}</span>
-                                        <span className="text-slate-800 text-[0.6rem] font-black">-</span>
-                                        <span className="font-black text-sm text-white">{match.awayScore}</span>
-                                    </div>
+                                    {(() => {
+                                        const hps = (match.events || []).filter(e => e.type === 'penalty_shootout_goal' && e.teamId === match.homeTeamId).length;
+                                        const aps = (match.events || []).filter(e => e.type === 'penalty_shootout_goal' && e.teamId === match.awayTeamId).length;
+                                        const hasPS = (match.events || []).some(e => e.type.startsWith('penalty_shootout_'));
+                                        return (
+                                            <div className="flex items-center gap-3 px-4 py-1.5 bg-black/40 rounded-xl border border-white/[0.03] relative">
+                                                {hasPS && <span className="absolute -top-1.5 -left-1 text-[0.45rem] font-black text-primary/60">{hps}</span>}
+                                                <span className="font-black text-sm text-white">{match.homeScore}</span>
+                                                <span className="text-slate-800 text-[0.6rem] font-black">-</span>
+                                                <span className="font-black text-sm text-white">{match.awayScore}</span>
+                                                {hasPS && <span className="absolute -top-1.5 -right-1 text-[0.45rem] font-black text-accent/60">{aps}</span>}
+                                            </div>
+                                        );
+                                    })()}
 
                                     <div className="flex items-center gap-3 flex-1 justify-end">
                                         <span className="text-[0.65rem] font-black text-white/70 uppercase truncate text-right">{at?.name}</span>
