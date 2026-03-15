@@ -372,14 +372,22 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             // Load owned leagues
             const { data: ownedData } = await supabase
                 .from('leagues')
-                .select('*')
+                .select(`
+                    *,
+                    follower_count:followed_leagues(count)
+                `)
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: true });
 
             // Load followed leagues
             const { data: followsData } = await supabase
                 .from('followed_leagues')
-                .select('leagues(*)')
+                .select(`
+                    leagues(
+                        *,
+                        follower_count:followed_leagues(count)
+                    )
+                `)
                 .eq('user_id', user.id);
 
             if (ownedData) {
@@ -393,7 +401,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     allowSubstitutionReturn: l.allow_substitution_return ?? true,
                     hasOvertime: l.has_overtime ?? true,
                     slug: l.slug || '',
-                    userId: l.user_id
+                    userId: l.user_id,
+                    follower_count: l.follower_count
                 }));
                 setLeagues(mapped);
                 if (mapped.length > 0 && !league && !isPublicView) {
@@ -418,7 +427,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                             allowSubstitutionReturn: l.allow_substitution_return ?? true,
                             hasOvertime: l.has_overtime ?? true,
                             slug: l.slug || '',
-                            userId: l.user_id
+                            userId: l.user_id,
+                            follower_count: l.follower_count
                         };
                     });
                 setFollowedLeagues(mapped);

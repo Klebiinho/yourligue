@@ -315,8 +315,10 @@ const LeagueItem = ({
                             {type === 'owned' ? 'Clique para gerenciar' : 'Clique para visualizar'}
                         </span>
                         {league.follower_count?.[0]?.count !== undefined && (
-                            <span className="flex items-center gap-1 text-slate-600 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
-                                <Bell size={10} className="text-primary" /> {league.follower_count[0].count}
+                            <span className="flex items-center gap-1.5 text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20 shadow-[0_0_15px_rgba(109,40,217,0.1)]">
+                                <Bell size={10} className="text-primary fill-primary/20" strokeWidth={3} />
+                                <span className="text-[0.65rem] font-black">{league.follower_count[0].count}</span>
+                                <span className="text-[0.55rem] font-bold text-slate-400 uppercase tracking-tighter ml-0.5">Acompanhando</span>
                             </span>
                         )}
                         <Settings2 size={10} strokeWidth={3} className="text-slate-500 group-hover:text-primary" />
