@@ -107,19 +107,37 @@ const MatchOverlay = () => {
         return (
             <div className="min-h-screen w-screen bg-transparent flex items-start justify-start p-6" data-state="loading">
                 {transparencyStyles}
-                <div className="bg-black/80 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 shadow-2xl">
-                    <div className="flex flex-col gap-4">
-                        <div className="text-[0.65rem] text-white font-black uppercase tracking-[0.25em] flex items-center gap-3">
-                            <div className="w-2.5 h-2.5 bg-primary rounded-full animate-ping" />
-                            SINCRONIZANDO PLACAR...
+                <div className="bg-black/90 backdrop-blur-xl px-6 py-5 rounded-2xl border border-white/10 shadow-2xl max-w-sm">
+                    <div className="flex flex-col gap-5">
+                        <div className="flex items-center gap-4">
+                            <div className="relative">
+                                <div className="w-8 h-8 border-2 border-primary/20 rounded-full" />
+                                <div className="absolute inset-0 w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[0.65rem] text-white font-black uppercase tracking-[0.2em]">Sincronizando Placar</span>
+                                <span className="text-[0.45rem] text-white/40 font-bold uppercase tracking-widest leading-tight">Match ID: {matchId?.slice(0,8)}...</span>
+                            </div>
                         </div>
-                        <div className="flex gap-2 w-48">
-                            <div className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${match ? 'bg-primary' : 'bg-white/10'}`} />
-                            <div className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${homeTeam && awayTeam ? 'bg-primary' : 'bg-white/10'}`} />
+
+                        <div className="space-y-3">
+                            {/* Passo 1: Match */}
+                            <div className="flex items-center justify-between text-[0.55rem] font-bold uppercase">
+                                <span className={match ? 'text-primary' : 'text-white/40'}>1. Identificar Partida</span>
+                                <span className={match ? 'text-primary' : 'text-white/20'}>{match ? 'Localizado ✓' : 'Buscando...'}</span>
+                            </div>
+                            
+                            {/* Passo 2: Times */}
+                            <div className="flex items-center justify-between text-[0.55rem] font-bold uppercase">
+                                <span className={(homeTeam && awayTeam) ? 'text-primary' : 'text-white/40'}>2. Carregar Times</span>
+                                <span className={(homeTeam && awayTeam) ? 'text-primary' : 'text-white/20'}>{(homeTeam && awayTeam) ? 'Localizado ✓' : 'Aguardando...'}</span>
+                            </div>
                         </div>
-                        <div className="text-[0.5rem] text-white/40 font-bold uppercase flex justify-between">
-                            <span>{match ? 'Partida ✓' : 'Buscando Partida...'}</span>
-                            <span>{homeTeam && awayTeam ? 'Times ✓' : 'Buscando Times...'}</span>
+
+                        <div className="pt-2 border-t border-white/5">
+                            <p className="text-[0.45rem] text-white/30 font-medium leading-relaxed italic">
+                                Se este aviso não sumir em 10 segundos, verifique se a partida ainda existe no seu painel.
+                            </p>
                         </div>
                     </div>
                 </div>
