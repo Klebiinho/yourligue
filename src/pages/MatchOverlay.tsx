@@ -44,21 +44,35 @@ const MatchOverlay = () => {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    if (!match || !homeTeam || !awayTeam) return null;
+    // Force transparency styles to be present from the very legacy start to avoid flicker
+    const transparencyStyles = (
+        <style>{`
+            :root, html, body, #root { 
+                background: transparent !important; 
+                background-color: transparent !important;
+                background-image: none !important; 
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+            * { -webkit-font-smoothing: antialiased; }
+        `}</style>
+    );
+
+    if (!match || !homeTeam || !awayTeam) {
+        return (
+            <div className="min-h-screen w-screen bg-transparent flex items-start justify-start p-6">
+                {transparencyStyles}
+                {/* Optional: Simple transparent loading text or nothing */}
+            </div>
+        );
+    }
 
     const periodLabel = match.period === 'Pênaltis' || match.period === 'Sel. Batedores' ? 'PÊNALTIS' : match.period;
 
     return (
         <div className="min-h-screen w-screen bg-transparent flex items-start justify-start p-6 font-outfit select-none animate-fade-in overflow-hidden">
-            {/* AGGRESSIVE TRANSPARENCY OVERRIDE FOR STREAMING TOOLS */}
-            <style>{`
-                :root, html, body, #root { 
-                    background: transparent !important; 
-                    background-color: transparent !important;
-                    background-image: none !important; 
-                }
-                * { -webkit-font-smoothing: antialiased; }
-            `}</style>
+            {transparencyStyles}
             
             {/* Main Scoreboard Container */}
             <div className="flex flex-col items-start gap-1">
