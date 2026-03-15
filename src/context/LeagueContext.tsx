@@ -329,7 +329,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     
     // ── YouTube Integration ─────────────────────────────────────
     const ytService = YouTubeService.getInstance();
-    const [ytToken, setYtToken] = useState<string | null>(sessionStorage.getItem('yt_access_token'));
+    const [ytToken, setYtToken] = useState<string | null>(localStorage.getItem('yt_access_token'));
     const [currentYtLiveStream, setCurrentYtLiveStream] = useState<{ streamKey: string, rtmpUrl: string } | null>(null);
 
     useEffect(() => {

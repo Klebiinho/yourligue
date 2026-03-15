@@ -41,7 +41,7 @@ export class YouTubeService {
                             reject(response);
                         }
                         this.accessToken = response.access_token;
-                        sessionStorage.setItem('yt_access_token', response.access_token);
+                        localStorage.setItem('yt_access_token', response.access_token);
                         if (this.onAuthChange) this.onAuthChange(response.access_token);
                     },
                 });
@@ -67,7 +67,7 @@ export class YouTubeService {
 
     public subscribeAuth(callback: (token: string | null) => void) {
         this.onAuthChange = callback;
-        const savedToken = sessionStorage.getItem('yt_access_token');
+        const savedToken = localStorage.getItem('yt_access_token');
         if (savedToken) {
             this.accessToken = savedToken;
             callback(savedToken);
@@ -81,7 +81,7 @@ export class YouTubeService {
 
     public logOut() {
         this.accessToken = null;
-        sessionStorage.removeItem('yt_access_token');
+        localStorage.removeItem('yt_access_token');
         if (this.onAuthChange) this.onAuthChange(null);
     }
 
