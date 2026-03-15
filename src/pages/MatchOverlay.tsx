@@ -19,6 +19,7 @@ const MatchOverlay = () => {
         const bootstrap = async () => {
             if (!matchId || match) return;
             
+            console.log('[Overlay] Bootstrap iniciada para match:', matchId);
             // Buscar o league_id desta match para carregar os dados
             const { data, error } = await supabase
                 .from('matches')
@@ -26,9 +27,15 @@ const MatchOverlay = () => {
                 .eq('id', matchId)
                 .single();
             
-            if (!error && data?.league_id) {
-                console.log('Bootstrapping overlay for league:', data.league_id);
-                loadPublicLeague(data.league_id);
+            if (error) {
+                console.error('[Overlay] Erro ao buscar liga da partida:', error);
+                return;
+            }
+
+            if (data?.league_id) {
+                console.log('[Overlay] Liga identificada:', data.league_id, '- Carregando dados públicos...');
+                const success = await loadPublicLeague(data.league_id);
+                console.log('[Overlay] Carregamento público finalizado. Sucesso:', success);
             }
         };
         bootstrap();
@@ -59,6 +66,12 @@ const MatchOverlay = () => {
         return () => window.clearInterval(interval);
     }, [match?.id, match?.status, match?.timer, match?.updatedAt]);
 
+    useEffect(() => {
+        if (match) {
+            console.log('[Overlay] Partida encontrada e sincronizada:', match.id);
+        }
+    }, [!!match]);
+
     const formatTime = (totalSeconds: number) => {
         const mins = Math.floor(totalSeconds / 60);
         const secs = totalSeconds % 60;
@@ -82,9 +95,14 @@ const MatchOverlay = () => {
 
     if (!match || !homeTeam || !awayTeam) {
         return (
-            <div className="min-h-screen w-screen bg-transparent flex items-start justify-start p-6">
+            <div className="min-h-screen w-screen bg-transparent flex items-start justify-start p-6" data-state="loading">
                 {transparencyStyles}
-                {/* Optional: Simple transparent loading text or nothing */}
+                <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+                    <div className="text-[0.6rem] text-white font-black uppercase tracking-[0.2em] flex items-center gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                        SINCRONIZANDO PLACAR...
+                    </div>
+                </div>
             </div>
         );
     }
@@ -92,7 +110,7 @@ const MatchOverlay = () => {
     const periodLabel = match.period === 'Pênaltis' || match.period === 'Sel. Batedores' ? 'PÊNALTIS' : match.period;
 
     return (
-        <div className="min-h-screen w-screen bg-transparent flex items-start justify-start p-6 font-outfit select-none animate-fade-in overflow-hidden">
+        <div className="min-h-screen w-screen bg-transparent flex items-start justify-start p-6 font-outfit select-none animate-fade-in overflow-hidden" data-state="ready">
             {transparencyStyles}
             
             {/* Main Scoreboard Container */}
