@@ -8,7 +8,7 @@ import AdBanner from '../components/AdBanner';
 
 const Matches = () => {
     const { user } = useAuth();
-    const { teams, matches, userInteractions, createMatch, startMatch, deleteMatch, updateMatch, isPublicView, isAdmin, leagueBasePath } = useLeague();
+    const { teams, matches, userInteractions, createMatch, startMatch, deleteMatch, updateMatch, isPublicView, isAdmin, leagueBasePath, setShowAuthModal } = useLeague();
     const navigate = useNavigate();
     const [homeTeamId, setHomeTeamId] = useState(teams[0]?.id || '');
     const [awayTeamId, setAwayTeamId] = useState(teams[1]?.id || '');
@@ -184,7 +184,7 @@ const Matches = () => {
                 {tabConfig.map(({ key, label, count }) => (
                     <button key={key} onClick={() => {
                         if (key === 'my_team' && !user) {
-                            navigate('/entrar');
+                            setShowAuthModal(true);
                             return;
                         }
                         setTab(key);
