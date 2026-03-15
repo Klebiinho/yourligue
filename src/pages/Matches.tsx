@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Swords, PlusCircle, Play, Trash2, Edit2, Calendar, MapPin, AlertCircle, Clock, CheckCircle2, Signal, Heart } from 'lucide-react';
+import { Swords, PlusCircle, Play, Trash2, Edit2, Calendar, MapPin, AlertCircle, Clock, CheckCircle2, Signal, Heart, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import TeamLogo from '../components/TeamLogo';
@@ -19,6 +19,8 @@ const Matches = () => {
     const [error, setError] = useState('');
     const [tab, setTab] = useState<'all' | 'scheduled' | 'live' | 'finished' | 'my_team'>('all');
     const [formOpen, setFormOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [teamFilter, setTeamFilter] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -72,6 +74,15 @@ const Matches = () => {
             if (tab === 'all') return true;
             if (tab === 'my_team') return myTeamIds.includes(m.homeTeamId) || myTeamIds.includes(m.awayTeamId);
             return m.status === tab;
+        })
+        .filter(m => {
+            const ht = teams.find(t => t.id === m.homeTeamId);
+            const at = teams.find(t => t.id === m.awayTeamId);
+            const matchesQuery = !searchQuery || 
+                ht?.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                at?.name.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesTeam = !teamFilter || m.homeTeamId === teamFilter || m.awayTeamId === teamFilter;
+            return matchesQuery && matchesTeam;
         })
         .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
     const formatDate = (dt?: string) => dt ? new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
@@ -188,6 +199,32 @@ const Matches = () => {
                         <span className={`px-1.5 py-0.5 rounded-md text-[0.55rem] font-black ${tab === key ? 'bg-black/20' : 'bg-white/10'}`}>{count}</span>
                     </button>
                 ))}
+            </div>
+
+            {/* Search and Team Filter */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                <div className="sm:col-span-2 relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                    <input 
+                        type="text" 
+                        placeholder="Pesquisar por time..." 
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-white placeholder:text-slate-600 focus:border-primary outline-none transition-all text-sm font-bold"
+                    />
+                </div>
+                <div className="relative">
+                    <select 
+                        value={teamFilter}
+                        onChange={e => setTeamFilter(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-white focus:border-primary outline-none transition-all appearance-none text-sm font-bold cursor-pointer"
+                    >
+                        <option value="" className="bg-[#07070a]">Todos os Times</option>
+                        {teams.sort((a,b) => a.name.localeCompare(b.name)).map(t => (
+                            <option key={t.id} value={t.id} className="bg-[#07070a]">{t.name}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             {isPublicView && <AdBanner position="matches_filter" />}
