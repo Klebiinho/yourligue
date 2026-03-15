@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Bell, BellOff, Heart, Music, Skull } from 'lucide-react';
+import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Bell, BellOff, Music, Skull } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';

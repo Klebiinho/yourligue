@@ -68,31 +68,31 @@ const Matches = () => {
         navigate(`${leagueBasePath}/match/${id}`);
     };
 
-    const myTeamIds = userInteractions.map(i => i.teamId);
+    const myTeamIds = userInteractions.map((i: any) => i.teamId);
     const filteredMatches = matches
-        .filter(m => {
+        .filter((m: any) => {
             if (tab === 'all') return true;
             if (tab === 'my_team') return myTeamIds.includes(m.homeTeamId) || myTeamIds.includes(m.awayTeamId);
             return m.status === tab;
         })
-        .filter(m => {
-            const ht = teams.find(t => t.id === m.homeTeamId);
-            const at = teams.find(t => t.id === m.awayTeamId);
+        .filter((m: any) => {
+            const ht = teams.find((t: any) => t.id === m.homeTeamId);
+            const at = teams.find((t: any) => t.id === m.awayTeamId);
             const matchesQuery = !searchQuery || 
                 ht?.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                 at?.name.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesTeam = !teamFilter || m.homeTeamId === teamFilter || m.awayTeamId === teamFilter;
             return matchesQuery && matchesTeam;
         })
-        .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+        .sort((a: any, b: any) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
     const formatDate = (dt?: string) => dt ? new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 
     const tabConfig = [
-        ...(isPublicView ? [{ key: 'my_team' as const, label: 'MEU TIME', count: matches.filter(m => myTeamIds.includes(m.homeTeamId) || myTeamIds.includes(m.awayTeamId)).length }] : []),
+        ...(isPublicView ? [{ key: 'my_team' as const, label: 'MEU TIME', count: matches.filter((m: any) => myTeamIds.includes(m.homeTeamId) || myTeamIds.includes(m.awayTeamId)).length }] : []),
         { key: 'all' as const, label: 'Todas', count: matches.length },
-        { key: 'live' as const, label: 'AO VIVO', count: matches.filter(m => m.status === 'live').length },
-        { key: 'scheduled' as const, label: 'Agendadas', count: matches.filter(m => m.status === 'scheduled').length },
-        { key: 'finished' as const, label: 'Concluídas', count: matches.filter(m => m.status === 'finished').length },
+        { key: 'live' as const, label: 'AO VIVO', count: matches.filter((m: any) => m.status === 'live').length },
+        { key: 'scheduled' as const, label: 'Agendadas', count: matches.filter((m: any) => m.status === 'scheduled').length },
+        { key: 'finished' as const, label: 'Concluídas', count: matches.filter((m: any) => m.status === 'finished').length },
     ];
 
     return (

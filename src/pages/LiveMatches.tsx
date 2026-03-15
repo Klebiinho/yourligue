@@ -8,10 +8,10 @@ const LiveMatches = () => {
     const { matches, teams, leagueBasePath, isPublicView } = useLeague();
     const navigate = useNavigate();
 
-    const liveMatches = matches.filter(m => m.status === 'live');
+    const liveMatches = matches.filter((m: any) => m.status === 'live');
     const finishedMatches = matches
-        .filter(m => m.status === 'finished')
-        .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
+        .filter((m: any) => m.status === 'finished')
+        .sort((a: any, b: any) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
         .slice(0, 5);
 
     const handleEnter = (id: string) => {
@@ -40,9 +40,9 @@ const LiveMatches = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {liveMatches.map(match => {
-                            const ht = teams.find(t => t.id === match.homeTeamId);
-                            const at = teams.find(t => t.id === match.awayTeamId);
+                        {liveMatches.map((match: any) => {
+                            const ht = teams.find((t: any) => t.id === match.homeTeamId);
+                            const at = teams.find((t: any) => t.id === match.awayTeamId);
                             return (
                                 <div key={match.id}
                                     onClick={() => handleEnter(match.id)}
@@ -58,9 +58,9 @@ const LiveMatches = () => {
                                         </div>
 
                                         {(() => {
-                                            const hps = (match.events || []).filter(e => e.type === 'penalty_shootout_goal' && e.teamId === match.homeTeamId).length;
-                                            const aps = (match.events || []).filter(e => e.type === 'penalty_shootout_goal' && e.teamId === match.awayTeamId).length;
-                                            const hasPS = (match.events || []).some(e => e.type.startsWith('penalty_shootout_'));
+                                            const hps = (match.events || []).filter((e: any) => e.type === 'penalty_shootout_goal' && e.teamId === match.homeTeamId).length;
+                                            const aps = (match.events || []).filter((e: any) => e.type === 'penalty_shootout_goal' && e.teamId === match.awayTeamId).length;
+                                            const hasPS = (match.events || []).some((e: any) => e.type.startsWith('penalty_shootout_'));
                                             return (
                                                 <div className="flex flex-col items-center gap-2">
                                                     <div className="text-3xl font-black font-outfit text-white flex items-center gap-4 relative">
@@ -108,9 +108,9 @@ const LiveMatches = () => {
                     {finishedMatches.length === 0 ? (
                         <p className="text-slate-600 text-[0.6rem] font-black uppercase tracking-widest py-4">Nenhuma partida finalizada recentemente</p>
                     ) : (
-                        finishedMatches.map(match => {
-                            const ht = teams.find(t => t.id === match.homeTeamId);
-                            const at = teams.find(t => t.id === match.awayTeamId);
+                        finishedMatches.map((match: any) => {
+                            const ht = teams.find((t: any) => t.id === match.homeTeamId);
+                            const at = teams.find((t: any) => t.id === match.awayTeamId);
                             return (
                                 <div key={match.id}
                                     onClick={() => handleEnter(match.id)}
@@ -121,9 +121,9 @@ const LiveMatches = () => {
                                     </div>
 
                                     {(() => {
-                                        const hps = (match.events || []).filter(e => e.type === 'penalty_shootout_goal' && e.teamId === match.homeTeamId).length;
-                                        const aps = (match.events || []).filter(e => e.type === 'penalty_shootout_goal' && e.teamId === match.awayTeamId).length;
-                                        const hasPS = (match.events || []).some(e => e.type.startsWith('penalty_shootout_'));
+                                        const hps = (match.events || []).filter((e: any) => e.type === 'penalty_shootout_goal' && e.teamId === match.homeTeamId).length;
+                                        const aps = (match.events || []).filter((e: any) => e.type === 'penalty_shootout_goal' && e.teamId === match.awayTeamId).length;
+                                        const hasPS = (match.events || []).some((e: any) => e.type.startsWith('penalty_shootout_'));
                                         return (
                                             <div className="flex items-center gap-3 px-4 py-1.5 bg-black/40 rounded-xl border border-white/[0.03] relative">
                                                 {hasPS && <span className="absolute -top-1.5 -left-1 text-[0.45rem] font-black text-primary/60">{hps}</span>}
