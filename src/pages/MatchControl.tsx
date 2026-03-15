@@ -576,9 +576,15 @@ const MatchControl = () => {
                                                                     #{player.number} {player.name}
                                                                 </h4>
                                                                 <div className="flex items-center gap-1 mt-1 h-3.5">
-                                                                    {Array.from({ length: yellowCards }).map((_, i) => (
-                                                                        <div key={i} className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm" />
-                                                                    ))}
+                                                                    {yellowCards === 1 ? (
+                                                                        <div className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm" />
+                                                                    ) : yellowCards >= 2 ? (
+                                                                        <>
+                                                                            <div className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 opacity-40" />
+                                                                            <div className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 opacity-40" />
+                                                                            <span className="text-[0.6rem] ml-1">🟥</span>
+                                                                        </>
+                                                                    ) : null}
                                                                 </div>
                                                             </div>
                                                             <div className="flex items-center gap-1">
