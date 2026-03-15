@@ -27,33 +27,53 @@ const MatchOverlay = () => {
         }
     }, [matchId, match, matches, teams, homeTeam, awayTeam, homeTeamId, awayTeamId]);
 
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [status, setStatus] = useState<string>('Iniciando...');
+
     // Bootstrap: Se entrar direto no overlay via link, precisamos carregar a liga
     useEffect(() => {
         const bootstrap = async () => {
-            if (!matchId || (match && homeTeam && awayTeam)) return;
+            if (!matchId) return;
+            if (match && homeTeam && awayTeam) {
+                setStatus('Pronto');
+                return;
+            }
             
+            setStatus('Buscando partida no banco...');
             console.log('[Overlay] Buscando match no banco:', matchId);
 
-            // Buscamos a liga via matches table diretamente
-            const { data: matchData, error: matchError } = await supabase
-                .from('matches')
-                .select('league_id')
-                .eq('id', matchId)
-                .maybeSingle();
-            
-            if (matchError) {
-                console.error('[Overlay] Erro crítico no Supabase:', matchError);
-                return;
-            }
+            try {
+                // Buscamos a liga via matches table diretamente
+                const { data: matchData, error: matchError } = await supabase
+                    .from('matches')
+                    .select('league_id')
+                    .eq('id', matchId)
+                    .maybeSingle();
+                
+                if (matchError) {
+                    console.error('[Overlay] Erro no Supabase:', matchError);
+                    setErrorMsg(`Erro de conexão: ${matchError.message}`);
+                    return;
+                }
 
-            if (!matchData) {
-                console.warn('[Overlay] Partida não encontrada no banco. O ID pode estar errado.');
-                return;
-            }
+                if (!matchData) {
+                    console.warn('[Overlay] Partida não encontrada.');
+                    setErrorMsg('Partida não localizada. Verifique o link.');
+                    return;
+                }
 
-            if (matchData.league_id) {
-                console.log('[Overlay] Liga identificada:', matchData.league_id, '- Forçando loadPublicLeague');
-                loadPublicLeague(matchData.league_id);
+                if (matchData.league_id) {
+                    setStatus('Carregando campeonato...');
+                    console.log('[Overlay] Liga identificada:', matchData.league_id);
+                    const success = await loadPublicLeague(matchData.league_id);
+                    if (!success) {
+                        setErrorMsg('Não foi possível carregar os dados da liga.');
+                    } else {
+                        setStatus('Sincronizando placar...');
+                    }
+                }
+            } catch (e: any) {
+                setErrorMsg(`Falha inesperada: ${e.message}`);
             }
         };
         bootstrap();
@@ -130,27 +150,38 @@ const MatchOverlay = () => {
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-[0.65rem] text-white font-black uppercase tracking-[0.2em]">Sincronizando Placar</span>
-                                <span className="text-[0.45rem] text-white/40 font-bold uppercase tracking-widest leading-tight">Match ID: {matchId?.slice(0,8)}...</span>
+                                <span className={`text-[0.45rem] font-bold uppercase tracking-widest leading-tight ${errorMsg ? 'text-red-400' : 'text-primary'}`}>
+                                    {errorMsg ? 'ERRO DE SINCRONISMO' : status}
+                                </span>
                             </div>
                         </div>
 
-                        <div className="space-y-3">
-                            {/* Passo 1: Match */}
-                            <div className="flex items-center justify-between text-[0.55rem] font-bold uppercase">
-                                <span className={match ? 'text-primary' : 'text-white/40'}>1. Identificar Partida</span>
-                                <span className={match ? 'text-primary' : 'text-white/20'}>{match ? 'Localizado ✓' : 'Buscando...'}</span>
+                        {errorMsg ? (
+                            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                                <p className="text-[0.55rem] text-red-400 font-bold uppercase leading-relaxed">
+                                    {errorMsg}
+                                </p>
                             </div>
-                            
-                            {/* Passo 2: Times */}
-                            <div className="flex items-center justify-between text-[0.55rem] font-bold uppercase">
-                                <span className={(homeTeam && awayTeam) ? 'text-primary' : 'text-white/40'}>2. Carregar Times</span>
-                                <span className={(homeTeam && awayTeam) ? 'text-primary' : 'text-white/20'}>{(homeTeam && awayTeam) ? 'Localizado ✓' : 'Aguardando...'}</span>
+                        ) : (
+                            <div className="space-y-3">
+                                {/* Passo 1: Match */}
+                                <div className="flex items-center justify-between text-[0.55rem] font-bold uppercase">
+                                    <span className={match ? 'text-primary' : 'text-white/40'}>1. Identificar Partida</span>
+                                    <span className={match ? 'text-primary' : 'text-white/20'}>{match ? 'OK ✓' : 'Pendente'}</span>
+                                </div>
+                                
+                                {/* Passo 2: Times */}
+                                <div className="flex items-center justify-between text-[0.55rem] font-bold uppercase">
+                                    <span className={(homeTeam && awayTeam) ? 'text-primary' : 'text-white/40'}>2. Sincronizar Times</span>
+                                    <span className={(homeTeam && awayTeam) ? 'text-primary' : 'text-white/20'}>{(homeTeam && awayTeam) ? 'OK ✓' : 'Pendente'}</span>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
-                        <div className="pt-2 border-t border-white/5">
+                        <div className="pt-2 border-t border-white/5 flex flex-col gap-1">
+                            <span className="text-[0.35rem] text-white/20 font-mono">MATCH_ID: {matchId}</span>
                             <p className="text-[0.45rem] text-white/30 font-medium leading-relaxed italic">
-                                Se este aviso não sumir em 10 segundos, verifique se a partida ainda existe no seu painel.
+                                Verifique se a partida está ativa no painel de controle.
                             </p>
                         </div>
                     </div>
