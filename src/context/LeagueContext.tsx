@@ -1182,21 +1182,51 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         if (!data) return;
         
         const mapped = mapDBEvent(data);
-        setRawMatches(prev => prev.map(m => m.id === matchId ? {
-            ...m,
-            events: [...m.events, mapped]
-        } : m));
+        
+        let newHomeScore = 0;
+        let newAwayScore = 0;
 
-        // Update score in DB (Trigger updates the match row, and our listener handles the UI)
+        setRawMatches(prev => prev.map(m => {
+            if (m.id !== matchId) return m;
+            
+            newHomeScore = m.homeScore;
+            newAwayScore = m.awayScore;
+
+            if (event.type === 'goal' || event.type === 'penalty_goal') {
+                if (event.teamId === m.homeTeamId) newHomeScore++;
+                else newAwayScore++;
+            } else if (event.type === 'own_goal') {
+                if (event.teamId === m.homeTeamId) newAwayScore++;
+                else newHomeScore++;
+            }
+
+            return {
+                ...m,
+                events: [...m.events, mapped],
+                homeScore: newHomeScore,
+                awayScore: newAwayScore,
+                updatedAt: new Date().toISOString()
+            };
+        }));
+
+        // Update score in DB
         if (event.type === 'goal' || event.type === 'penalty_goal' || event.type === 'own_goal') {
-            const match = rawMatches.find(m => m.id === matchId);
-            if (!match) return;
-            const scoringTeamIsHome = event.type === 'own_goal' ? (event.teamId !== match.homeTeamId) : (event.teamId === match.homeTeamId);
-
             await supabase.from('matches').update({
-                home_score: scoringTeamIsHome ? match.homeScore + 1 : match.homeScore,
-                away_score: !scoringTeamIsHome ? match.awayScore + 1 : match.awayScore,
+                home_score: newHomeScore,
+                away_score: newAwayScore,
             }).eq('id', matchId);
+
+            // BROADCAST results immediately
+            supabase.channel(`league-central-${league?.id}`).send({
+                type: 'broadcast',
+                event: 'match-update',
+                payload: {
+                    matchId,
+                    homeScore: newHomeScore,
+                    awayScore: newAwayScore,
+                    updatedAt: new Date().toISOString()
+                }
+            });
         }
 
         // Lógica de Transferência de Braçadeira (Substituição ou Vermelho do Capitão)
@@ -1231,19 +1261,47 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         const event = match?.events.find(e => e.id === eventId);
         await supabase.from('match_events').delete().eq('id', eventId);
 
-        setRawMatches(prev => prev.map(m => m.id === matchId ? {
-            ...m,
-            events: m.events.filter(e => e.id !== eventId)
-        } : m));
+        let newHomeScore = 0;
+        let newAwayScore = 0;
+
+        setRawMatches(prev => prev.map(m => {
+            if (m.id !== matchId) return m;
+
+            newHomeScore = m.homeScore;
+            newAwayScore = m.awayScore;
+
+            if (event && (event.type === 'goal' || event.type === 'penalty_goal' || event.type === 'own_goal')) {
+                const scoringTeamIsHome = event.type === 'own_goal' ? (event.teamId !== m.homeTeamId) : (event.teamId === m.homeTeamId);
+                if (scoringTeamIsHome) newHomeScore = Math.max(0, newHomeScore - 1);
+                else newAwayScore = Math.max(0, newAwayScore - 1);
+            }
+
+            return {
+                ...m,
+                events: m.events.filter(e => e.id !== eventId),
+                homeScore: newHomeScore,
+                awayScore: newAwayScore,
+                updatedAt: new Date().toISOString()
+            };
+        }));
 
         if (event && (event.type === 'goal' || event.type === 'penalty_goal' || event.type === 'own_goal')) {
-            const m = rawMatches.find(rm => rm.id === matchId)!;
-            const scoringTeamIsHome = event.type === 'own_goal' ? (event.teamId !== m.homeTeamId) : (event.teamId === m.homeTeamId);
-
             await supabase.from('matches').update({
-                home_score: scoringTeamIsHome ? Math.max(0, m.homeScore - 1) : m.homeScore,
-                away_score: !scoringTeamIsHome ? Math.max(0, m.awayScore - 1) : m.awayScore,
+                home_score: newHomeScore,
+                away_score: newAwayScore,
             }).eq('id', matchId);
+
+            // BROADCAST for other spectators
+            supabase.channel(`league-central-${league?.id}`).send({
+                type: 'broadcast',
+                event: 'match-update',
+                payload: {
+                    matchId,
+                    homeScore: newHomeScore,
+                    awayScore: newAwayScore,
+                    updatedAt: new Date().toISOString()
+                }
+            });
         }
     };
 
