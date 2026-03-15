@@ -7,39 +7,53 @@ import { supabase } from '../lib/supabase';
 const MatchOverlay = () => {
     const { matchId } = useParams<{ matchId: string }>();
     const { matches, teams, loadPublicLeague } = useLeague();
-    const match = matches.find((m: Match) => m.id === matchId);
+    const match = matches.find((m: Match) => String(m.id) === String(matchId));
     
     const [localSeconds, setLocalSeconds] = useState(match?.timer || 0);
 
-    const homeTeam = teams.find(t => t.id === match?.homeTeamId);
-    const awayTeam = teams.find(t => t.id === match?.awayTeamId);
+    const homeTeamId = match?.homeTeamId;
+    const awayTeamId = match?.awayTeamId;
+    const homeTeam = teams.find(t => String(t.id) === String(homeTeamId));
+    const awayTeam = teams.find(t => String(t.id) === String(awayTeamId));
+
+    useEffect(() => {
+        if (matchId && matches.length > 0 && !match) {
+            console.log('[Overlay] Match IDs na memória:', matches.map(m => m.id));
+            console.log('[Overlay] Procurando por:', matchId);
+        }
+        if (match && teams.length > 0 && (!homeTeam || !awayTeam)) {
+            console.log('[Overlay] IDs dos times na match:', homeTeamId, awayTeamId);
+            console.log('[Overlay] IDs dos times na memória:', teams.map(t => t.id));
+        }
+    }, [matchId, match, matches, teams, homeTeam, awayTeam, homeTeamId, awayTeamId]);
 
     // Bootstrap: Se entrar direto no overlay via link, precisamos carregar a liga
     useEffect(() => {
         const bootstrap = async () => {
-            // Se já temos tudo (match e times), não precisamos de bootstrap
             if (!matchId || (match && homeTeam && awayTeam)) return;
             
-            console.log('[Overlay] Bootstrap verificando match:', matchId);
+            console.log('[Overlay] Buscando match no banco:', matchId);
 
-            // Se não temos a match, buscamos a liga dela para carregar os dados
-            if (!match) {
-                console.log('[Overlay] Match não encontrada localmente. Buscando liga via matches table...');
-                const { data, error } = await supabase
-                    .from('matches')
-                    .select('league_id')
-                    .eq('id', matchId)
-                    .single();
-                
-                if (error) {
-                    console.error('[Overlay] Erro ao buscar liga da partida:', error);
-                    return;
-                }
+            // Buscamos a liga via matches table diretamente
+            const { data: matchData, error: matchError } = await supabase
+                .from('matches')
+                .select('league_id')
+                .eq('id', matchId)
+                .maybeSingle();
+            
+            if (matchError) {
+                console.error('[Overlay] Erro crítico no Supabase:', matchError);
+                return;
+            }
 
-                if (data?.league_id) {
-                    console.log('[Overlay] Liga identificada:', data.league_id, '- Chamando loadPublicLeague...');
-                    await loadPublicLeague(data.league_id);
-                }
+            if (!matchData) {
+                console.warn('[Overlay] Partida não encontrada no banco. O ID pode estar errado.');
+                return;
+            }
+
+            if (matchData.league_id) {
+                console.log('[Overlay] Liga identificada:', matchData.league_id, '- Forçando loadPublicLeague');
+                loadPublicLeague(matchData.league_id);
             }
         };
         bootstrap();

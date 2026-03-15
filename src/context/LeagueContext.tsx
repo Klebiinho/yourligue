@@ -630,6 +630,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     follower_count: data.follower_count
                 };
                 setLeague(lg);
+                loadLeagueData(lg.id); // Garante que times e matches sejam carregados
                 return true;
             } else {
                 setLeague(null);
