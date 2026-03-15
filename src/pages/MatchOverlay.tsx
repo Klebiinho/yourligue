@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 
 const MatchOverlay = () => {
     const { matchId } = useParams<{ matchId: string }>();
-    const { matches, teams, loadPublicLeague } = useLeague();
+    const { matches, teams, league, loadPublicLeague } = useLeague();
     const match = matches.find((m: Match) => String(m.id) === String(matchId));
     
     const [localSeconds, setLocalSeconds] = useState(match?.timer || 0);
@@ -192,54 +192,76 @@ const MatchOverlay = () => {
 
     const periodLabel = match.period === 'Pênaltis' || match.period === 'Sel. Batedores' ? 'PÊNALTIS' : match.period;
 
+    const shootoutEvents = match.events.filter(e => e.type.startsWith('penalty_shootout_'));
+    const homeShootout = shootoutEvents.filter(e => e.teamId === match.homeTeamId);
+    const awayShootout = shootoutEvents.filter(e => e.teamId === match.awayTeamId);
+
     return (
-        <div className="min-h-screen w-screen bg-transparent flex items-start justify-start p-6 font-outfit select-none animate-fade-in overflow-hidden" data-state="ready">
+        <div className="min-h-screen w-screen bg-transparent flex flex-col items-start justify-start p-8 font-outfit select-none animate-fade-in overflow-hidden" data-state="ready">
             {transparencyStyles}
             
+            {/* ── League Branding Header ── */}
+            <div className="flex items-center gap-3 bg-black/80 backdrop-blur-md px-4 py-2 rounded-t-2xl border-x border-t border-white/10 shadow-2xl animate-slide-down">
+                <div className="flex items-center gap-2 pr-4 border-r border-white/10">
+                    <div className="w-5 h-5 bg-primary rounded-md flex items-center justify-center">
+                        <span className="text-[0.6rem] font-black text-white italic">YL</span>
+                    </div>
+                    <span className="text-[0.65rem] font-black text-white tracking-[0.2em] uppercase">YourLeague</span>
+                </div>
+                <div className="flex items-center gap-2 pl-1">
+                    {league?.logo && <img src={league.logo} alt="" className="w-4 h-4 object-contain" />}
+                    <span className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                        {league?.name || 'Campeonato'}
+                    </span>
+                </div>
+            </div>
+
             {/* Main Scoreboard Container */}
             <div className="flex flex-col items-start gap-1">
-                <div className="flex items-stretch h-12 bg-black/90 backdrop-blur-md rounded-xl overflow-hidden border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+                <div className="flex items-stretch h-14 bg-black/90 backdrop-blur-md rounded-tr-2xl rounded-b-2xl overflow-hidden border border-white/10 shadow-[0_12px_45px_rgba(0,0,0,0.6)] animate-slide-up">
                     
                     {/* Timer & Period Section */}
-                    <div className="bg-primary px-4 flex flex-col items-center justify-center border-r border-white/10 min-w-[70px]">
-                        <span className="text-[0.55rem] font-black text-white/70 uppercase tracking-tighter leading-none mb-0.5">
+                    <div className="bg-primary px-6 flex flex-col items-center justify-center border-r border-white/10 min-w-[90px] relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+                        <span className="text-[0.6rem] font-black text-white/70 uppercase tracking-widest leading-none mb-1">
                             {periodLabel}
                         </span>
-                        <span className="text-sm font-mono font-black text-white leading-none">
+                        <span className="text-lg font-mono font-black text-white leading-none tracking-wider text-glow-white">
                             {match.period === 'Pênaltis' || match.period === 'Sel. Batedores' ? '--:--' : formatTime(localSeconds)}
                         </span>
                     </div>
 
                     {/* Home Team */}
-                    <div className="flex items-center gap-3 px-4 border-r border-white/5 bg-white/[0.02]">
+                    <div className="flex items-center gap-4 px-5 border-r border-white/5 bg-white/[0.02]">
                         <div className="flex flex-col items-end">
-                            <span className="text-[0.75rem] font-black text-white uppercase truncate max-w-[100px] leading-none">
+                            <span className="text-[0.85rem] font-black text-white uppercase truncate max-w-[140px] leading-none tracking-wide">
                                  {homeTeam.name}
                             </span>
                         </div>
-                        <TeamLogo src={homeTeam.logo} size={28} />
-                        <div className="flex items-center justify-center w-10 h-full bg-primary/20">
-                            <span className="text-xl font-black text-primary text-glow-primary">
+                        <div className="relative group">
+                            <div className="absolute -inset-1 bg-primary/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <TeamLogo src={homeTeam.logo} size={32} className="relative z-10" />
+                        </div>
+                        <div className="flex items-center justify-center w-12 h-full bg-primary/20 border-x border-white/5">
+                            <span className="text-2xl font-black text-primary text-glow-primary">
                                 {match.homeScore}
                             </span>
                         </div>
                     </div>
 
-                    {/* Divider / VS */}
-                    <div className="flex items-center justify-center px-1 opacity-20">
-                        <div className="w-px h-6 bg-white" />
-                    </div>
-
                     {/* Away Team */}
-                    <div className="flex items-center gap-3 px-4 bg-white/[0.02]">
-                        <div className="flex items-center justify-center w-10 h-full bg-accent/20">
-                            <span className="text-xl font-black text-accent text-glow-accent">
+                    <div className="flex items-center gap-4 px-5 bg-white/[0.02]">
+                        <div className="flex items-center justify-center w-12 h-full bg-accent/20 border-x border-white/5">
+                            <span className="text-2xl font-black text-accent text-glow-accent">
                                 {match.awayScore}
                             </span>
                         </div>
-                        <TeamLogo src={awayTeam.logo} size={28} />
+                        <div className="relative group">
+                            <div className="absolute -inset-1 bg-accent/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <TeamLogo src={awayTeam.logo} size={32} className="relative z-10" />
+                        </div>
                         <div className="flex flex-col items-start">
-                            <span className="text-[0.75rem] font-black text-white uppercase truncate max-w-[100px] leading-none">
+                            <span className="text-[0.85rem] font-black text-white uppercase truncate max-w-[140px] leading-none tracking-wide">
                                 {awayTeam.name}
                             </span>
                         </div>
@@ -247,27 +269,79 @@ const MatchOverlay = () => {
                 </div>
 
                 {/* Extra Info Row (Stays below primary scoreboard) */}
-                <div className="flex gap-1">
+                <div className="flex flex-col gap-1 w-full animate-fade-in delay-200">
                     {/* Added Time */}
                     {(match.extraTime || 0) > 0 && match.period !== 'Pênaltis' && (
-                        <div className="bg-danger px-2 py-0.5 rounded-lg text-[0.6rem] font-black text-white shadow-lg animate-pulse border border-white/10">
+                        <div className="bg-danger px-3 py-1 rounded-lg text-[0.65rem] font-black text-white shadow-lg animate-pulse border border-white/10 flex items-center gap-2 self-start mt-1">
+                            <span className="w-1.5 h-1.5 bg-white rounded-full" />
                             +{match.extraTime} ACRÉSCIMO
                         </div>
                     )}
 
-                    {/* Penalty Shootout Indicators */}
-                    {match.period === 'Pênaltis' && (
-                        <div className="bg-black/80 backdrop-blur-sm px-3 py-1 rounded-xl border border-white/10 flex items-center gap-3 shadow-xl">
-                            <div className="flex gap-1.5">
-                                {match.events.filter(e => e.teamId === match.homeTeamId && (e.type === 'penalty_shootout_goal' || e.type === 'penalty_shootout_miss')).map((e, i) => (
-                                    <div key={i} className={`w-2 h-2 rounded-full ${e.type === 'penalty_shootout_goal' ? 'bg-accent shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-danger shadow-[0_0_8px_rgba(239,68,68,0.8)]'}`} />
-                                ))}
+                    {/* Detailed Penalty Shootout Panel */}
+                    {(match.period === 'Pênaltis' || (match.period === 'Finalizado' && shootoutEvents.length > 0)) && (
+                        <div className="mt-2 flex flex-col gap-1">
+                            <div className="bg-black/85 backdrop-blur-xl p-3 px-4 rounded-2xl border border-white/10 shadow-2xl min-w-[320px]">
+                                <div className="flex flex-col gap-3">
+                                    {/* Home Shots */}
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-2 flex-1">
+                                            <TeamLogo src={homeTeam.logo} size={18} />
+                                            <span className="text-[0.6rem] font-black text-white/50 uppercase tracking-widest truncate">{homeTeam.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 flex-none">
+                                            {[...Array(Math.max(5, homeShootout.length))].map((_, i) => (
+                                                <div key={`h-${i}`} 
+                                                    className={`w-3.5 h-3.5 rounded-full border border-white/10 flex items-center justify-center transition-all duration-500 ${
+                                                        !homeShootout[i] ? 'bg-white/5' : 
+                                                        homeShootout[i].type === 'penalty_shootout_goal' ? 'bg-accent shadow-[0_0_12px_rgba(16,185,129,0.5)] border-accent' : 
+                                                        'bg-danger shadow-[0_0_12px_rgba(239,68,68,0.5)] border-danger'
+                                                    }`}
+                                                >
+                                                    {homeShootout[i] && (
+                                                        <span className="text-[0.4rem] font-black text-white uppercase">
+                                                            {homeShootout[i].type === 'penalty_shootout_goal' ? 'G' : 'X'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="h-px bg-white/5" />
+
+                                    {/* Away Shots */}
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-2 flex-1 border-white/5">
+                                            <TeamLogo src={awayTeam.logo} size={18} />
+                                            <span className="text-[0.6rem] font-black text-white/50 uppercase tracking-widest truncate">{awayTeam.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 flex-none">
+                                            {[...Array(Math.max(5, awayShootout.length))].map((_, i) => (
+                                                <div key={`a-${i}`} 
+                                                    className={`w-3.5 h-3.5 rounded-full border border-white/10 flex items-center justify-center transition-all duration-500 ${
+                                                        !awayShootout[i] ? 'bg-white/5' : 
+                                                        awayShootout[i].type === 'penalty_shootout_goal' ? 'bg-accent shadow-[0_0_12px_rgba(16,185,129,0.5)] border-accent' : 
+                                                        'bg-danger shadow-[0_0_12px_rgba(239,68,68,0.5)] border-danger'
+                                                    }`}
+                                                >
+                                                    {awayShootout[i] && (
+                                                        <span className="text-[0.4rem] font-black text-white uppercase">
+                                                            {awayShootout[i].type === 'penalty_shootout_goal' ? 'G' : 'X'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="w-px h-3 bg-white/20" />
-                            <div className="flex gap-1.5">
-                                {match.events.filter(e => e.teamId === match.awayTeamId && (e.type === 'penalty_shootout_goal' || e.type === 'penalty_shootout_miss')).map((e, i) => (
-                                    <div key={i} className={`w-2 h-2 rounded-full ${e.type === 'penalty_shootout_goal' ? 'bg-accent shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-danger shadow-[0_0_8px_rgba(239,68,68,0.8)]'}`} />
-                                ))}
+                            
+                            {/* Shootout Status Footer */}
+                            <div className="self-center bg-primary/20 backdrop-blur-sm border border-primary/20 py-1 px-4 rounded-full">
+                                <span className="text-[0.55rem] font-black text-primary uppercase tracking-[0.3em]">
+                                    Disputa de Pênaltis
+                                </span>
                             </div>
                         </div>
                     )}
