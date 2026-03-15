@@ -235,7 +235,8 @@ const LeagueSelector = () => {
                                     defaultHalfLength: 45, playersPerTeam: 5, reserveLimitPerTeam: 5,
                                     substitutionsLimit: 5,
                                     allowSubstitutionReturn: true,
-                                    hasOvertime: true
+                                    hasOvertime: true,
+                                    overtimeHalfLength: 15
                                 });
                                 if (!res.error) {
                                     setNewName(''); setShowCreate(false); navigate('/');

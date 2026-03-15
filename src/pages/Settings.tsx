@@ -29,6 +29,7 @@ const Settings = () => {
     const [pointsForDraw, setPointsForDraw] = useState(String(league?.pointsForDraw ?? 1));
     const [pointsForLoss, setPointsForLoss] = useState(String(league?.pointsForLoss ?? 0));
     const [halfLength, setHalfLength] = useState(String(league?.defaultHalfLength ?? 45));
+    const [overtimeHalfLength, setOvertimeHalfLength] = useState(String(league?.overtimeHalfLength ?? 15));
     const [playersPerTeam, setPlayersPerTeam] = useState(String(league?.playersPerTeam ?? 5));
     const [reserveLimit, setReserveLimit] = useState(String(league?.reserveLimitPerTeam ?? 5));
     const [substitutionsLimit, setSubstitutionsLimit] = useState(String(league?.substitutionsLimit ?? 5));
@@ -47,6 +48,7 @@ const Settings = () => {
             setPointsForDraw(String(league.pointsForDraw ?? 1));
             setPointsForLoss(String(league.pointsForLoss ?? 0));
             setHalfLength(String(league.defaultHalfLength ?? 45));
+            setOvertimeHalfLength(String(league.overtimeHalfLength ?? 15));
             setPlayersPerTeam(String(league.playersPerTeam ?? 5));
             setReserveLimit(String(league.reserveLimitPerTeam ?? 5));
             setSubstitutionsLimit(String(league.substitutionsLimit ?? 5));
@@ -99,6 +101,7 @@ const Settings = () => {
             pointsForDraw: parseInt(pointsForDraw) || 1,
             pointsForLoss: parseInt(pointsForLoss) || 0,
             defaultHalfLength: parseInt(halfLength) || 45,
+            overtimeHalfLength: parseInt(overtimeHalfLength) || 15,
             playersPerTeam: parseInt(playersPerTeam) || 5,
             reserveLimitPerTeam: parseInt(reserveLimit) || 5,
             substitutionsLimit: parseInt(substitutionsLimit) || 5,
@@ -265,6 +268,17 @@ const Settings = () => {
                                         />
                                     </div>
                                 </div>
+                                {hasOvertime && (
+                                    <div className="space-y-2 animate-fade-in">
+                                        <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Duração Prorrogação (min)</label>
+                                        <div className="relative">
+                                            <Clock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-warning" />
+                                            <input type="number" value={overtimeHalfLength} onChange={e => setOvertimeHalfLength(e.target.value)} required min={1} max={45}
+                                                className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-warning transition-colors h-14"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Squad Size Configs */}

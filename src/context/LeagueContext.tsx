@@ -88,6 +88,7 @@ export type League = {
     pointsForDraw: number;
     pointsForLoss: number;
     defaultHalfLength: number;
+    overtimeHalfLength: number;
     playersPerTeam: number;
     reserveLimitPerTeam: number;
     substitutionsLimit: number;
@@ -367,6 +368,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
                     pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
                     pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
+                    overtimeHalfLength: l.overtime_half_length || 15,
                     playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
                     substitutionsLimit: l.substitutions_limit || 5,
                     allowSubstitutionReturn: l.allow_substitution_return ?? true,
@@ -391,6 +393,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                             id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
                             pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
                             pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
+                            overtimeHalfLength: l.overtime_half_length || 15,
                             playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
                             substitutionsLimit: l.substitutions_limit || 5,
                             allowSubstitutionReturn: l.allow_substitution_return ?? true,
@@ -433,6 +436,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
                 pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
                 pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
+                overtimeHalfLength: l.overtime_half_length || 15,
                 playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
                 substitutionsLimit: l.substitutions_limit || 5,
                 allowSubstitutionReturn: l.allow_substitution_return ?? true,
@@ -468,6 +472,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     id: data.id, name: data.name, logo: data.logo || '', maxTeams: data.max_teams,
                     pointsForWin: data.points_for_win, pointsForDraw: data.points_for_draw,
                     pointsForLoss: data.points_for_loss, defaultHalfLength: data.default_half_length,
+                    overtimeHalfLength: data.overtime_half_length || 15,
                     playersPerTeam: data.players_per_team || 5, reserveLimitPerTeam: data.reserve_limit_per_team || 5,
                     substitutionsLimit: data.substitutions_limit || 5,
                     allowSubstitutionReturn: data.allow_substitution_return ?? true,
@@ -773,6 +778,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 id: row.id, name: row.name, logo: row.logo || '', maxTeams: row.max_teams,
                 pointsForWin: row.points_for_win, pointsForDraw: row.points_for_draw,
                 pointsForLoss: row.points_for_loss, defaultHalfLength: row.default_half_length,
+                overtimeHalfLength: row.overtime_half_length || 15,
                 playersPerTeam: row.players_per_team || 5, reserveLimitPerTeam: row.reserve_limit_per_team || 5,
                 substitutionsLimit: row.substitutions_limit || 5,
                 allowSubstitutionReturn: row.allow_substitution_return ?? true,
@@ -793,6 +799,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             name: data.name, logo: data.logo, max_teams: data.maxTeams,
             points_for_win: data.pointsForWin, points_for_draw: data.pointsForDraw,
             points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
+            overtime_half_length: data.overtimeHalfLength,
             players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
             substitutions_limit: data.substitutionsLimit,
             allow_substitution_return: data.allowSubstitutionReturn,

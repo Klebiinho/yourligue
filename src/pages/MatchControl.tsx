@@ -193,10 +193,21 @@ const MatchControl = () => {
     const handleGolContra = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && !period.includes('Intervalo') && period !== 'Pênaltis') addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); };
     const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { if (matchId && match?.status === 'live' && !period.includes('Intervalo')) addEvent(matchId, { type, teamId, playerId, minute: currentMinute }); };
     const handlePeriodChange = async (newPeriod: string) => {
-        if (!matchId || !match) return;
+        if (!matchId || !match || !league) return;
         
         let newTimer = localSeconds;
         let newStatus = match.status;
+        let newHalfLength = match.halfLength || league.defaultHalfLength;
+
+        // Auto-set half length based on period type
+        if (newPeriod === '1º Tempo' || newPeriod === '2º Tempo') {
+            newHalfLength = league.defaultHalfLength;
+        } else if (newPeriod.includes('Prorrog.')) {
+            newHalfLength = league.overtimeHalfLength || 15;
+        }
+
+        const regMin = league.defaultHalfLength;
+        const otMin = league.overtimeHalfLength || 15;
 
         // Real-time functional logic
         if (newPeriod === '1º Tempo' && localSeconds > 60) {
@@ -205,19 +216,20 @@ const MatchControl = () => {
             }
         } else if (newPeriod.includes('Intervalo')) {
             newStatus = 'scheduled'; // Auto-pause
-        } else if (newPeriod === '2º Tempo' && localSeconds < (match.halfLength || 45) * 60) {
-            newTimer = (match.halfLength || 45) * 60;
-        } else if (newPeriod === '1º Prorrog.' && localSeconds < (match.halfLength || 45) * 120) {
-            newTimer = (match.halfLength || 45) * 120;
-        } else if (newPeriod === '2º Prorrog.' && localSeconds < (match.halfLength || 45) * 120 + 900) {
-            newTimer = (match.halfLength || 45) * 120 + 900;
+        } else if (newPeriod === '2º Tempo' && localSeconds < regMin * 60) {
+            newTimer = regMin * 60;
+        } else if (newPeriod === '1º Prorrog.' && localSeconds < regMin * 120) {
+            newTimer = regMin * 120;
+        } else if (newPeriod === '2º Prorrog.' && localSeconds < (regMin * 120 + otMin * 60)) {
+            newTimer = regMin * 120 + otMin * 60;
         } else if (newPeriod === 'Sel. Batedores' || newPeriod === 'Pênaltis') {
             newStatus = 'scheduled'; // Stop main clock
         }
 
         setPeriod(newPeriod);
         setLocalSeconds(newTimer);
-        await updateMatch(matchId, { period: newPeriod, status: newStatus, timer: newTimer });
+        setHalfLength(newHalfLength);
+        await updateMatch(matchId, { period: newPeriod, status: newStatus, timer: newTimer, halfLength: newHalfLength });
     };
 
     const handleSubstitution = (teamId: string, playerInId: string, playerOutId: string) => {
@@ -703,11 +715,6 @@ const MatchControl = () => {
                                 </div>
                                 {period !== 'Sel. Batedores' && period !== 'Pênaltis' && (
                                     <>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Duração (min)</label>
-                                            <input type="number" value={halfLength} onChange={e => setHalfLength(parseInt(e.target.value))}
-                                                className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm font-bold focus:border-primary outline-none h-10" />
-                                        </div>
                                         <div className="col-span-2 space-y-1.5 mb-5">
                                             <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Acréscimos (min)</label>
                                             <div className="flex gap-1.5 mb-2">
