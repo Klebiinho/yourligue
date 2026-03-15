@@ -41,7 +41,7 @@ const MatchOverlay = () => {
         <div className="fixed top-6 left-6 flex flex-col items-start gap-1 select-none font-outfit animate-fade-in origin-top-left bg-transparent">
             {/* Force transparency for the whole page in OBS/PRISM */}
             <style>{`
-                body { background: transparent !important; background-image: none !important; }
+                html, body { background: transparent !important; background-image: none !important; }
                 #root { background: transparent !important; }
             `}</style>
             
