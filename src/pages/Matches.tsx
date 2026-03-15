@@ -202,30 +202,32 @@ const Matches = () => {
             </div>
 
             {/* Search and Team Filter */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-                <div className="sm:col-span-2 relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                    <input 
-                        type="text" 
-                        placeholder="Pesquisar por time..." 
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-white placeholder:text-slate-600 focus:border-primary outline-none transition-all text-sm font-bold"
-                    />
+            {tab !== 'my_team' && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                    <div className="sm:col-span-2 relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                        <input 
+                            type="text" 
+                            placeholder="Pesquisar por time..." 
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-white placeholder:text-slate-600 focus:border-primary outline-none transition-all text-sm font-bold"
+                        />
+                    </div>
+                    <div className="relative">
+                        <select 
+                            value={teamFilter}
+                            onChange={e => setTeamFilter(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-white focus:border-primary outline-none transition-all appearance-none text-sm font-bold cursor-pointer"
+                        >
+                            <option value="" className="bg-[#07070a]">Todos os Times</option>
+                            {teams.sort((a,b) => a.name.localeCompare(b.name)).map(t => (
+                                <option key={t.id} value={t.id} className="bg-[#07070a]">{t.name}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
-                <div className="relative">
-                    <select 
-                        value={teamFilter}
-                        onChange={e => setTeamFilter(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-white focus:border-primary outline-none transition-all appearance-none text-sm font-bold cursor-pointer"
-                    >
-                        <option value="" className="bg-[#07070a]">Todos os Times</option>
-                        {teams.sort((a,b) => a.name.localeCompare(b.name)).map(t => (
-                            <option key={t.id} value={t.id} className="bg-[#07070a]">{t.name}</option>
-                        ))}
-                    </select>
-                </div>
-            </div>
+            )}
 
             {isPublicView && <AdBanner position="matches_filter" />}
 
