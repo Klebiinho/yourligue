@@ -249,6 +249,31 @@ const MatchControl = () => {
     };
 
 
+    const calculateShootoutWinner = () => {
+        if (period !== 'Pênaltis') return null;
+        const shootoutEvents = match.events.filter(e => e.type.startsWith('penalty_shootout_'));
+        const homeEvents = shootoutEvents.filter(e => e.teamId === match.homeTeamId);
+        const awayEvents = shootoutEvents.filter(e => e.teamId === match.awayTeamId);
+        const homeGoals = homeEvents.filter(e => e.type === 'penalty_shootout_goal').length;
+        const awayGoals = awayEvents.filter(e => e.type === 'penalty_shootout_goal').length;
+        const homeTaken = homeEvents.length;
+        const awayTaken = awayEvents.length;
+
+        if (homeTaken <= 5 && awayTaken <= 5) {
+            const homeRem = 5 - homeTaken;
+            const awayRem = 5 - awayTaken;
+            if (homeGoals > awayGoals + awayRem) return match.homeTeamId;
+            if (awayGoals > homeGoals + homeRem) return match.awayTeamId;
+            if (homeTaken === 5 && awayTaken === 5 && homeGoals !== awayGoals) {
+                return homeGoals > awayGoals ? match.homeTeamId : match.awayTeamId;
+            }
+        } else if (homeTaken === awayTaken && homeGoals !== awayGoals) {
+            return homeGoals > awayGoals ? match.homeTeamId : match.awayTeamId;
+        }
+        return null;
+    };
+    const shootoutWinnerId = calculateShootoutWinner();
+
     return (
         <div className="animate-fade-in relative pb-10">
             {isPublicView && <AdBanner position="top" />}
@@ -360,6 +385,7 @@ const MatchControl = () => {
                                   period === 'Intervalo (OT2)' ? 'Iniciar 2º Prorrog.' :
                                   period === '2º Prorrog.' ? (match.homeScore === match.awayScore ? 'Ir p/ Sel. Pênaltis' : 'Finalizar Jogo') :
                                   period === 'Sel. Batedores' ? 'Iniciar Pênaltis' :
+                                  period === 'Pênaltis' && shootoutWinnerId ? `Finalizar (${shootoutWinnerId === homeTeam.id ? homeTeam.name : awayTeam.name} Venceu!)` :
                                   'Finalizar Jogo'}
                              </button>
                         </>
@@ -434,52 +460,76 @@ const MatchControl = () => {
                                 if (isShootout) {
                                     const shootersIds = idx === 0 ? confirmedPenaltyShooters.home : confirmedPenaltyShooters.away;
                                     const shootoutEvents = match.events.filter(e => e.type.startsWith('penalty_shootout_'));
-                                    const isHomeTurn = shootoutEvents.length % 2 === 0;
+                                    
+                                    // Logic for rounds and turns
+                                    const totalKicks = shootoutEvents.length;
+                                    const isHomeTurn = totalKicks % 2 === 0;
                                     const isMyTurn = (idx === 0 && isHomeTurn) || (idx === 1 && !isHomeTurn);
                                     
-                                    const allKicked = shootersIds.every(id => shootoutEvents.some(e => e.playerId === id));
-                                    const hasShooters = shootersIds.length > 0;
+                                    const myEvents = shootoutEvents.filter(e => e.teamId === team.id);
+                                    const myKicksCount = myEvents.length;
+                                    
+                                    // Repetir batedores: use modulo to loop through the list
+                                    const currentTakerIndex = myKicksCount % (shootersIds.length || 1);
+                                    
+                                    // Winner is already calculated at top level: shootoutWinnerId
 
                                     return (
                                         <div className="space-y-3">
-                                            <div className={`p-4 rounded-2xl mb-2 text-center border transition-all ${isMyTurn ? 'bg-accent/10 border-accent/40 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 opacity-50'}`}>
-                                                <h3 className={`text-[0.65rem] font-black uppercase tracking-[0.2em] mb-1 ${isMyTurn ? 'text-accent' : 'text-slate-500'}`}>
-                                                    {isMyTurn ? 'Sua Vez de Bater' : 'Aguardando Adversário'}
-                                                </h3>
-                                                {isMyTurn && allKicked && hasShooters && (
-                                                    <button onClick={() => handlePeriodChange('Sel. Batedores')}
-                                                        className="mt-2 text-[0.55rem] font-black text-white bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full uppercase tracking-widest transition-all">
-                                                        + Adicionar Batedores
-                                                    </button>
-                                                )}
-                                            </div>
+                                            {shootoutWinnerId ? (
+                                                <div className={`p-4 rounded-2xl mb-4 text-center border-2 animate-bounce ${shootoutWinnerId === team.id ? 'bg-accent/20 border-accent shadow-[0_0_30px_rgba(16,185,129,0.3)]' : 'bg-black/20 border-white/10 opacity-60'}`}>
+                                                    <h3 className={`text-[0.65rem] font-black uppercase tracking-[0.2em] ${shootoutWinnerId === team.id ? 'text-accent' : 'text-slate-500'}`}>
+                                                        {shootoutWinnerId === team.id ? 'Vencedor da Disputa! 🏆' : 'Fim da Disputa'}
+                                                    </h3>
+                                                </div>
+                                            ) : (
+                                                <div className={`p-4 rounded-2xl mb-2 text-center border transition-all ${isMyTurn ? 'bg-accent/10 border-accent/40 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 opacity-50'}`}>
+                                                    <h3 className={`text-[0.65rem] font-black uppercase tracking-[0.2em] mb-1 ${isMyTurn ? 'text-accent' : 'text-slate-500'}`}>
+                                                        {isMyTurn ? 'Sua Vez de Bater' : 'Aguardando Adversário'}
+                                                    </h3>
+                                                    {isMyTurn && myKicksCount >= shootersIds.length && shootersIds.length > 0 && (
+                                                        <p className="text-[0.5rem] text-slate-500 font-bold uppercase tracking-widest animate-pulse">
+                                                            Reiniciando fila de batedores...
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
+
                                             {shootersIds.map((pid: string, sIdx: number) => {
                                                 const player = team.players.find(p => p.id === pid);
                                                 if (!player) return null;
-                                                const event = shootoutEvents.find(e => e.playerId === pid);
-                                                const hasKicked = !!event;
-                                                const isCurrentTaker = isMyTurn && shootersIds.findIndex(id => !shootoutEvents.some(e => e.playerId === id)) === sIdx;
+                                                
+                                                // Calculate how many times THIS specific shooter has kicked so far
+                                                const kicksByThisPlayer = myEvents.filter(e => e.playerId === pid).length;
+                                                const isCurrentTaker = isMyTurn && sIdx === currentTakerIndex && !shootoutWinnerId;
 
                                                 return (
-                                                    <div key={pid} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${hasKicked ? 'opacity-40 bg-black/20 border-white/5' : isCurrentTaker ? 'bg-white/5 border-primary shadow-lg scale-[1.02]' : 'bg-white/[0.02] border-white/10'}`}>
-                                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs bg-black/20 text-white">
+                                                    <div key={`${pid}-${sIdx}`} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${isCurrentTaker ? 'bg-white/5 border-primary shadow-lg scale-[1.02]' : 'bg-white/[0.02] border-white/10 opacity-70'}`}>
+                                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${isCurrentTaker ? 'bg-primary text-white' : 'bg-black/20 text-white'}`}>
                                                             {sIdx + 1}º
                                                         </div>
-                                                        <div className="flex-1 text-[0.75rem] font-black text-white uppercase truncate">
-                                                            {player.name}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-[0.75rem] font-black text-white uppercase truncate">
+                                                                {player.name}
+                                                            </div>
+                                                            {kicksByThisPlayer > 0 && (
+                                                                <div className="flex gap-1 mt-1">
+                                                                    {myEvents.filter(e => e.playerId === pid).map((e, i) => (
+                                                                        <div key={i} className={`text-[0.5rem] font-black uppercase px-1.5 py-0.5 rounded ${e.type === 'penalty_shootout_goal' ? 'bg-accent/20 text-accent' : 'bg-danger/20 text-danger'}`}>
+                                                                            {e.type === 'penalty_shootout_goal' ? 'GOL' : 'X'}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                         <div className="flex items-center gap-2">
-                                                            {hasKicked ? (
-                                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-black ${event?.type === 'penalty_shootout_goal' ? 'text-accent' : 'text-danger'}`}>
-                                                                    {event?.type === 'penalty_shootout_goal' ? <Target size={20} /> : <XCircle size={20} />}
-                                                                </div>
-                                                            ) : (
+                                                            {isCurrentTaker && (
                                                                 <>
-                                                                    <button disabled={match.status !== 'live' || !isCurrentTaker} onClick={() => handleGol(team.id, player.id)} 
+                                                                    <button disabled={match.status !== 'live'} onClick={() => handleGol(team.id, player.id)} 
                                                                         className="w-10 h-10 rounded-lg bg-accent text-white flex items-center justify-center active:scale-90 disabled:opacity-20 shadow-lg shadow-accent/20 hover:brightness-110 transition-all">
                                                                         <Target size={18} strokeWidth={3} />
                                                                     </button>
-                                                                    <button disabled={match.status !== 'live' || !isCurrentTaker} onClick={() => handleMiss(team.id, player.id)} 
+                                                                    <button disabled={match.status !== 'live'} onClick={() => handleMiss(team.id, player.id)} 
                                                                         className="w-10 h-10 rounded-lg bg-danger text-white flex items-center justify-center font-black text-lg active:scale-90 disabled:opacity-20 shadow-lg shadow-danger/20 hover:brightness-110 transition-all">
                                                                         X
                                                                     </button>
