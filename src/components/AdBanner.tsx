@@ -37,7 +37,7 @@ const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
     const ad = positionAds[currentIndex];
     const activeMediaUrl = (position === 'home_highlight' && ad.square_media_url) 
         ? ad.square_media_url 
-        : (isMobile && ad.mobile_media_url) 
+        : ((isMobile || position === 'teams_list') && ad.mobile_media_url) 
             ? ad.mobile_media_url 
             : ad.desktop_media_url;
 
@@ -80,7 +80,7 @@ const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
         halftime: "w-full aspect-video max-w-3xl mx-auto my-10",
         overlay: "fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-6",
         home_stats: "w-full aspect-[3/1] sm:aspect-[6/1] mb-8",
-        teams_list: "w-full h-32 sm:h-40 mb-8",
+        teams_list: "w-full aspect-[3/1] mb-8",
         matches_filter: "w-full h-32 sm:h-40 mb-8",
         live_top: "w-full h-32 sm:h-40 mb-8",
         standings_info: "w-full h-32 sm:h-40 mb-8",
