@@ -112,6 +112,8 @@ export type Ad = {
     link_url?: string;
     duration: number;
     active: boolean;
+    display_order?: number;
+    created_at?: string;
 };
 
 // ─── Context Type ────────────────────────────────────────────
@@ -186,6 +188,7 @@ interface LeagueContextType {
     addAd: (ad: Omit<Ad, 'id' | 'league_id' | 'active'>) => Promise<{ error: string | null }>;
     updateAd: (id: string, ad: Partial<Ad>) => Promise<{ error: string | null }>;
     deleteAd: (id: string) => Promise<{ error: string | null }>;
+    reorderAds: (reorderedAds: Ad[]) => Promise<void>;
 }
 
 // ─── Mappings (DB to Frontend) ──────────────────────────────
@@ -454,6 +457,49 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         await loadLeagues();
     };
 
+    const addAd = async (adData: any) => {
+        if (!league) return { error: 'No league selected' };
+        const maxOrder = ads.reduce((max, a) => Math.max(max, a.display_order || 0), 0);
+        const { data, error } = await supabase.from('ads').insert({
+            ...adData,
+            league_id: league.id,
+            display_order: maxOrder + 1,
+            active: true
+        }).select().single();
+        if (!error && data) {
+            setAds(prev => [...prev, { ...data, display_order: data.display_order || 0 }].sort((a, b) => (a.display_order || 0) - (b.display_order || 0)));
+            return { error: null };
+        }
+        return { error: error?.message || 'Error adding ad' };
+    };
+
+    const updateAd = async (id: string, updates: any) => {
+        const { error } = await supabase.from('ads').update(updates).eq('id', id);
+        if (!error) {
+            setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a).sort((a, b) => (a.display_order || 0) - (b.display_order || 0)));
+            return { error: null };
+        }
+        return { error: error.message };
+    };
+
+    const deleteAd = async (id: string) => {
+        if (!league) return { error: 'No league selected' };
+        const { error } = await supabase.from('ads').delete().eq('id', id);
+        if (!error) {
+            setAds(prev => prev.filter(a => a.id !== id));
+            return { error: null };
+        }
+        return { error: error.message };
+    };
+
+    const reorderAds = async (reorderedAds: Ad[]) => {
+        setAds(reorderedAds); // Optimistic update
+        const updates = reorderedAds.map((ad, index) => 
+            supabase.from('ads').update({ display_order: index }).eq('id', ad.id)
+        );
+        await Promise.all(updates);
+    };
+
     const searchLeagues = async (query: string): Promise<League[]> => {
         // Obter todas as ligas e contar acompanhantes
         // Para ordenar por 'mais acompanhantes', precisamos de uma consulta que conte a tabela followed_leagues
@@ -589,15 +635,32 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         loadSupportCounts(leagueId);
 
         // Fetch everything in parallel
-        const [teamsRes, matchesRes, bracketsRes] = await Promise.all([
+        const [teamsRes, matchesRes, bracketsRes, adsRes] = await Promise.all([
             supabase.from('teams').select('*, players(*)').eq('league_id', leagueId).order('created_at'),
             supabase.from('matches').select('*, match_events(*)').eq('league_id', leagueId).order('updated_at', { ascending: false }).order('created_at', { ascending: false }),
-            supabase.from('brackets').select('*').eq('league_id', leagueId).order('match_order')
+            supabase.from('brackets').select('*').eq('league_id', leagueId).order('match_order'),
+            supabase.from('ads').select('*').eq('league_id', leagueId).order('display_order', { ascending: true })
         ]);
 
         if (teamsRes.data) setRawTeams(teamsRes.data.map(mapDBTeam));
         if (matchesRes.data) setRawMatches(matchesRes.data.map(mapDBMatch));
         if (bracketsRes.data) setBrackets(bracketsRes.data.map(mapDBBracket));
+        if (adsRes.data) setAds(adsRes.data.map((a: any) => ({
+            id: a.id,
+            league_id: a.league_id,
+            title: a.title,
+            desktop_media_url: a.desktop_media_url,
+            mobile_media_url: a.mobile_media_url,
+            square_media_url: a.square_media_url,
+            media_type: a.media_type,
+            positions: a.positions,
+            object_position: a.object_position,
+            link_url: a.link_url,
+            duration: a.duration,
+            active: a.active,
+            display_order: a.display_order || 0,
+            created_at: a.created_at
+        })));
 
         setDataLoading(false);
     }, [loadUserInteractions, loadSupportCounts]);
@@ -1519,76 +1582,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
 
-    const addAd = async (ad: Omit<Ad, 'id' | 'league_id' | 'active'>) => {
-        if (!league) return { error: 'No league selected' };
-        console.log('[LeagueContext] Adding Ad:', ad);
-        try {
-            const { data, error } = await supabase.from('ads').insert([
-                { ...ad, league_id: league.id, active: true }
-            ]).select('id').single();
-            
-            if (error) {
-                console.error('[LeagueContext] Add Ad Error:', error);
-                return { error: error.message };
-            }
-            // Realtime will handle the full update if identity is full, 
-            // but for now we'll just return success and let the local fetch/state handle it
-            console.log('[LeagueContext] Add Ad Success:', data);
-            return { error: null };
-        } catch (err: any) {
-            console.error('[LeagueContext] Add Ad Exception:', err);
-            return { error: err.message || 'Erro de rede ao adicionar propaganda' };
-        }
-    };
-
-    const updateAd = async (id: string, updates: Partial<Ad>) => {
-        if (!league) return { error: 'No league selected' };
-        console.log('[LeagueContext] Updating Ad:', id, updates);
-        try {
-            // Simplified update without select to avoid Safari fetch blocks
-            const { error } = await supabase.from('ads').update(updates).eq('id', id);
-            
-            if (error) {
-                console.error('[LeagueContext] Update Ad Error:', error);
-                return { error: error.message || JSON.stringify(error) };
-            }
-            
-            console.log('[LeagueContext] Update Ad Success');
-            setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
-            return { error: null };
-        } catch (err: any) {
-            // Safari false-positive handling: if we updated state, we might treat 'Load failed' as a network glitch but assume success if state exists
-            console.error('[LeagueContext] Update Ad Exception:', err);
-            if (err.message === 'Load failed') {
-                // Optimistic update for Safari when it blocks the response
-                setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
-                return { error: null };
-            }
-            return { error: err.message || 'Erro de rede ao atualizar propaganda' };
-        }
-    };
-
-    const deleteAd = async (id: string) => {
-        if (!league) return { error: 'No league selected' };
-        const { error } = await supabase.from('ads').delete().eq('id', id);
-        if (!error) {
-            setAds(prev => prev.filter(a => a.id !== id));
-            return { error: null };
-        }
-        return { error: error.message };
-    };
-
-    useEffect(() => {
-        if (!league) {
-            setAds([]);
-            return;
-        }
-        const fetchAds = async () => {
-            const { data } = await supabase.from('ads').select('*').eq('league_id', league.id);
-            if (data) setAds(data as Ad[]);
-        };
-        fetchAds();
-    }, [league?.id]);
 
     return (
         <LeagueContext.Provider value={{
@@ -1603,7 +1596,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
             showAuthModal, setShowAuthModal,
             supportCounts, notifications, clearNotification, leagueBasePath,
-            ads, addAd, updateAd, deleteAd
+            ads, addAd, updateAd, deleteAd, reorderAds
         }}>
             {children}
         </LeagueContext.Provider>

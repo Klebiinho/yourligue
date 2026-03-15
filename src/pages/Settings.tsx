@@ -3,7 +3,7 @@ import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
 import TeamLogo from '../components/TeamLogo';
 import { useNavigate } from 'react-router-dom';
-import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Check, Edit2, Smartphone } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Check, Edit2, Smartphone, ArrowUp, ArrowDown } from 'lucide-react';
 
 const AD_POSITIONS = [
     { id: 'top', label: 'Topo da Página' },
@@ -59,7 +59,7 @@ const Settings = () => {
     }, [league]);
 
     // Ads Management State
-    const { ads, addAd, updateAd, deleteAd } = useLeague();
+    const { ads, addAd, updateAd, deleteAd, reorderAds } = useLeague();
     const [isAddingAd, setIsAddingAd] = useState(false);
     const [formAd, setFormAd] = useState({
         title: '',
@@ -742,6 +742,40 @@ const Settings = () => {
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-1.5 sm:gap-2 flex-none" onClick={e => e.stopPropagation()}>
+                                            {/* Reorder Controls */}
+                                            <div className="flex flex-col gap-1 mr-1">
+                                                <button
+                                                    onClick={() => {
+                                                        const index = ads.findIndex(a => a.id === ad.id);
+                                                        if (index > 0) {
+                                                            const newAds = [...ads];
+                                                            [newAds[index - 1], newAds[index]] = [newAds[index], newAds[index - 1]];
+                                                            reorderAds(newAds);
+                                                        }
+                                                    }}
+                                                    disabled={ads.findIndex(a => a.id === ad.id) === 0}
+                                                    className="p-1.5 rounded bg-white/5 text-slate-500 hover:text-primary hover:bg-white/10 disabled:opacity-0 transition-all border border-transparent hover:border-white/10"
+                                                    title="Mover para cima"
+                                                >
+                                                    <ArrowUp size={12} strokeWidth={3} />
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        const index = ads.findIndex(a => a.id === ad.id);
+                                                        if (index < ads.length - 1) {
+                                                            const newAds = [...ads];
+                                                            [newAds[index + 1], newAds[index]] = [newAds[index], newAds[index + 1]];
+                                                            reorderAds(newAds);
+                                                        }
+                                                    }}
+                                                    disabled={ads.findIndex(a => a.id === ad.id) === ads.length - 1}
+                                                    className="p-1.5 rounded bg-white/5 text-slate-500 hover:text-primary hover:bg-white/10 disabled:opacity-0 transition-all border border-transparent hover:border-white/10"
+                                                    title="Mover para baixo"
+                                                >
+                                                    <ArrowDown size={12} strokeWidth={3} />
+                                                </button>
+                                            </div>
+
                                             <button
                                                 onClick={async () => {
                                                     const { error } = await updateAd(ad.id, { active: !ad.active });
