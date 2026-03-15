@@ -96,6 +96,7 @@ export type League = {
     hasOvertime: boolean;
     slug: string;
     userId: string;
+    follower_count?: { count: number }[];
 };
 
 export type Ad = {
@@ -443,27 +444,47 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const searchLeagues = async (query: string): Promise<League[]> => {
-        const { data } = await supabase
+        // Obter todas as ligas e contar acompanhantes
+        // Para ordenar por 'mais acompanhantes', precisamos de uma consulta que conte a tabela followed_leagues
+        const { data, error } = await supabase
             .from('leagues')
-            .select('*')
-            .ilike('name', `%${query}%`)
-            .limit(10);
+            .select(`
+                *,
+                follower_count:followed_leagues(count)
+            `);
 
-        if (data) {
-            return data.map(l => ({
-                id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
-                pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
-                pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
-                overtimeHalfLength: l.overtime_half_length || 15,
-                playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
-                substitutionsLimit: l.substitutions_limit || 5,
-                allowSubstitutionReturn: l.allow_substitution_return ?? true,
-                hasOvertime: l.has_overtime ?? true,
-                slug: l.slug || '',
-                userId: l.user_id
-            }));
+        if (error) {
+            console.error('Error searching leagues:', error);
+            return [];
         }
-        return [];
+
+        let filtered = data || [];
+
+        if (query.trim()) {
+            filtered = filtered.filter(l => l.name.toLowerCase().includes(query.toLowerCase()));
+        }
+
+        // Ordenar por acompanhantes (desc) e depois por nome
+        const results = filtered.sort((a, b) => {
+            const countA = (a.follower_count && a.follower_count[0]?.count) || 0;
+            const countB = (b.follower_count && b.follower_count[0]?.count) || 0;
+            if (countB !== countA) return countB - countA;
+            return a.name.localeCompare(b.name);
+        }).slice(0, 15);
+
+        return results.map(l => ({
+            id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
+            pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
+            pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
+            overtimeHalfLength: l.overtime_half_length || 15,
+            playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
+            substitutionsLimit: l.substitutions_limit || 5,
+            allowSubstitutionReturn: l.allow_substitution_return ?? true,
+            hasOvertime: l.has_overtime ?? true,
+            slug: l.slug || '',
+            userId: l.user_id,
+            follower_count: l.follower_count // Passado para o componente UI
+        }));
     };
 
     const loadPublicLeague = useCallback(async (slugOrId: string) => {

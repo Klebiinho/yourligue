@@ -20,16 +20,14 @@ const LeagueSelector = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (activeTab === 'explore' && searchQuery.length > 2) {
+        if (activeTab === 'explore') {
             const delayDebounceFn = setTimeout(async () => {
                 setSearching(true);
                 const results = await searchLeagues(searchQuery);
                 setSearchResults(results);
                 setSearching(false);
-            }, 500);
+            }, searchQuery.length > 0 ? 500 : 0);
             return () => clearTimeout(delayDebounceFn);
-        } else if (activeTab === 'explore') {
-            setSearchResults([]);
         }
     }, [searchQuery, activeTab]);
 
@@ -186,24 +184,14 @@ const LeagueSelector = () => {
                     )}
 
                     {activeTab === 'explore' && (
-                        searchQuery.length < 3 ? (
-                            <div className="glass-panel py-20 px-10 text-center space-y-6">
-                                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
-                                    <Search size={40} className="text-slate-700" strokeWidth={1} />
-                                </div>
-                                <div className="space-y-2">
-                                    <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Explorar Ligas</h3>
-                                    <p className="text-slate-500 font-medium text-sm">Digite pelo menos 3 caracteres para buscar.</p>
-                                </div>
-                            </div>
-                        ) : searching ? (
+                        searching ? (
                             <div className="flex flex-col items-center justify-center py-20 gap-4">
                                 <div className="w-10 h-10 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
                                 <p className="text-slate-500 font-black text-[0.65rem] uppercase tracking-widest">Buscando...</p>
                             </div>
                         ) : searchResults.length === 0 ? (
                             <div className="glass-panel py-20 px-10 text-center space-y-6">
-                                <p className="text-slate-500 font-medium text-sm">Nenhuma liga encontrada para "{searchQuery}"</p>
+                                <p className="text-slate-500 font-medium text-sm">Nenhuma liga encontrada {searchQuery ? `para "${searchQuery}"` : ''}</p>
                             </div>
                         ) : (
                             searchResults.map(l => (
@@ -322,8 +310,16 @@ const LeagueItem = ({
                         {type === 'owned' && currentLeagueId === league.id && <span className="bg-primary/20 text-primary text-[0.55rem] font-black px-2 py-0.5 rounded tracking-widest leading-none border border-primary/20">ATIVA</span>}
                         {isOwned && type !== 'owned' && <span className="bg-primary/20 text-primary text-[0.55rem] font-black px-2 py-0.5 rounded tracking-widest leading-none border border-primary/20">MINHA</span>}
                     </div>
-                    <div className="flex items-center gap-2 text-[0.6rem] font-bold text-slate-500 uppercase tracking-widest group-hover:text-primary transition-colors">
-                        {type === 'owned' ? 'Clique para gerenciar' : 'Clique para visualizar'} <Settings2 size={10} strokeWidth={3} />
+                    <div className="flex items-center gap-3 text-[0.6rem] font-bold uppercase tracking-widest transition-colors">
+                        <span className="text-slate-500 group-hover:text-primary">
+                            {type === 'owned' ? 'Clique para gerenciar' : 'Clique para visualizar'}
+                        </span>
+                        {league.follower_count?.[0]?.count !== undefined && (
+                            <span className="flex items-center gap-1 text-slate-600 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                                <Bell size={10} className="text-primary" /> {league.follower_count[0].count}
+                            </span>
+                        )}
+                        <Settings2 size={10} strokeWidth={3} className="text-slate-500 group-hover:text-primary" />
                     </div>
                 </div>
             )}
