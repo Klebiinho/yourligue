@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Swords, PlusCircle, Play, Trash2, Edit2, Calendar, MapPin, AlertCircle, Clock, CheckCircle2, Signal } from 'lucide-react';
+import { Swords, PlusCircle, Play, Trash2, Edit2, Calendar, MapPin, AlertCircle, Clock, CheckCircle2, Signal, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const Matches = () => {
-    const { teams, matches, createMatch, startMatch, deleteMatch, updateMatch, isPublicView, isAdmin, leagueBasePath } = useLeague();
+    const { user } = useAuth();
+    const { teams, matches, userInteractions, createMatch, startMatch, deleteMatch, updateMatch, isPublicView, isAdmin, leagueBasePath } = useLeague();
     const navigate = useNavigate();
     const [homeTeamId, setHomeTeamId] = useState(teams[0]?.id || '');
     const [awayTeamId, setAwayTeamId] = useState(teams[1]?.id || '');
@@ -15,7 +17,7 @@ const Matches = () => {
     const [location, setLocation] = useState('');
     const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
     const [error, setError] = useState('');
-    const [tab, setTab] = useState<'all' | 'scheduled' | 'live' | 'finished'>('all');
+    const [tab, setTab] = useState<'all' | 'scheduled' | 'live' | 'finished' | 'my_team'>('all');
     const [formOpen, setFormOpen] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -64,17 +66,23 @@ const Matches = () => {
         navigate(`${leagueBasePath}/match/${id}`);
     };
 
+    const myTeamIds = userInteractions.map(i => i.teamId);
     const filteredMatches = matches
-        .filter(m => tab === 'all' || m.status === tab)
+        .filter(m => {
+            if (tab === 'all') return true;
+            if (tab === 'my_team') return myTeamIds.includes(m.homeTeamId) || myTeamIds.includes(m.awayTeamId);
+            return m.status === tab;
+        })
         .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
     const formatDate = (dt?: string) => dt ? new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 
     const tabConfig = [
-        { key: 'all', label: 'Todas', count: matches.length },
-        { key: 'live', label: 'AO VIVO', count: matches.filter(m => m.status === 'live').length },
-        { key: 'scheduled', label: 'Agendadas', count: matches.filter(m => m.status === 'scheduled').length },
-        { key: 'finished', label: 'Concluídas', count: matches.filter(m => m.status === 'finished').length },
-    ] as const;
+        ...(isPublicView ? [{ key: 'my_team' as const, label: 'MEU TIME', count: matches.filter(m => myTeamIds.includes(m.homeTeamId) || myTeamIds.includes(m.awayTeamId)).length }] : []),
+        { key: 'all' as const, label: 'Todas', count: matches.length },
+        { key: 'live' as const, label: 'AO VIVO', count: matches.filter(m => m.status === 'live').length },
+        { key: 'scheduled' as const, label: 'Agendadas', count: matches.filter(m => m.status === 'scheduled').length },
+        { key: 'finished' as const, label: 'Concluídas', count: matches.filter(m => m.status === 'finished').length },
+    ];
 
     return (
         <div className="animate-fade-in">
@@ -163,12 +171,19 @@ const Matches = () => {
             {/* Filter Tabs */}
             <div className="flex gap-1.5 mb-5 overflow-x-auto no-scrollbar pb-1">
                 {tabConfig.map(({ key, label, count }) => (
-                    <button key={key} onClick={() => setTab(key)}
+                    <button key={key} onClick={() => {
+                        if (key === 'my_team' && !user) {
+                            navigate('/entrar');
+                            return;
+                        }
+                        setTab(key);
+                    }}
                         className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.6rem] font-black uppercase tracking-widest transition-all duration-300 flex-none ${tab === key
                             ? key === 'live' ? 'bg-danger text-white shadow-[0_4px_15px_rgba(239,68,68,0.3)]' : 'bg-accent text-white shadow-[0_4px_15px_rgba(16,185,129,0.3)]'
                             : 'bg-white/5 border border-white/5 text-slate-500 hover:text-slate-300'
                             }`}>
                         {key === 'live' && <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
+                        {key === 'my_team' && <Heart size={12} className={tab === key ? 'text-white' : 'text-danger'} fill="currentColor" />}
                         {label}
                         <span className={`px-1.5 py-0.5 rounded-md text-[0.55rem] font-black ${tab === key ? 'bg-black/20' : 'bg-white/10'}`}>{count}</span>
                     </button>
