@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useLeague, type Player } from '../context/LeagueContext';
 import { Shield, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, Star, PlusCircle, GripVertical, ArrowDownUp, Heart, Wind } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
@@ -6,7 +7,16 @@ import AdBanner from '../components/AdBanner';
 
 const Teams = () => {
     const { league, teams, addTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain, reorderPlayers, isPublicView, isAdmin, interactWithTeam, userInteractions, supportCounts } = useLeague();
-    const [activeTeamId, setActiveTeamId] = useState<string | null>(teams[0]?.id ?? null);
+    const { teamId } = useParams<{ teamId: string }>();
+    const [activeTeamId, setActiveTeamId] = useState<string | null>(teamId || teams[0]?.id || null);
+
+    useEffect(() => {
+        if (teamId) {
+            setActiveTeamId(teamId);
+        } else if (!activeTeamId && teams.length > 0) {
+            setActiveTeamId(teams[0].id);
+        }
+    }, [teamId, teams]);
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLogo, setNewTeamLogo] = useState('');
     const [error, setError] = useState('');

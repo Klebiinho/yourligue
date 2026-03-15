@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
+import { useNavigate } from 'react-router-dom';
 import { Shuffle, Shield, Trophy, LayoutGrid, Network, Info, ChevronRight, Check, X, Users } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const Bracket = () => {
-    const { teams, brackets, generateBracket, updateBracket, generateGroups, isPublicView, isAdmin } = useLeague();
+    const { teams, brackets, generateBracket, updateBracket, generateGroups, isPublicView, isAdmin, leagueBasePath } = useLeague();
+    const navigate = useNavigate();
     const [mode, setMode] = useState<'bracket' | 'groups'>('bracket');
     const [generating, setGenerating] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -52,7 +54,10 @@ const Bracket = () => {
                 <div onClick={() => { if (!isPublicView && isAdmin) { setEditingId(b.id); setEditHome(String(b.homeScore)); setEditAway(String(b.awayScore)); } }}
                     className={`w-64 bg-white/3 border ${b.status === 'finished' ? 'border-primary/30 shadow-lg shadow-primary/10' : 'border-white/5 shadow-xl'} rounded-2xl overflow-hidden ${(isPublicView || !isAdmin) ? 'cursor-default' : 'cursor-pointer'} backdrop-blur-md`}>
 
-                    <div className={`flex items-center gap-3 p-3 transition-colors ${b.status === 'finished' && b.homeScore > b.awayScore ? 'bg-primary/20 text-white' : 'hover:bg-white/5'}`}>
+                    <div 
+                        onClick={(e) => { if (ht) { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${ht.id}`); } }}
+                        className={`flex items-center gap-3 p-3 transition-colors cursor-pointer ${b.status === 'finished' && b.homeScore > b.awayScore ? 'bg-primary/20 text-white' : 'hover:bg-white/10'}`}
+                    >
                         <TeamLogo src={ht?.logo} size={28} />
                         <span className={`flex-1 font-outfit font-black text-[0.7rem] uppercase tracking-wider truncate ${ht ? 'text-white' : 'text-slate-600 italic'}`}>
                             {ht?.name || 'A definir'}
@@ -64,7 +69,10 @@ const Bracket = () => {
 
                     <div className="h-px bg-white/5" />
 
-                    <div className={`flex items-center gap-3 p-3 transition-colors ${b.status === 'finished' && b.awayScore > b.homeScore ? 'bg-primary/20 text-white' : 'hover:bg-white/5'}`}>
+                    <div 
+                        onClick={(e) => { if (at) { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${at.id}`); } }}
+                        className={`flex items-center gap-3 p-3 transition-colors cursor-pointer ${b.status === 'finished' && b.awayScore > b.homeScore ? 'bg-primary/20 text-white' : 'hover:bg-white/10'}`}
+                    >
                         <TeamLogo src={at?.logo} size={28} />
                         <span className={`flex-1 font-outfit font-black text-[0.7rem] uppercase tracking-wider truncate ${at ? 'text-white' : 'text-slate-600 italic'}`}>
                             {at?.name || 'A definir'}
@@ -239,7 +247,9 @@ const Bracket = () => {
                                     </div>
                                     <div className="p-4 space-y-2">
                                         {groups[gn].map((t, idx) => (
-                                            <div key={t.id} className="flex items-center gap-4 p-3.5 rounded-xl bg-white/3 border border-white/5 hover:bg-white/5 transition-all group">
+                                            <div key={t.id} 
+                                                onClick={() => navigate(`${leagueBasePath}/teams/${t.id}`)}
+                                                className="flex items-center gap-4 p-3.5 rounded-xl bg-white/3 border border-white/5 hover:bg-white/10 transition-all group cursor-pointer">
                                                 <div className="relative">
                                                     <TeamLogo src={t.logo} size={36} />
                                                     <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-black/60 flex items-center justify-center text-[0.55rem] font-bold text-slate-400 group-hover:text-white transition-colors">

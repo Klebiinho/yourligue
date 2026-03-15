@@ -1,10 +1,12 @@
 import { useLeague } from '../context/LeagueContext';
+import { useNavigate } from 'react-router-dom';
 import { Trophy, Info, Medal, TrendingUp, Heart, Wind, Star } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const Standings = () => {
-    const { teams, matches, isPublicView, userInteractions, interactWithTeam } = useLeague();
+    const { teams, matches, isPublicView, userInteractions, interactWithTeam, leagueBasePath } = useLeague();
+    const navigate = useNavigate();
 
     // The stats are already calculated and sorted in LeagueContext useMemo
     const sortedTeams = [...teams].sort((a: any, b: any) => {
@@ -90,7 +92,9 @@ const Standings = () => {
                                         const isMyTeam = team.id === myTeamId;
 
                                         return (
-                                            <tr key={team.id} className={`group hover:bg-white/[0.03] transition-all duration-300 relative ${isTop ? 'bg-primary/[0.03]' : isZone ? 'bg-danger/[0.02]' : ''} ${isMyTeam ? 'bg-accent/[0.05]' : ''}`}>
+                                            <tr key={team.id} 
+                                                onClick={() => navigate(`${leagueBasePath}/teams/${team.id}`)}
+                                                className={`group hover:bg-white/[0.06] transition-all duration-300 relative cursor-pointer ${isTop ? 'bg-primary/[0.03]' : isZone ? 'bg-danger/[0.02]' : ''} ${isMyTeam ? 'bg-accent/[0.05]' : ''}`}>
                                                 {/* Position # */}
                                                 <td className="px-4 py-4.5 text-center">
                                                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black font-outfit text-xs transition-all duration-500 group-hover:scale-110 mx-auto ${

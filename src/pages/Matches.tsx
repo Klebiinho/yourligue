@@ -256,7 +256,10 @@ const Matches = () => {
                                 {/* Match Header Row */}
                                 <div className="flex items-center gap-3 sm:gap-4">
                                     {/* Home */}
-                                    <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                                    <div 
+                                        onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${ht?.id}`); }}
+                                        className="flex flex-col items-center gap-1 flex-1 min-w-0 cursor-pointer hover:bg-white/5 p-2 rounded-2xl transition-all"
+                                    >
                                         <TeamLogo src={ht?.logo} size={38} />
                                         <span className="text-[0.55rem] sm:text-[0.65rem] font-black text-white uppercase tracking-wide w-full text-center font-outfit line-clamp-2 leading-tight">{ht?.name}</span>
                                     </div>
@@ -293,7 +296,10 @@ const Matches = () => {
                                     </div>
 
                                     {/* Away */}
-                                    <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                                    <div 
+                                        onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${at?.id}`); }}
+                                        className="flex flex-col items-center gap-2 flex-1 min-w-0 cursor-pointer hover:bg-white/5 p-2 rounded-2xl transition-all"
+                                    >
                                         <div className="transform transition-transform group-hover:scale-110 duration-500">
                                             <TeamLogo src={at?.logo} size={42} className="shadow-lg" />
                                         </div>

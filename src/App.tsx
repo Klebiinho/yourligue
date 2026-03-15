@@ -70,6 +70,7 @@ const PublicLayout = () => (
           <Route path="standings" element={<Standings />} />
           <Route path="bracket" element={<Bracket />} />
           <Route path="teams" element={<Teams />} />
+          <Route path="teams/:teamId" element={<Teams />} />
           <Route path="match/:matchId" element={<MatchControl />} />
 
           <Route path="*" element={<Navigate to="." replace />} />
@@ -161,6 +162,7 @@ const AppRouter = () => {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/teams" element={<Teams />} />
+            <Route path="/teams/:teamId" element={<Teams />} />
             <Route path="/teams-dashboard" element={<TeamsDashboard />} />
             <Route path="/matches" element={<Matches />} />
             <Route path="/standings" element={<Standings />} />

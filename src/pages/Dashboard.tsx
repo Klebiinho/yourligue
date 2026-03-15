@@ -173,7 +173,7 @@ const Dashboard = () => {
                                         className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 sm:py-5 cursor-pointer transition-all duration-200 ${isLive ? 'bg-danger/[0.04]' : 'hover:bg-white/[0.03]'}`}>
 
                                         {/* Home: logo + nome */}
-                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <div onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${ht?.id}`); }} className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer h-full hover:bg-white/5 p-1 rounded-xl transition-all">
                                             <TeamLogo src={ht?.logo} size={30} />
                                             <span className="font-bold text-[0.7rem] sm:text-sm truncate leading-tight">{ht?.name}</span>
                                         </div>
@@ -205,7 +205,7 @@ const Dashboard = () => {
                                         </div>
 
                                         {/* Away: nome + logo */}
-                                        <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                                        <div onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${at?.id}`); }} className="flex items-center gap-2 flex-1 min-w-0 justify-end cursor-pointer h-full hover:bg-white/5 p-1 rounded-xl transition-all">
                                             <span className="font-bold text-[0.7rem] sm:text-sm truncate text-right leading-tight">{at?.name}</span>
                                             <TeamLogo src={at?.logo} size={30} />
                                         </div>
@@ -244,7 +244,10 @@ const Dashboard = () => {
                                 sortedTeams.slice(0, 5).map((team, i) => {
                                     const pts = (team.stats?.wins || 0) * (league?.pointsForWin || 3) + (team.stats?.draws || 0) * (league?.pointsForDraw || 1);
                                     return (
-                                        <div key={team.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3.5 hover:bg-white/[0.03] transition-colors">
+                                        <div key={team.id} 
+                                            onClick={() => navigate(`${leagueBasePath}/teams/${team.id}`)}
+                                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3.5 hover:bg-white/[0.08] transition-all cursor-pointer group"
+                                        >
                                             {/* Position badge */}
                                             <span className={`w-6 h-6 flex items-center justify-center rounded-md font-black text-[0.6rem] font-outfit flex-none ${i === 0 ? 'bg-warning/20 text-warning' :
                                                 i < 3 ? 'bg-white/10 text-slate-300' : 'text-slate-600'

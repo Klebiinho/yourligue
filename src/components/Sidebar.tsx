@@ -6,10 +6,10 @@ import TeamLogo from './TeamLogo';
 
 const navItems = [
     { to: '/', icon: LayoutDashboard, label: 'Home', shortLabel: 'Home' },
-    { to: '/teams', icon: Users, label: 'Times', shortLabel: 'Times' },
+    { to: '/standings', icon: Trophy, label: 'Tabela', shortLabel: 'Tabela' },
     { to: '/matches', icon: Swords, label: 'Partidas', shortLabel: 'Partidas' },
     { to: '/live', icon: Signal, label: 'Ao Vivo', shortLabel: 'Ao Vivo' },
-    { to: '/standings', icon: Trophy, label: 'Tabela', shortLabel: 'Tabela' },
+    { to: '/teams', icon: Users, label: 'Times', shortLabel: 'Times' },
     { to: '/teams-dashboard', icon: BarChart2, label: 'Painel', shortLabel: 'Painel' },
     { to: '/bracket', icon: GitBranch, label: 'Chaveamento', shortLabel: 'Chaveam.' },
     { to: '/settings', icon: Settings, label: 'Config.', shortLabel: 'Config.' },

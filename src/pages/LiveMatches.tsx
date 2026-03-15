@@ -52,7 +52,7 @@ const LiveMatches = () => {
                                     </div>
 
                                     <div className="flex items-center justify-between gap-4 mb-4">
-                                        <div className="flex flex-col items-center gap-2 flex-1">
+                                        <div onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${ht?.id}`); }} className="flex flex-col items-center gap-2 flex-1 cursor-pointer hover:bg-white/5 p-2 rounded-2xl transition-all">
                                             <TeamLogo src={ht?.logo} size={50} />
                                             <span className="text-[0.65rem] font-black text-white text-center uppercase tracking-wider">{ht?.name}</span>
                                         </div>
@@ -77,7 +77,7 @@ const LiveMatches = () => {
                                             );
                                         })()}
 
-                                        <div className="flex flex-col items-center gap-2 flex-1">
+                                        <div onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${at?.id}`); }} className="flex flex-col items-center gap-2 flex-1 cursor-pointer hover:bg-white/5 p-2 rounded-2xl transition-all">
                                             <TeamLogo src={at?.logo} size={50} />
                                             <span className="text-[0.65rem] font-black text-white text-center uppercase tracking-wider">{at?.name}</span>
                                         </div>
@@ -115,7 +115,7 @@ const LiveMatches = () => {
                                 <div key={match.id}
                                     onClick={() => handleEnter(match.id)}
                                     className="glass-panel p-4 border-white/[0.05] hover:bg-white/[0.02] transition-all cursor-pointer flex items-center justify-between gap-4">
-                                    <div className="flex items-center gap-3 flex-1">
+                                    <div onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${ht?.id}`); }} className="flex items-center gap-3 flex-1 cursor-pointer hover:bg-white/5 p-1 rounded-lg transition-all">
                                         <TeamLogo src={ht?.logo} size={24} />
                                         <span className="text-[0.65rem] font-black text-white/70 uppercase truncate">{ht?.name}</span>
                                     </div>
@@ -135,7 +135,7 @@ const LiveMatches = () => {
                                         );
                                     })()}
 
-                                    <div className="flex items-center gap-3 flex-1 justify-end">
+                                    <div onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${at?.id}`); }} className="flex items-center gap-3 flex-1 justify-end cursor-pointer hover:bg-white/5 p-1 rounded-lg transition-all">
                                         <span className="text-[0.65rem] font-black text-white/70 uppercase truncate text-right">{at?.name}</span>
                                         <TeamLogo src={at?.logo} size={24} />
                                     </div>
