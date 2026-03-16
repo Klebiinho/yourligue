@@ -850,18 +850,32 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             }
         });
 
-        // 3. Broadcast for low-latency timer sync
+        // 3. Broadcast for low-latency timer sync and instant event feedback
         channel.on('broadcast', { event: 'match-update' }, ({ payload }) => {
             console.log('[Realtime Broadcast] Match Update', payload);
-            setRawMatches(prev => prev.map(m => m.id === payload.matchId ? { 
-                ...m, 
-                timer: payload.timer,
-                homeScore: payload.homeScore,
-                awayScore: payload.awayScore,
-                period: payload.period,
-                status: payload.status,
-                updatedAt: new Date().toISOString() // Force timer restart calculation
-            } : m));
+            setRawMatches(prev => prev.map(m => {
+                if (m.id !== payload.matchId) return m;
+
+                let events = m.events;
+                if (payload.newEvent) {
+                    const alreadyExists = events.some(e => e.id === payload.newEvent.id);
+                    if (!alreadyExists) events = [...events, payload.newEvent];
+                }
+                if (payload.removedEventId) {
+                    events = events.filter(e => e.id !== payload.removedEventId);
+                }
+
+                return { 
+                    ...m, 
+                    timer: payload.timer !== undefined ? payload.timer : m.timer,
+                    homeScore: payload.homeScore !== undefined ? payload.homeScore : m.homeScore,
+                    awayScore: payload.awayScore !== undefined ? payload.awayScore : m.awayScore,
+                    period: payload.period !== undefined ? payload.period : m.period,
+                    status: payload.status !== undefined ? payload.status : m.status,
+                    events,
+                    updatedAt: new Date().toISOString() // Force timer restart calculation
+                };
+            }));
         });
 
         channel.on('broadcast', { event: 'players-reordered' }, ({ payload }) => {
@@ -1465,9 +1479,10 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 timer: snapshotTimer,
                 homeScore: newHomeScore,
                 awayScore: newAwayScore,
-                status: m.status,
                 period: m.period,
-                updatedAt: newMatchState.updatedAt
+                status: m.status,
+                newEvent: mappedEvent,
+                updatedAt: new Date(now).toISOString()
             }
         });
 
@@ -1532,19 +1547,20 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 home_score: newHomeScore,
                 away_score: newAwayScore,
             }).eq('id', matchId);
-
-            // BROADCAST for other spectators
-            supabase.channel(`league-central-${league?.id}`).send({
-                type: 'broadcast',
-                event: 'match-update',
-                payload: {
-                    matchId,
-                    homeScore: newHomeScore,
-                    awayScore: newAwayScore,
-                    updatedAt: new Date().toISOString()
-                }
-            });
         }
+
+        // BROADCAST for instant feedback (important for non-score events too)
+        supabase.channel(`league-central-${league?.id}`).send({
+            type: 'broadcast',
+            event: 'match-update',
+            payload: {
+                matchId,
+                removedEventId: eventId,
+                homeScore: newHomeScore,
+                awayScore: newAwayScore,
+                updatedAt: new Date().toISOString()
+            }
+        });
     };
 
     // ── Bracket ────────────────────────────────────────────────
