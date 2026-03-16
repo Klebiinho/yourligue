@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Swords, PlusCircle, Play, Trash2, Edit2, Calendar, MapPin, AlertCircle, Clock, CheckCircle2, Signal, Heart, Search } from 'lucide-react';
+import { Swords, PlusCircle, Play, Trash2, Edit2, Calendar, MapPin, AlertCircle, Clock, CheckCircle2, Signal, Heart, Search, Video, ChevronUp, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import TeamLogo from '../components/TeamLogo';
@@ -21,6 +21,7 @@ const Matches = () => {
     const [formOpen, setFormOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [teamFilter, setTeamFilter] = useState('');
+    const [expandedVideoIds, setExpandedVideoIds] = useState<string[]>([]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -307,6 +308,21 @@ const Matches = () => {
                                     </div>
                                 </div>
 
+                                {match.youtubeLiveId && expandedVideoIds.includes(match.id) && (
+                                    <div className="mt-4 animate-slide-up">
+                                        <div className="relative pt-[56.25%] rounded-2xl overflow-hidden bg-black/40 border border-white/10 ring-1 ring-white/5 shadow-2xl">
+                                            <iframe
+                                                title="Match Playback"
+                                                className="absolute inset-0 w-full h-full"
+                                                src={`https://www.youtube.com/embed/${match.youtubeLiveId}?autoplay=1`}
+                                                frameBorder="0"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Action Row */}
                                 <div className="flex items-center justify-between mt-5 pt-4 border-t border-white/[0.05] gap-3">
                                     {/* Status Badge */}
@@ -319,6 +335,25 @@ const Matches = () => {
 
                                     {/* Buttons */}
                                     <div className="flex items-center gap-2">
+                                        {match.youtubeLiveId && (
+                                            <button 
+                                                onClick={(e) => { 
+                                                    e.stopPropagation(); 
+                                                    setExpandedVideoIds(prev => 
+                                                        prev.includes(match.id) ? prev.filter(id => id !== match.id) : [...prev, match.id]
+                                                    );
+                                                }}
+                                                className={`flex items-center gap-2 px-4 py-3 rounded-xl font-black text-[0.65rem] uppercase tracking-[0.15em] transition-all active:scale-95 border ${
+                                                    expandedVideoIds.includes(match.id) 
+                                                    ? 'bg-red-500/20 border-red-500/30 text-red-500' 
+                                                    : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                                                }`}
+                                            >
+                                                <Video size={14} />
+                                                <span className="hidden sm:inline">{expandedVideoIds.includes(match.id) ? 'Fechar Vídeo' : 'Assistir'}</span>
+                                                {expandedVideoIds.includes(match.id) ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                            </button>
+                                        )}
                                         {!isPublicView && isAdmin && match.status === 'scheduled' && (
                                             <button onClick={(e) => { e.stopPropagation(); handleEdit(match); }} className="p-3 rounded-xl bg-white/5 border border-white/5 text-slate-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all group/btn">
                                                 <Edit2 size={16} className="transition-transform group-hover/btn:rotate-12" />
