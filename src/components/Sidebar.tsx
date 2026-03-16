@@ -175,7 +175,7 @@ const Sidebar = () => {
                 >
                     <div className="relative flex-none">
                         <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-60 transition-opacity" />
-                        <TeamLogo src={league?.logo} size={40} fallbackIcon={<img src="/logo.png" className="w-6 h-6 object-contain opacity-50" />} />
+                        <TeamLogo src={league?.logo} size={40} fallbackIcon={<img src={`/logo.png?v=${new Date().getTime()}`} className="w-6 h-6 object-contain opacity-50" />} />
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">

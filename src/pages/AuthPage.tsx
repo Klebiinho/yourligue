@@ -65,7 +65,7 @@ const AuthPage = () => {
                 {/* Logo Section */}
                 <div className="text-center">
                     <div className="inline-flex mb-5">
-                        <img src="/logo.png" alt="YourLigue" className="w-32 h-32 object-contain drop-shadow-[0_0_20px_rgba(109,40,217,0.3)]" />
+                        <img src={`/logo.png?v=${new Date().getTime()}`} alt="YourLigue" className="w-32 h-32 object-contain drop-shadow-[0_0_20px_rgba(109,40,217,0.3)]" />
                     </div>
                     <h1 className="text-3xl md:text-5xl font-outfit font-black mb-2 tracking-tighter text-white uppercase">
                         YourLigue
