@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2 } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, EyeOff, Edit3, Unlink, Eye } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
@@ -12,7 +12,7 @@ const MatchControl = () => {
         league, matches, teams, endMatch, addEvent, removeEvent, 
         updateMatch, isPublicView, isAdmin, isPlayerOnPitch,
         currentYtLiveStream, isYtAuthenticated, recoverStreamDetails,
-        ytLogin
+        ytLogin, setYtLivePrivacy
     } = useLeague();
 
     const match = matches.find((m: Match) => m.id === matchId);
@@ -40,6 +40,8 @@ const MatchControl = () => {
     const [showYtSetup, setShowYtSetup] = useState(false);
     const [showFinishModal, setShowFinishModal] = useState(false);
     const [finishedMatchVideoUrl, setFinishedMatchVideoUrl] = useState(match?.youtubeLiveId || '');
+    const [isEditingYtUrl, setIsEditingYtUrl] = useState(false);
+    const [editingYtUrl, setEditingYtUrl] = useState(match?.youtubeLiveId || '');
 
     useEffect(() => {
         if (currentYtLiveStream) {
@@ -90,6 +92,36 @@ const MatchControl = () => {
 
     const handleSaveTimeSettings = () => {
         if (matchId) updateMatch(matchId, { halfLength, extraTime, period });
+    };
+
+    const handleSaveYtUrl = () => {
+        if (matchId) {
+            // Helper to extract ID from potential URL
+            const extractId = (url: string) => {
+                const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                const match = url.match(regExp);
+                return (match && match[2].length === 11) ? match[2] : url;
+            };
+            const ytId = extractId(editingYtUrl);
+            updateMatch(matchId, { youtubeLiveId: ytId });
+            setIsEditingYtUrl(false);
+        }
+    };
+
+    const handleUnlinkYt = () => {
+        if (matchId && window.confirm('Deseja remover o vídeo desta partida? (O vídeo permanecerá no YouTube)')) {
+            updateMatch(matchId, { youtubeLiveId: undefined });
+        }
+    };
+
+    const handleSetPrivacy = async (privacy: 'public' | 'private' | 'unlisted') => {
+        if (!match?.youtubeLiveId) return;
+        try {
+            await setYtLivePrivacy(match.youtubeLiveId, privacy);
+            alert(`Privacidade alterada para: ${privacy}`);
+        } catch (err) {
+            alert('Erro ao alterar privacidade. Verifique se sua conta do YouTube está conectada.');
+        }
     };
 
     // ── SMART TIMER CALCULATION ──
@@ -971,21 +1003,60 @@ const MatchControl = () => {
                 {/* Right Area: Settings + Event Log (now column 3 on XL) */}
                 <div className="space-y-4 md:space-y-6">
                     {/* YouTube Video Player */}
-                    {match?.youtubeLiveId && (
+                    {(match?.youtubeLiveId || (isAdmin && !isPublicView && isEditingYtUrl)) && (
                         <div className="glass-panel p-4 overflow-hidden border border-white/10 shadow-2xl">
                             <h3 className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                                 <Video size={14} /> Transmissão / Gravação
                             </h3>
-                            <div className="relative pt-[56.25%] rounded-2xl overflow-hidden bg-black/40 border border-white/5 ring-1 ring-white/10">
-                                <iframe
-                                    title="Match Video"
-                                    className="absolute inset-0 w-full h-full"
-                                    src={`https://www.youtube.com/embed/${match.youtubeLiveId}`}
-                                    frameBorder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                />
-                            </div>
+                            {match?.youtubeLiveId && (
+                                <div className="relative pt-[56.25%] rounded-2xl overflow-hidden bg-black/40 border border-white/5 ring-1 ring-white/10">
+                                    <iframe
+                                        title="Match Video"
+                                        className="absolute inset-0 w-full h-full"
+                                        src={`https://www.youtube.com/embed/${match.youtubeLiveId}`}
+                                        frameBorder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    />
+                                </div>
+                            )}
+
+                            {isAdmin && !isPublicView && (
+                                <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
+                                    {isEditingYtUrl ? (
+                                        <div className="flex gap-2">
+                                            <input 
+                                                type="text" 
+                                                value={editingYtUrl} 
+                                                onChange={e => setEditingYtUrl(e.target.value)}
+                                                placeholder="ID do vídeo (ex: dQw4w9WgXcQ)"
+                                                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-primary outline-none font-bold"
+                                            />
+                                            <button onClick={handleSaveYtUrl} className="p-2 bg-primary text-white rounded-lg hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20" title="Salvar">
+                                                <Check size={14} />
+                                            </button>
+                                            <button onClick={() => setIsEditingYtUrl(false)} className="p-2 bg-white/5 text-slate-400 rounded-lg hover:bg-white/10 active:scale-95 transition-all" title="Cancelar">
+                                                <XCircle size={14} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-wrap gap-2">
+                                            <button onClick={() => { setEditingYtUrl(match.youtubeLiveId || ''); setIsEditingYtUrl(true); }} className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[0.6rem] font-black uppercase text-slate-400 hover:text-white hover:bg-primary/20 hover:border-primary/30 transition-all">
+                                                <Edit3 size={12} /> Editar
+                                            </button>
+                                            <button onClick={() => handleSetPrivacy('private')} className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[0.6rem] font-black uppercase text-slate-400 hover:text-white hover:bg-warning/20 hover:border-warning/30 transition-all" title="Torna o vídeo privado no YouTube">
+                                                <Lock size={12} /> Privar
+                                            </button>
+                                            <button onClick={() => handleSetPrivacy('public')} className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[0.6rem] font-black uppercase text-slate-400 hover:text-white hover:bg-accent/20 hover:border-accent/30 transition-all" title="Torna o vídeo público no YouTube">
+                                                <Eye size={12} /> Público
+                                            </button>
+                                            <button onClick={handleUnlinkYt} className="flex items-center gap-2 px-3 py-1.5 bg-danger/10 border border-danger/20 rounded-lg text-[0.6rem] font-black uppercase text-danger hover:bg-danger/20 transition-all ml-auto" title="Remove o vídeo do site (Mantém no YouTube)">
+                                                <Unlink size={12} /> Desvincular
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -1037,6 +1108,17 @@ const MatchControl = () => {
                                             </button>
                                         </div>
                                     </>
+                                )}
+                                {!match.youtubeLiveId && !isEditingYtUrl && (
+                                    <div className="col-span-2 mt-2 text-center">
+                                        <button 
+                                            onClick={() => { setEditingYtUrl(''); setIsEditingYtUrl(true); }}
+                                            className="w-full bg-red-600/10 border border-red-600/20 text-red-500 font-black py-4 rounded-xl uppercase tracking-widest text-[0.65rem] hover:bg-red-600/20 active:scale-[0.95] transition-all flex items-center justify-center gap-2 group"
+                                        >
+                                            <Video size={14} className="group-hover:scale-110 transition-transform" /> Vincular Gravação do YouTube
+                                        </button>
+                                        <p className="text-[0.55rem] text-slate-500 font-bold uppercase tracking-widest mt-2 italic">Dica: Você também pode usar o botão "Live" no topo para transmitir ao vivo.</p>
+                                    </div>
                                 )}
                             </div>
                         </section>

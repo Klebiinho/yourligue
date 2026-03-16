@@ -207,4 +207,51 @@ export class YouTubeService {
             rtmpUrl: stream.cdn.ingestionInfo.ingestionAddress
         };
     }
+
+    public async deleteBroadcast(broadcastId: string) {
+        if (!this.accessToken) throw new Error('Not authenticated');
+
+        const response = await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts?id=${broadcastId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${this.accessToken}` }
+        });
+
+        if (response.status === 401) {
+            this.logOut();
+            throw new Error('Sua sessão do YouTube expirou. Por favor, faça login novamente.');
+        }
+
+        if (!response.ok && response.status !== 204) {
+            const data = await response.json();
+            throw new Error(data.error?.message || 'Failed to delete broadcast');
+        }
+    }
+
+    public async setBroadcastPrivacy(broadcastId: string, privacy: 'public' | 'private' | 'unlisted') {
+        if (!this.accessToken) throw new Error('Not authenticated');
+
+        const response = await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts?part=status`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${this.accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: broadcastId,
+                status: {
+                    privacyStatus: privacy
+                }
+            })
+        });
+
+        if (response.status === 401) {
+            this.logOut();
+            throw new Error('Sua sessão do YouTube expirou. Por favor, faça login novamente.');
+        }
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error?.message || 'Failed to update privacy');
+        }
+    }
 }

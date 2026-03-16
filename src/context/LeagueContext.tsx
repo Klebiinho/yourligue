@@ -199,6 +199,8 @@ interface LeagueContextType {
     isYtAuthenticated: boolean;
     currentYtLiveStream: { streamKey: string, rtmpUrl: string } | null;
     recoverStreamDetails: (broadcastId: string) => Promise<void>;
+    deleteYtLive: (matchId: string, broadcastId: string) => Promise<void>;
+    setYtLivePrivacy: (broadcastId: string, privacy: 'public' | 'private' | 'unlisted') => Promise<void>;
 }
 
 // ─── Mappings (DB to Frontend) ──────────────────────────────
@@ -1372,6 +1374,25 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         // Ao iniciar/retomar, salvamos o tempo atual e o Supabase cuidará do updated_at (agora)
         return updateMatch(matchId, { status: 'live', timer: currentTimer, youtubeLiveId });
     };
+
+    const deleteYtLive = async (matchId: string, broadcastId: string) => {
+        try {
+            await ytService.deleteBroadcast(broadcastId);
+            await updateMatch(matchId, { youtubeLiveId: undefined });
+        } catch (err: any) {
+            console.error('Failed to delete YT broadcast:', err);
+            throw err;
+        }
+    };
+
+    const setYtLivePrivacy = async (broadcastId: string, privacy: 'public' | 'private' | 'unlisted') => {
+        try {
+            await ytService.setBroadcastPrivacy(broadcastId, privacy);
+        } catch (err: any) {
+            console.error('Failed to set YT privacy:', err);
+            throw err;
+        }
+    };
     
     const pauseMatch = async (matchId: string, currentTimer: number) => {
         // Ao pausar, salvamos o tempo exato acumulado
@@ -1742,7 +1763,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             showAuthModal, setShowAuthModal,
             supportCounts, notifications, clearNotification, leagueBasePath,
             ads, addAd, updateAd, deleteAd, reorderAds,
-            ytToken, ytLogin, ytLogout, isYtAuthenticated, currentYtLiveStream, recoverStreamDetails
+            ytToken, ytLogin, ytLogout, isYtAuthenticated, currentYtLiveStream, recoverStreamDetails,
+            deleteYtLive, setYtLivePrivacy
         }}>
             {children}
         </LeagueContext.Provider>
