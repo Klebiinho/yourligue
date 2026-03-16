@@ -26,8 +26,16 @@ const MatchControl = () => {
     const [period, setPeriod] = useState(match?.period || '1º Tempo');
     const [submittingPlayer, setSubmittingPlayer] = useState<{ teamId: string, playerOutId: string } | null>(null);
     const [showOverlay, setShowOverlay] = useState(true);
-    const [penaltyPickers, setPenaltyPickers] = useState<{ [teamId: string]: string[] }>({});
-    const [confirmedPenaltyShooters, setConfirmedPenaltyShooters] = useState<{ home: string[], away: string[] }>({ home: [], away: [] });
+    const [penaltyPickers, setPenaltyPickers] = useState<{ [teamId: string]: string[] }>(() => {
+        if (!matchId) return {};
+        const saved = localStorage.getItem(`yl_pickers_${matchId}`);
+        return saved ? JSON.parse(saved) : {};
+    });
+    const [confirmedPenaltyShooters, setConfirmedPenaltyShooters] = useState<{ home: string[], away: string[] }>(() => {
+        if (!matchId) return { home: [], away: [] };
+        const saved = localStorage.getItem(`yl_shooters_${matchId}`);
+        return saved ? JSON.parse(saved) : { home: [], away: [] };
+    });
     const { startMatch, pauseMatch, loading: leagueLoading } = useLeague();
     const [showYtSetup, setShowYtSetup] = useState(false);
     const [showFinishModal, setShowFinishModal] = useState(false);
@@ -43,22 +51,18 @@ const MatchControl = () => {
         setShowOverlay(true);
     }, [period]);
 
-    // Persist shooters across refreshes
+    // Persist shooters and pickers across refreshes
     useEffect(() => {
-        if (!matchId || (!confirmedPenaltyShooters.home.length && !confirmedPenaltyShooters.away.length)) return;
-        localStorage.setItem(`yl_shooters_${matchId}`, JSON.stringify(confirmedPenaltyShooters));
-    }, [confirmedPenaltyShooters, matchId]);
+        if (!matchId) return;
+        localStorage.setItem(`yl_pickers_${matchId}`, JSON.stringify(penaltyPickers));
+    }, [penaltyPickers, matchId]);
 
     useEffect(() => {
         if (!matchId) return;
-        const saved = localStorage.getItem(`yl_shooters_${matchId}`);
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                if (parsed.home || parsed.away) setConfirmedPenaltyShooters(parsed);
-            } catch (e) { console.error('Failed to load saved shooters'); }
+        if (confirmedPenaltyShooters.home.length || confirmedPenaltyShooters.away.length) {
+            localStorage.setItem(`yl_shooters_${matchId}`, JSON.stringify(confirmedPenaltyShooters));
         }
-    }, [matchId]);
+    }, [confirmedPenaltyShooters, matchId]);
 
     // Sincronizar estados locais com dados do banco (Realtime)
     useEffect(() => {
@@ -756,9 +760,12 @@ const MatchControl = () => {
                                                         </h3>
                                                         <button 
                                                             onClick={async () => {
-                                                                if (window.confirm("Isso apagará TODAS as cobranças feitas até agora. Deseja reiniciar a disputa?")) {
+                                                                if (window.confirm("Isso apagará TODAS as cobranças feitas até agora e voltará para a fase de seleção. Deseja reiniciar?")) {
                                                                     const toDelete = match.events.filter(e => e.type.startsWith('penalty_shootout_'));
                                                                     for (const e of toDelete) await removeEvent(matchId!, e.id);
+                                                                    setConfirmedPenaltyShooters({ home: [], away: [] });
+                                                                    localStorage.removeItem(`yl_shooters_${matchId}`);
+                                                                    handlePeriodChange('Sel. Batedores');
                                                                 }
                                                             }}
                                                             className="text-[0.5rem] font-black text-danger hover:underline uppercase"
@@ -960,7 +967,15 @@ const MatchControl = () => {
                                     <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Etapa Atual</label>
                                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                                          {['1º Tempo', 'Intervalo', '2º Tempo', 'Intervalo (OT)', '1º Prorrog.', 'Intervalo (OT2)', '2º Prorrog.', 'Sel. Batedores', 'Pênaltis'].map(p => (
-                                             <button key={p} onClick={() => handlePeriodChange(p)}
+                                             <button key={p} 
+                                                 onClick={() => {
+                                                     if (p === 'Pênaltis' && confirmedPenaltyShooters.home.length === 0) {
+                                                         alert('Selecione e confirme os batedores primeiro!');
+                                                         handlePeriodChange('Sel. Batedores');
+                                                         return;
+                                                     }
+                                                     handlePeriodChange(p);
+                                                 }}
                                                  className={`py-2 px-1 rounded-lg text-[0.6rem] font-black uppercase tracking-tight transition-all border ${period === p ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}>
                                                  {p.includes('Intervalo') ? 'Interv.' : p === 'Sel. Batedores' ? 'Sel. Bat.' : p}
                                              </button>
