@@ -727,10 +727,15 @@ const MatchControl = () => {
                                     );
                                 }
 
-                                if (isShootout) {
-                                    const shootersIds = idx === 0 ? confirmedPenaltyShooters.home : confirmedPenaltyShooters.away;
+                                if (isShootout || (match.status === 'finished' && match.events.some(e => e.type.startsWith('penalty_shootout_')))) {
+                                    let shootersIds = idx === 0 ? confirmedPenaltyShooters.home : confirmedPenaltyShooters.away;
                                     const shootoutEvents = match.events.filter(e => e.type.startsWith('penalty_shootout_'));
                                     
+                                    // Derive shooters list from events if local state is empty (for finished matches)
+                                    if (shootersIds.length === 0 && shootoutEvents.length > 0) {
+                                        shootersIds = Array.from(new Set(shootoutEvents.filter(e => e.teamId === team.id).map(e => e.playerId))).filter(id => id);
+                                    }
+
                                     // Logic for rounds and turns
                                     const totalKicks = shootoutEvents.length;
                                     const isHomeTurn = totalKicks % 2 === 0;
@@ -740,13 +745,22 @@ const MatchControl = () => {
                                     const myKicksCount = myEvents.length;
                                     
                                     // Repetir batedores: use modulo to loop through the list
-                                    const currentTakerIndex = myKicksCount % (shootersIds.length || 1);
+                                    const currentTakerIndex = shootersIds.length > 0 ? myKicksCount % shootersIds.length : 0;
                                     
-                                    // Winner is already calculated at top level: shootoutWinnerId
+                                    const isWinner = shootoutWinnerId === team.id;
+                                    const isFinished = match.status === 'finished';
 
                                     return (
                                         <div className="space-y-3">
-                                            {shootoutWinnerId ? (
+                                            {isFinished && shootersIds.length > 0 && (
+                                                <div className={`p-3 rounded-xl mb-4 text-center border-2 ${isWinner ? 'bg-accent/20 border-accent shadow-lg animate-pulse' : 'bg-black/20 border-white/5 opacity-60'}`}>
+                                                    <h3 className={`text-[0.7rem] font-black uppercase tracking-[0.2em] ${isWinner ? 'text-accent' : 'text-slate-500'}`}>
+                                                        {isWinner ? 'Vencedor da Disputa! 🏆' : 'Fim da Disputa'}
+                                                    </h3>
+                                                </div>
+                                            )}
+
+                                            {shootoutWinnerId && !isFinished ? (
                                                 <div className={`p-4 rounded-2xl mb-4 text-center border-2 animate-bounce ${shootoutWinnerId === team.id ? 'bg-accent/20 border-accent shadow-[0_0_30px_rgba(16,185,129,0.3)]' : 'bg-black/20 border-white/10 opacity-60'}`}>
                                                     <h3 className={`text-[0.65rem] font-black uppercase tracking-[0.2em] ${shootoutWinnerId === team.id ? 'text-accent' : 'text-slate-500'}`}>
                                                         {shootoutWinnerId === team.id ? 'Vencedor da Disputa! 🏆' : 'Fim da Disputa'}
@@ -796,7 +810,7 @@ const MatchControl = () => {
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="text-[0.75rem] font-black text-white uppercase truncate">
-                                                                {player.name}
+                                                                {player.name} ({team.name})
                                                             </div>
                                                             {kicksByThisPlayer > 0 && (
                                                                 <div className="flex gap-1 mt-1">
@@ -956,6 +970,25 @@ const MatchControl = () => {
 
                 {/* Right Area: Settings + Event Log (now column 3 on XL) */}
                 <div className="space-y-4 md:space-y-6">
+                    {/* YouTube Video Player */}
+                    {match?.youtubeLiveId && (
+                        <div className="glass-panel p-4 overflow-hidden border border-white/10 shadow-2xl">
+                            <h3 className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <Video size={14} /> Transmissão / Gravação
+                            </h3>
+                            <div className="relative pt-[56.25%] rounded-2xl overflow-hidden bg-black/40 border border-white/5 ring-1 ring-white/10">
+                                <iframe
+                                    title="Match Video"
+                                    className="absolute inset-0 w-full h-full"
+                                    src={`https://www.youtube.com/embed/${match.youtubeLiveId}`}
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                />
+                            </div>
+                        </div>
+                    )}
+
                     {/* Technical Panel - conditionally rendered or read-only */}
                     {!isPublicView && isAdmin ? (
                         <section className="glass-panel p-4 md:p-6">
