@@ -1,6 +1,7 @@
 import { FileText, ArrowLeft, ExternalLink, Globe } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import sitemapData from '../sitemap_data.json';
+import rawSitemapData from '../sitemap_data.json';
+const sitemapData = rawSitemapData as any;
 
 const Sitemap = () => {
     const navigate = useNavigate();
@@ -11,6 +12,8 @@ const Sitemap = () => {
         { title: 'Blog', icon: FileText, items: sitemapData.Posts },
         { title: 'Glossário', icon: FileText, items: sitemapData.Glossario },
         { title: 'Categorias', icon: FileText, items: sitemapData.Categorias },
+        { title: 'Autores', icon: FileText, items: sitemapData.Autores },
+        { title: 'Navegação A-Z', icon: FileText, items: sitemapData.Alfabeto },
     ];
 
     return (
@@ -67,7 +70,7 @@ const Sitemap = () => {
                             </div>
 
                             <ul className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                {section.items.map((item, idy) => (
+                                {section.items.map((item: any, idy: number) => (
                                     <li key={idy}>
                                         <Link 
                                             to={item.path} 

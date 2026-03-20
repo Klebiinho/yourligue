@@ -423,5 +423,149 @@
       "path": "/categoria/futebol-amador-e-copa-nony",
       "date": "2026-03-20"
     }
+  ],
+  "Autores": [
+    {
+      "title": "Kleber Venancio",
+      "path": "/autor/kleber-venancio",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Equipe YourLeague",
+      "path": "/autor/equipe-yourleague",
+      "date": "2026-03-20"
+    }
+  ],
+  "Alfabeto": [
+    {
+      "title": "Dúvidas - Letra A",
+      "path": "/duvidas/a",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra B",
+      "path": "/duvidas/b",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra C",
+      "path": "/duvidas/c",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra D",
+      "path": "/duvidas/d",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra E",
+      "path": "/duvidas/e",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra F",
+      "path": "/duvidas/f",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra G",
+      "path": "/duvidas/g",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra H",
+      "path": "/duvidas/h",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra I",
+      "path": "/duvidas/i",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra J",
+      "path": "/duvidas/j",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra K",
+      "path": "/duvidas/k",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra L",
+      "path": "/duvidas/l",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra M",
+      "path": "/duvidas/m",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra N",
+      "path": "/duvidas/n",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra O",
+      "path": "/duvidas/o",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra P",
+      "path": "/duvidas/p",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra Q",
+      "path": "/duvidas/q",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra R",
+      "path": "/duvidas/r",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra S",
+      "path": "/duvidas/s",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra T",
+      "path": "/duvidas/t",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra U",
+      "path": "/duvidas/u",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra V",
+      "path": "/duvidas/v",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra W",
+      "path": "/duvidas/w",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra X",
+      "path": "/duvidas/x",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra Y",
+      "path": "/duvidas/y",
+      "date": "2026-03-20"
+    },
+    {
+      "title": "Dúvidas - Letra Z",
+      "path": "/duvidas/z",
+      "date": "2026-03-20"
+    }
   ]
 }

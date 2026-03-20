@@ -90,7 +90,14 @@ Súmula Eletrônica e Arbitragem
 Transmissões e Overlays
 Gestão de Equipes e Atletas
 Integração e API de Vídeo
-Futebol Amador e Copa Nony`;
+Futebol Amador e Copa Nony
+
+Autores
+Kleber Venancio
+Equipe YourLeague
+
+Alfabeto
+A B C D E F G H I J K L M N O P Q R S T U V W X Y Z`;
 
 function slugify(text) {
     return text.toString().toLowerCase()
@@ -108,11 +115,14 @@ const data = {
     Paginas: [],
     Servicos: [],
     Glossario: [],
-    Categorias: []
+    Categorias: [],
+    Autores: [],
+    Alfabeto: []
 };
 
 for (let line of lines) {
-    if (["Posts", "Páginas", "Serviços", "Glossário", "Categorias", "Dúvidas de A a Z"].includes(line)) {
+    const sections = ["Posts", "Páginas", "Serviços", "Glossário", "Categorias", "Dúvidas de A a Z", "Autores", "Alfabeto"];
+    if (sections.includes(line)) {
         if (line === "Páginas") currentSection = "Paginas";
         else if (line === "Serviços") currentSection = "Servicos";
         else if (line === "Glossário") currentSection = "Glossario";
@@ -122,10 +132,16 @@ for (let line of lines) {
     }
     
     if (currentSection) {
+        if (currentSection === "Alfabeto") {
+            const letters = line.split(' ');
+            letters.forEach(letter => {
+                data.Alfabeto.push({ title: 'Dúvidas - Letra ' + letter, path: '/duvidas/' + letter.toLowerCase(), date: "2026-03-20" });
+            });
+            continue;
+        }
+
         let title = line;
         let date = "2026-03-20";
-        
-        // Remove trailing date string (DD/MM/YYYY)
         const dateMatch = title.match(/\((\d{2})\/(\d{2})\/(\d{4})\)$/);
         if (dateMatch) {
             date = dateMatch[3] + "-" + dateMatch[2] + "-" + dateMatch[1];
@@ -137,6 +153,7 @@ for (let line of lines) {
         if (currentSection === 'Servicos') prefix = '/servicos/';
         if (currentSection === 'Glossario') prefix = '/glossario/';
         if (currentSection === 'Categorias') prefix = '/categoria/';
+        if (currentSection === 'Autores') prefix = '/autor/';
         
         let originalTitle = title;
         if (currentSection === 'Paginas') {
@@ -147,7 +164,7 @@ for (let line of lines) {
              if (title === "Sobre Nós") title = "sobre-nos";
         }
         
-        if (['d-vidas-de-a-a-z', 'blog', 'in-cio'].includes(slugify(title))) {
+        if (['d-vidas-de-a-a-z', 'blog', 'in-cio'].includes(slugify(title)) && currentSection === 'Paginas') {
             continue;
         }
 
@@ -175,13 +192,10 @@ function addXmlUrl(item) {
     xml += '  </url>\n';
 }
 
-data.Paginas.forEach(addXmlUrl);
-data.Servicos.forEach(addXmlUrl);
-data.Posts.forEach(addXmlUrl);
-data.Glossario.forEach(addXmlUrl);
-data.Categorias.forEach(addXmlUrl);
+Object.values(data).forEach(list => list.forEach(addXmlUrl));
 
 xml += '</urlset>';
 
 fs.writeFileSync('c:/Users/Kleber/.gemini/antigravity/playground/warped-tyson/public/sitemap.xml', xml);
 fs.writeFileSync('c:/Users/Kleber/.gemini/antigravity/playground/warped-tyson/src/sitemap_data.json', JSON.stringify(data, null, 2));
+console.log('Sitemap and data generated successfully!');
