@@ -1,6 +1,10 @@
 {
     "rewrites": [
         {
+            "source": "/(sitemap.xml|robots.txt|assets/.*|public/.*)",
+            "destination": "/$1"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }
