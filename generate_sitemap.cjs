@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 
 const rawText = `Posts
 Quem Pode Organizar um Campeonato no YourLeague? (20/03/2026)
@@ -196,6 +197,6 @@ Object.values(data).forEach(list => list.forEach(addXmlUrl));
 
 xml += '</urlset>';
 
-fs.writeFileSync('c:/Users/Kleber/.gemini/antigravity/playground/warped-tyson/public/sitemap.xml', xml);
-fs.writeFileSync('c:/Users/Kleber/.gemini/antigravity/playground/warped-tyson/src/sitemap_data.json', JSON.stringify(data, null, 2));
+fs.writeFileSync(path.join(__dirname, 'public', 'sitemap.xml'), xml);
+fs.writeFileSync(path.join(__dirname, 'src', 'sitemap_data.json'), JSON.stringify(data, null, 2));
 console.log('Sitemap and data generated successfully!');
