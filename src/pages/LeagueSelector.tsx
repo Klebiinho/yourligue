@@ -112,7 +112,10 @@ const LeagueSelector = () => {
                         <button onClick={loadLeagues} className="p-3 rounded-xl bg-white/3 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95" title="Recarregar">
                             <RefreshCw size={18} />
                         </button>
-                        <button onClick={() => { signOut(); navigate('/'); }} className="p-3 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger hover:text-white transition-all active:scale-95 flex items-center gap-2 font-black text-[0.65rem] uppercase tracking-widest px-5">
+                        <button onClick={async () => { 
+                            await signOut(); 
+                            navigate('/auth', { replace: true }); 
+                        }} className="p-3 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger hover:text-white transition-all active:scale-95 flex items-center gap-2 font-black text-[0.65rem] uppercase tracking-widest px-5">
                             <LogOut size={16} /> <span className="hidden sm:inline">Sair</span>
                         </button>
                     </div>

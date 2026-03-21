@@ -146,7 +146,8 @@ const AppRouter = () => {
 
   if (!user && !isPublicPath) return <AuthPage />;
 
-  if ((leagues.length === 0 || !league) && window.location.pathname !== '/leagues') {
+  // If authenticated but no league selected yet, show the selector
+  if (user && (leagues.length === 0 || !league) && window.location.pathname !== '/leagues') {
     return (
       <Routes>
         <Route path="*" element={<LeagueSelector />} />
