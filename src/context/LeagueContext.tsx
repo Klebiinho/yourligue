@@ -936,7 +936,15 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     // ── League CRUD ────────────────────────────────────────────
     const createLeague = async (data: Omit<League, 'id' | 'slug' | 'userId'>) => {
         try {
-            if (!user) {
+            let activeUser = user;
+            
+            // Reforço: se o estado do hook estiver vazio, tenta pegar diretamente do Supabase
+            if (!activeUser) {
+                const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+                activeUser = supabaseUser;
+            }
+
+            if (!activeUser) {
                 alert('Você precisa estar logado para criar uma liga.');
                 return { error: 'Usuário não autenticado' };
             }
@@ -946,7 +954,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             if (existing) return { error: 'Uma liga com este nome já existe.' };
 
             const { data: row, error } = await supabase.from('leagues').insert({
-                user_id: user.id, name: data.name, logo: data.logo, max_teams: data.maxTeams,
+                user_id: activeUser.id, name: data.name, logo: data.logo, max_teams: data.maxTeams,
                 points_for_win: data.pointsForWin, points_for_draw: data.pointsForDraw,
                 points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
                 players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
