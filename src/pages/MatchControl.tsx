@@ -980,6 +980,8 @@ const MatchControl = () => {
                                                                                 
                                                                                 <div className="w-px h-4 bg-white/10 mx-1" />
 
+                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handleAssist(team.id, player.id)} 
+                                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-warning/10 text-warning font-black text-[0.55rem] hover:bg-warning hover:text-white transition-all" title="Assistência">ASS</button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handleStat(team.id, player.id, 'rebound')} 
                                                                                     className="w-8 h-8 flex items-center justify-center rounded-lg bg-orange-500/10 text-orange-400 font-black text-[0.55rem] hover:bg-orange-500 hover:text-white transition-all" title="Rebote">REB</button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handleStat(team.id, player.id, 'foul')} 

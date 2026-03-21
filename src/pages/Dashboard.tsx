@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Bell, BellOff, Heart, Wind } from 'lucide-react';
+import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Bell, BellOff, Heart, Wind, ArrowUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
@@ -52,9 +52,10 @@ const Dashboard = () => {
         return valB - valA;
     }).filter(p => (isBasket ? (p.stats?.points || 0) : (p.stats?.goals || 0)) > 0).slice(0, 5);
     const topAssisters = [...allPlayers].sort((a, b) => (b.stats?.assists || 0) - (a.stats?.assists || 0)).filter(p => (p.stats?.assists || 0) > 0).slice(0, 5);
+    const topRebounders = [...allPlayers].sort((a, b) => (b.stats?.rebounds || 0) - (a.stats?.rebounds || 0)).filter(p => (p.stats?.rebounds || 0) > 0).slice(0, 5);
 
     const [activeTab, setActiveTab] = useState<'matches' | 'standings' | 'scorers'>('matches');
-    const [showTopRankModal, setShowTopRankModal] = useState<{ open: boolean, type: 'goals' | 'assists' }>({ open: false, type: 'goals' });
+    const [showTopRankModal, setShowTopRankModal] = useState<{ open: boolean, type: 'goals' | 'assists' | 'rebounds' }>({ open: false, type: 'goals' });
 
     return (
         <div className="animate-fade-in space-y-6 md:space-y-8 pb-10">
@@ -391,6 +392,53 @@ const Dashboard = () => {
                                 )}
                             </div>
                         </div>
+
+                        {/* Top Rebounders (Basket Only) */}
+                        {isBasket && (
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-sm font-black font-outfit uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                                        <ArrowUp size={16} className="text-accent fill-accent/20" />
+                                        Rebotes
+                                    </h2>
+                                    <button onClick={() => setShowTopRankModal({ open: true, type: 'rebounds' })} className="flex items-center gap-1 text-accent text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
+                                        Rank Completo <ArrowRight size={12} />
+                                    </button>
+                                </div>
+
+                                <div className="glass-panel divide-y divide-white/[0.04] overflow-hidden cursor-pointer group/card" onClick={() => setShowTopRankModal({ open: true, type: 'rebounds' })}>
+                                    {topRebounders.length === 0 ? (
+                                        <div className="py-8 sm:py-10 text-center opacity-25">
+                                            <ArrowUp size={24} strokeWidth={1} className="mx-auto mb-2" />
+                                            <p className="text-[0.6rem] font-black uppercase tracking-widest">Sem rebotes</p>
+                                        </div>
+                                    ) : (
+                                        topRebounders.map((player, i) => (
+                                            <div key={player.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-white/[0.05] transition-all group">
+                                                <span className={`w-5 h-5 flex items-center justify-center rounded-md font-black text-[0.55rem] font-outfit flex-none ${i === 0 ? 'bg-accent/20 text-accent' : 'text-slate-500'}`}>
+                                                    {i + 1}
+                                                </span>
+                                                <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden flex-none">
+                                                    {player.photo ? (
+                                                        <img src={player.photo} className="w-full h-full object-cover" alt={player.name} />
+                                                    ) : (
+                                                        <span className="font-black text-[0.6rem] text-slate-400">{player.number}</span>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0 flex flex-col">
+                                                    <span className="font-bold truncate text-[0.65rem] sm:text-xs text-white group-hover:text-accent transition-colors">{player.name}</span>
+                                                    <span className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest truncate leading-tight">{player.team.name}</span>
+                                                </div>
+                                                <div className="flex flex-col items-end flex-none min-w-[32px]">
+                                                    <span className="font-black text-accent text-sm sm:text-base font-outfit leading-none">{player.stats?.rebounds || 0}</span>
+                                                    <span className="text-[0.45rem] text-slate-500 font-black uppercase">Reb.</span>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -403,12 +451,12 @@ const Dashboard = () => {
                         <div className="relative glass-panel w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col animate-scale-in shadow-[0_30px_100px_rgba(0,0,0,0.8)] border-white/10">
                             <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${showTopRankModal.type === 'goals' ? 'bg-warning/20 text-warning' : 'bg-primary/20 text-primary'}`}>
-                                        {showTopRankModal.type === 'goals' ? <Star size={24} className="fill-warning/20" /> : <Zap size={24} className="fill-primary/20" />}
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${showTopRankModal.type === 'goals' ? 'bg-warning/20 text-warning' : showTopRankModal.type === 'rebounds' ? 'bg-accent/20 text-accent' : 'bg-primary/20 text-primary'}`}>
+                                        {showTopRankModal.type === 'goals' ? <Star size={24} className="fill-warning/20" /> : showTopRankModal.type === 'rebounds' ? <ArrowUp size={24} className="fill-accent/20" /> : <Zap size={24} className="fill-primary/20" />}
                                     </div>
                                     <div>
                                         <h3 className="font-outfit font-black text-white uppercase tracking-tight text-xl">
-                                            {showTopRankModal.type === 'goals' ? 'Artilharia da Liga' : 'Maiores Garçons'}
+                                            {showTopRankModal.type === 'goals' ? (isBasket ? 'Cestinhas' : 'Artilharia da Liga') : showTopRankModal.type === 'rebounds' ? 'Líder em Rebotes' : (isBasket ? 'Líder de Assistências' : 'Maiores Garçons')}
                                         </h3>
                                         <p className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Dados atualizados em tempo real</p>
                                     </div>
@@ -419,10 +467,15 @@ const Dashboard = () => {
                             </div>
                             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 no-scrollbar pb-10">
                                 {[...allPlayers].sort((a, b) => {
-                                    if (showTopRankModal.type === 'goals') return (b.stats?.goals || 0) - (a.stats?.goals || 0);
+                                    if (showTopRankModal.type === 'goals') return (isBasket ? (b.stats?.points || 0) - (a.stats?.points || 0) : (b.stats?.goals || 0) - (a.stats?.goals || 0));
+                                    if (showTopRankModal.type === 'rebounds') return (b.stats?.rebounds || 0) - (a.stats?.rebounds || 0);
                                     return (b.stats?.assists || 0) - (a.stats?.assists || 0);
                                 })
-                                    .filter(p => showTopRankModal.type === 'goals' ? (p.stats?.goals || 0) > 0 : (p.stats?.assists || 0) > 0)
+                                    .filter(p => {
+                                        if (showTopRankModal.type === 'goals') return (isBasket ? (p.stats?.points || 0) : (p.stats?.goals || 0)) > 0;
+                                        if (showTopRankModal.type === 'rebounds') return (p.stats?.rebounds || 0) > 0;
+                                        return (p.stats?.assists || 0) > 0;
+                                    })
                                     .map((player, i) => (
                                         <div key={player.id} className="flex items-center gap-4 p-4 rounded-3xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] transition-all group">
                                             <div className={`w-10 h-10 flex items-center justify-center rounded-2xl font-black font-outfit text-base ${i === 0 ? (showTopRankModal.type === 'goals' ? 'bg-warning text-black shadow-lg shadow-warning/20' : 'bg-primary text-white shadow-lg shadow-primary/20') :
@@ -446,19 +499,23 @@ const Dashboard = () => {
                                             </div>
                                             <div className="text-right">
                                                 <div className="flex items-center gap-1.5 justify-end">
-                                                    <span className={`text-2xl font-black font-outfit ${showTopRankModal.type === 'goals' ? 'text-accent' : 'text-primary'}`}>
-                                                        {showTopRankModal.type === 'goals' ? player.stats?.goals : player.stats?.assists}
+                                                    <span className={`text-2xl font-black font-outfit ${showTopRankModal.type === 'goals' ? 'text-accent' : showTopRankModal.type === 'rebounds' ? 'text-accent' : 'text-primary'}`}>
+                                                        {showTopRankModal.type === 'goals' ? (isBasket ? player.stats?.points : player.stats?.goals) : showTopRankModal.type === 'rebounds' ? player.stats?.rebounds : player.stats?.assists}
                                                     </span>
-                                                    {showTopRankModal.type === 'goals' ? <Star size={14} className="text-warning fill-warning" /> : <Zap size={14} className="text-primary fill-primary" />}
+                                                    {showTopRankModal.type === 'goals' ? <Star size={14} className="text-warning fill-warning" /> : showTopRankModal.type === 'rebounds' ? <ArrowUp size={14} className="text-accent fill-accent" /> : <Zap size={14} className="text-primary fill-primary" />}
                                                 </div>
                                                 <span className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest leading-none">
-                                                    {showTopRankModal.type === 'goals' ? 'Gols' : 'Assis.'}
+                                                    {showTopRankModal.type === 'goals' ? (isBasket ? 'Pts' : 'Gols') : showTopRankModal.type === 'rebounds' ? 'Reb.' : 'Assis.'}
                                                 </span>
                                             </div>
                                         </div>
                                     ))
                                 }
-                                {[...allPlayers].filter(p => showTopRankModal.type === 'goals' ? (p.stats?.goals || 0) > 0 : (p.stats?.assists || 0) > 0).length === 0 && (
+                                {[...allPlayers].filter(p => {
+                                    if (showTopRankModal.type === 'goals') return (isBasket ? (p.stats?.points || 0) : (p.stats?.goals || 0)) > 0;
+                                    if (showTopRankModal.type === 'rebounds') return (p.stats?.rebounds || 0) > 0;
+                                    return (p.stats?.assists || 0) > 0;
+                                }).length === 0 && (
                                     <div className="text-center py-20 opacity-30">
                                         <p className="font-black uppercase tracking-widest text-sm">Nenhum dado registrado</p>
                                     </div>
