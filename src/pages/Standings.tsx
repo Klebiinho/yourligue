@@ -5,8 +5,10 @@ import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const Standings = () => {
-    const { teams, matches, isPublicView, userInteractions, interactWithTeam, leagueBasePath } = useLeague();
+    const { teams, matches, isPublicView, userInteractions, interactWithTeam, leagueBasePath, league } = useLeague();
     const navigate = useNavigate();
+
+    const isBasket = league?.sportType === 'basketball';
 
     // The stats are already calculated and sorted in LeagueContext useMemo
     const sortedTeams = [...teams].sort((a: any, b: any) => {
@@ -76,11 +78,11 @@ const Standings = () => {
                                         <th className="w-16 sm:w-20 px-2 sm:px-4 py-5 text-center text-white border-x border-white/[0.03]">Pts</th>
                                         <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center">PJ</th>
                                         <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center text-accent/80">V</th>
-                                        <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center">E</th>
+                                        {!isBasket && <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center">E</th>}
                                         <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center text-danger/80">D</th>
-                                        <th className="w-20 px-4 py-5 text-center hidden md:table-cell">GP</th>
-                                        <th className="w-20 px-4 py-5 text-center hidden md:table-cell">GC</th>
-                                        <th className="w-20 px-4 py-5 text-center">SG</th>
+                                        <th className="w-20 px-4 py-5 text-center hidden md:table-cell">{isBasket ? 'PP' : 'GP'}</th>
+                                        <th className="w-20 px-4 py-5 text-center hidden md:table-cell">{isBasket ? 'PC' : 'GC'}</th>
+                                        <th className="w-20 px-4 py-5 text-center">{isBasket ? 'S' : 'SG'}</th>
                                         <th className="w-32 sm:w-36 px-4 py-5 text-center">Últimos</th>
                                     </tr>
                                 </thead>
@@ -162,7 +164,7 @@ const Standings = () => {
                                                 </td>
                                                 <td className="px-2 sm:px-4 py-4 sm:py-4.5 text-center font-bold text-slate-400 text-[0.7rem] sm:text-sm">{team.stats.matches}</td>
                                                 <td className="px-2 sm:px-4 py-4 sm:py-4.5 text-center font-bold text-accent text-[0.7rem] sm:text-sm">{team.stats.wins}</td>
-                                                <td className="px-2 sm:px-4 py-4 sm:py-4.5 text-center font-bold text-slate-500 text-[0.7rem] sm:text-sm">{team.stats.draws}</td>
+                                                {!isBasket && <td className="px-2 sm:px-4 py-4 sm:py-4.5 text-center font-bold text-slate-500 text-[0.7rem] sm:text-sm">{team.stats.draws}</td>}
                                                 <td className="px-2 sm:px-4 py-4 sm:py-4.5 text-center font-bold text-danger text-[0.7rem] sm:text-sm">{team.stats.losses}</td>
                                                 
                                                 {/* Goals */}
@@ -212,7 +214,7 @@ const Standings = () => {
                             <div className="flex items-center gap-6">
                                 <div className="flex items-center gap-2 text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.1em] italic">
                                     <Info size={14} className="text-primary opacity-60" />
-                                    <span>Critérios: Pts &gt; SG &gt; GP</span>
+                                    <span>Critérios: Pts &gt; {isBasket ? 'Saldo' : 'SG'} &gt; {isBasket ? 'PC' : 'GP'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.1em] italic">
                                     <TrendingUp size={14} className="text-accent opacity-60" />

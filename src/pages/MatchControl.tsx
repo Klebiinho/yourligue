@@ -21,9 +21,9 @@ const MatchControl = () => {
 
     const [localSeconds, setLocalSeconds] = useState(match?.timer || 0);
     const [timerRunning, setTimerRunning] = useState(match?.status === 'live');
-    const [halfLength, setHalfLength] = useState(match?.halfLength || 45);
+    const [halfLength, setHalfLength] = useState(match?.halfLength || (league?.sportType === 'basketball' ? 10 : 45));
     const [extraTime, setExtraTime] = useState(match?.extraTime || 0);
-    const [period, setPeriod] = useState(match?.period || '1º Tempo');
+    const [period, setPeriod] = useState(match?.period || (league?.sportType === 'basketball' ? '1º Quarto' : '1º Tempo'));
     const [submittingPlayer, setSubmittingPlayer] = useState<{ teamId: string, playerOutId: string } | null>(null);
     const [showOverlay, setShowOverlay] = useState(true);
     const [penaltyPickers, setPenaltyPickers] = useState<{ [teamId: string]: string[] }>(() => {
@@ -69,9 +69,9 @@ const MatchControl = () => {
     // Sincronizar estados locais com dados do banco (Realtime)
     useEffect(() => {
         if (match) {
-            setHalfLength(match.halfLength || 45);
+            setHalfLength(match.halfLength || (league?.sportType === 'basketball' ? 10 : 45));
             setExtraTime(match.extraTime || 0);
-            setPeriod(match.period || '1º Tempo');
+            setPeriod(match.period || (league?.sportType === 'basketball' ? '1º Quarto' : '1º Tempo'));
         }
     }, [match?.halfLength, match?.extraTime, match?.period]);
 
@@ -215,8 +215,21 @@ const MatchControl = () => {
     const handleEndMatch = () => {
         if (!matchId || !match) return;
 
-        if (period === '1º Tempo') {
-            if (window.confirm('Encerrar 1º tempo e iniciar o Intervalo?')) {
+        const isBasket = league?.sportType === 'basketball';
+
+        if (period === '1º Tempo' || (isBasket && period === '1º Quarto')) {
+            const nextP = isBasket ? '2º Quarto' : 'Intervalo';
+            if (window.confirm(`Encerrar ${period} e seguir para ${nextP}?`)) {
+                setTimerRunning(false);
+                handlePeriodChange(isBasket ? 'Intervalo' : 'Intervalo'); // Both use 'Intervalo' or specialized intervals
+                // Actually basketball has intervals between all quarters
+                handlePeriodChange('Intervalo');
+            }
+            return;
+        }
+
+        if (period === '2º Quarto' || period === '3º Quarto') {
+             if (window.confirm(`Encerrar ${period} e seguir para Intervalo?`)) {
                 setTimerRunning(false);
                 handlePeriodChange('Intervalo');
             }
@@ -225,14 +238,32 @@ const MatchControl = () => {
 
         if (period.includes('Intervalo')) {
             let next = '2º Tempo';
-            if (period === 'Intervalo (OT)') next = '1º Prorrog.';
-            if (period === 'Intervalo (OT2)') next = '2º Prorrog.';
+            if (isBasket) {
+                const prev = match.period || '';
+                if (prev === '1º Quarto') next = '2º Quarto';
+                else if (prev === '2º Quarto') next = '3º Quarto';
+                else if (prev === '3º Quarto') next = '4º Quarto';
+                else if (prev === '4º Quarto') next = 'Prorrogação';
+            } else {
+                if (period === 'Intervalo (OT)') next = '1º Prorrog.';
+                if (period === 'Intervalo (OT2)') next = '2º Prorrog.';
+            }
             
             if (window.confirm(`Encerrar intervalo e iniciar o ${next}?`)) {
                 let startTime = 0;
-                if (next === '2º Tempo') startTime = (league?.defaultHalfLength || 45) * 60;
-                if (next === '1º Prorrog.') startTime = ((league?.defaultHalfLength || 45) * 2) * 60;
-                if (next === '2º Prorrog.') startTime = ((league?.defaultHalfLength || 45) * 2 + (league?.overtimeHalfLength || 15)) * 60;
+                if (!isBasket) {
+                    if (next === '2º Tempo') startTime = (league?.defaultHalfLength || 45) * 60;
+                    if (next === '1º Prorrog.') startTime = ((league?.defaultHalfLength || 45) * 2) * 60;
+                    if (next === '2º Prorrog.') startTime = ((league?.defaultHalfLength || 45) * 2 + (league?.overtimeHalfLength || 15)) * 60;
+                } else {
+                    // Basketball logic: timer continues or additive?
+                    // FIBA: 10 min each. Timer in this app seems to be cumulative.
+                    const qLen = league?.defaultHalfLength || 10;
+                    if (next === '2º Quarto') startTime = qLen * 60;
+                    if (next === '3º Quarto') startTime = (qLen * 2) * 60;
+                    if (next === '4º Quarto') startTime = (qLen * 3) * 60;
+                    if (next === 'Prorrogação') startTime = (qLen * 4) * 60;
+                }
 
                 handlePeriodChange(next);
                 setTimerRunning(true);
@@ -241,15 +272,15 @@ const MatchControl = () => {
             return;
         }
 
-        if (period === '2º Tempo' || period === '2º Prorrog.') {
+        if (period === '2º Tempo' || period === '2º Prorrog.' || (isBasket && period === '4º Quarto') || (isBasket && period === 'Prorrogação')) {
             if (match.homeScore === match.awayScore) {
-                if (period === '2º Tempo' && league?.hasOvertime) {
+                if ((period === '2º Tempo' || (isBasket && period === '4º Quarto')) && league?.hasOvertime) {
                     if (window.confirm('A partida terminou empatada. Deseja iniciar a Prorrogação?')) {
                         setTimerRunning(false);
-                        handlePeriodChange('Intervalo (OT)');
+                        handlePeriodChange(isBasket ? 'Intervalo' : 'Intervalo (OT)');
                         return;
                     }
-                } else if (window.confirm('O empate persiste. Deseja iniciar a disputa de Pênaltis?')) {
+                } else if (!isBasket && window.confirm('O empate persiste. Deseja iniciar a disputa de Pênaltis?')) {
                     setTimerRunning(false);
                     handlePeriodChange('Sel. Batedores');
                     return;
@@ -318,38 +349,63 @@ const MatchControl = () => {
     const handleAssist = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && !period.includes('Intervalo') && period !== 'Pênaltis') addEvent(matchId, { type: 'assist', teamId, playerId, minute: currentMinute }); };
     const handleGolContra = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && !period.includes('Intervalo') && period !== 'Pênaltis') addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); };
     const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { if (matchId && match?.status === 'live' && !period.includes('Intervalo')) addEvent(matchId, { type, teamId, playerId, minute: currentMinute }); };
+    
+    // Basketball specific events
+    const handlePoints = (teamId: string, playerId: string, points: 1 | 2 | 3) => {
+        if (!matchId || match?.status !== 'live' || period.includes('Intervalo')) return;
+        const type = points === 1 ? 'points_1' : points === 2 ? 'points_2' : 'points_3';
+        addEvent(matchId, { type, teamId, playerId, minute: currentMinute });
+    };
+
+    const handleStat = (teamId: string, playerId: string, type: 'rebound' | 'block' | 'steal' | 'foul') => {
+        if (!matchId || match?.status !== 'live' || period.includes('Intervalo')) return;
+        addEvent(matchId, { type, teamId, playerId, minute: currentMinute });
+    };
     const handlePeriodChange = async (newPeriod: string) => {
         if (!matchId || !match || !league) return;
         
+        const isBasket = league.sportType === 'basketball';
         let newTimer = localSeconds;
         let newStatus = match.status;
         let newHalfLength = match.halfLength || league.defaultHalfLength;
 
         // Auto-set half length based on period type
-        if (newPeriod === '1º Tempo' || newPeriod === '2º Tempo') {
-            newHalfLength = league.defaultHalfLength;
-        } else if (newPeriod.includes('Prorrog.')) {
-            newHalfLength = league.overtimeHalfLength || 15;
+        if (isBasket) {
+            newHalfLength = newPeriod === 'Prorrogação' ? 5 : league.defaultHalfLength;
+        } else {
+            if (newPeriod === '1º Tempo' || newPeriod === '2º Tempo') {
+                newHalfLength = league.defaultHalfLength;
+            } else if (newPeriod.includes('Prorrog.')) {
+                newHalfLength = league.overtimeHalfLength || 15;
+            }
         }
 
         const regMin = league.defaultHalfLength;
-        const otMin = league.overtimeHalfLength || 15;
+        const otMin = league.overtimeHalfLength || (isBasket ? 5 : 15);
 
         // Real-time functional logic
-        if (newPeriod === '1º Tempo' && localSeconds > 60) {
-            if (window.confirm('Deseja zerar o cronômetro para o início do 1º tempo?')) {
-                newTimer = 0;
-            }
-        } else if (newPeriod.includes('Intervalo')) {
+        if (newPeriod.includes('Intervalo')) {
             newStatus = 'scheduled'; // Auto-pause
-        } else if (newPeriod === '2º Tempo' && localSeconds < regMin * 60) {
-            newTimer = regMin * 60;
-        } else if (newPeriod === '1º Prorrog.' && localSeconds < regMin * 120) {
-            newTimer = regMin * 120;
-        } else if (newPeriod === '2º Prorrog.' && localSeconds < (regMin * 120 + otMin * 60)) {
-            newTimer = regMin * 120 + otMin * 60;
-        } else if (newPeriod === 'Sel. Batedores' || newPeriod === 'Pênaltis') {
-            newStatus = 'scheduled'; // Stop main clock
+        } else if (isBasket) {
+            if (newPeriod === '1º Quarto' && localSeconds > 30) { if(confirm('Zerar?')) newTimer = 0; }
+            else if (newPeriod === '2º Quarto' && localSeconds < regMin * 60) newTimer = regMin * 60;
+            else if (newPeriod === '3º Quarto' && localSeconds < regMin * 120) newTimer = regMin * 120;
+            else if (newPeriod === '4º Quarto' && localSeconds < regMin * 180) newTimer = regMin * 180;
+            else if (newPeriod === 'Prorrogação' && localSeconds < regMin * 240) newTimer = regMin * 240;
+        } else {
+            if (newPeriod === '1º Tempo' && localSeconds > 60) {
+                if (window.confirm('Deseja zerar o cronômetro para o início do 1º tempo?')) {
+                    newTimer = 0;
+                }
+            } else if (newPeriod === '2º Tempo' && localSeconds < regMin * 60) {
+                newTimer = regMin * 60;
+            } else if (newPeriod === '1º Prorrog.' && localSeconds < regMin * 120) {
+                newTimer = regMin * 120;
+            } else if (newPeriod === '2º Prorrog.' && localSeconds < (regMin * 120 + otMin * 60)) {
+                newTimer = regMin * 120 + otMin * 60;
+            } else if (newPeriod === 'Sel. Batedores' || newPeriod === 'Pênaltis') {
+                newStatus = 'scheduled'; // Stop main clock
+            }
         }
 
         setPeriod(newPeriod);
@@ -678,7 +734,11 @@ const MatchControl = () => {
                                  className="flex-1 sm:flex-none px-4 sm:px-8 py-3 rounded-xl bg-danger/10 border border-danger/20 text-danger font-black text-[0.65rem] uppercase tracking-[0.15em] hover:bg-danger hover:text-white transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
                                  <StopCircle size={16} strokeWidth={3} />
                                  {period === '1º Tempo' ? 'Fim 1º Tempo' : 
-                                  period === 'Intervalo' ? 'Iniciar 2º Tempo' : 
+                                  period === '1º Quarto' ? 'Fim 1º Quarto' :
+                                  period === '2º Quarto' ? 'Fim 2º Quarto' :
+                                  period === '3º Quarto' ? 'Fim 3º Quarto' :
+                                  period === '4º Quarto' ? (match.homeScore === match.awayScore ? 'Ir p/ Prorrogação' : 'Finalizar Jogo') :
+                                  period === 'Intervalo' ? 'Continuar Jogo' : 
                                   period === '2º Tempo' ? (match.homeScore === match.awayScore ? (league?.hasOvertime ? 'Ir p/ Interv. Prorrog.' : 'Ir p/ Sel. Pênaltis') : 'Finalizar Jogo') :
                                   period === 'Intervalo (OT)' ? 'Iniciar 1º Prorrog.' :
                                   period === '1º Prorrog.' ? 'Fim 1º Prorrog.' :
@@ -909,20 +969,40 @@ const MatchControl = () => {
                                                             <div className="flex items-center gap-1">
                                                                 {!isPublicView && isAdmin && (
                                                                     <div className="flex items-center gap-1">
-                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleGol(team.id, player.id)} 
-                                                                            className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Gol"><Target size={14} /></button>
-                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleAssist(team.id, player.id)} 
-                                                                            className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Assistência"><Award size={14} /></button>
-                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleGolContra(team.id, player.id)} 
-                                                                            className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Gol Contra"><XCircle size={14} /></button>
+                                                                        {league?.sportType === 'basketball' ? (
+                                                                            <>
+                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 1)} 
+                                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-accent/10 text-accent font-black text-[0.6rem] hover:bg-accent hover:text-white transition-all">+1</button>
+                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 2)} 
+                                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-accent/20 text-accent font-black text-[0.65rem] hover:bg-accent hover:text-white transition-all">+2</button>
+                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 3)} 
+                                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-accent/30 text-accent font-black text-[0.7rem] hover:bg-accent hover:text-white transition-all">+3</button>
+                                                                                
+                                                                                <div className="w-px h-4 bg-white/10 mx-1" />
+
+                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handleStat(team.id, player.id, 'rebound')} 
+                                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-orange-500/10 text-orange-400 font-black text-[0.55rem] hover:bg-orange-500 hover:text-white transition-all" title="Rebote">REB</button>
+                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handleStat(team.id, player.id, 'foul')} 
+                                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-danger/10 text-danger font-black text-[0.55rem] hover:bg-danger hover:text-white transition-all" title="Falta">FAL</button>
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleGol(team.id, player.id)} 
+                                                                                    className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Gol"><Target size={14} /></button>
+                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleAssist(team.id, player.id)} 
+                                                                                    className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Assistência"><Award size={14} /></button>
+                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleGolContra(team.id, player.id)} 
+                                                                                    className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Gol Contra"><XCircle size={14} /></button>
+                                                                                
+                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleCartao(team.id, player.id, 'yellow_card')} 
+                                                                                    className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs disabled:cursor-not-allowed disabled:opacity-30`} title="Amarelo">🟨</button>
+                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleCartao(team.id, player.id, 'red_card')} 
+                                                                                    className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs disabled:cursor-not-allowed disabled:opacity-30`} title="Vermelho">🟥</button>
+                                                                            </>
+                                                                        )}
                                                                         
                                                                         <button disabled={match.status !== 'live' && !period.includes('Intervalo') || isRedCarded} onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} 
                                                                             className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Substituir"><ArrowLeftRight size={14} /></button>
-                                                                        
-                                                                        <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleCartao(team.id, player.id, 'yellow_card')} 
-                                                                            className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs disabled:cursor-not-allowed disabled:opacity-30`} title="Amarelo">🟨</button>
-                                                                         <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleCartao(team.id, player.id, 'red_card')} 
-                                                                            className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs disabled:cursor-not-allowed disabled:opacity-30`} title="Vermelho">🟥</button>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1070,7 +1150,10 @@ const MatchControl = () => {
                                 <div className="col-span-2 space-y-1.5">
                                     <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Etapa Atual</label>
                                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                                         {['1º Tempo', 'Intervalo', '2º Tempo', 'Intervalo (OT)', '1º Prorrog.', 'Intervalo (OT2)', '2º Prorrog.', 'Sel. Batedores', 'Pênaltis'].map(p => (
+                                         {(league?.sportType === 'basketball' 
+                                           ? ['1º Quarto', '2º Quarto', '3º Quarto', '4º Quarto', 'Intervalo', 'Prorrogação']
+                                           : ['1º Tempo', 'Intervalo', '2º Tempo', 'Intervalo (OT)', '1º Prorrog.', 'Intervalo (OT2)', '2º Prorrog.', 'Sel. Batedores', 'Pênaltis']
+                                         ).map(p => (
                                              <button key={p} 
                                                  onClick={() => {
                                                      if (p === 'Pênaltis' && confirmedPenaltyShooters.home.length === 0) {
@@ -1174,6 +1257,8 @@ const MatchControl = () => {
                                          penalty_shootout_goal: '✅ Pênalti (Decisão)', penalty_shootout_miss: '❌ Pênalti (Perdido)',
                                          yellow_card: '🟨 Amarelo', red_card: '🟥 Vermelho', assist: '🅰️ Assistência',
                                          substitution: '🔄 Subst.',
+                                         points_1: '🏀 +1 Ponto', points_2: '🏀 +2 Pontos', points_3: '🏀 +3 Pontos',
+                                         rebound: '🏀 Rebote', block: '🏀 Toco', steal: '🏀 Roubo', foul: '🚫 Falta'
                                      };
                                     const pOut = event.playerOutId ? [...homeTeam.players, ...awayTeam.players].find(pl => pl.id === event.playerOutId) : null;
                                     return (

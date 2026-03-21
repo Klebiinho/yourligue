@@ -947,6 +947,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             substitutions_limit: data.substitutionsLimit,
             allow_substitution_return: data.allowSubstitutionReturn ?? true,
             has_overtime: data.hasOvertime ?? true,
+            sport_type: data.sportType,
             slug
         }).select().single();
         if (error) {
@@ -1443,12 +1444,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         // 4. Calculate New Scores
         let newHomeScore = m.homeScore || 0;
         let newAwayScore = m.awayScore || 0;
+        const isHome = String(event.teamId) === String(m.homeTeamId);
+
         if (event.type === 'goal' || event.type === 'penalty_goal') {
-            if (String(event.teamId) === String(m.homeTeamId)) newHomeScore++;
-            else newAwayScore++;
+            if (isHome) newHomeScore++; else newAwayScore++;
         } else if (event.type === 'own_goal') {
-            if (String(event.teamId) === String(m.homeTeamId)) newAwayScore++;
-            else newHomeScore++;
+            if (isHome) newAwayScore++; else newHomeScore++;
+        } else if (event.type === 'points_1') {
+            if (isHome) newHomeScore += 1; else newAwayScore += 1;
+        } else if (event.type === 'points_2') {
+            if (isHome) newHomeScore += 2; else newAwayScore += 2;
+        } else if (event.type === 'points_3') {
+            if (isHome) newHomeScore += 3; else newAwayScore += 3;
         }
 
         const newMatchState = {
@@ -1464,7 +1471,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         setRawMatches(prev => prev.map(x => String(x.id) === String(matchId) ? newMatchState : x));
 
         // 6. Sync with Database
-        const isScoreChange = event.type === 'goal' || event.type === 'penalty_goal' || event.type === 'own_goal';
+        const isScoreChange = ['goal', 'penalty_goal', 'own_goal', 'points_1', 'points_2', 'points_3'].includes(event.type);
         
         const updateData: any = { timer: snapshotTimer };
         if (isScoreChange) {
@@ -1531,10 +1538,24 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             newHomeScore = m.homeScore;
             newAwayScore = m.awayScore;
 
-            if (event && (event.type === 'goal' || event.type === 'penalty_goal' || event.type === 'own_goal')) {
-                const scoringTeamIsHome = event.type === 'own_goal' ? (event.teamId !== m.homeTeamId) : (event.teamId === m.homeTeamId);
-                if (scoringTeamIsHome) newHomeScore = Math.max(0, newHomeScore - 1);
-                else newAwayScore = Math.max(0, newAwayScore - 1);
+            const isScoreChange = event && ['goal', 'penalty_goal', 'own_goal', 'points_1', 'points_2', 'points_3'].includes(event.type);
+            if (event && isScoreChange) {
+                const isHome = String(event.teamId) === String(m.homeTeamId);
+                const isOwnGoal = event.type === 'own_goal';
+                
+                let pointsToRemove = 0;
+                if (['goal', 'penalty_goal', 'own_goal'].includes(event.type)) pointsToRemove = 1;
+                else if (event.type === 'points_1') pointsToRemove = 1;
+                else if (event.type === 'points_2') pointsToRemove = 2;
+                else if (event.type === 'points_3') pointsToRemove = 3;
+
+                if (isOwnGoal) {
+                    if (isHome) newAwayScore = Math.max(0, newAwayScore - pointsToRemove);
+                    else newHomeScore = Math.max(0, newHomeScore - pointsToRemove);
+                } else {
+                    if (isHome) newHomeScore = Math.max(0, newHomeScore - pointsToRemove);
+                    else newAwayScore = Math.max(0, newAwayScore - pointsToRemove);
+                }
             }
 
             return {
@@ -1546,7 +1567,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             };
         }));
 
-        if (event && (event.type === 'goal' || event.type === 'penalty_goal' || event.type === 'own_goal')) {
+        const isScoreChange = event && ['goal', 'penalty_goal', 'own_goal', 'points_1', 'points_2', 'points_3'].includes(event.type);
+        if (isScoreChange) {
             await supabase.from('matches').update({
                 home_score: newHomeScore,
                 away_score: newAwayScore,

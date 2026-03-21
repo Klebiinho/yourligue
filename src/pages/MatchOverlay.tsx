@@ -190,7 +190,8 @@ const MatchOverlay = () => {
         );
     }
 
-    const periodLabel = match.period === 'Pênaltis' || match.period === 'Sel. Batedores' ? 'PÊNALTIS' : match.period;
+    const isBasket = league?.sportType === 'basketball';
+    const periodLabel = (match.period === 'Pênaltis' || match.period === 'Sel. Batedores') ? 'PÊNALTIS' : match.period;
 
     const shootoutEvents = match.events.filter(e => e.type.startsWith('penalty_shootout_'));
     const homeShootout = shootoutEvents.filter(e => e.teamId === match.homeTeamId);
@@ -270,16 +271,16 @@ const MatchOverlay = () => {
 
                 {/* Extra Info Row (Stays below primary scoreboard) */}
                 <div className="flex flex-col gap-1 w-full animate-fade-in delay-200">
-                    {/* Added Time */}
-                    {(match.extraTime || 0) > 0 && match.period !== 'Pênaltis' && (
+                    {/* Extra Time / Overtime Info */}
+                    {(match.extraTime || 0) > 0 && match.period !== 'Pênaltis' && !isBasket && (
                         <div className="bg-danger px-3 py-1 rounded-lg text-[0.65rem] font-black text-white shadow-lg animate-pulse border border-white/10 flex items-center gap-2 self-start mt-1">
                             <span className="w-1.5 h-1.5 bg-white rounded-full" />
                             +{match.extraTime} ACRÉSCIMO
                         </div>
                     )}
 
-                    {/* Detailed Penalty Shootout Panel */}
-                    {(match.period === 'Pênaltis' || (match.period === 'Finalizado' && shootoutEvents.length > 0)) && (
+                    {/* Detailed Penalty Shootout Panel (Soccer Only) */}
+                    {(match.period === 'Pênaltis' || (match.period === 'Finalizado' && shootoutEvents.length > 0)) && !isBasket && (
                         <div className="mt-2 flex flex-col gap-1">
                             <div className="bg-black/85 backdrop-blur-xl p-3 px-4 rounded-2xl border border-white/10 shadow-2xl min-w-[320px]">
                                 <div className="flex flex-col gap-3">
