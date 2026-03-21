@@ -324,7 +324,7 @@ const Matches = () => {
                                 )}
 
                                 {/* Action Row */}
-                                <div className="flex items-center justify-between mt-5 pt-4 border-t border-white/[0.05] gap-3">
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mt-5 pt-4 border-t border-white/[0.05] gap-3">
                                     {/* Status Badge */}
                                     <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[0.6rem] font-black uppercase tracking-widest flex-none border ${isLive ? 'bg-danger/10 text-danger border-danger/20 shadow-[0_4px_15px_rgba(239,68,68,0.1)]' :
                                         isFinished ? 'bg-primary/10 text-primary border-primary/20' : 'bg-slate-900 text-slate-500 border-white/5'
@@ -334,7 +334,7 @@ const Matches = () => {
                                     </div>
 
                                     {/* Buttons */}
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap justify-end sm:justify-start items-center gap-2">
                                         {match.youtubeLiveId && (
                                             <button 
                                                 onClick={(e) => { 

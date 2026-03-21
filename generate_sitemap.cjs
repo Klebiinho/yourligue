@@ -197,6 +197,10 @@ Object.values(data).forEach(list => list.forEach(addXmlUrl));
 
 xml += '</urlset>';
 
-fs.writeFileSync(path.join(__dirname, 'public', 'sitemap.xml'), xml);
+const publicDir = path.join(__dirname, 'public');
+if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir, { recursive: true });
+}
+fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), xml);
 fs.writeFileSync(path.join(__dirname, 'src', 'sitemap_data.json'), JSON.stringify(data, null, 2));
 console.log('Sitemap and data generated successfully!');

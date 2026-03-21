@@ -111,7 +111,7 @@ const Dashboard = () => {
             {isPublicView && <AdBanner position="home_stats" />}
 
             {/* ── Stats Row ─────────────────────────────────────────────── */}
-            <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 {stats.map((stat, i) => (
                     <div key={i} className={`glass-panel p-3 sm:p-4 md:p-5 bg-gradient-to-br ${stat.gradientFrom} to-transparent border ${stat.border} flex flex-col items-center sm:items-start gap-1.5 sm:gap-2 text-center sm:text-left`}>
                         <div className={`${stat.text} hidden sm:block`}>{stat.icon}</div>

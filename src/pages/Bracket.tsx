@@ -84,7 +84,7 @@ const Bracket = () => {
                 </div>
 
                 {isEdit && (
-                    <div className="absolute top-0 left-full ml-3 z-50 bg-[#15151e] border border-primary/50 p-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-slide-left min-w-[220px]" onClick={e => e.stopPropagation()}>
+                    <div className="absolute top-full lg:top-0 left-1/2 -translate-x-1/2 lg:translate-x-0 lg:left-full mt-2 lg:mt-0 lg:ml-3 z-50 bg-[#15151e] border border-primary/50 p-3 lg:p-4 rounded-2xl shadow-2xl flex flex-col sm:flex-row items-center gap-3 animate-slide-up lg:animate-slide-left min-w-[200px] lg:min-w-[220px]" onClick={e => e.stopPropagation()}>
                         <div className="flex flex-col gap-2">
                             <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest ml-1">Resultado</span>
                             <div className="flex items-center gap-2">
@@ -213,8 +213,8 @@ const Bracket = () => {
                             <p className="text-slate-400 font-medium md:text-lg">{isPublicView ? 'Acompanhe a divisão e classificação dos grupos' : 'Sorteio equilibrado de equipes divididas em potes.'}</p>
                         </div>
                         {!isPublicView && isAdmin && (
-                            <div className="flex items-center gap-4 bg-black/40 p-4 rounded-3xl border border-white/5 shadow-2xl">
-                                <div className="flex flex-col gap-1.5 px-4 h-[60px] justify-center">
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 bg-black/40 p-4 rounded-3xl border border-white/5 shadow-2xl w-full sm:w-auto">
+                                <div className="flex flex-col gap-1.5 px-4 h-[60px] justify-center bg-white/5 sm:bg-transparent rounded-xl sm:rounded-none">
                                     <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest pl-1">Equipes / Grupo</span>
                                     <input type="number" min="2" max="10" value={teamsPerGroup} onChange={e => setTeamsPerGroup(parseInt(e.target.value))}
                                         className="w-full bg-transparent border-none text-white font-black font-outfit text-2xl outline-none focus:text-accent transition-colors" />

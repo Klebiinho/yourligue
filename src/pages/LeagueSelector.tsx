@@ -234,7 +234,7 @@ const LeagueSelector = () => {
                                 <div className="flex flex-col gap-4">
                                     <div className="flex flex-col gap-2">
                                         <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Crie sua nova liga</label>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-col sm:flex-row gap-2">
                                             <input type="text" placeholder="Ex: Premier League 2026" value={newName}
                                                 onChange={e => setNewName(e.target.value)} autoFocus required
                                                 className="flex-1 bg-black/40 border border-white/10 rounded-xl px-5 py-4 text-white font-bold text-lg outline-none focus:border-accent transition-all placeholder:text-slate-700"
@@ -273,13 +273,13 @@ const LeagueItem = ({
 }: any) => {
     return (
         <div onClick={onSelect}
-            className={`group p-5 rounded-2xl border transition-all duration-500 flex items-center gap-5 cursor-pointer relative overflow-hidden backdrop-blur-xl ${currentLeagueId === league.id
+            className={`group p-4 sm:p-5 rounded-2xl border transition-all duration-500 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 cursor-pointer relative overflow-hidden backdrop-blur-xl ${currentLeagueId === league.id
                 ? 'bg-primary/10 border-primary/30 shadow-[0_8px_30px_rgba(109,40,217,0.15)]'
                 : 'bg-white/3 border-white/5 hover:bg-white/6 hover:border-white/10'
                 }`}>
             {currentLeagueId === league.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
 
-            <div className="relative flex-none">
+            <div className="relative flex-none flex items-center justify-center w-full sm:w-auto mt-2 sm:mt-0">
                 <TeamLogo src={league.logo} size={56} />
                 {currentLeagueId === league.id && (
                     <div className="absolute -bottom-1 -right-1 bg-primary text-white w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-bg-dark animate-bounce">
@@ -289,7 +289,7 @@ const LeagueItem = ({
             </div>
 
             {isEditing ? (
-                <div className="flex-1 flex gap-2" onClick={e => e.stopPropagation()}>
+                <div className="flex-1 flex flex-col sm:flex-row gap-2 w-full" onClick={e => e.stopPropagation()}>
                     <input
                         value={editName} onChange={e => onEditNameChange(e.target.value)}
                         autoFocus className="flex-1 bg-black/40 border border-primary/50 rounded-xl px-4 py-3 text-white font-bold outline-none ring-2 ring-primary/20"
@@ -302,16 +302,16 @@ const LeagueItem = ({
                     </button>
                 </div>
             ) : (
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-outfit font-black text-white text-lg uppercase tracking-wide truncate max-w-[250px] leading-tight transition-transform group-hover:translate-x-1 duration-300">
+                <div className="flex-1 min-w-0 w-full text-center sm:text-left">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-start gap-2 mb-1 sm:mb-0.5">
+                        <span className="font-outfit font-black text-white text-lg uppercase tracking-wide truncate max-w-full sm:max-w-[250px] leading-tight transition-transform sm:group-hover:translate-x-1 duration-300">
                             {league.name}
                         </span>
                         {type === 'owned' && currentLeagueId === league.id && <span className="bg-primary/20 text-primary text-[0.55rem] font-black px-2 py-0.5 rounded tracking-widest leading-none border border-primary/20">ATIVA</span>}
                         {isOwned && type !== 'owned' && <span className="bg-primary/20 text-primary text-[0.55rem] font-black px-2 py-0.5 rounded tracking-widest leading-none border border-primary/20">MINHA</span>}
                         {isFollowed && type === 'explore' && <span className="bg-accent/20 text-accent text-[0.55rem] font-black px-2 py-0.5 rounded tracking-widest leading-none border border-accent/20">SEGUINDO</span>}
                     </div>
-                    <div className="flex items-center gap-3 text-[0.6rem] font-bold uppercase tracking-widest transition-colors">
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-2 sm:mt-0 text-[0.6rem] font-bold uppercase tracking-widest transition-colors">
                         <span className="text-slate-500 group-hover:text-primary">
                             {type === 'owned' ? 'Clique para gerenciar' : 'Clique para visualizar'}
                         </span>
@@ -325,7 +325,7 @@ const LeagueItem = ({
                 </div>
             )}
 
-            <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-center sm:justify-end gap-1.5 w-full sm:w-auto mt-3 sm:mt-0 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
                 {!isEditing && (
                     <>
                         {type === 'owned' && (
