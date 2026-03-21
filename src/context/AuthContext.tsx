@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
+import { registerPushNotifications } from '../services/pushNotifications';
 
 interface AuthContextType {
     user: User | null;
@@ -43,7 +44,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             // Only update if something actually changed to avoid unnecessary re-renders on window focus
             setSession(current => current?.access_token === session?.access_token ? current : session);
-            setUser(current => current?.id === session?.user?.id ? current : (session?.user ?? null));
+            setUser(current => {
+                const newUser = session?.user ?? null;
+                if (newUser && current?.id !== newUser.id) {
+                    registerPushNotifications(newUser.id);
+                }
+                return current?.id === newUser?.id ? current : newUser;
+            });
         });
 
         return () => subscription.unsubscribe();
