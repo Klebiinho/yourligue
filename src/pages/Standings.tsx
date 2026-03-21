@@ -77,13 +77,13 @@ const Standings = () => {
                                         <th className="min-w-[160px] sm:w-auto px-4 py-5 text-left sticky left-12 sm:left-16 z-30 bg-[#0d0d14]/95 backdrop-blur-md">Clube</th>
                                         <th className="w-16 sm:w-20 px-2 sm:px-4 py-5 text-center text-white border-x border-white/[0.03]">Pts</th>
                                         <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center">PJ</th>
-                                        <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center text-accent/80">V</th>
-                                        {!isBasket && <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center">E</th>}
-                                        <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center text-danger/80">D</th>
-                                        <th className="w-20 px-4 py-5 text-center hidden md:table-cell">{isBasket ? 'PP' : 'GP'}</th>
-                                        <th className="w-20 px-4 py-5 text-center hidden md:table-cell">{isBasket ? 'PC' : 'GC'}</th>
-                                        <th className="w-20 px-4 py-5 text-center">{isBasket ? 'S' : 'SG'}</th>
-                                        <th className="w-32 sm:w-36 px-4 py-5 text-center">Últimos</th>
+                                        <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center text-accent/80" title="Vitórias">V</th>
+                                        {!isBasket && <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center" title="Empates">E</th>}
+                                        <th className="w-12 sm:w-16 px-2 sm:px-4 py-5 text-center text-danger/80" title="Derrotas">D</th>
+                                        <th className="w-20 px-4 py-5 text-center hidden md:table-cell" title={isBasket ? "Pontos Pró" : "Gols Pró"}>{isBasket ? 'PP' : 'GP'}</th>
+                                        <th className="w-20 px-4 py-5 text-center hidden md:table-cell" title={isBasket ? "Pontos Contra" : "Gols Contra"}>{isBasket ? 'PC' : 'GC'}</th>
+                                        <th className="w-20 px-4 py-5 text-center" title={isBasket ? "Saldo de Pontos" : "Saldo de Gols"}>{isBasket ? 'S' : 'SG'}</th>
+                                        <th className="w-32 sm:w-36 px-4 py-5 text-center" title="Forma Recente">Últimos</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/[0.04]">
@@ -214,7 +214,7 @@ const Standings = () => {
                             <div className="flex items-center gap-6">
                                 <div className="flex items-center gap-2 text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.1em] italic">
                                     <Info size={14} className="text-primary opacity-60" />
-                                    <span>Critérios: Pts &gt; {isBasket ? 'Saldo' : 'SG'} &gt; {isBasket ? 'PC' : 'GP'}</span>
+                                    <span>Critérios: Pts &gt; {isBasket ? 'S' : 'SG'} &gt; {isBasket ? 'PP' : 'GP'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.1em] italic">
                                     <TrendingUp size={14} className="text-accent opacity-60" />
