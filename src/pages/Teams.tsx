@@ -26,10 +26,11 @@ const Teams = () => {
     const [teamError, setTeamError] = useState('');
     const [isAddingPlayer, setIsAddingPlayer] = useState(false);
     const [isEditingPlayer, setIsEditingPlayer] = useState<string | null>(null);
+    const isBasket = league?.sportType === 'basketball';
     const [formPlayer, setFormPlayer] = useState({
         name: '',
         number: 0,
-        position: 'Atacante',
+        position: isBasket ? 'Armador' : 'Atacante',
         isCaptain: false,
         isReserve: false,
         photo: ''
@@ -78,7 +79,7 @@ const Teams = () => {
             if (error) { setError(error); return; }
             setIsAddingPlayer(false);
         }
-        setFormPlayer({ name: '', number: 0, position: 'Atacante', isCaptain: false, isReserve: false, photo: '' });
+        setFormPlayer({ name: '', number: 0, position: isBasket ? 'Armador' : 'Atacante', isCaptain: false, isReserve: false, photo: '' });
     };
 
     const startEdit = (player: Player) => {
@@ -344,7 +345,10 @@ const Teams = () => {
                                                         <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Posição Principal</label>
                                                         <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm focus:border-accent outline-none mt-1.5 font-bold appearance-none cursor-pointer h-14"
                                                             value={formPlayer.position} onChange={e => setFormPlayer({ ...formPlayer, position: e.target.value })}>
-                                                            {['Goleiro', 'Zagueiro', 'Lateral', 'Meia', 'Atacante'].map(p => <option key={p} value={p} className="bg-[#07070a]">{p}</option>)}
+                                                            {isBasket 
+                                                                ? ['Armador', 'Ala-Armador', 'Ala', 'Ala-Pivô', 'Pivô'].map(p => <option key={p} value={p} className="bg-[#07070a]">{p}</option>)
+                                                                : ['Goleiro', 'Zagueiro', 'Lateral', 'Meia', 'Atacante'].map(p => <option key={p} value={p} className="bg-[#07070a]">{p}</option>)
+                                                            }
                                                         </select>
                                                     </div>
                                                 </div>

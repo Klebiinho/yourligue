@@ -21,8 +21,16 @@ const TeamsDashboard = () => {
         photo: string;
     }
 
+    const isBasket = league?.sportType === 'basketball';
     const [formTeam, setFormTeam] = useState({ name: '', logo: '' });
-    const [formPlayer, setFormPlayer] = useState<FormPlayer>({ name: '', number: 0, position: 'Goleiro', isCaptain: false, isReserve: false, photo: '' });
+    const [formPlayer, setFormPlayer] = useState<FormPlayer>({
+        name: '', 
+        number: 0, 
+        position: isBasket ? 'Armador' : 'Goleiro', 
+        isCaptain: false, 
+        isReserve: false, 
+        photo: '' 
+    });
 
     const selectedTeam = teams.find(t => t.id === selectedTeamId);
 
@@ -60,7 +68,7 @@ const TeamsDashboard = () => {
             if (error) { alert(error); return; }
             setIsAddingPlayer(false);
         }
-        setFormPlayer({ name: '', number: 0, position: 'Goleiro', isCaptain: false, isReserve: false, photo: '' });
+        setFormPlayer({ name: '', number: 0, position: isBasket ? 'Armador' : 'Goleiro', isCaptain: false, isReserve: false, photo: '' });
     };
 
     // List filtering
@@ -173,7 +181,9 @@ const TeamsDashboard = () => {
                                         <div className="flex flex-col">
                                             <span className="text-[0.5rem] font-black text-slate-600 uppercase tracking-widest">Aproveitamento</span>
                                             <span className="text-lg sm:text-xl font-black text-white font-outfit leading-none">
-                                                {selectedTeam.stats?.matches > 0 ? Math.round(((selectedTeam.stats.wins * 3 + selectedTeam.stats.draws) / (selectedTeam.stats.matches * 3)) * 100) : 0}%
+                                                {selectedTeam.stats?.matches > 0 
+                                                    ? Math.round(((selectedTeam.stats.wins * (league?.pointsForWin || 3) + selectedTeam.stats.draws * (league?.pointsForDraw || 1)) / (selectedTeam.stats.matches * (league?.pointsForWin || 3))) * 100) 
+                                                    : 0}%
                                             </span>
                                         </div>
                                         <div className="w-px h-8 bg-white/10 flex-none" />
@@ -231,7 +241,10 @@ const TeamsDashboard = () => {
                                                     <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Posição Principal</label>
                                                     <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm focus:border-accent outline-none mt-1.5 font-bold appearance-none cursor-pointer h-14"
                                                         value={formPlayer.position} onChange={e => setFormPlayer({ ...formPlayer, position: e.target.value })}>
-                                                        {['Goleiro', 'Zagueiro', 'Lateral', 'Meia', 'Atacante'].map(p => <option key={p} value={p} className="bg-[#07070a]">{p}</option>)}
+                                                        {isBasket 
+                                                            ? ['Armador', 'Ala-Armador', 'Ala', 'Ala-Pivô', 'Pivô'].map(p => <option key={p} value={p} className="bg-[#07070a]">{p}</option>)
+                                                            : ['Goleiro', 'Zagueiro', 'Lateral', 'Meia', 'Atacante'].map(p => <option key={p} value={p} className="bg-[#07070a]">{p}</option>)
+                                                        }
                                                     </select>
                                                 </div>
                                             </div>
@@ -368,19 +381,29 @@ const TeamsDashboard = () => {
                     <div className="flex items-center gap-3">
                         <span className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest bg-black/40 px-1.5 py-0.5 rounded">Nº {p.number}</span>
                         <div className="flex items-center gap-2">
-                            {(p.stats?.goals || 0) > 0 && (
-                                <span className="flex items-center gap-1 text-[0.6rem] font-black text-accent uppercase">
-                                    <TrendingUp size={10} /> {p.stats.goals}
-                                </span>
+                            {isBasket ? (
+                                (p.stats?.points || 0) > 0 && (
+                                    <span className="flex items-center gap-1 text-[0.6rem] font-black text-accent uppercase">
+                                        <TrendingUp size={10} /> {p.stats.points} pts
+                                    </span>
+                                )
+                            ) : (
+                                <>
+                                    {(p.stats?.goals || 0) > 0 && (
+                                        <span className="flex items-center gap-1 text-[0.6rem] font-black text-accent uppercase">
+                                            <TrendingUp size={10} /> {p.stats.goals}
+                                        </span>
+                                    )}
+                                    {(p.stats?.yellowCards || 0) > 0 && (
+                                        <div className="flex gap-0.5">
+                                            {Array.from({ length: p.stats?.yellowCards || 0 }).map((_, i) => (
+                                                <div key={i} className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm" />
+                                            ))}
+                                        </div>
+                                    )}
+                                    {(p.stats?.redCards || 0) > 0 && <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm" />}
+                                </>
                             )}
-                            {(p.stats?.yellowCards || 0) > 0 && (
-                                <div className="flex gap-0.5">
-                                    {Array.from({ length: p.stats?.yellowCards || 0 }).map((_, i) => (
-                                        <div key={i} className="w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm" />
-                                    ))}
-                                </div>
-                            )}
-                            {(p.stats?.redCards || 0) > 0 && <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm" />}
                         </div>
                     </div>
                 </div>
