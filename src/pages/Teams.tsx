@@ -6,9 +6,10 @@ import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const Teams = () => {
-    const { league, teams, addTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain, reorderPlayers, isPublicView, isAdmin, interactWithTeam, userInteractions, supportCounts } = useLeague();
+    const { league, teams, addTeam, updateTeam, deleteTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain, reorderPlayers, isPublicView, isAdmin, interactWithTeam, userInteractions, supportCounts } = useLeague();
     const { teamId } = useParams<{ teamId: string }>();
     const [activeTeamId, setActiveTeamId] = useState<string | null>(teamId || teams[0]?.id || null);
+    const [isEditingTeam, setIsEditingTeam] = useState<string | null>(null);
 
     useEffect(() => {
         if (teamId) {
@@ -45,11 +46,22 @@ const Teams = () => {
         e.preventDefault();
         if (!newTeamName.trim()) return;
         setTeamError('');
-        const { error } = await addTeam({ name: newTeamName, logo: newTeamLogo });
-        if (error) { setTeamError(error); return; }
+        
+        if (isEditingTeam) {
+            await updateTeam(isEditingTeam, { name: newTeamName, logo: newTeamLogo });
+            setIsEditingTeam(null);
+        } else {
+            const { error } = await addTeam({ name: newTeamName, logo: newTeamLogo });
+            if (error) { setTeamError(error); return; }
+        }
+        
         setNewTeamName(''); setNewTeamLogo('');
-        const added = teams[teams.length - 1];
-        if (added) setActiveTeamId(added.id);
+    };
+
+    const startEditingTeam = (team: any) => {
+        setIsEditingTeam(team.id);
+        setNewTeamName(team.name);
+        setNewTeamLogo(team.logo || '');
     };
 
     const handlePlayerSubmit = async (e: React.FormEvent) => {
@@ -152,9 +164,17 @@ const Teams = () => {
                 <section className="xl:col-span-4 space-y-4">
                     {/* New Team Form (Hidden in Public View or if not admin) */}
                     {!isPublicView && isAdmin && (
-                        <div className="glass-panel p-4 sm:p-6">
-                            <h2 className="text-sm font-black text-white font-outfit uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <Plus size={16} className="text-accent" /> Novo Clube
+                        <div className="glass-panel p-4 sm:p-6 transition-all">
+                            <h2 className="text-sm font-black text-white font-outfit uppercase tracking-widest mb-4 flex items-center justify-between">
+                                <span className="flex items-center gap-2">
+                                    {isEditingTeam ? <Edit2 size={16} className="text-primary" /> : <Plus size={16} className="text-accent" />}
+                                    {isEditingTeam ? 'Editar Clube' : 'Novo Clube'}
+                                </span>
+                                {isEditingTeam && (
+                                    <button onClick={() => { setIsEditingTeam(null); setNewTeamName(''); setNewTeamLogo(''); }} className="text-slate-500 hover:text-white transition-colors">
+                                        <X size={16} />
+                                    </button>
+                                )}
                             </h2>
                             <form onSubmit={handleAddTeam} className="space-y-3">
                                 <div className="space-y-1.5">
@@ -208,7 +228,7 @@ const Teams = () => {
                             ) : (
                                 teams.map(team => (
                                     <div key={team.id} onClick={() => setActiveTeamId(team.id)}
-                                        className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 border ${activeTeamId === team.id
+                                        className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 border relative group/team ${activeTeamId === team.id
                                             ? 'bg-primary/10 border-primary/25 shadow-sm'
                                             : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05]'
                                             }`}>
@@ -217,7 +237,18 @@ const Teams = () => {
                                             <h4 className="font-outfit font-black text-white uppercase text-xs sm:text-sm truncate tracking-wide leading-tight">{team.name}</h4>
                                             <p className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest mt-0.5">{team.players.length} Atletas</p>
                                         </div>
-                                        {activeTeamId === team.id && <Check size={14} className="text-primary flex-none" />}
+                                        
+                                        {!isPublicView && isAdmin && (
+                                            <div className="flex items-center gap-1 opacity-0 group-hover/team:opacity-100 transition-opacity">
+                                                <button onClick={(e) => { e.stopPropagation(); startEditingTeam(team); }} className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-all">
+                                                    <Edit2 size={12} />
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); if (window.confirm('Excluir time?')) deleteTeam(team.id); }} className="p-1.5 rounded-lg text-danger/40 hover:text-danger hover:bg-danger/10 transition-all">
+                                                    <Trash2 size={12} />
+                                                </button>
+                                            </div>
+                                        )}
+                                        {activeTeamId === team.id && !isAdmin && <Check size={14} className="text-primary flex-none" />}
                                     </div>
                                 ))
                             )}
