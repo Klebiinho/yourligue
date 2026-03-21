@@ -317,7 +317,7 @@ const LeagueSelector = () => {
                                     const res = await createLeague({
                                         name: newName, logo: '', maxTeams: 16,
                                         pointsForWin: isBasket ? 2 : 3, 
-                                        pointsForDraw: isBasket ? 0 : 1, 
+                                        pointsForDraw: isBasket ? 1 : 1, 
                                         pointsForLoss: isBasket ? 1 : 0,
                                         defaultHalfLength: isBasket ? 10 : 45, 
                                         playersPerTeam: isBasket ? 5 : 7, 
@@ -325,7 +325,7 @@ const LeagueSelector = () => {
                                         substitutionsLimit: 5,
                                         allowSubstitutionReturn: true,
                                         hasOvertime: true,
-                                        overtimeHalfLength: isBasket ? 5 : 15,
+                                        overtimeHalfLength: 15,
                                         sportType: newSport
                                     });
                                     if (!res.error) {
