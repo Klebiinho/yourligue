@@ -141,7 +141,10 @@ const AppRouter = () => {
     return <PublicLayout />;
   }
 
-  if (!user) return <AuthPage />;
+  const publicPaths = ['/', '/blog', '/duvidas', '/servicos', '/categoria', '/autor', '/privacidade', '/termos', '/sitemap'];
+  const isPublicPath = publicPaths.some(path => window.location.pathname === path || window.location.pathname.startsWith(path + '/'));
+
+  if (!user && !isPublicPath) return <AuthPage />;
 
   if ((leagues.length === 0 || !league) && window.location.pathname !== '/leagues') {
     return (
@@ -168,6 +171,13 @@ const AppRouter = () => {
             <Route path="/settings" element={<Settings />} />
             <Route path="/match/:matchId" element={<MatchControl />} />
             <Route path="/leagues" element={<LeagueSelector />} />
+
+            {/* Public SEO Routes */}
+            <Route path="/blog/*" element={<div className="p-10 text-center uppercase font-black tracking-widest text-slate-500">Conteúdo do Blog em breve...</div>} />
+            <Route path="/duvidas/*" element={<div className="p-10 text-center uppercase font-black tracking-widest text-slate-500">Central de Dúvidas em breve...</div>} />
+            <Route path="/servicos/*" element={<div className="p-10 text-center uppercase font-black tracking-widest text-slate-500">Nossos Serviços em breve...</div>} />
+            <Route path="/categoria/*" element={<div className="p-10 text-center uppercase font-black tracking-widest text-slate-500">Categoria em breve...</div>} />
+            <Route path="/autor/*" element={<div className="p-10 text-center uppercase font-black tracking-widest text-slate-500">Perfil do Autor em breve...</div>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
