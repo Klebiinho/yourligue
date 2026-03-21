@@ -97,6 +97,10 @@ export type League = {
     hasOvertime: boolean;
     slug: string;
     userId: string;
+    lat?: number;
+    lng?: number;
+    address?: string;
+    distancia_km?: number;
     follower_count?: { count: number }[];
 };
 
@@ -171,6 +175,7 @@ interface LeagueContextType {
     followLeague: (leagueId: string) => Promise<void>;
     unfollowLeague: (leagueId: string) => Promise<void>;
     searchLeagues: (query: string) => Promise<League[]>;
+    fetchNearbyLeagues: (lat: number, lng: number, radiusKm: number) => Promise<League[]>;
 
     // User Interactions
     userInteractions: TeamInteraction[];
@@ -589,6 +594,43 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             slug: l.slug || '',
             userId: l.user_id,
             follower_count: l.follower_count // Passado para o componente UI
+        }));
+    };
+
+    const fetchNearbyLeagues = async (lat: number, lng: number, radiusKm: number): Promise<League[]> => {
+        const { data, error } = await supabase.rpc('get_nearby_leagues', {
+            user_lat: lat,
+            user_lng: lng,
+            dist_km: radiusKm
+        });
+
+        if (error) {
+            console.error('Error fetching nearby leagues:', error);
+            return [];
+        }
+
+        return (data || []).map((l: any) => ({
+            id: l.id,
+            name: l.name,
+            logo: l.logo || '',
+            maxTeams: l.max_teams || 16,
+            pointsForWin: l.points_for_win || 3,
+            pointsForDraw: l.points_for_draw || 1,
+            pointsForLoss: l.points_for_loss || 0,
+            defaultHalfLength: l.default_half_length || 45,
+            overtimeHalfLength: l.overtime_half_length || 15,
+            playersPerTeam: l.players_per_team || 5,
+            reserveLimitPerTeam: l.reserve_limit_per_team || 5,
+            substitutionsLimit: l.substitutions_limit || 5,
+            allowSubstitutionReturn: l.allow_substitution_return ?? true,
+            hasOvertime: l.has_overtime ?? true,
+            slug: l.slug || '',
+            userId: l.user_id,
+            lat: l.lat,
+            lng: l.lng,
+            address: l.address,
+            distancia_km: l.distancia_km,
+            follower_count: l.follower_count
         }));
     };
 
@@ -1753,7 +1795,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         <LeagueContext.Provider value={{
             league, leagues, followedLeagues, teams, matches, brackets, loading, dataLoading,
             createLeague, updateLeague, deleteLeague, selectLeague, generateGroups,
-            followLeague, unfollowLeague, searchLeagues,
+            followLeague, unfollowLeague, searchLeagues, fetchNearbyLeagues,
             addTeam, updateTeam, deleteTeam,
             addPlayer, updatePlayer, removePlayer, toggleCaptain, reorderPlayers, isPlayerOnPitch,
             createMatch, updateMatch, deleteMatch, startMatch, pauseMatch, endMatch, updateTimer,

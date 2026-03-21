@@ -6,9 +6,11 @@ import { Trophy, Plus, Trash2, LogOut, Edit2, Check, X, RefreshCw, User, Setting
 import TeamLogo from '../components/TeamLogo';
 
 const LeagueSelector = () => {
-    const { leagues, followedLeagues, league, createLeague, deleteLeague, selectLeague, updateLeague, loadLeagues, searchLeagues, followLeague, unfollowLeague, loadPublicLeague } = useLeague();
+    const { leagues, followedLeagues, league, createLeague, deleteLeague, selectLeague, updateLeague, loadLeagues, searchLeagues, followLeague, unfollowLeague, loadPublicLeague, fetchNearbyLeagues } = useLeague();
     const { user, signOut } = useAuth();
     const [activeTab, setActiveTab] = useState<'owned' | 'following' | 'nearby' | 'explore'>('owned');
+    const [nearbyLeagues, setNearbyLeagues] = useState<any[]>([]);
+    const [isLocating, setIsLocating] = useState(false);
     const [showCreate, setShowCreate] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
@@ -54,6 +56,30 @@ const LeagueSelector = () => {
     const handleViewLeague = async (l: any) => {
         const success = await loadPublicLeague(l.slug || l.id);
         if (success) navigate(`/view/${l.slug || l.id}`);
+    };
+
+    const handleRequestLocation = async () => {
+        setIsLocating(true);
+        if (!navigator.geolocation) {
+            alert("Seu navegador não suporta geolocalização.");
+            setIsLocating(false);
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                const results = await fetchNearbyLeagues(latitude, longitude, 50); // Raio de 50km
+                setNearbyLeagues(results);
+                setIsLocating(false);
+            },
+            (error) => {
+                console.error("Erro ao obter localização:", error);
+                alert("Não foi possível obter sua localização. Verifique as permissões do navegador.");
+                setIsLocating(false);
+            },
+            { enableHighAccuracy: true }
+        );
     };
 
     return (
@@ -190,18 +216,42 @@ const LeagueSelector = () => {
                     )}
 
                     {activeTab === 'nearby' && (
-                        <div className="glass-panel py-20 px-10 text-center space-y-6">
-                            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
-                                <MapPin size={40} className="text-slate-700" strokeWidth={1} />
+                        nearbyLeagues.length === 0 ? (
+                            <div className="glass-panel py-20 px-10 text-center space-y-6">
+                                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                                    <MapPin size={40} className="text-slate-700" strokeWidth={1} />
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Ligas Próximas a Você</h3>
+                                    <p className="text-slate-500 font-medium text-sm">Use sua localização para encontrar campeonatos regionais e interagir com a comunidade local.</p>
+                                    <button 
+                                        onClick={handleRequestLocation} 
+                                        disabled={isLocating}
+                                        className="mt-4 px-8 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                                    >
+                                        {isLocating ? 'Obtendo Localização...' : 'Solicitar Localização'}
+                                    </button>
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Ligas Próximas a Você</h3>
-                                <p className="text-slate-500 font-medium text-sm">Use sua localização para encontrar campeonatos regionais e interagir com a comunidade local.</p>
-                                <button onClick={() => alert('A busca por localização estará disponível em breve!')} className="mt-4 px-8 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all">
-                                    Solicitar Localização
-                                </button>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between px-2 mb-2">
+                                    <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Encontradas num raio de 50km</span>
+                                    <button onClick={handleRequestLocation} className="text-[0.6rem] font-black text-primary uppercase tracking-widest hover:underline">Atualizar</button>
+                                </div>
+                                {nearbyLeagues.map(l => (
+                                    <LeagueItem
+                                        key={l.id} league={l}
+                                        onSelect={() => handleViewLeague(l)}
+                                        onFollow={() => followLeague(l.id)}
+                                        onUnfollow={() => unfollowLeague(l.id)}
+                                        isFollowed={followedLeagues.some(f => f.id === l.id)}
+                                        isOwned={leagues.some(o => o.id === l.id)}
+                                        type="nearby"
+                                    />
+                                ))}
                             </div>
-                        </div>
+                        )
                     )}
 
                     {activeTab === 'explore' && (
@@ -330,12 +380,19 @@ const LeagueItem = ({
                         </span>
                         {type === 'owned' && currentLeagueId === league.id && <span className="bg-primary/20 text-primary text-[0.55rem] font-black px-2 py-0.5 rounded tracking-widest leading-none border border-primary/20">ATIVA</span>}
                         {isOwned && type !== 'owned' && <span className="bg-primary/20 text-primary text-[0.55rem] font-black px-2 py-0.5 rounded tracking-widest leading-none border border-primary/20">MINHA</span>}
-                        {isFollowed && type === 'explore' && <span className="bg-accent/20 text-accent text-[0.55rem] font-black px-2 py-0.5 rounded tracking-widest leading-none border border-accent/20">SEGUINDO</span>}
+                        {isFollowed && (type === 'explore' || type === 'nearby') && <span className="bg-accent/20 text-accent text-[0.55rem] font-black px-2 py-0.5 rounded tracking-widest leading-none border border-accent/20">SEGUINDO</span>}
                     </div>
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-2 sm:mt-0 text-[0.6rem] font-bold uppercase tracking-widest transition-colors">
                         <span className="text-slate-500 group-hover:text-primary">
                             {type === 'owned' ? 'Clique para gerenciar' : 'Clique para visualizar'}
                         </span>
+                        {league.distancia_km !== undefined && (
+                             <span className="flex items-center gap-1.5 text-accent bg-accent/10 px-3 py-1.5 rounded-full border border-accent/20 shadow-lg shadow-accent/5">
+                                <MapPin size={12} className="text-accent" strokeWidth={3} />
+                                <span className="text-[0.8rem] font-black">{league.distancia_km.toFixed(1)} km</span>
+                                <span className="text-[0.55rem] font-black text-slate-400 uppercase tracking-tighter ml-0.5">daqui</span>
+                             </span>
+                        )}
                         <span className="flex items-center gap-1.5 text-primary bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20 shadow-lg shadow-primary/5">
                             <Bell size={12} className="text-primary fill-primary/20" strokeWidth={3} />
                             <span className="text-[0.8rem] font-black">{(league.follower_count?.[0]?.count) || 0}</span>
@@ -369,7 +426,7 @@ const LeagueItem = ({
                                 </button>
                             </>
                         )}
-                        {type === 'explore' && (
+                        {(type === 'explore' || type === 'nearby') && (
                             <>
                                 <button onClick={onSelect} className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all outline-none" title="Visualizar">
                                     <Eye size={16} />
