@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, Plus, Trash2, LogOut, Edit2, Check, X, RefreshCw, User, Settings2, Search, Eye, Bell, Shield } from 'lucide-react';
+import { Trophy, Plus, Trash2, LogOut, Edit2, Check, X, RefreshCw, User, Settings2, Search, Eye, Bell, Shield, MapPin } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const LeagueSelector = () => {
     const { leagues, followedLeagues, league, createLeague, deleteLeague, selectLeague, updateLeague, loadLeagues, searchLeagues, followLeague, unfollowLeague, loadPublicLeague } = useLeague();
     const { user, signOut } = useAuth();
-    const [activeTab, setActiveTab] = useState<'owned' | 'following' | 'explore'>('owned');
+    const [activeTab, setActiveTab] = useState<'owned' | 'following' | 'nearby' | 'explore'>('owned');
     const [showCreate, setShowCreate] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
@@ -92,22 +92,28 @@ const LeagueSelector = () => {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex bg-white/3 p-1.5 rounded-2xl mb-6 border border-white/5">
+                <div className="flex bg-white/3 p-1.5 rounded-2xl mb-6 border border-white/5 overflow-x-auto no-scrollbar scroll-smooth">
                     <button
                         onClick={() => setActiveTab('owned')}
-                        className={`flex-1 py-3 px-4 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'owned' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                        className={`flex-1 min-w-max py-3 px-5 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'owned' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                     >
                         <Shield size={14} /> Minhas Ligas
                     </button>
                     <button
                         onClick={() => setActiveTab('following')}
-                        className={`flex-1 py-3 px-4 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'following' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                        className={`flex-1 min-w-max py-3 px-5 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'following' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                     >
                         <Bell size={14} /> Seguindo
                     </button>
                     <button
+                        onClick={() => setActiveTab('nearby')}
+                        className={`flex-1 min-w-max py-3 px-5 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'nearby' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                    >
+                        <MapPin size={14} /> Ligas que estão acontecendo perto de voce
+                    </button>
+                    <button
                         onClick={() => setActiveTab('explore')}
-                        className={`flex-1 py-3 px-4 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'explore' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                        className={`flex-1 min-w-max py-3 px-5 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'explore' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                     >
                         <Search size={14} /> Explorar
                     </button>
@@ -181,6 +187,21 @@ const LeagueSelector = () => {
                                 />
                             ))
                         )
+                    )}
+
+                    {activeTab === 'nearby' && (
+                        <div className="glass-panel py-20 px-10 text-center space-y-6">
+                            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                                <MapPin size={40} className="text-slate-700" strokeWidth={1} />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Ligas que estão acontecendo perto de você</h3>
+                                <p className="text-slate-500 font-medium text-sm">Use sua localização para encontrar campeonatos regionais e interagir com a comunidade local.</p>
+                                <button onClick={() => alert('A busca por localização estará disponível em breve!')} className="mt-4 px-8 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all">
+                                    Solicitar Localização
+                                </button>
+                            </div>
+                        </div>
                     )}
 
                     {activeTab === 'explore' && (
