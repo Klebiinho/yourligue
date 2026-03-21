@@ -3,7 +3,7 @@ import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
 import TeamLogo from '../components/TeamLogo';
 import { useNavigate } from 'react-router-dom';
-import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Check, Edit2, Smartphone, ArrowUp, ArrowDown } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Check, Edit2, Smartphone, ArrowUp, ArrowDown, MapPin } from 'lucide-react';
 
 const AD_POSITIONS = [
     { id: 'top', label: 'Topo da Página' },
@@ -36,7 +36,11 @@ const Settings = () => {
     const [substitutionsLimit, setSubstitutionsLimit] = useState(String(league?.substitutionsLimit ?? 5));
     const [allowSubstitutionReturn, setAllowSubstitutionReturn] = useState(league?.allowSubstitutionReturn ?? true);
     const [hasOvertime, setHasOvertime] = useState(league?.hasOvertime ?? true);
+    const [address, setAddress] = useState(league?.address ?? '');
+    const [lat, setLat] = useState(league?.lat ? String(league.lat) : '');
+    const [lng, setLng] = useState(league?.lng ? String(league.lng) : '');
     const [saved, setSaved] = useState(false);
+    const [isCapturingGPS, setIsCapturingGPS] = useState(false);
     const [copied, setCopied] = useState(false);
 
     // Sync state with league data when it loads
@@ -55,6 +59,9 @@ const Settings = () => {
             setSubstitutionsLimit(String(league.substitutionsLimit ?? 5));
             setAllowSubstitutionReturn(league.allowSubstitutionReturn ?? true);
             setHasOvertime(league.hasOvertime ?? true);
+            setAddress(league.address ?? '');
+            setLat(league.lat ? String(league.lat) : '');
+            setLng(league.lng ? String(league.lng) : '');
         }
     }, [league]);
 
@@ -164,10 +171,34 @@ const Settings = () => {
             reserveLimitPerTeam: parseInt(reserveLimit) || 5,
             substitutionsLimit: parseInt(substitutionsLimit) || 5,
             allowSubstitutionReturn,
-            hasOvertime
-        });
+            hasOvertime,
+            address,
+            lat: lat ? parseFloat(lat) : null,
+            lng: lng ? parseFloat(lng) : null
+        } as any);
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
+    };
+
+    const handleGetGPS = () => {
+        setIsCapturingGPS(true);
+        if (!navigator.geolocation) {
+            alert("Geolocalização não suportada.");
+            setIsCapturingGPS(false);
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setLat(String(pos.coords.latitude));
+                setLng(String(pos.coords.longitude));
+                setIsCapturingGPS(false);
+                alert("✅ Coordenadas capturadas com sucesso!");
+            },
+            (err) => {
+                alert("❌ Erro ao capturar GPS: " + err.message);
+                setIsCapturingGPS(false);
+            }
+        );
     };
 
     const handleCopyLink = () => {
@@ -423,38 +454,76 @@ const Settings = () => {
                              </div>
 
                              {/* Point System */}
-                            <div className="space-y-6 bg-black/10 p-8 rounded-3xl border border-white/5">
-                                <h3 className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <Target size={14} className="text-primary" /> Sistema de Pontuação (Draft)
-                                </h3>
-                                <div className="grid grid-cols-3 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Vitória</label>
-                                        <input type="number" value={pointsForWin} onChange={e => setPointsForWin(e.target.value)} required min={0}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-primary/20 transition-all"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Empate</label>
-                                        <input type="number" value={pointsForDraw} onChange={e => setPointsForDraw(e.target.value)} required min={0}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-white/10 transition-all"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Derrota</label>
-                                        <input type="number" value={pointsForLoss} onChange={e => setPointsForLoss(e.target.value)} required min={0}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-danger/20 transition-all"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
+                             <div className="space-y-6 bg-black/10 p-8 rounded-3xl border border-white/5">
+                                 <h3 className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                     <Target size={14} className="text-primary" /> Sistema de Pontuação
+                                 </h3>
+                                 <div className="grid grid-cols-3 gap-6">
+                                     <div className="space-y-2">
+                                         <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Vitória</label>
+                                         <input type="number" value={pointsForWin} onChange={e => setPointsForWin(e.target.value)} required min={0}
+                                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-primary/20 transition-all font-outfit"
+                                         />
+                                     </div>
+                                     <div className="space-y-2">
+                                         <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Empate</label>
+                                         <input type="number" value={pointsForDraw} onChange={e => setPointsForDraw(e.target.value)} required min={0}
+                                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-white/10 transition-all font-outfit"
+                                         />
+                                     </div>
+                                     <div className="space-y-2">
+                                         <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Derrota</label>
+                                         <input type="number" value={pointsForLoss} onChange={e => setPointsForLoss(e.target.value)} required min={0}
+                                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-danger/20 transition-all font-outfit"
+                                         />
+                                     </div>
+                                 </div>
+                             </div>
 
-                            <button type="submit"
-                                className={`w-full py-5 rounded-2xl font-black text-[0.8rem] uppercase tracking-[0.2em] shadow-2xl transition-all flex items-center justify-center gap-4 active:scale-[0.98] ${saved ? 'bg-accent text-white animate-scale-in' : 'bg-primary text-white hover:brightness-110 shadow-primary/20'
-                                    }`}>
-                                {saved ? <><ShieldCheck size={22} strokeWidth={3} /> Configurações Atualizadas!</> : <><Save size={22} strokeWidth={3} /> Salvar Alterações</>}
-                            </button>
-                        </form>
+                             {/* Location Section */}
+                             <div className="space-y-6 bg-black/10 p-8 rounded-3xl border border-white/5">
+                                 <h3 className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                     <MapPin size={14} className="text-accent" /> Localização Geográfica
+                                 </h3>
+                                 <div className="space-y-4">
+                                     <div className="space-y-2">
+                                         <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Endereço / Nome do Local</label>
+                                         <input type="text" value={address} onChange={e => setAddress(e.target.value)}
+                                             placeholder="Ex: Arena Corinthians, São Paulo - SP"
+                                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white font-bold outline-none focus:border-accent transition-all h-14"
+                                         />
+                                     </div>
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                         <div className="space-y-2">
+                                             <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Latitude</label>
+                                             <input type="text" value={lat} onChange={e => setLat(e.target.value)}
+                                                 placeholder="-23.5505"
+                                                 className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-medium outline-none focus:border-accent transition-all"
+                                             />
+                                         </div>
+                                         <div className="space-y-2">
+                                             <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Longitude</label>
+                                             <input type="text" value={lng} onChange={e => setLng(e.target.value)}
+                                                 placeholder="-46.6333"
+                                                 className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-medium outline-none focus:border-accent transition-all"
+                                             />
+                                         </div>
+                                     </div>
+                                     <button type="button" onClick={handleGetGPS} disabled={isCapturingGPS}
+                                         className="w-full py-3 bg-accent/10 border border-accent/20 text-accent rounded-xl font-black text-[0.6rem] uppercase tracking-widest hover:bg-accent hover:text-white transition-all flex items-center justify-center gap-2">
+                                         <Fingerprint size={16} /> 
+                                         {isCapturingGPS ? 'Obtendo GPS...' : 'Usar Minha Localização Atual'}
+                                     </button>
+                                     <p className="text-[0.55rem] text-slate-600 italic font-medium">As coordenadas são necessárias para que sua liga apareça na aba "Ligas Próximas" dos usuários.</p>
+                                 </div>
+                             </div>
+
+                             <button type="submit"
+                                 className={`w-full py-5 rounded-2xl font-black text-[0.8rem] uppercase tracking-[0.2em] shadow-2xl transition-all flex items-center justify-center gap-4 active:scale-[0.98] ${saved ? 'bg-accent text-white animate-scale-in' : 'bg-primary text-white hover:brightness-110 shadow-primary/20'
+                                     }`}>
+                                 {saved ? <><ShieldCheck size={22} strokeWidth={3} /> Configurações Atualizadas!</> : <><Save size={22} strokeWidth={3} /> Salvar Alterações</>}
+                             </button>
+                         </form>
 
                         {/* Ads Management Section */}
                         <div ref={adSectionRef} className="mt-20 border-t border-white/5 pt-12">

@@ -201,6 +201,12 @@ const LeagueSelector = () => {
                                 <div className="space-y-2">
                                     <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Nenhuma liga seguida</h3>
                                     <p className="text-slate-500 font-medium text-sm">Procure ligas na aba Explorar para acompanhar.</p>
+                                    <button 
+                                        onClick={() => setActiveTab('explore')}
+                                        className="mt-4 px-8 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all"
+                                    >
+                                        Explorar Campeonatos
+                                    </button>
                                 </div>
                             </div>
                         ) : (
@@ -262,7 +268,21 @@ const LeagueSelector = () => {
                             </div>
                         ) : searchResults.length === 0 ? (
                             <div className="glass-panel py-20 px-10 text-center space-y-6">
-                                <p className="text-slate-500 font-medium text-sm">Nenhuma liga encontrada {searchQuery ? `para "${searchQuery}"` : ''}</p>
+                                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                                    <Search size={40} className="text-slate-700" strokeWidth={1} />
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-xl font-outfit font-black text-white uppercase tracking-widest">Nenhuma liga encontrada</p>
+                                    <p className="text-slate-500 font-medium text-sm">
+                                        {searchQuery ? `Não existem resultados para "${searchQuery}"` : 'Tente buscar pelo nome ou slug da liga.'}
+                                    </p>
+                                    <button 
+                                        onClick={() => {setSearchQuery(''); loadLeagues();}}
+                                        className="mt-4 px-8 py-4 bg-primary/20 text-primary border border-primary/20 rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg hover:bg-primary hover:text-white transition-all"
+                                    >
+                                        Limpar Filtros
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             searchResults.map(l => (
