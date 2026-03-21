@@ -109,7 +109,7 @@ const LeagueSelector = () => {
                         onClick={() => setActiveTab('nearby')}
                         className={`flex-1 min-w-max py-3 px-5 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'nearby' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                     >
-                        <MapPin size={14} /> Ligas que estão acontecendo perto de voce
+                        <MapPin size={14} /> Ligas Próximas
                     </button>
                     <button
                         onClick={() => setActiveTab('explore')}
@@ -195,7 +195,7 @@ const LeagueSelector = () => {
                                 <MapPin size={40} className="text-slate-700" strokeWidth={1} />
                             </div>
                             <div className="space-y-2">
-                                <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Ligas que estão acontecendo perto de você</h3>
+                                <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Ligas Próximas a Você</h3>
                                 <p className="text-slate-500 font-medium text-sm">Use sua localização para encontrar campeonatos regionais e interagir com a comunidade local.</p>
                                 <button onClick={() => alert('A busca por localização estará disponível em breve!')} className="mt-4 px-8 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all">
                                     Solicitar Localização
