@@ -14,7 +14,7 @@ export type Player = {
     isCaptain?: boolean;
     isReserve?: boolean;
     displayOrder?: number;
-    stats: { goals: number; assists: number; ownGoals: number; yellowCards: number; redCards: number };
+    stats: { goals: number; assists: number; ownGoals: number; yellowCards: number; redCards: number; points1?: number; points2?: number; points3?: number; rebounds?: number; blocks?: number; steals?: number; fouls?: number; };
 };
 
 export type Team = {
@@ -28,7 +28,7 @@ export type Team = {
 
 export type MatchEvent = {
     id: string;
-    type: 'goal' | 'assist' | 'yellow_card' | 'red_card' | 'substitution' | 'foul' | 'penalty_goal' | 'penalty_miss' | 'own_goal' | 'penalty_shootout_goal' | 'penalty_shootout_miss';
+    type: 'goal' | 'assist' | 'yellow_card' | 'red_card' | 'substitution' | 'foul' | 'penalty_goal' | 'penalty_miss' | 'own_goal' | 'penalty_shootout_goal' | 'penalty_shootout_miss' | 'points_1' | 'points_2' | 'points_3' | 'rebound' | 'block' | 'steal';
     teamId: string;
     playerId: string;
     playerOutId?: string; // For substitutions
@@ -97,6 +97,7 @@ export type League = {
     hasOvertime: boolean;
     slug: string;
     userId: string;
+    sportType: 'soccer' | 'basketball';
     lat?: number;
     lng?: number;
     address?: string;
@@ -245,7 +246,7 @@ const mapDBPlayer = (p: any): Player => ({
     isCaptain: p.is_captain || false,
     isReserve: p.is_reserve || false,
     displayOrder: p.display_order || 0,
-    stats: { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0 }
+    stats: { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0 }
 });
 
 const mapDBTeam = (t: any): Team => {
@@ -265,6 +266,22 @@ const mapDBBracket = (b: any): BracketMatch => ({
     homeTeamId: b.home_team_id, awayTeamId: b.away_team_id,
     homeScore: b.home_score || 0, awayScore: b.away_score || 0, 
     status: b.status
+});
+
+const mapDBLeague = (l: any): League => ({
+    id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
+    pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
+    pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
+    overtimeHalfLength: l.overtime_half_length || 15,
+    playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
+    substitutionsLimit: l.substitutions_limit || 5,
+    allowSubstitutionReturn: l.allow_substitution_return ?? true,
+    hasOvertime: l.has_overtime ?? true,
+    slug: l.slug || '',
+    userId: l.user_id,
+    sportType: l.sport_type || 'soccer',
+    lat: l.lat, lng: l.lng, address: l.address,
+    distancia_km: l.distancia_km, follower_count: l.follower_count
 });
 
 const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
@@ -327,6 +344,13 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                         ownGoals: allEvents.filter(e => e.playerId === p.id && e.type === 'own_goal').length,
                         yellowCards: allEvents.filter(e => e.playerId === p.id && e.type === 'yellow_card').length,
                         redCards: allEvents.filter(e => e.playerId === p.id && e.type === 'red_card').length,
+                        points1: allEvents.filter(e => e.playerId === p.id && e.type === 'points_1').length,
+                        points2: allEvents.filter(e => e.playerId === p.id && e.type === 'points_2').length,
+                        points3: allEvents.filter(e => e.playerId === p.id && e.type === 'points_3').length,
+                        rebounds: allEvents.filter(e => e.playerId === p.id && e.type === 'rebound').length,
+                        blocks: allEvents.filter(e => e.playerId === p.id && e.type === 'block').length,
+                        steals: allEvents.filter(e => e.playerId === p.id && e.type === 'steal').length,
+                        fouls: allEvents.filter(e => e.playerId === p.id && (e.type === 'foul' || e.type === 'yellow_card' || e.type === 'red_card')).length
                     }
                 })),
                 stats: { matches: teamMatches.length, wins, draws, losses, goalsFor, goalsAgainst, points, form: form.reverse() }
@@ -448,19 +472,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 .eq('user_id', user.id);
 
             if (ownedData) {
-                const mapped: League[] = ownedData.map(l => ({
-                    id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
-                    pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
-                    pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
-                    overtimeHalfLength: l.overtime_half_length || 15,
-                    playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
-                    substitutionsLimit: l.substitutions_limit || 5,
-                    allowSubstitutionReturn: l.allow_substitution_return ?? true,
-                    hasOvertime: l.has_overtime ?? true,
-                    slug: l.slug || '',
-                    userId: l.user_id,
-                    follower_count: l.follower_count
-                }));
+                const mapped: League[] = ownedData.map(mapDBLeague);
                 setLeagues(mapped);
                 if (mapped.length > 0 && !league && !isPublicView) {
                     const saved = localStorage.getItem('selectedLeagueId');
@@ -472,22 +484,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             if (followsData) {
                 const mapped: League[] = followsData
                     .filter(f => f.leagues)
-                    .map(f => {
-                        const l = f.leagues as any;
-                        return {
-                            id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
-                            pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
-                            pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
-                            overtimeHalfLength: l.overtime_half_length || 15,
-                            playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
-                            substitutionsLimit: l.substitutions_limit || 5,
-                            allowSubstitutionReturn: l.allow_substitution_return ?? true,
-                            hasOvertime: l.has_overtime ?? true,
-                            slug: l.slug || '',
-                            userId: l.user_id,
-                            follower_count: l.follower_count
-                        };
-                    });
+                    .map(f => mapDBLeague(f.leagues));
                 setFollowedLeagues(mapped);
             }
         } catch (err) {
@@ -582,19 +579,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             return a.name.localeCompare(b.name);
         }).slice(0, 15);
 
-        return results.map(l => ({
-            id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
-            pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
-            pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
-            overtimeHalfLength: l.overtime_half_length || 15,
-            playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
-            substitutionsLimit: l.substitutions_limit || 5,
-            allowSubstitutionReturn: l.allow_substitution_return ?? true,
-            hasOvertime: l.has_overtime ?? true,
-            slug: l.slug || '',
-            userId: l.user_id,
-            follower_count: l.follower_count // Passado para o componente UI
-        }));
+        return results.map(mapDBLeague);
     };
 
     const fetchNearbyLeagues = async (lat: number, lng: number, radiusKm: number): Promise<League[]> => {
@@ -609,29 +594,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             return [];
         }
 
-        return (data || []).map((l: any) => ({
-            id: l.id,
-            name: l.name,
-            logo: l.logo || '',
-            maxTeams: l.max_teams || 16,
-            pointsForWin: l.points_for_win || 3,
-            pointsForDraw: l.points_for_draw || 1,
-            pointsForLoss: l.points_for_loss || 0,
-            defaultHalfLength: l.default_half_length || 45,
-            overtimeHalfLength: l.overtime_half_length || 15,
-            playersPerTeam: l.players_per_team || 5,
-            reserveLimitPerTeam: l.reserve_limit_per_team || 5,
-            substitutionsLimit: l.substitutions_limit || 5,
-            allowSubstitutionReturn: l.allow_substitution_return ?? true,
-            hasOvertime: l.has_overtime ?? true,
-            slug: l.slug || '',
-            userId: l.user_id,
-            lat: l.lat,
-            lng: l.lng,
-            address: l.address,
-            distancia_km: l.distancia_km,
-            follower_count: l.follower_count
-        }));
+        return (data || []).map(mapDBLeague);
     };
 
     const loadPublicLeague = useCallback(async (slugOrId: string) => {
@@ -660,19 +623,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             }
 
             if (data) {
-                const lg: League = {
-                    id: data.id, name: data.name, logo: data.logo || '', maxTeams: data.max_teams,
-                    pointsForWin: data.points_for_win, pointsForDraw: data.points_for_draw,
-                    pointsForLoss: data.points_for_loss, defaultHalfLength: data.default_half_length,
-                    overtimeHalfLength: data.overtime_half_length || 15,
-                    playersPerTeam: data.players_per_team || 5, reserveLimitPerTeam: data.reserve_limit_per_team || 5,
-                    substitutionsLimit: data.substitutions_limit || 5,
-                    allowSubstitutionReturn: data.allow_substitution_return ?? true,
-                    hasOvertime: data.has_overtime ?? true,
-                    slug: data.slug || '',
-                    userId: data.user_id,
-                    follower_count: data.follower_count
-                };
+                const lg: League = mapDBLeague(data);
                 setLeague(lg);
                 loadLeagueData(lg.id); // Garante que times e matches sejam carregados
                 return true;
@@ -1004,18 +955,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             return { error: error.message };
         }
         if (row) {
-            const lg: League = {
-                id: row.id, name: row.name, logo: row.logo || '', maxTeams: row.max_teams,
-                pointsForWin: row.points_for_win, pointsForDraw: row.points_for_draw,
-                pointsForLoss: row.points_for_loss, defaultHalfLength: row.default_half_length,
-                overtimeHalfLength: row.overtime_half_length || 15,
-                playersPerTeam: row.players_per_team || 5, reserveLimitPerTeam: row.reserve_limit_per_team || 5,
-                substitutionsLimit: row.substitutions_limit || 5,
-                allowSubstitutionReturn: row.allow_substitution_return ?? true,
-                hasOvertime: row.has_overtime ?? true,
-                slug: row.slug || '',
-                userId: row.user_id
-            };
+            const lg: League = mapDBLeague(row);
             setLeagues(prev => [...prev, lg]);
             setLeague(lg);
             return { error: null };
@@ -1033,7 +973,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
             substitutions_limit: data.substitutionsLimit,
             allow_substitution_return: data.allowSubstitutionReturn,
-            has_overtime: data.hasOvertime
+            has_overtime: data.hasOvertime,
+            sport_type: data.sportType
         };
 
         if (data.name && data.name !== league.name) {
