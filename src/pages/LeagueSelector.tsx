@@ -140,7 +140,10 @@ const LeagueSelector = () => {
                         <span className="text-center">Seguindo</span>
                     </button>
                     <button
-                        onClick={() => setActiveTab('nearby')}
+                        onClick={() => { 
+                            setActiveTab('nearby'); 
+                            if (!hasSearchedNearby) handleRequestLocation(); 
+                        }}
                         className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'nearby' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                     >
                         <MapPin size={14} className="sm:hidden" /> <span className="hidden sm:inline"><MapPin size={14} /></span>
