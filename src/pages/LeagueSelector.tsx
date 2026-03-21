@@ -470,11 +470,17 @@ const LeagueItem = ({
                             {type === 'owned' ? 'Clique para gerenciar' : 'Clique para visualizar'}
                         </span>
                         {league.distancia_km !== undefined && (
-                             <span className="flex items-center gap-1.5 text-accent bg-accent/10 px-3 py-1.5 rounded-full border border-accent/20 shadow-lg shadow-accent/5">
-                                <MapPin size={12} className="text-accent" strokeWidth={3} />
+                             <a 
+                                href={league.lat && league.lng ? `https://www.google.com/maps/dir/?api=1&destination=${league.lat},${league.lng}` : (league.address ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(league.address)}` : '#')} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center gap-1.5 text-accent bg-accent/10 px-3 py-1.5 rounded-full border border-accent/20 shadow-lg shadow-accent/5 hover:bg-accent hover:text-white transition-all group/loc"
+                             >
+                                <MapPin size={12} className="text-accent group-hover/loc:text-white transition-colors" strokeWidth={3} />
                                 <span className="text-[0.8rem] font-black">{league.distancia_km.toFixed(1)} km</span>
-                                <span className="text-[0.55rem] font-black text-slate-400 uppercase tracking-tighter ml-0.5">daqui</span>
-                             </span>
+                                <span className="text-[0.55rem] font-black text-slate-400 group-hover/loc:text-white/80 uppercase tracking-tighter ml-0.5 transition-colors">daqui</span>
+                             </a>
                         )}
                         <span className="flex items-center gap-1.5 text-primary bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20 shadow-lg shadow-primary/5">
                             <Bell size={12} className="text-primary fill-primary/20" strokeWidth={3} />
