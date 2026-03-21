@@ -188,11 +188,28 @@ const Settings = () => {
             return;
         }
         navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                setLat(String(pos.coords.latitude));
-                setLng(String(pos.coords.longitude));
+            async (pos) => {
+                const latitude = pos.coords.latitude;
+                const longitude = pos.coords.longitude;
+                setLat(String(latitude));
+                setLng(String(longitude));
+                
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`);
+                    const data = await response.json();
+                    if (data && data.address) {
+                        const city = data.address.city || data.address.town || data.address.municipality || data.address.village || '';
+                        const state = data.address.state || '';
+                        if (city || state) {
+                            setAddress(`${city}${city && state ? ' - ' : ''}${state}`);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Erro ao buscar nome da cidade:", e);
+                }
+
                 setIsCapturingGPS(false);
-                alert("✅ Coordenadas capturadas com sucesso!");
+                alert("✅ Localização capturada! Salve as configurações.");
             },
             (err) => {
                 alert("❌ Erro ao capturar GPS: " + err.message);
@@ -489,32 +506,16 @@ const Settings = () => {
                                      <div className="space-y-2">
                                          <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Endereço / Nome do Local</label>
                                          <input type="text" value={address} onChange={e => setAddress(e.target.value)}
-                                             placeholder="Ex: Arena Corinthians, São Paulo - SP"
+                                             placeholder="Ex: São Paulo - SP"
                                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white font-bold outline-none focus:border-accent transition-all h-14"
                                          />
                                      </div>
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                         <div className="space-y-2">
-                                             <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Latitude</label>
-                                             <input type="text" value={lat} onChange={e => setLat(e.target.value)}
-                                                 placeholder="-23.5505"
-                                                 className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-medium outline-none focus:border-accent transition-all"
-                                             />
-                                         </div>
-                                         <div className="space-y-2">
-                                             <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Longitude</label>
-                                             <input type="text" value={lng} onChange={e => setLng(e.target.value)}
-                                                 placeholder="-46.6333"
-                                                 className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-medium outline-none focus:border-accent transition-all"
-                                             />
-                                         </div>
-                                     </div>
                                      <button type="button" onClick={handleGetGPS} disabled={isCapturingGPS}
-                                         className="w-full py-3 bg-accent/10 border border-accent/20 text-accent rounded-xl font-black text-[0.6rem] uppercase tracking-widest hover:bg-accent hover:text-white transition-all flex items-center justify-center gap-2">
+                                         className="w-full py-3 bg-accent/10 border border-accent/20 text-accent rounded-xl font-black text-[0.6rem] uppercase tracking-widest hover:bg-accent hover:text-white transition-all flex items-center justify-center gap-2 mt-4">
                                          <Fingerprint size={16} /> 
-                                         {isCapturingGPS ? 'Obtendo GPS...' : 'Usar Minha Localização Atual'}
+                                         {isCapturingGPS ? 'Obtendo Localização...' : 'Usar Minha Localização Atual'}
                                      </button>
-                                     <p className="text-[0.55rem] text-slate-600 italic font-medium">As coordenadas são necessárias para que sua liga apareça na aba "Ligas Próximas" dos usuários.</p>
+                                     <p className="text-[0.55rem] text-slate-600 italic font-medium mt-2">A localização é necessária para que sua liga apareça na aba "Ligas Próximas" dos usuários.</p>
                                  </div>
                              </div>
 

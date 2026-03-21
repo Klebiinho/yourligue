@@ -1006,7 +1006,10 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             substitutions_limit: data.substitutionsLimit,
             allow_substitution_return: data.allowSubstitutionReturn,
             has_overtime: data.hasOvertime,
-            sport_type: data.sportType
+            sport_type: data.sportType,
+            address: data.address,
+            lat: data.lat,
+            lng: data.lng
         };
 
         if (data.name && data.name !== league.name) {
