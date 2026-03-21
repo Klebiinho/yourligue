@@ -426,6 +426,16 @@ const LeagueItem = ({
                         <span className="font-outfit font-black text-white text-lg uppercase tracking-wide truncate max-w-full sm:max-w-[250px] leading-tight transition-transform sm:group-hover:translate-x-1 duration-300">
                             {league.name}
                         </span>
+                        
+                        {/* Modalidade Badge */}
+                        <span className={`text-[0.55rem] font-black px-2 py-0.5 rounded tracking-widest leading-none border flex items-center gap-1 ${
+                            league.sportType === 'basketball' 
+                            ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
+                            : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                        }`}>
+                            {league.sportType === 'basketball' ? '🏀 BASQUETE' : '⚽ FUTEBOL'}
+                        </span>
+
                         {type === 'owned' && currentLeagueId === league.id && <span className="bg-primary/20 text-primary text-[0.55rem] font-black px-2 py-0.5 rounded tracking-widest leading-none border border-primary/20">ATIVA</span>}
                         {isOwned && type !== 'owned' && <span className="bg-primary/20 text-primary text-[0.55rem] font-black px-2 py-0.5 rounded tracking-widest leading-none border border-primary/20">MINHA</span>}
                         {isFollowed && (type === 'explore' || type === 'nearby') && <span className="bg-accent/20 text-accent text-[0.55rem] font-black px-2 py-0.5 rounded tracking-widest leading-none border border-accent/20">SEGUINDO</span>}
