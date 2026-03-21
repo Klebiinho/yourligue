@@ -124,30 +124,34 @@ const LeagueSelector = () => {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex bg-white/3 p-1.5 rounded-2xl mb-6 border border-white/5 overflow-x-auto no-scrollbar scroll-smooth">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 bg-white/3 p-1.5 rounded-2xl mb-6 border border-white/5">
                     <button
                         onClick={() => setActiveTab('owned')}
-                        className={`flex-1 min-w-max py-3 px-5 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'owned' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                        className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'owned' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                     >
-                        <Shield size={14} /> Minhas Ligas
+                        <Shield size={14} className="sm:hidden" /> <span className="hidden sm:inline"><Shield size={14} /></span>
+                        <span className="text-center">Minhas Ligas</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('following')}
-                        className={`flex-1 min-w-max py-3 px-5 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'following' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                        className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'following' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                     >
-                        <Bell size={14} /> Seguindo
+                        <Bell size={14} className="sm:hidden" /> <span className="hidden sm:inline"><Bell size={14} /></span>
+                        <span className="text-center">Seguindo</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('nearby')}
-                        className={`flex-1 min-w-max py-3 px-5 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'nearby' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                        className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'nearby' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                     >
-                        <MapPin size={14} /> Ligas Próximas
+                        <MapPin size={14} className="sm:hidden" /> <span className="hidden sm:inline"><MapPin size={14} /></span>
+                        <span className="text-center">Ligas Próximas</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('explore')}
-                        className={`flex-1 min-w-max py-3 px-5 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'explore' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                        className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'explore' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                     >
-                        <Search size={14} /> Explorar
+                        <Search size={14} className="sm:hidden" /> <span className="hidden sm:inline"><Search size={14} /></span>
+                        <span className="text-center">Explorar</span>
                     </button>
                 </div>
 
