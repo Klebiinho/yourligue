@@ -11,6 +11,8 @@ const Dashboard = () => {
     const { league, teams, matches, loading, isPublicView, isAdmin, leagueBasePath, followedLeagues, followLeague, unfollowLeague, setShowAuthModal, userInteractions, interactWithTeam } = useLeague();
     const { user } = useAuth();
     const navigate = useNavigate();
+    
+    const isBasket = league?.sportType === 'basketball';
 
     if (loading) return (
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -27,20 +29,28 @@ const Dashboard = () => {
     const stats = [
         { label: 'Times', value: teams.length, icon: <Users size={18} />, gradientFrom: 'from-primary/20', border: 'border-primary/20', text: 'text-primary' },
         { label: 'Partidas', value: matches.length, icon: <Swords size={18} />, gradientFrom: 'from-accent/20', border: 'border-accent/20', text: 'text-accent' },
-        { label: 'Gols', value: totalGoals, icon: <TrendingUp size={18} />, gradientFrom: 'from-warning/20', border: 'border-warning/20', text: 'text-warning' },
+        { label: isBasket ? 'Pontos' : 'Gols', value: totalGoals, icon: <TrendingUp size={18} />, gradientFrom: 'from-warning/20', border: 'border-warning/20', text: 'text-warning' },
         { label: 'Ao Vivo', value: liveMatches.length, icon: <Star size={18} />, gradientFrom: 'from-danger/20', border: 'border-danger/20', text: 'text-danger' },
     ];
 
     const formatDate = (dt?: string) =>
         dt ? new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 
+    const calcPoints = (t: typeof teams[0]) => 
+        (t.stats?.wins || 0) * (league?.pointsForWin || 3) + 
+        (t.stats?.draws || 0) * (league?.pointsForDraw || 1) + 
+        (t.stats?.losses || 0) * (league?.pointsForLoss || 0);
+
     const sortedTeams = [...teams].sort((a, b) => {
-        const pts = (t: typeof teams[0]) => (t.stats?.wins || 0) * (league?.pointsForWin || 3) + (t.stats?.draws || 0) * (league?.pointsForDraw || 1);
-        return pts(b) - pts(a);
+        return calcPoints(b) - calcPoints(a);
     });
 
     const allPlayers = teams.flatMap(t => t.players.map(p => ({ ...p, team: t })));
-    const topScorers = [...allPlayers].sort((a, b) => (b.stats?.goals || 0) - (a.stats?.goals || 0)).filter(p => (p.stats?.goals || 0) > 0).slice(0, 5);
+    const topScorers = [...allPlayers].sort((a, b) => {
+        const valA = isBasket ? (a.stats?.points || 0) : (a.stats?.goals || 0);
+        const valB = isBasket ? (b.stats?.points || 0) : (b.stats?.goals || 0);
+        return valB - valA;
+    }).filter(p => (isBasket ? (p.stats?.points || 0) : (p.stats?.goals || 0)) > 0).slice(0, 5);
     const topAssisters = [...allPlayers].sort((a, b) => (b.stats?.assists || 0) - (a.stats?.assists || 0)).filter(p => (p.stats?.assists || 0) > 0).slice(0, 5);
 
     const [activeTab, setActiveTab] = useState<'matches' | 'standings' | 'scorers'>('matches');
@@ -242,7 +252,7 @@ const Dashboard = () => {
                                 </div>
                             ) : (
                                 sortedTeams.slice(0, 5).map((team, i) => {
-                                    const pts = (team.stats?.wins || 0) * (league?.pointsForWin || 3) + (team.stats?.draws || 0) * (league?.pointsForDraw || 1);
+                                    const pts = calcPoints(team);
                                     return (
                                         <div key={team.id} 
                                             onClick={() => navigate(`${leagueBasePath}/teams/${team.id}`)}
@@ -308,7 +318,7 @@ const Dashboard = () => {
                                 {topScorers.length === 0 ? (
                                     <div className="py-8 sm:py-10 text-center opacity-25">
                                         <Star size={24} strokeWidth={1} className="mx-auto mb-2" />
-                                        <p className="text-[0.6rem] font-black uppercase tracking-widest">Sem artilheiros</p>
+                                        <p className="text-[0.6rem] font-black uppercase tracking-widest">{isBasket ? 'Sem cestinhas' : 'Sem artilheiros'}</p>
                                     </div>
                                 ) : (
                                     topScorers.map((player, i) => (
@@ -328,8 +338,8 @@ const Dashboard = () => {
                                                 <span className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest truncate leading-tight">{player.team.name}</span>
                                             </div>
                                             <div className="flex flex-col items-end flex-none min-w-[32px]">
-                                                <span className="font-black text-accent text-sm sm:text-base font-outfit leading-none">{player.stats?.goals || 0}</span>
-                                                <span className="text-[0.45rem] text-slate-500 font-black uppercase">Gols</span>
+                                                <span className="font-black text-accent text-sm sm:text-base font-outfit leading-none">{isBasket ? (player.stats?.points || 0) : (player.stats?.goals || 0)}</span>
+                                                <span className="text-[0.45rem] text-slate-500 font-black uppercase">{isBasket ? 'Pts' : 'Gols'}</span>
                                             </div>
                                         </div>
                                     ))
@@ -342,7 +352,7 @@ const Dashboard = () => {
                             <div className="flex items-center justify-between">
                                 <h2 className="text-sm font-black font-outfit uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
                                     <Zap size={16} className="text-primary fill-primary/20" />
-                                    Garçons (Assis.)
+                                    {isBasket ? 'Líder de Assistências' : 'Garçons (Assis.)'}
                                 </h2>
                                 <button onClick={() => setShowTopRankModal({ open: true, type: 'assists' })} className="flex items-center gap-1 text-primary text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
                                     Rank Completo <ArrowRight size={12} />

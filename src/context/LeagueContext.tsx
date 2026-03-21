@@ -14,7 +14,7 @@ export type Player = {
     isCaptain?: boolean;
     isReserve?: boolean;
     displayOrder?: number;
-    stats: { goals: number; assists: number; ownGoals: number; yellowCards: number; redCards: number; points1?: number; points2?: number; points3?: number; rebounds?: number; blocks?: number; steals?: number; fouls?: number; };
+    stats: { goals: number; assists: number; ownGoals: number; yellowCards: number; redCards: number; points?: number; points1?: number; points2?: number; points3?: number; rebounds?: number; blocks?: number; steals?: number; fouls?: number; };
 };
 
 export type Team = {
@@ -344,6 +344,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                         ownGoals: allEvents.filter(e => e.playerId === p.id && e.type === 'own_goal').length,
                         yellowCards: allEvents.filter(e => e.playerId === p.id && e.type === 'yellow_card').length,
                         redCards: allEvents.filter(e => e.playerId === p.id && e.type === 'red_card').length,
+                        points: allEvents.filter(e => e.playerId === p.id && e.type === 'points_1').length * 1 +
+                               allEvents.filter(e => e.playerId === p.id && e.type === 'points_2').length * 2 +
+                               allEvents.filter(e => e.playerId === p.id && e.type === 'points_3').length * 3,
                         points1: allEvents.filter(e => e.playerId === p.id && e.type === 'points_1').length,
                         points2: allEvents.filter(e => e.playerId === p.id && e.type === 'points_2').length,
                         points3: allEvents.filter(e => e.playerId === p.id && e.type === 'points_3').length,
