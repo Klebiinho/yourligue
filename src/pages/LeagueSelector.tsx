@@ -310,24 +310,29 @@ const LeagueSelector = () => {
                                 if (!newName.trim()) return;
                                 setLoading(true);
                                 const isBasket = newSport === 'basketball';
-                                const res = await createLeague({
-                                    name: newName, logo: '', maxTeams: 16,
-                                    pointsForWin: isBasket ? 2 : 3, 
-                                    pointsForDraw: isBasket ? 0 : 1, 
-                                    pointsForLoss: isBasket ? 1 : 0,
-                                    defaultHalfLength: isBasket ? 10 : 45, 
-                                    playersPerTeam: isBasket ? 5 : 7, 
-                                    reserveLimitPerTeam: 5,
-                                    substitutionsLimit: 5,
-                                    allowSubstitutionReturn: true,
-                                    hasOvertime: true,
-                                    overtimeHalfLength: isBasket ? 5 : 15,
-                                    sportType: newSport
-                                });
-                                if (!res.error) {
-                                    setNewName(''); setNewSport('soccer'); setShowCreate(false); navigate('/');
+                                try {
+                                    const res = await createLeague({
+                                        name: newName, logo: '', maxTeams: 16,
+                                        pointsForWin: isBasket ? 2 : 3, 
+                                        pointsForDraw: isBasket ? 0 : 1, 
+                                        pointsForLoss: isBasket ? 1 : 0,
+                                        defaultHalfLength: isBasket ? 10 : 45, 
+                                        playersPerTeam: isBasket ? 5 : 7, 
+                                        reserveLimitPerTeam: 5,
+                                        substitutionsLimit: 5,
+                                        allowSubstitutionReturn: true,
+                                        hasOvertime: true,
+                                        overtimeHalfLength: isBasket ? 5 : 15,
+                                        sportType: newSport
+                                    });
+                                    if (!res.error) {
+                                        setNewName(''); setNewSport('soccer'); setShowCreate(false); navigate('/');
+                                    }
+                                } catch (err) {
+                                    console.error(err);
+                                } finally {
+                                    setLoading(false);
                                 }
-                                setLoading(false);
                             }} className={`glass-panel p-6 animate-slide-up border-t-2 ${newSport === 'basketball' ? 'border-t-[#ff6b00]' : 'border-t-accent'} shadow-[0_20px_50px_rgba(0,0,0,0.4)] relative`}>
                                 <div className="flex flex-col gap-4">
                                     <div className="flex flex-col gap-2">

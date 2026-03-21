@@ -935,33 +935,53 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     // ── League CRUD ────────────────────────────────────────────
     const createLeague = async (data: Omit<League, 'id' | 'slug' | 'userId'>) => {
-        const slug = generateSlug(data.name);
-        const { data: existing } = await supabase.from('leagues').select('id').eq('slug', slug).single();
-        if (existing) return { error: 'Uma liga com este nome já existe.' };
+        try {
+            if (!user) {
+                alert('Você precisa estar logado para criar uma liga.');
+                return { error: 'Usuário não autenticado' };
+            }
 
-        const { data: row, error } = await supabase.from('leagues').insert({
-            user_id: user!.id, name: data.name, logo: data.logo, max_teams: data.maxTeams,
-            points_for_win: data.pointsForWin, points_for_draw: data.pointsForDraw,
-            points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
-            players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
-            substitutions_limit: data.substitutionsLimit,
-            allow_substitution_return: data.allowSubstitutionReturn ?? true,
-            has_overtime: data.hasOvertime ?? true,
-            sport_type: data.sportType,
-            slug
-        }).select().single();
-        if (error) {
-            console.error('Error creating league:', error);
-            alert('Failed to create league: ' + error.message);
-            return { error: error.message };
+            const slug = generateSlug(data.name);
+            const { data: existing } = await supabase.from('leagues').select('id').eq('slug', slug).single();
+            if (existing) return { error: 'Uma liga com este nome já existe.' };
+
+            const { data: row, error } = await supabase.from('leagues').insert({
+                user_id: user.id, name: data.name, logo: data.logo, max_teams: data.maxTeams,
+                points_for_win: data.pointsForWin, points_for_draw: data.pointsForDraw,
+                points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
+                players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
+                substitutions_limit: data.substitutionsLimit,
+                allow_substitution_return: data.allowSubstitutionReturn ?? true,
+                has_overtime: data.hasOvertime ?? true,
+                sport_type: data.sportType,
+                slug
+            }).select().single();
+
+            if (error) {
+                console.error('Error creating league:', error);
+                
+                // Trata erro específico de coluna inexistente (caso usuário não tenha rodado o SQL)
+                if (error.code === '42703') {
+                    alert('Erro de Banco de Dados: A coluna "sport_type" não foi encontrada. \n\nPOR FAVOR, EXECUTE O SCRIPT SQL (add_sport_to_leagues.sql) NO SEU DASHBOARD DO SUPABASE.');
+                } else {
+                    alert('Erro ao criar liga: ' + error.message);
+                }
+                
+                return { error: error.message };
+            }
+
+            if (row) {
+                const lg: League = mapDBLeague(row);
+                setLeagues(prev => [...prev, lg]);
+                setLeague(lg);
+                return { error: null };
+            }
+            return { error: 'Erro desconhecido ao cadastrar liga.' };
+        } catch (err: any) {
+            console.error('Crash in createLeague:', err);
+            alert('Erro crítico ao criar liga: ' + (err.message || 'Erro desconhecido'));
+            return { error: err.message };
         }
-        if (row) {
-            const lg: League = mapDBLeague(row);
-            setLeagues(prev => [...prev, lg]);
-            setLeague(lg);
-            return { error: null };
-        }
-        return { error: 'Unknown error' };
     };
 
     const updateLeague = async (data: Partial<League>) => {
