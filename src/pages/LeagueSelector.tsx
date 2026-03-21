@@ -10,6 +10,7 @@ const LeagueSelector = () => {
     const { user, signOut } = useAuth();
     const [activeTab, setActiveTab] = useState<'owned' | 'following' | 'nearby' | 'explore'>('owned');
     const [nearbyLeagues, setNearbyLeagues] = useState<any[]>([]);
+    const [hasSearchedNearby, setHasSearchedNearby] = useState(false);
     const [isLocating, setIsLocating] = useState(false);
     const [showCreate, setShowCreate] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -72,6 +73,7 @@ const LeagueSelector = () => {
                 const { latitude, longitude } = position.coords;
                 const results = await fetchNearbyLeagues(latitude, longitude, 50); // Raio de 50km
                 setNearbyLeagues(results);
+                setHasSearchedNearby(true);
                 setIsLocating(false);
             },
             (error) => {
@@ -227,22 +229,41 @@ const LeagueSelector = () => {
 
                     {activeTab === 'nearby' && (
                         nearbyLeagues.length === 0 ? (
-                            <div className="glass-panel py-20 px-10 text-center space-y-6">
-                                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
-                                    <MapPin size={40} className="text-slate-700" strokeWidth={1} />
+                            hasSearchedNearby ? (
+                                <div className="glass-panel py-20 px-10 text-center space-y-6">
+                                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                                        <MapPin size={40} className="text-slate-700" strokeWidth={1} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Nenhuma liga encontrada</h3>
+                                        <p className="text-slate-500 font-medium text-sm">Não encontramos nenhuma liga num raio de 50km da sua localização selecionada.</p>
+                                        <button 
+                                            onClick={handleRequestLocation} 
+                                            disabled={isLocating}
+                                            className="mt-4 px-8 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                                        >
+                                            {isLocating ? 'Buscando novamente...' : 'Tentar Novamente'}
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Ligas Próximas a Você</h3>
-                                    <p className="text-slate-500 font-medium text-sm">Use sua localização para encontrar campeonatos regionais e interagir com a comunidade local.</p>
-                                    <button 
-                                        onClick={handleRequestLocation} 
-                                        disabled={isLocating}
-                                        className="mt-4 px-8 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
-                                    >
-                                        {isLocating ? 'Obtendo Localização...' : 'Solicitar Localização'}
-                                    </button>
+                            ) : (
+                                <div className="glass-panel py-20 px-10 text-center space-y-6">
+                                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                                        <MapPin size={40} className="text-slate-700" strokeWidth={1} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Ligas Próximas a Você</h3>
+                                        <p className="text-slate-500 font-medium text-sm">Use sua localização para encontrar campeonatos regionais e interagir com a comunidade local.</p>
+                                        <button 
+                                            onClick={handleRequestLocation} 
+                                            disabled={isLocating}
+                                            className="mt-4 px-8 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                                        >
+                                            {isLocating ? 'Obtendo Localização...' : 'Solicitar Localização'}
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            )
                         ) : (
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between px-2 mb-2">
