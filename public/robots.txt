@@ -1,4 +1,3 @@
 User-agent: *
 Allow: /
-
 Sitemap: https://yourligue.vercel.app/sitemap.xml
