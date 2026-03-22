@@ -170,9 +170,10 @@ A B C D E F G H I J K L M N O P Q R S T U V W X Y Z`;
 
 function slugify(text) {
     return text.toString().toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove accents
         .replace(/\s+/g, '-')
-        .replace(/[^\w-]+/g, '')
-        .replace(/--+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-')
         .replace(/^-+/, '')
         .replace(/-+$/, '');
 }
