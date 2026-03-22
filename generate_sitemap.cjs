@@ -205,13 +205,13 @@ for (let line of lines) {
         if (currentSection === "Alfabeto") {
             const letters = line.split(' ');
             letters.forEach(letter => {
-                data.Alfabeto.push({ title: 'Dúvidas - Letra ' + letter, path: '/duvidas/' + letter.toLowerCase(), date: "2026-03-20" });
+                data.Alfabeto.push({ title: 'Dúvidas - Letra ' + letter, path: '/duvidas/' + letter.toLowerCase(), date: "2026-03-22" });
             });
             continue;
         }
 
         let title = line;
-        let date = "2026-03-20";
+        let date = "2026-03-22";
         const dateMatch = title.match(/\((\d{2})\/(\d{2})\/(\d{4})\)$/);
         if (dateMatch) {
             date = dateMatch[3] + "-" + dateMatch[2] + "-" + dateMatch[1];
@@ -243,10 +243,10 @@ for (let line of lines) {
 }
 
 data.Paginas.push(
-    { title: "Início", path: "/", date: "2026-03-20" },
-    { title: "Blog", path: "/blog", date: "2026-03-20" },
-    { title: "Dúvidas de A a Z", path: "/duvidas", date: "2026-03-20" },
-    { title: "Informações", path: "/informacoes", date: "2026-03-20" }
+    { title: "Início", path: "/", date: "2026-03-22" },
+    { title: "Blog", path: "/blog", date: "2026-03-22" },
+    { title: "Dúvidas de A a Z", path: "/duvidas", date: "2026-03-22" },
+    { title: "Informações", path: "/informacoes", date: "2026-03-22" }
 );
 
 const base_url = 'https://yourligue.vercel.app';
