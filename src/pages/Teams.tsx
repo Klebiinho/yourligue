@@ -39,9 +39,45 @@ const Teams = () => {
 
     const currentTeam = teams.find(t => t.id === activeTeamId);
 
+    const extractColorFromImage = (dataUrl: string) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            canvas.width = 64; canvas.height = 64; // Small scale for speed
+            ctx.drawImage(img, 0, 0, 64, 64);
+            const data = ctx.getImageData(0, 0, 64, 64).data;
+            let r = 0, g = 0, b = 0, count = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                // Ignore transparent and nearly black/white pixels
+                const alpha = data[i + 3];
+                const sum = data[i] + data[i+1] + data[i+2];
+                if (alpha > 125 && sum > 60 && sum < 700) { 
+                    r += data[i]; g += data[i+1]; b += data[i+2];
+                    count++;
+                }
+            }
+            if (count > 0) {
+                const toHex = (n: number) => Math.round(n / count).toString(16).padStart(2, '0');
+                setNewTeamColor(`#${toHex(r)}${toHex(g)}${toHex(b)}`);
+            }
+        };
+        img.src = dataUrl;
+    };
+
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) => {
         const file = e.target.files?.[0];
-        if (file) { const r = new FileReader(); r.onloadend = () => setter(r.result as string); r.readAsDataURL(file); }
+        if (file) { 
+            const r = new FileReader(); 
+            r.onloadend = () => {
+                const res = r.result as string;
+                setter(res);
+                extractColorFromImage(res);
+            }; 
+            r.readAsDataURL(file); 
+        }
     };
 
     const handleAddTeam = async (e: React.FormEvent) => {
