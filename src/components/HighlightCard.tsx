@@ -162,8 +162,8 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     </div>
                 </div>
 
-                {/* Adaptive spacer to push content down: less space for MVP to fit stats */}
-                <div style={{ height: eventType === 'MVP' ? '120px' : '520px' }} />
+                {/* Spacer refined to raise the photo while names stay lower */}
+                <div style={{ height: eventType === 'MVP' ? '80px' : '300px' }} />
 
                 {/* Action label moved below info box */}
 
@@ -237,7 +237,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                 {/* ── PLAYER INFO BOX ────────────────────────────── */}
                 <div style={{
                     position: 'relative', zIndex: 10,
-                    marginTop: '50px',
+                    marginTop: '240px', // Large gap to keep names and label lower
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     width: '100%', padding: '0 64px',
                 }}>
