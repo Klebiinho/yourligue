@@ -1064,26 +1064,48 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const updateTeam = async (teamId: string, data: Partial<{ name: string; logo: string; primary_color: string }>) => {
-        console.log('[LeagueContext] Iniciando updateTeam:', { teamId, data });
-        const { error } = await supabase.from('teams').update(data).eq('id', teamId);
+        console.log('[LeagueContext] Iniciando updateTeam:', { teamId, updateKeys: Object.keys(data) });
         
-        if (error) {
-            console.error('[LeagueContext] Erro ao atualizar time:', error);
-            return { error: error.message };
-        }
+        try {
+            // Limpa campos vazios ou nulos que não devem ser enviados
+            const updatePayload: any = {};
+            if (data.name) updatePayload.name = data.name;
+            if (data.logo) updatePayload.logo = data.logo;
+            if (data.primary_color) updatePayload.primary_color = data.primary_color;
 
-        setRawTeams(prev => prev.map(t => {
-            if (t.id === teamId) {
-                const updated = { ...t };
-                if (data.name) updated.name = data.name;
-                if (data.logo) updated.logo = data.logo;
-                if (data.primary_color !== undefined) updated.primaryColor = data.primary_color;
-                return updated;
+            const { data: updatedData, error } = await supabase
+                .from('teams')
+                .update(updatePayload)
+                .eq('id', teamId)
+                .select()
+                .single();
+            
+            if (error) {
+                console.error('[LeagueContext] Erro fatal no Supabase updateTeam:', error);
+                return { error: `Erro no servidor: ${error.message} (Código: ${error.code})` };
             }
-            return t;
-        }));
-        
-        return { error: null };
+
+            if (!updatedData) {
+                console.error('[LeagueContext] Update concluído mas nenhum dado retornado para ID:', teamId);
+                return { error: 'O time não foi encontrado para atualização.' };
+            }
+
+            console.log('[LeagueContext] Update bem-sucedido:', updatedData.id);
+
+            // Sincroniza estado local com o retorno real do banco, preservando os jogadores
+            setRawTeams(prev => prev.map(t => {
+                if (t.id === teamId) {
+                    const mapped = mapDBTeam(updatedData);
+                    return { ...mapped, players: t.players }; // Preserva os jogadores do estado atual
+                }
+                return t;
+            }));
+            
+            return { error: null };
+        } catch (err: any) {
+            console.error('[LeagueContext] Exceção inesperada em updateTeam:', err);
+            return { error: 'Ocorreu um erro inesperado ao salvar. Verifique o tamanho da imagem.' };
+        }
     };
 
     const deleteTeam = async (teamId: string) => {
