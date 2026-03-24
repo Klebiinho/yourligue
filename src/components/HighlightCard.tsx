@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import type { Player, Team } from '../context/LeagueContext';
+import { useLeague, type Player, type Team } from '../context/LeagueContext';
 
 interface HighlightCardProps {
     player?: Player;
@@ -31,6 +31,7 @@ const AVATAR_PLACEHOLDER = 'rgba(255,255,255,0.08)';
 
 export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
     ({ player, team, sportType, eventType, stats, description, transparent = false, hideValues = false }, ref) => {
+        const { league } = useLeague();
 
         if (!player || !team) return null;
 
@@ -156,7 +157,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                 }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontSize: '32px', fontWeight: '900', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>
-                            yourligue.app
+                            yourligue.vercel.app
                         </span>
                     </div>
                 </div>
@@ -270,17 +271,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     width: '100%', padding: '0 64px',
                 }}>
-                    {player.number && (
-                        <div style={{
-                            background: `linear-gradient(135deg, ${palette.accent}, ${palette.accent}88)`,
-                            padding: '10px 32px',
-                            borderRadius: '12px',
-                            marginBottom: '16px',
-                            boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
-                        }}>
-                             <span style={{ fontSize: '42px', fontWeight: '900', color: 'white' }}>#{player.number}</span>
-                        </div>
-                    )}
+                    {/* Removed number pill to put it next to name */}
                     
                     <h2 style={{
                         fontSize: '92px', fontWeight: '950', lineHeight: 1.1,
@@ -288,7 +279,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                         color: 'white', letterSpacing: '-3px',
                         textShadow: '0 10px 50px rgba(0,0,0,0.8)',
                     }}>
-                        {player.name}
+                        {player.number ? `#${player.number} ` : ''}{player.name}
                     </h2>
 
                     <div style={{
@@ -330,47 +321,49 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     </div>
                 )}
 
-                {/* ── STATS grid ────────────────────────────────────── */}
-                <div style={{
-                    position: 'relative', zIndex: 10,
-                    marginTop: displayDescription && eventType !== 'MVP' ? '32px' : '56px',
-                    width: '100%', padding: '0 64px',
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(${Math.min(Object.entries(stats).filter(([_, v]) => eventType === 'MVP' || v > 0).length, 3)}, 1fr)`,
-                    gap: '28px',
-                }}>
-                    {Object.entries(stats).filter(([_, v]) => eventType === 'MVP' || v > 0).map(([label, value], i) => (
-                        <div key={label} style={{
-                            background: 'rgba(255,255,255,0.07)',
-                            backdropFilter: 'blur(20px)',
-                            border: '2px solid rgba(255,255,255,0.12)',
-                            borderRadius: '32px',
-                            padding: '40px 28px',
-                            display: 'flex', flexDirection: 'column',
-                            alignItems: 'center', gap: '16px',
-                        }}>
-                            <span style={{
-                                fontSize: '32px', fontWeight: '700',
-                                textTransform: 'uppercase', letterSpacing: '0.1em',
-                                color: 'rgba(255,255,255,0.5)',
+                {/* ── STATS grid (Only for MVP cards) ──────────────── */}
+                {eventType === 'MVP' && (
+                    <div style={{
+                        position: 'relative', zIndex: 10,
+                        marginTop: displayDescription ? '32px' : '56px',
+                        width: '100%', padding: '0 64px',
+                        display: 'grid',
+                        gridTemplateColumns: `repeat(${Math.min(Object.entries(stats).length, 3)}, 1fr)`,
+                        gap: '28px',
+                    }}>
+                        {Object.entries(stats).map(([label, value], i) => (
+                            <div key={label} style={{
+                                background: 'rgba(255,255,255,0.07)',
+                                backdropFilter: 'blur(20px)',
+                                border: '2px solid rgba(255,255,255,0.12)',
+                                borderRadius: '32px',
+                                padding: '40px 28px',
+                                display: 'flex', flexDirection: 'column',
+                                alignItems: 'center', gap: '16px',
                             }}>
-                                {label}
-                            </span>
-                            <span
-                                id={`metric-${i}`}
-                                style={{
-                                    fontSize: '110px', fontWeight: '900', lineHeight: 1,
-                                    color: 'white',
-                                    textShadow: `0 0 40px ${palette.glow}`,
-                                    opacity: hideValues ? 0 : 1,
-                                    display: 'block',
-                                }}
-                            >
-                                {value}
-                            </span>
-                        </div>
-                    ))}
-                </div>
+                                <span style={{
+                                    fontSize: '32px', fontWeight: '700',
+                                    textTransform: 'uppercase', letterSpacing: '0.1em',
+                                    color: 'rgba(255,255,255,0.5)',
+                                }}>
+                                    {label}
+                                </span>
+                                <span
+                                    id={`metric-${i}`}
+                                    style={{
+                                        fontSize: '110px', fontWeight: '900', lineHeight: 1,
+                                        color: 'white',
+                                        textShadow: `0 0 40px ${palette.glow}`,
+                                        opacity: hideValues ? 0 : 1,
+                                        display: 'block',
+                                    }}
+                                >
+                                    {value}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {/* ── Bottom watermark ─────────────────────────────── */}
                 <div style={{
@@ -386,7 +379,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                         fontSize: '28px', fontWeight: '900', letterSpacing: '0.25em',
                         textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)',
                     }}>
-                        yourligue.app
+                        {league?.name || 'YourLigue'}
                     </span>
                     <div style={{
                         height: '2px', flex: 1, maxWidth: '200px',
