@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLeague, type Player } from '../context/LeagueContext';
-import { Shield, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, Star, PlusCircle, GripVertical, ArrowDownUp, Heart, Wind } from 'lucide-react';
+import { Shield, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, Star, PlusCircle, GripVertical, ArrowDownUp, Heart, Wind, Compass } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
@@ -36,6 +36,9 @@ const Teams = () => {
         isReserve: false,
         photo: ''
     });
+
+    const [teamSearch, setTeamSearch] = useState('');
+    const filteredTeams = teams.filter(t => t.name.toLowerCase().includes(teamSearch.toLowerCase()));
 
     const currentTeam = teams.find(t => t.id === activeTeamId);
 
@@ -271,17 +274,45 @@ const Teams = () => {
                     {isPublicView && <AdBanner position="teams_list" className="mb-4" />}
 
                     {/* Club List */}
-                    <div className="glass-panel p-4 sm:p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.15em]">
-                                Clubes {teams.length}/{league?.maxTeams}
+                    <div className="glass-panel p-4 sm:p-6 overflow-hidden">
+                        <div className="flex flex-col gap-3 mb-4">
+                            <h3 className="text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.15em] flex items-center justify-between">
+                                <span>Clubes {teams.length}/{league?.maxTeams}</span>
+                                {filteredTeams.length !== teams.length && (
+                                    <span className="text-primary/60 lowercase italic font-normal tracking-normal">{filteredTeams.length} encontrados</span>
+                                )}
                             </h3>
+                            
+                            {/* Search Bar */}
+                            <div className="relative group">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-primary transition-colors pointer-events-none">
+                                    <Compass size={14} className="animate-spin-slow group-focus-within:animate-none" />
+                                </div>
+                                <input 
+                                    type="text" 
+                                    placeholder="Localizar time..." 
+                                    value={teamSearch} 
+                                    onChange={e => setTeamSearch(e.target.value)}
+                                    className="w-full bg-black/20 border border-white/5 rounded-lg pl-9 pr-4 py-2 text-[0.65rem] font-bold text-white placeholder:text-slate-700 focus:border-primary/40 outline-none transition-all"
+                                />
+                                {teamSearch && (
+                                    <button 
+                                        onClick={() => setTeamSearch('')}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-600 hover:text-white transition-colors"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
+
                         <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto no-scrollbar">
-                            {teams.length === 0 ? (
-                                <p className="text-center py-8 text-[0.65rem] font-black text-slate-600 uppercase tracking-widest opacity-50">Nenhum clube cadastrado</p>
+                            {filteredTeams.length === 0 ? (
+                                <p className="text-center py-8 text-[0.65rem] font-black text-slate-600 uppercase tracking-widest opacity-50">
+                                    {teamSearch ? 'Nenhum time encontrado' : 'Nenhum clube cadastrado'}
+                                </p>
                             ) : (
-                                teams.map(team => (
+                                filteredTeams.map(team => (
                                     <div key={team.id} onClick={() => setActiveTeamId(team.id)}
                                         className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 border relative group/team ${activeTeamId === team.id
                                             ? 'bg-primary/10 border-primary/25 shadow-sm'
