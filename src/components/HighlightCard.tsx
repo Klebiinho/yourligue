@@ -96,7 +96,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     }}
                 >
                 {/* ── Layer 2: Background Watermark Logo ───────────────── */}
-                {team.logo && !transparent && (
+                {team.logo && (
                     <div style={{
                         position: 'absolute',
                         top: '50%',
@@ -122,29 +122,31 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     </div>
                 )}
 
-                {/* ── Layer 3: Background decorations (Blobs & Grid) ── */}
-                {!transparent && (
-                    <div style={{ position: 'absolute', inset: 0, zIndex: 2 }}>
-                        {/* top-left blob */}
+                {/* ── Layer 3: Background decorations (Grid & Mesh) ── */}
+                <div style={{ position: 'absolute', inset: 0, zIndex: 2 }}>
+                    {/* top-left blob (hide when transparent to avoid doubling with canvas) */}
+                    {!transparent && (
                         <div style={{
                             position: 'absolute', top: '-200px', left: '-200px',
                             width: '900px', height: '900px', borderRadius: '50%',
                             background: `radial-gradient(circle, ${palette.glow.replace('0.5', '0.35')} 0%, transparent 70%)`,
                         }} />
-                        {/* bottom-right blob */}
+                    )}
+                    {/* bottom-right blob (hide when transparent to avoid doubling with canvas) */}
+                    {!transparent && (
                         <div style={{
                             position: 'absolute', bottom: '-300px', right: '-200px',
                             width: '1000px', height: '1000px', borderRadius: '50%',
                             background: `radial-gradient(circle, ${palette.glow.replace('0.5', '0.25')} 0%, transparent 70%)`,
                         }} />
-                        {/* subtle grid */}
-                        <div style={{
-                            position: 'absolute', inset: 0,
-                            backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
-                            backgroundSize: '80px 80px',
-                        }} />
-                    </div>
-                )}
+                    )}
+                    {/* subtle grid (ALWAYS show in snapshot) */}
+                    <div style={{
+                        position: 'absolute', inset: 0,
+                        backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
+                        backgroundSize: '80px 80px',
+                    }} />
+                </div>
 
                 {/* ── TOP: App branding strip ───────────────────────── */}
                 <div style={{
@@ -160,7 +162,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                 </div>
 
                 {/* ── EVENT label ───────────────────────────────────── */}
-                <div style={{
+                <div id="event-label-container" style={{
                     position: 'relative', zIndex: 10,
                     marginTop: '64px',
                     background: `linear-gradient(90deg, ${palette.accent}, ${palette.accent}dd)`,
@@ -171,12 +173,13 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     transform: 'skewX(-10deg)', // Dynamic slant
                 }}>
                     <span style={{
-                        fontSize: '56px', fontWeight: '950', letterSpacing: '0.25em',
+                        fontSize: '56px', fontWeight: '950', letterSpacing: '0.15em',
                         textTransform: 'uppercase', color: 'white',
                         textShadow: '0 4px 30px rgba(0,0,0,0.6)',
                         display: 'flex',
                         gap: '2px',
                         transform: 'skewX(10deg)', // Un-skew text
+                        opacity: hideValues ? 0 : 1, // Only hide the text so canvas can animate it
                     }}>
                         {(labelMap[eventType] ?? eventType).split('').map((char, index) => (
                             <span 

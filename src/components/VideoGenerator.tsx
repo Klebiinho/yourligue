@@ -194,6 +194,17 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
             const statKeys   = Object.keys(stats);
             const statValues = Object.values(stats);
             const statPos    = statKeys.map((_, i) => getElemCenter(`metric-${i}`));
+            const eventPos   = getElemCenter('event-label-container');
+
+            const labelMap: Record<string, string> = {
+                MVP:    'MELHOR DA PARTIDA',
+                Gol:    'GOOOOOL',
+                Ponto:  'CESTA!!!',
+                Assist: 'GARÇOM!',
+                Rebote: 'PAREDÃO!',
+                Falta:  'FALTA!',
+            };
+            const displayLabel = labelMap[eventType] || eventType;
 
             const DURATION = 8000; // ms
             const FPS      = 60;
@@ -263,6 +274,42 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                 ctx.globalAlpha = opacity;
                 ctx.translate(0, yOffset);
                 ctx.drawImage(contentImg, 0, 0, 1080, 1920);
+
+                // ── Animated highlight label (PILL TEXT) ──────────────
+                if (eventPos) {
+                    const waveTime = frame / 60;
+                    const chars = displayLabel.split('');
+                    
+                    ctx.textAlign    = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.font         = '950 56px "Inter", "Outfit", system-ui, sans-serif';
+                    ctx.fillStyle     = 'white';
+                    ctx.shadowColor   = 'rgba(0,0,0,0.6)';
+                    ctx.shadowBlur    = 30;
+                    ctx.shadowOffsetY = 4;
+
+                    // Approximation for letter-spacing (0.15em of 56px is ~8.4px)
+                    const charSpacing = 10; 
+                    const charWidths = chars.map(c => ctx.measureText(c).width);
+                    const totalWidth = charWidths.reduce((a, b) => a + b, 0) + (chars.length - 1) * charSpacing;
+                    
+                    let drawX = eventPos.x - totalWidth / 2;
+                    chars.forEach((char, i) => {
+                        const charW = charWidths[i];
+                        const individualX = drawX + charW / 2;
+                        
+                        // Wave offset (sync'd with CSS version)
+                        const offsetT = waveTime * 4.5 + (i * 0.4); 
+                        const yWave = Math.sin(offsetT) * 12;
+
+                        ctx.fillText(char, individualX, eventPos.y + yWave);
+                        drawX += charW + charSpacing;
+                    });
+                    
+                    ctx.shadowBlur = 0;
+                    ctx.shadowOffsetY = 0;
+                }
+
                 ctx.restore();
 
                 // ── Animated stat numbers ─────────────────────────────
