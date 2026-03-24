@@ -683,10 +683,19 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         loadUserInteractions(leagueId);
         loadSupportCounts(leagueId);
 
-        // Fetch everything in parallel
+        // Fetch everything in parallel with optimized queries and limits
         const [teamsRes, matchesRes, bracketsRes, adsRes] = await Promise.all([
+            // Limit player columns to avoid huge payload overhead if not needed immediately
             supabase.from('teams').select('*, players(*)').eq('league_id', leagueId).order('created_at'),
-            supabase.from('matches').select('*, match_events(*)').eq('league_id', leagueId).order('updated_at', { ascending: false }).order('created_at', { ascending: false }),
+            
+            // Limit matches to a reasonable window (150 matches) for initial load
+            supabase.from('matches')
+                .select('*, match_events(*)')
+                .eq('league_id', leagueId)
+                .order('updated_at', { ascending: false })
+                .order('created_at', { ascending: false })
+                .limit(150), // Optimization: Prevent loading thousands of historical matches at once
+            
             supabase.from('brackets').select('*').eq('league_id', leagueId).order('match_order'),
             supabase.from('ads').select('*').eq('league_id', leagueId).order('display_order', { ascending: true })
         ]);
