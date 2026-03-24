@@ -242,10 +242,36 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     )}
                 </div>
 
+                {/* ── Description quote (NOW ABOVE NAMES) ───────────── */}
+                {displayDescription && eventType !== 'MVP' && (
+                    <div style={{
+                        position: 'relative', zIndex: 10,
+                        marginTop: '280px', // Large gap to lower the narrative block
+                        width: '100%', padding: '0 64px',
+                    }}>
+                        <div style={{
+                            background: 'rgba(255,255,255,0.06)',
+                            backdropFilter: 'blur(16px)',
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            borderLeft: `6px solid ${palette.accent}`,
+                            borderRadius: '20px',
+                            padding: '32px 48px',
+                        }}>
+                            <span style={{
+                                fontSize: '36px', fontWeight: '500', fontStyle: 'italic',
+                                color: 'rgba(255,255,255,0.8)', lineHeight: 1.5,
+                                display: 'block', textAlign: 'center',
+                            }}>
+                                "{displayDescription}"
+                            </span>
+                        </div>
+                    </div>
+                )}
+
                 {/* ── PLAYER INFO BOX ────────────────────────────── */}
                 <div style={{
                     position: 'relative', zIndex: 10,
-                    marginTop: '480px', // Very large gap to keep names and label at the bottom
+                    marginTop: displayDescription && eventType !== 'MVP' ? '64px' : '480px', 
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     width: '100%', padding: '0 64px',
                 }}>
@@ -308,31 +334,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     </span>
                 </div>
 
-                {/* ── Description quote (event description) ─────────── */}
-                {displayDescription && eventType !== 'MVP' && (
-                    <div style={{
-                        position: 'relative', zIndex: 10,
-                        marginTop: '40px',
-                        width: '100%', padding: '0 64px',
-                    }}>
-                        <div style={{
-                            background: 'rgba(255,255,255,0.06)',
-                            backdropFilter: 'blur(16px)',
-                            border: '1px solid rgba(255,255,255,0.12)',
-                            borderLeft: `6px solid ${palette.accent}`,
-                            borderRadius: '20px',
-                            padding: '32px 48px',
-                        }}>
-                            <span style={{
-                                fontSize: '36px', fontWeight: '500', fontStyle: 'italic',
-                                color: 'rgba(255,255,255,0.8)', lineHeight: 1.5,
-                                display: 'block', textAlign: 'center',
-                            }}>
-                                "{displayDescription}"
-                            </span>
-                        </div>
-                    </div>
-                )}
+                {/* Description removed from here */}
 
                 {/* ── STATS grid (Only for MVP cards) ──────────────── */}
                 {eventType === 'MVP' && (
