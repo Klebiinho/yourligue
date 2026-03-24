@@ -90,11 +90,11 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     <div style={{
                         position: 'absolute',
                         top: '50%',
-                        right: '-400px', // Shift it much further right
+                        left: '-1000px', // Large negative offset to shift the logo way to the left
                         transform: 'translateY(-50%)',
-                        width: '1600px',
-                        height: '1600px',
-                        opacity: 0.05,
+                        width: '2400px',
+                        height: '2400px',
+                        opacity: 0.04,
                         zIndex: 1,
                         pointerEvents: 'none',
                     }}>
