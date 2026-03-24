@@ -64,6 +64,14 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
             Falta:  'FALTA!',
         };
 
+        // Utility to clean player name (removes redundant team info if present like "Name (Team)")
+        const cleanPlayerName = (name: string, teamName: string) => {
+            const pattern = new RegExp(`\\s*\\(${teamName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'i');
+            return name.replace(pattern, '').trim();
+        };
+
+        const displayName = cleanPlayerName(player.name, team.name);
+
         const displayDescription = description || '';
 
         const bgStyle = transparent ? {} : {
@@ -162,8 +170,8 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     </div>
                 </div>
 
-                {/* Spacer refined to raise the photo while names stay lower */}
-                <div style={{ height: eventType === 'MVP' ? '80px' : '300px' }} />
+                {/* Spacer drastically reduced to bring everything to the top as requested */}
+                <div style={{ height: eventType === 'MVP' ? '40px' : '80px' }} />
 
                 {/* Action label moved below info box */}
 
@@ -237,7 +245,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                 {/* ── PLAYER INFO BOX ────────────────────────────── */}
                 <div style={{
                     position: 'relative', zIndex: 10,
-                    marginTop: '240px', // Large gap to keep names and label lower
+                    marginTop: '48px', // Back to tight spacing with photo
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     width: '100%', padding: '0 64px',
                 }}>
@@ -249,7 +257,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                         color: 'white', letterSpacing: '-3px',
                         textShadow: '0 10px 50px rgba(0,0,0,0.8)',
                     }}>
-                        {player.number ? `#${player.number} ` : ''}{player.name}
+                        {player.number ? `#${player.number} ` : ''}{displayName}
                     </h2>
 
                     <div style={{
