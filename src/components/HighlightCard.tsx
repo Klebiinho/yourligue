@@ -245,7 +245,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                 {/* ── PLAYER INFO BOX ────────────────────────────── */}
                 <div style={{
                     position: 'relative', zIndex: 10,
-                    marginTop: '48px', // Back to tight spacing with photo
+                    marginTop: '480px', // Very large gap to keep names and label at the bottom
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     width: '100%', padding: '0 64px',
                 }}>
