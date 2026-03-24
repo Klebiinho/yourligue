@@ -162,40 +162,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     </div>
                 </div>
 
-                {/* ── EVENT label ───────────────────────────────────── */}
-                <div id="event-label-container" style={{
-                    position: 'relative', zIndex: 10,
-                    marginTop: '64px',
-                    background: `linear-gradient(90deg, ${palette.accent}, ${palette.accent}dd)`,
-                    padding: '28px 100px',
-                    borderRadius: '24px',
-                    boxShadow: `0 20px 80px ${palette.glow}`,
-                    border: '3px solid rgba(255,255,255,0.3)',
-                    transform: 'skewX(-10deg)', // Dynamic slant
-                }}>
-                    <span style={{
-                        fontSize: '56px', fontWeight: '950', letterSpacing: '0.15em',
-                        textTransform: 'uppercase', color: 'white',
-                        textShadow: '0 4px 30px rgba(0,0,0,0.6)',
-                        display: 'flex',
-                        gap: '2px',
-                        transform: 'skewX(10deg)', // Un-skew text
-                        opacity: hideValues ? 0 : 1, // Only hide the text so canvas can animate it
-                    }}>
-                        {(labelMap[eventType] ?? eventType).split('').map((char, index) => (
-                            <span 
-                                key={index} 
-                                className="wave-char" 
-                                style={{ 
-                                    animationDelay: `${index * 0.08}s`,
-                                    marginRight: char === ' ' ? '30px' : '0' 
-                                }}
-                            >
-                                {char}
-                            </span>
-                        ))}
-                    </span>
-                </div>
+                {/* Action label moved below info box */}
 
                 {/* ── PLAYER PHOTO + team logo badge ────────────────── */}
                 <div style={{
@@ -293,6 +260,41 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                             {team.name}
                         </span>
                     </div>
+                </div>
+
+                {/* ── EVENT label (Action Label) ─────────────────────── */}
+                <div id="event-label-container" style={{
+                    position: 'relative', zIndex: 10,
+                    marginTop: '56px',
+                    background: `linear-gradient(90deg, ${palette.accent}, ${palette.accent}dd)`,
+                    padding: '28px 100px',
+                    borderRadius: '24px',
+                    boxShadow: `0 20px 80px ${palette.glow}`,
+                    border: '3px solid rgba(255,255,255,0.3)',
+                    transform: 'skewX(-10deg)', // Dynamic slant
+                }}>
+                    <span style={{
+                        fontSize: '56px', fontWeight: '950', letterSpacing: '0.15em',
+                        textTransform: 'uppercase', color: 'white',
+                        textShadow: '0 4px 30px rgba(0,0,0,0.6)',
+                        display: 'flex',
+                        gap: '2px',
+                        transform: 'skewX(10deg)', // Un-skew text
+                        opacity: hideValues ? 0 : 1, // Only hide the text so canvas can animate it
+                    }}>
+                        {(labelMap[eventType] ?? eventType).split('').map((char, index) => (
+                            <span 
+                                key={index} 
+                                className="wave-char" 
+                                style={{ 
+                                    animationDelay: `${index * 0.08}s`,
+                                    marginRight: char === ' ' ? '30px' : '0' 
+                                }}
+                            >
+                                {char}
+                            </span>
+                        ))}
+                    </span>
                 </div>
 
                 {/* ── Description quote (event description) ─────────── */}
