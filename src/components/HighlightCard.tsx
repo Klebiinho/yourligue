@@ -87,11 +87,11 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     <div style={{
                         position: 'absolute',
                         top: '50%',
-                        left: '-15%',
+                        right: '-400px', // Shift it much further right
                         transform: 'translateY(-50%)',
-                        width: '1200px',
-                        height: '1400px',
-                        opacity: 0.12, // Slightly more visible as it's behind blobs
+                        width: '1600px',
+                        height: '1600px',
+                        opacity: 0.05,
                         zIndex: 1,
                         pointerEvents: 'none',
                     }}>
@@ -103,7 +103,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                                 width: '100%', 
                                 height: '100%', 
                                 objectFit: 'contain',
-                                filter: 'grayscale(100%) contrast(120%)'
+                                filter: 'grayscale(100%) brightness(150%) contrast(150%)'
                             }} 
                         />
                     </div>
@@ -149,17 +149,20 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                 {/* ── EVENT label ───────────────────────────────────── */}
                 <div style={{
                     position: 'relative', zIndex: 10,
-                    marginTop: '48px',
-                    background: `linear-gradient(90deg, ${palette.accent}, ${palette.accent}bb)`,
-                    padding: '24px 80px',
-                    borderRadius: '999px',
-                    boxShadow: `0 0 60px ${palette.glow}`,
-                    border: '2px solid rgba(255,255,255,0.2)',
+                    marginTop: '64px',
+                    background: `linear-gradient(90deg, ${palette.accent}, ${palette.accent}dd)`,
+                    padding: '28px 100px',
+                    borderRadius: '24px',
+                    boxShadow: `0 20px 80px ${palette.glow}`,
+                    border: '3px solid rgba(255,255,255,0.3)',
+                    transform: 'skewX(-10deg)', // Dynamic slant
                 }}>
                     <span style={{
-                        fontSize: '52px', fontWeight: '900', letterSpacing: '0.2em',
+                        fontSize: '56px', fontWeight: '950', letterSpacing: '0.25em',
                         textTransform: 'uppercase', color: 'white',
-                        textShadow: '0 2px 20px rgba(0,0,0,0.4)',
+                        textShadow: '0 4px 30px rgba(0,0,0,0.6)',
+                        display: 'block',
+                        transform: 'skewX(10deg)', // Un-skew text
                     }}>
                         {labelMap[eventType] ?? eventType}
                     </span>
@@ -221,43 +224,49 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     )}
                 </div>
 
-                {/* ── PLAYER NAME + NUMBER ──────────────────────────── */}
+                {/* ── PLAYER INFO BOX ────────────────────────────── */}
                 <div style={{
                     position: 'relative', zIndex: 10,
-                    marginTop: '48px',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
+                    marginTop: '64px',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
                     width: '100%', padding: '0 64px',
                 }}>
                     {player.number && (
                         <div style={{
-                            background: `linear-gradient(135deg, ${palette.accent}44, ${palette.accent}22)`,
-                            border: `3px solid ${palette.accent}`,
-                            borderRadius: '20px',
-                            padding: '8px 40px',
+                            background: `linear-gradient(135deg, ${palette.accent}, ${palette.accent}88)`,
+                            padding: '10px 32px',
+                            borderRadius: '12px',
+                            marginBottom: '16px',
+                            boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
                         }}>
-                            <span style={{
-                                fontSize: '52px', fontWeight: '900',
-                                color: palette.accent, letterSpacing: '0.05em',
-                            }}>
-                                #{player.number}
-                            </span>
+                             <span style={{ fontSize: '42px', fontWeight: '900', color: 'white' }}>#{player.number}</span>
                         </div>
                     )}
+                    
                     <h2 style={{
-                        fontSize: '88px', fontWeight: '900', lineHeight: 1,
+                        fontSize: '82px', fontWeight: '950', lineHeight: 1.1,
                         textAlign: 'center', textTransform: 'uppercase', margin: 0,
-                        color: 'white', letterSpacing: '-1px',
-                        textShadow: '0 4px 30px rgba(0,0,0,0.5)',
-                        maxWidth: '100%', wordBreak: 'break-word',
+                        color: 'white', letterSpacing: '-2px',
+                        textShadow: '0 10px 40px rgba(0,0,0,0.8)',
                     }}>
                         {player.name}
                     </h2>
-                    <span style={{
-                        fontSize: '38px', fontWeight: '700', letterSpacing: '0.15em',
-                        textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)',
+
+                    <div style={{
+                        marginTop: '24px',
+                        padding: '12px 40px',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        borderRadius: '99px',
+                        backdropFilter: 'blur(8px)',
                     }}>
-                        {team.name}
-                    </span>
+                        <span style={{
+                            fontSize: '32px', fontWeight: '800', letterSpacing: '0.2em',
+                            textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)',
+                        }}>
+                            {team.name}
+                        </span>
+                    </div>
                 </div>
 
                 {/* ── Description quote (event description) ─────────── */}
