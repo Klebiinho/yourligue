@@ -283,25 +283,21 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     )}
                     
                     <h2 style={{
-                        fontSize: '82px', fontWeight: '950', lineHeight: 1.1,
+                        fontSize: '92px', fontWeight: '950', lineHeight: 1.1,
                         textAlign: 'center', textTransform: 'uppercase', margin: 0,
-                        color: 'white', letterSpacing: '-2px',
-                        textShadow: '0 10px 40px rgba(0,0,0,0.8)',
+                        color: 'white', letterSpacing: '-3px',
+                        textShadow: '0 10px 50px rgba(0,0,0,0.8)',
                     }}>
                         {player.name}
                     </h2>
 
                     <div style={{
-                        marginTop: '24px',
-                        padding: '12px 40px',
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.15)',
-                        borderRadius: '99px',
-                        backdropFilter: 'blur(8px)',
+                        marginTop: '12px',
                     }}>
                         <span style={{
-                            fontSize: '32px', fontWeight: '800', letterSpacing: '0.2em',
+                            fontSize: '44px', fontWeight: '900', letterSpacing: '0.15em',
                             textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)',
+                            textShadow: '0 4px 20px rgba(0,0,0,0.5)',
                         }}>
                             {team.name}
                         </span>
