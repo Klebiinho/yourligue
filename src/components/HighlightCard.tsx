@@ -162,8 +162,8 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     </div>
                 </div>
 
-                {/* Vertical spacer to push content down and center it more */}
-                <div style={{ height: '360px' }} />
+                {/* Adaptive spacer to push content down: less space for MVP to fit stats */}
+                <div style={{ height: eventType === 'MVP' ? '120px' : '360px' }} />
 
                 {/* Action label moved below info box */}
 
