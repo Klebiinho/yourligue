@@ -97,10 +97,37 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     </>
                 )}
 
+                {/* ── Background Watermark Logo ─────────────────────────── */}
+                {team.logo && !transparent && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '-15%', // Shifting it to show half of the logo
+                        transform: 'translateY(-50%)',
+                        width: '1200px',
+                        height: '1400px',
+                        opacity: 0.08,
+                        zIndex: 0,
+                        pointerEvents: 'none',
+                    }}>
+                        <img 
+                            src={team.logo} 
+                            alt={team.name} 
+                            crossOrigin="anonymous"
+                            style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                objectFit: 'contain',
+                                filter: 'grayscale(100%) brightness(200%)'
+                            }} 
+                        />
+                    </div>
+                )}
+
                 {/* ── TOP: App branding strip ───────────────────────── */}
                 <div style={{
                     width: '100%', padding: '48px 64px 0',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', // Center branding since logo is gone
                     position: 'relative', zIndex: 10,
                 }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -108,21 +135,6 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                             yourligue.app
                         </span>
                     </div>
-                    {/* Team logo top-right */}
-                    {team.logo && (
-                        <div style={{
-                            width: '120px', height: '120px',
-                            background: 'rgba(255,255,255,0.08)',
-                            borderRadius: '50%',
-                            border: '3px solid rgba(255,255,255,0.15)',
-                            padding: '12px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            backdropFilter: 'blur(12px)',
-                        }}>
-                            <img src={team.logo} alt={team.name} crossOrigin="anonymous"
-                                style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                        </div>
-                    )}
                 </div>
 
                 {/* ── EVENT label ───────────────────────────────────── */}
