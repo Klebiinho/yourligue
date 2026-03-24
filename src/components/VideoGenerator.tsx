@@ -70,8 +70,8 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
         if (!cardRef.current) return;
         setGenerating(true);
         try {
-            // Give browser time to render logo images
-            await new Promise(r => setTimeout(r, 600));
+            // Wait for assets to be ready
+            await new Promise(r => setTimeout(r, 800));
 
             const dataUrl = await toPng(cardRef.current, {
                 canvasWidth: 1080,
@@ -83,10 +83,25 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                 skipAutoScale: true,
             });
 
-            const res = await fetch(dataUrl);
-            const blob = await res.blob();
             const fileName = `Destaque-${player.name.replace(/\s+/g, '-')}-${Date.now()}.png`;
-            await downloadBlob(blob, fileName);
+
+            // On mobile, we still prefer Blob for sharing
+            if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+                const res = await fetch(dataUrl);
+                const blob = await res.blob();
+                await downloadBlob(blob, fileName);
+            } else {
+                // On PC/Desktop, dataUrl directly is more reliable for large images
+                const a = document.createElement('a');
+                a.href = dataUrl;
+                a.download = fileName;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                }, 1000);
+            }
         } catch (err) {
             console.error('Error generating image', err);
             alert('Erro ao gerar imagem. Verifique se as imagens permitem acesso público (CORS).');
