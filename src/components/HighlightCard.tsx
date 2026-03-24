@@ -163,7 +163,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                 </div>
 
                 {/* Adaptive spacer to push content down: less space for MVP to fit stats */}
-                <div style={{ height: eventType === 'MVP' ? '120px' : '360px' }} />
+                <div style={{ height: eventType === 'MVP' ? '120px' : '520px' }} />
 
                 {/* Action label moved below info box */}
 
