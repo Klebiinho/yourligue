@@ -142,8 +142,8 @@ interface LeagueContextType {
     generateGroups: (teamsPerGroup: number) => Promise<void>;
 
     // Team actions
-    addTeam: (team: { name: string; logo: string; primary_color?: string }) => Promise<{ error: string | null }>;
-    updateTeam: (teamId: string, data: Partial<{ name: string; logo: string; primary_color: string }>) => Promise<{ error: string | null }>;
+    addTeam: (team: { name: string; logo: string; primary_color?: string; secondary_color?: string }) => Promise<{ error: string | null }>;
+    updateTeam: (teamId: string, data: Partial<{ name: string; logo: string; primary_color: string; secondary_color: string }>) => Promise<{ error: string | null }>;
     deleteTeam: (teamId: string) => Promise<void>;
 
     // Player actions
@@ -257,6 +257,7 @@ const mapDBTeam = (t: any): Team => {
         name: t.name,
         logo: t.logo || '',
         primaryColor: t.primary_color || null,
+        secondaryColor: t.secondary_color || null,
         group_name: t.group_name || '',
         players,
         stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0, form: [] as ('W' | 'D' | 'L')[] }
@@ -1054,7 +1055,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             league_id: league.id, 
             name: team.name, 
             logo: team.logo,
-            primary_color: team.primary_color 
+            primary_color: team.primary_color,
+            secondary_color: team.secondary_color 
         }).select().single();
         if (error) return { error: error.message };
         if (data) {
@@ -1072,6 +1074,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             if (data.name) updatePayload.name = data.name;
             if (data.logo) updatePayload.logo = data.logo;
             if (data.primary_color) updatePayload.primary_color = data.primary_color;
+            if (data.secondary_color) updatePayload.secondary_color = data.secondary_color;
 
             const { data: updatedData, error } = await supabase
                 .from('teams')
