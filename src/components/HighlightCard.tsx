@@ -337,10 +337,10 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     marginTop: displayDescription && eventType !== 'MVP' ? '32px' : '56px',
                     width: '100%', padding: '0 64px',
                     display: 'grid',
-                    gridTemplateColumns: `repeat(${Math.min(Object.keys(stats).length, 3)}, 1fr)`,
+                    gridTemplateColumns: `repeat(${Math.min(Object.entries(stats).filter(([_, v]) => eventType === 'MVP' || v > 0).length, 3)}, 1fr)`,
                     gap: '28px',
                 }}>
-                    {Object.entries(stats).map(([label, value], i) => (
+                    {Object.entries(stats).filter(([_, v]) => eventType === 'MVP' || v > 0).map(([label, value], i) => (
                         <div key={label} style={{
                             background: 'rgba(255,255,255,0.07)',
                             backdropFilter: 'blur(20px)',
