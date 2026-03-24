@@ -265,7 +265,7 @@ const Teams = () => {
                                 {teamError && <ErrorMsg msg={teamError} />}
 
                                 <button type="submit" className="w-full bg-primary text-white font-black py-3 rounded-xl shadow-[0_4px_20px_rgba(109,40,217,0.3)] hover:brightness-110 active:scale-[0.98] transition-all uppercase tracking-widest text-[0.65rem] flex items-center justify-center gap-2">
-                                    <Shield size={15} fill="currentColor" /> Cadastrar Clube
+                                    <Shield size={15} fill="currentColor" /> {isEditingTeam ? 'Salvar Alterações' : 'Cadastrar Clube'}
                                 </button>
                             </form>
                         </div>
