@@ -143,7 +143,7 @@ interface LeagueContextType {
 
     // Team actions
     addTeam: (team: { name: string; logo: string; primary_color?: string }) => Promise<{ error: string | null }>;
-    updateTeam: (teamId: string, data: Partial<{ name: string; logo: string; primary_color: string }>) => Promise<void>;
+    updateTeam: (teamId: string, data: Partial<{ name: string; logo: string; primary_color: string }>) => Promise<{ error: string | null }>;
     deleteTeam: (teamId: string) => Promise<void>;
 
     // Player actions
@@ -1064,8 +1064,26 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const updateTeam = async (teamId: string, data: Partial<{ name: string; logo: string; primary_color: string }>) => {
-        await supabase.from('teams').update(data).eq('id', teamId);
-        setRawTeams(prev => prev.map(t => t.id === teamId ? { ...t, ...data, primaryColor: data.primary_color || t.primaryColor } : t));
+        console.log('[LeagueContext] Iniciando updateTeam:', { teamId, data });
+        const { error } = await supabase.from('teams').update(data).eq('id', teamId);
+        
+        if (error) {
+            console.error('[LeagueContext] Erro ao atualizar time:', error);
+            return { error: error.message };
+        }
+
+        setRawTeams(prev => prev.map(t => {
+            if (t.id === teamId) {
+                const updated = { ...t };
+                if (data.name) updated.name = data.name;
+                if (data.logo) updated.logo = data.logo;
+                if (data.primary_color !== undefined) updated.primaryColor = data.primary_color;
+                return updated;
+            }
+            return t;
+        }));
+        
+        return { error: null };
     };
 
     const deleteTeam = async (teamId: string) => {

@@ -104,12 +104,19 @@ const Teams = () => {
         if (!newTeamName.trim()) return;
         setTeamError('');
         
+        let errorResult = null;
         if (isEditingTeam) {
-            await updateTeam(isEditingTeam, { name: newTeamName, logo: newTeamLogo, primary_color: newTeamColor });
-            setIsEditingTeam(null);
+            const { error } = await updateTeam(isEditingTeam, { name: newTeamName, logo: newTeamLogo, primary_color: newTeamColor });
+            if (error) errorResult = error;
+            else setIsEditingTeam(null);
         } else {
             const { error } = await addTeam({ name: newTeamName, logo: newTeamLogo, primary_color: newTeamColor });
-            if (error) { setTeamError(error); return; }
+            if (error) errorResult = error;
+        }
+
+        if (errorResult) {
+            setTeamError(errorResult);
+            return;
         }
         
         setNewTeamName(''); setNewTeamLogo(''); setNewTeamColor('#6366f1');
