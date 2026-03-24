@@ -20,6 +20,7 @@ const Teams = () => {
     }, [teamId, teams]);
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLogo, setNewTeamLogo] = useState('');
+    const [newTeamColor, setNewTeamColor] = useState('#6366f1'); // Default indigo
     const [error, setError] = useState('');
     const [swappingPlayerId, setSwappingPlayerId] = useState<string | null>(null);
     const [draggedPlayerId, setDraggedPlayerId] = useState<string | null>(null);
@@ -49,20 +50,21 @@ const Teams = () => {
         setTeamError('');
         
         if (isEditingTeam) {
-            await updateTeam(isEditingTeam, { name: newTeamName, logo: newTeamLogo });
+            await updateTeam(isEditingTeam, { name: newTeamName, logo: newTeamLogo, primary_color: newTeamColor });
             setIsEditingTeam(null);
         } else {
-            const { error } = await addTeam({ name: newTeamName, logo: newTeamLogo });
+            const { error } = await addTeam({ name: newTeamName, logo: newTeamLogo, primary_color: newTeamColor });
             if (error) { setTeamError(error); return; }
         }
         
-        setNewTeamName(''); setNewTeamLogo('');
+        setNewTeamName(''); setNewTeamLogo(''); setNewTeamColor('#6366f1');
     };
 
     const startEditingTeam = (team: any) => {
         setIsEditingTeam(team.id);
         setNewTeamName(team.name);
         setNewTeamLogo(team.logo || '');
+        setNewTeamColor(team.primaryColor || '#6366f1');
     };
 
     const handlePlayerSubmit = async (e: React.FormEvent) => {
@@ -203,6 +205,26 @@ const Teams = () => {
                                             </button>
                                         </div>
                                     )}
+                                </div>
+
+                                <div className="space-y-1.5 pb-2">
+                                    <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
+                                        <span>Cor do Time</span>
+                                        <span className="text-white/40 font-mono text-[0.6rem]">{newTeamColor}</span>
+                                    </label>
+                                    <div className="flex items-center gap-3">
+                                        <div 
+                                            className="w-12 h-12 rounded-xl border border-white/20 shadow-lg flex-none"
+                                            style={{ backgroundColor: newTeamColor }}
+                                        />
+                                        <input 
+                                            type="color" 
+                                            value={newTeamColor} 
+                                            onChange={e => setNewTeamColor(e.target.value)}
+                                            className="flex-1 h-12 bg-black/40 border border-white/10 rounded-xl px-2 py-1 cursor-pointer outline-none focus:border-primary transition-all"
+                                        />
+                                    </div>
+                                    <p className="text-[0.55rem] text-slate-600 mt-1 italic">Esta cor será usada nos vídeos e artes de destaque do clube.</p>
                                 </div>
 
                                 {teamError && <ErrorMsg msg={teamError} />}

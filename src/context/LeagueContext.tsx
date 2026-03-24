@@ -21,6 +21,7 @@ export type Team = {
     id: string;
     name: string;
     logo: string;
+    primaryColor?: string; // Standard hex color, e.g., #ff0000
     group_name?: string;
     players: Player[];
     stats: { matches: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number; points: number; form: ('W' | 'D' | 'L')[] };
@@ -141,8 +142,8 @@ interface LeagueContextType {
     generateGroups: (teamsPerGroup: number) => Promise<void>;
 
     // Team actions
-    addTeam: (team: { name: string; logo: string }) => Promise<{ error: string | null }>;
-    updateTeam: (teamId: string, data: Partial<{ name: string; logo: string }>) => Promise<void>;
+    addTeam: (team: { name: string; logo: string; primary_color?: string }) => Promise<{ error: string | null }>;
+    updateTeam: (teamId: string, data: Partial<{ name: string; logo: string; primary_color: string }>) => Promise<void>;
     deleteTeam: (teamId: string) => Promise<void>;
 
     // Player actions
@@ -255,6 +256,7 @@ const mapDBTeam = (t: any): Team => {
         id: t.id,
         name: t.name,
         logo: t.logo || '',
+        primaryColor: t.primary_color || null,
         group_name: t.group_name || '',
         players,
         stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0, form: [] as ('W' | 'D' | 'L')[] }
@@ -1046,9 +1048,14 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     // ── Team CRUD ──────────────────────────────────────────────
     // ── Team CRUD ──────────────────────────────────────────────
-    const addTeam = async (team: { name: string; logo: string }) => {
+    const addTeam = async (team: { name: string; logo: string; primary_color?: string }) => {
         if (!league) return { error: 'Nenhuma liga selecionada' };
-        const { data, error } = await supabase.from('teams').insert({ league_id: league.id, name: team.name, logo: team.logo }).select().single();
+        const { data, error } = await supabase.from('teams').insert({ 
+            league_id: league.id, 
+            name: team.name, 
+            logo: team.logo,
+            primary_color: team.primary_color 
+        }).select().single();
         if (error) return { error: error.message };
         if (data) {
             setRawTeams(prev => [...prev, mapDBTeam(data)]);
@@ -1056,9 +1063,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         return { error: null };
     };
 
-    const updateTeam = async (teamId: string, data: Partial<{ name: string; logo: string }>) => {
+    const updateTeam = async (teamId: string, data: Partial<{ name: string; logo: string; primary_color: string }>) => {
         await supabase.from('teams').update(data).eq('id', teamId);
-        setRawTeams(prev => prev.map(t => t.id === teamId ? { ...t, ...data } : t));
+        setRawTeams(prev => prev.map(t => t.id === teamId ? { ...t, ...data, primaryColor: data.primary_color || t.primaryColor } : t));
     };
 
     const deleteTeam = async (teamId: string) => {

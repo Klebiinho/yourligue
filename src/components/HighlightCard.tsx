@@ -34,7 +34,13 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
 
         if (!player || !team) return null;
 
-        const palette = PALETTES[sportType] ?? PALETTES.football;
+        const teamPalette = team.primaryColor ? {
+            grad: [team.primaryColor, team.primaryColor + '44'], // Gradient from solid to transparent
+            accent: team.primaryColor,
+            glow: team.primaryColor + '88',
+        } : null;
+
+        const palette = teamPalette ?? (PALETTES[sportType] ?? PALETTES.football);
 
         const labelMap: Record<string, string> = {
             MVP:    'MELHOR DA PARTIDA',

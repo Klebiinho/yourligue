@@ -159,13 +159,24 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
 
             mediaRecorder.start(100); // request data every 100ms
 
-            // ── Sport palette for canvas ──────────────────────────────
+            // ── Team colors for canvas ──────────────────────────────
+            const hexToRgb = (hex: string) => {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : null;
+            };
+
             const isBasket = sportType === 'basketball';
-            const bgTop    = isBasket ? '#7c2d12' : '#1e1b4b';
-            const bgBot    = isBasket ? '#431407' : '#0f172a';
-            const accentR  = isBasket ? 249 : 109;
-            const accentG  = isBasket ? 115 : 40;
-            const accentB  = isBasket ? 22  : 217;
+            const teamRgb = team?.primaryColor ? hexToRgb(team.primaryColor) : null;
+
+            const bgTop   = team.primaryColor || (isBasket ? '#7c2d12' : '#1e1b4b');
+            const bgBot   = isBasket ? '#431407' : '#0f172a';
+            const accentR = teamRgb?.r ?? (isBasket ? 249 : 109);
+            const accentG = teamRgb?.g ?? (isBasket ? 115 : 40);
+            const accentB = teamRgb?.b ?? (isBasket ? 22  : 217);
 
             // ── Resolve stat element positions from DOM ────────────────
             const getElemCenter = (id: string): { x: number; y: number } | null => {
