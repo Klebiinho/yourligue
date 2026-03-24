@@ -13,7 +13,8 @@ const MatchControl = () => {
         league, matches, teams, endMatch, addEvent, removeEvent, 
         updateMatch, isPublicView, isAdmin, isPlayerOnPitch,
         currentYtLiveStream, isYtAuthenticated, recoverStreamDetails,
-        ytLogin, setYtLivePrivacy
+        ytLogin, setYtLivePrivacy, startMatch, pauseMatch, 
+        loading: leagueLoading, dataLoading
     } = useLeague();
 
     const match = matches.find((m: Match) => m.id === matchId);
@@ -37,7 +38,6 @@ const MatchControl = () => {
         const saved = localStorage.getItem(`yl_shooters_${matchId}`);
         return saved ? JSON.parse(saved) : { home: [], away: [] };
     });
-    const { startMatch, pauseMatch, loading: leagueLoading } = useLeague();
     const [showYtSetup, setShowYtSetup] = useState(false);
     const [showFinishModal, setShowFinishModal] = useState(false);
     const [finishedMatchVideoUrl, setFinishedMatchVideoUrl] = useState(match?.youtubeLiveId || '');
@@ -263,11 +263,11 @@ const MatchControl = () => {
         }
     };
 
-    if (leagueLoading && !match) {
+    if ((leagueLoading || dataLoading) && (!match || !homeTeam || !awayTeam)) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500 gap-4">
                 <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                <p className="font-outfit font-black uppercase tracking-widest text-xs">Carregando Partida...</p>
+                <p className="font-outfit font-black uppercase tracking-widest text-xs">Sincronizando Partida...</p>
             </div>
         );
     }
