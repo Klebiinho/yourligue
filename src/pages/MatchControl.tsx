@@ -1033,13 +1033,10 @@ const MatchControl = () => {
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center gap-2">
-                                                                    <h4 className={`font-black uppercase leading-tight font-outfit truncate ${player.id === suggestedMVPId ? 'text-warning text-sm' : 'text-white text-[0.7rem]'}`}>
+                                                                    <h4 className={`font-black uppercase leading-tight font-outfit truncate ${player.id === suggestedMVPId ? 'text-warning text-[0.7rem]' : 'text-white text-[0.7rem]'}`}>
                                                                         #{player.number} {player.name}
                                                                     </h4>
                                                                 </div>
-                                                                {player.id === suggestedMVPId && (
-                                                                    <div className="text-[0.5rem] font-black text-warning/70 uppercase tracking-widest -mt-1 mb-1">Sugestão de melhor da partida</div>
-                                                                )}
                                                                 <div className="flex items-center gap-1 mt-1 h-3.5">
                                                                     {Array.from({ length: yellowCards }).map((_, i) => (
                                                                         <div key={i} className={`w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm ${isRedCarded ? 'opacity-40' : ''}`} />
@@ -1093,8 +1090,13 @@ const MatchControl = () => {
                                                                 
                                                                 {/* Highlight/MVP Video Button (Visible when finished) */}
                                                                 {match.status === 'finished' && (
-                                                                    <div className="flex items-center gap-1.5 ml-2">
-                                                                        {/* Old suggestion badge removed */}
+                                                                    <div className="flex items-center gap-1.5 ml-2 relative">
+                                                                        {/* Suggestion text moved below buttons to avoid wrapping and keep single line */}
+                                                                        {player.id === suggestedMVPId && (
+                                                                            <span className="absolute -bottom-3 right-0 text-[0.45rem] font-black text-warning uppercase whitespace-nowrap bg-[#1a140a] px-2 py-0.5 rounded-full border border-warning/10 shadow-sm pointer-events-none">
+                                                                                ✨ Sugestão de melhor da partida
+                                                                            </span>
+                                                                        )}
                                                                         <button 
                                                                             onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
                                                                             className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary/20 text-primary hover:bg-primary hover:text-white transition-all border border-primary/20 active:scale-95 shadow-lg shadow-primary/10"
@@ -1129,12 +1131,9 @@ const MatchControl = () => {
                                                             )}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <h4 className={`font-black uppercase leading-tight font-outfit truncate ${player.id === suggestedMVPId ? 'text-warning text-sm' : 'text-white text-[0.7rem]'}`}>
+                                                            <h4 className={`font-black uppercase leading-tight font-outfit truncate ${player.id === suggestedMVPId ? 'text-warning text-[0.7rem]' : 'text-white text-[0.7rem]'}`}>
                                                                 #{player.number} {player.name}
                                                             </h4>
-                                                            {player.id === suggestedMVPId && (
-                                                                <div className="text-[0.5rem] font-black text-warning/70 uppercase tracking-widest -mt-1 mb-1">Sugestão de melhor da partida</div>
-                                                            )}
                                                             <div className="flex items-center gap-1 mt-1 h-3.5">
                                                                 {isRedCarded ? (
                                                                     <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm" />
@@ -1155,7 +1154,12 @@ const MatchControl = () => {
                                                         )}
 
                                                         {match.status === 'finished' && (
-                                                            <div className="flex items-center gap-1.5 flex-none">
+                                                            <div className="flex items-center gap-1.5 flex-none relative">
+                                                                {player.id === suggestedMVPId && (
+                                                                    <span className="absolute -bottom-3 right-0 text-[0.45rem] font-black text-warning uppercase whitespace-nowrap bg-[#1a140a] px-2 py-0.5 rounded-full border border-warning/10 shadow-sm">
+                                                                        ✨ Sugestão de melhor da partida
+                                                                    </span>
+                                                                )}
                                                                 {/* Old suggestion badge removed */}
                                                                 <button 
                                                                     onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
