@@ -73,9 +73,36 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     ...bgStyle,
                 }}
             >
-                {/* ── Background decorations ─────────────────────────── */}
+                {/* ── Layer 2: Background Watermark Logo ───────────────── */}
+                {team.logo && !transparent && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '-15%',
+                        transform: 'translateY(-50%)',
+                        width: '1200px',
+                        height: '1400px',
+                        opacity: 0.12, // Slightly more visible as it's behind blobs
+                        zIndex: 1,
+                        pointerEvents: 'none',
+                    }}>
+                        <img 
+                            src={team.logo} 
+                            alt={team.name} 
+                            crossOrigin="anonymous"
+                            style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                objectFit: 'contain',
+                                filter: 'grayscale(100%) contrast(120%)'
+                            }} 
+                        />
+                    </div>
+                )}
+
+                {/* ── Layer 3: Background decorations (Blobs & Grid) ── */}
                 {!transparent && (
-                    <>
+                    <div style={{ position: 'absolute', inset: 0, zIndex: 2 }}>
                         {/* top-left blob */}
                         <div style={{
                             position: 'absolute', top: '-200px', left: '-200px',
@@ -94,33 +121,6 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                             backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
                             backgroundSize: '80px 80px',
                         }} />
-                    </>
-                )}
-
-                {/* ── Background Watermark Logo ─────────────────────────── */}
-                {team.logo && !transparent && (
-                    <div style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '-15%', // Shifting it to show half of the logo
-                        transform: 'translateY(-50%)',
-                        width: '1200px',
-                        height: '1400px',
-                        opacity: 0.08,
-                        zIndex: 0,
-                        pointerEvents: 'none',
-                    }}>
-                        <img 
-                            src={team.logo} 
-                            alt={team.name} 
-                            crossOrigin="anonymous"
-                            style={{ 
-                                width: '100%', 
-                                height: '100%', 
-                                objectFit: 'contain',
-                                filter: 'grayscale(100%) brightness(200%)'
-                            }} 
-                        />
                     </div>
                 )}
 
