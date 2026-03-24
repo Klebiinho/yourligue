@@ -44,7 +44,10 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
         };
 
         const teamPalette = team.primaryColor ? {
-            grad: [darkenColor(team.primaryColor, 30), darkenColor(team.primaryColor, 70)], 
+            grad: [
+                darkenColor(team.primaryColor, 15), // Top color slightly darkened for richness
+                team.secondaryColor ? darkenColor(team.secondaryColor, 30) : darkenColor(team.primaryColor, 75) // Bottom color
+            ], 
             accent: team.primaryColor,
             glow: team.primaryColor + '88',
         } : null;

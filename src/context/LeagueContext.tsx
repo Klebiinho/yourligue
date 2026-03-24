@@ -21,7 +21,8 @@ export type Team = {
     id: string;
     name: string;
     logo: string;
-    primaryColor?: string; // Standard hex color, e.g., #ff0000
+    primaryColor?: string;
+    secondaryColor?: string;
     group_name?: string;
     players: Player[];
     stats: { matches: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number; points: number; form: ('W' | 'D' | 'L')[] };
@@ -1049,7 +1050,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     // ── Team CRUD ──────────────────────────────────────────────
     // ── Team CRUD ──────────────────────────────────────────────
-    const addTeam = async (team: { name: string; logo: string; primary_color?: string }) => {
+    const addTeam = async (team: { name: string; logo: string; primary_color?: string; secondary_color?: string }) => {
         if (!league) return { error: 'Nenhuma liga selecionada' };
         const { data, error } = await supabase.from('teams').insert({ 
             league_id: league.id, 
@@ -1065,7 +1066,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         return { error: null };
     };
 
-    const updateTeam = async (teamId: string, data: Partial<{ name: string; logo: string; primary_color: string }>) => {
+    const updateTeam = async (teamId: string, data: Partial<{ name: string; logo: string; primary_color: string; secondary_color: string }>) => {
         console.log('[LeagueContext] Iniciando updateTeam:', { teamId, updateKeys: Object.keys(data) });
         
         try {

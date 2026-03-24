@@ -20,7 +20,8 @@ const Teams = () => {
     }, [teamId, teams]);
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLogo, setNewTeamLogo] = useState('');
-    const [newTeamColor, setNewTeamColor] = useState('#6366f1'); // Default indigo
+    const [newTeamColor, setNewTeamColor] = useState('#6366f1'); 
+    const [newTeamColor2, setNewTeamColor2] = useState('#4338ca');
     const [error, setError] = useState('');
     const [swappingPlayerId, setSwappingPlayerId] = useState<string | null>(null);
     const [draggedPlayerId, setDraggedPlayerId] = useState<string | null>(null);
@@ -42,7 +43,7 @@ const Teams = () => {
 
     const currentTeam = teams.find(t => t.id === activeTeamId);
 
-    const extractColorFromImage = (dataUrl: string, onDone?: (hex: string) => void) => {
+    const extractColorFromImage = (dataUrl: string, onDone?: (colors: { p: string, s: string }) => void) => {
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.onload = () => {
@@ -52,20 +53,57 @@ const Teams = () => {
             canvas.width = 64; canvas.height = 64;
             ctx.drawImage(img, 0, 0, 64, 64);
             const data = ctx.getImageData(0, 0, 64, 64).data;
-            let r = 0, g = 0, b = 0, count = 0;
+            
+            // Histogram of color buckets (8x8x8 = 512 buckets)
+            const buckets: Record<string, { r: number, g: number, b: number, count: number }> = {};
+            
             for (let i = 0; i < data.length; i += 4) {
-                const alpha = data[i + 3];
-                const sum = data[i] + data[i+1] + data[i+2];
-                if (alpha > 125 && sum > 60 && sum < 700) { 
-                    r += data[i]; g += data[i+1]; b += data[i+2];
-                    count++;
-                }
+                const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+                if (a < 128) continue; // Skip transparency
+                
+                const sum = r + g + b;
+                if (sum < 60 || sum > 700) continue; // Skip near-black or near-white
+                
+                // Group into buckets (shards of 32)
+                const br = Math.floor(r / 32) * 32;
+                const bg = Math.floor(g / 32) * 32;
+                const bb = Math.floor(b / 32) * 32;
+                const key = `${br}-${bg}-${bb}`;
+                
+                if (!buckets[key]) buckets[key] = { r: 0, g: 0, b: 0, count: 0 };
+                buckets[key].r += r; buckets[key].g += g; buckets[key].b += b; buckets[key].count++;
             }
-            if (count > 0) {
-                const toHexValue = (n: number) => Math.round(n / count).toString(16).padStart(2, '0');
-                const hex = `#${toHexValue(r)}${toHexValue(g)}${toHexValue(b)}`;
-                if (onDone) onDone(hex);
-                else setNewTeamColor(hex);
+            
+            const sortedBuckets = Object.values(buckets).sort((a, b) => b.count - a.count);
+            
+            if (sortedBuckets.length > 0) {
+                const toHex = (b: any) => {
+                    const rh = Math.round(b.r / b.count).toString(16).padStart(2, '0');
+                    const gh = Math.round(b.g / b.count).toString(16).padStart(2, '0');
+                    const bh = Math.round(b.b / b.count).toString(16).padStart(2, '0');
+                    return `#${rh}${gh}${bh}`;
+                };
+
+                const color1 = toHex(sortedBuckets[0]);
+                // For second color, pick one that is different enough
+                let color2 = color1;
+                for (let i = 1; i < sortedBuckets.length; i++) {
+                    const c2 = toHex(sortedBuckets[i]);
+                    // Basic distance check
+                    const r1 = parseInt(color1.slice(1,3), 16), g1 = parseInt(color1.slice(3,5), 16), b1 = parseInt(color1.slice(5,7), 16);
+                    const r2 = parseInt(c2.slice(1,3), 16), g2 = parseInt(c2.slice(3,5), 16), b2 = parseInt(c2.slice(5,7), 16);
+                    const dist = Math.sqrt(Math.pow(r1-r2, 2) + Math.pow(g1-g2, 2) + Math.pow(b1-b2, 2));
+                    if (dist > 60) {
+                        color2 = c2;
+                        break;
+                    }
+                }
+
+                if (onDone) onDone({ p: color1, s: color2 });
+                else {
+                    setNewTeamColor(color1);
+                    setNewTeamColor2(color2);
+                }
             }
         };
         img.src = dataUrl;
@@ -79,8 +117,8 @@ const Teams = () => {
         if (teamsWithoutColor.length > 0) {
             console.log(`[Color Sync] Processando ${teamsWithoutColor.length} times sem cor...`);
             teamsWithoutColor.forEach(team => {
-                extractColorFromImage(team.logo, (hex) => {
-                    updateTeam(team.id, { primary_color: hex });
+                extractColorFromImage(team.logo, (colors) => {
+                    updateTeam(team.id, { primary_color: colors.p, secondary_color: colors.s });
                 });
             });
         }
@@ -106,11 +144,21 @@ const Teams = () => {
         
         let errorResult = null;
         if (isEditingTeam) {
-            const { error } = await updateTeam(isEditingTeam, { name: newTeamName, logo: newTeamLogo, primary_color: newTeamColor });
+            const { error } = await updateTeam(isEditingTeam, { 
+                name: newTeamName, 
+                logo: newTeamLogo, 
+                primary_color: newTeamColor,
+                secondary_color: newTeamColor2
+            });
             if (error) errorResult = error;
             else setIsEditingTeam(null);
         } else {
-            const { error } = await addTeam({ name: newTeamName, logo: newTeamLogo, primary_color: newTeamColor });
+            const { error } = await addTeam({ 
+                name: newTeamName, 
+                logo: newTeamLogo, 
+                primary_color: newTeamColor,
+                secondary_color: newTeamColor2
+            });
             if (error) errorResult = error;
         }
 
@@ -119,7 +167,7 @@ const Teams = () => {
             return;
         }
         
-        setNewTeamName(''); setNewTeamLogo(''); setNewTeamColor('#6366f1');
+        setNewTeamName(''); setNewTeamLogo(''); setNewTeamColor('#6366f1'); setNewTeamColor2('#4338ca');
     };
 
     const startEditingTeam = (team: any) => {
@@ -127,6 +175,7 @@ const Teams = () => {
         setNewTeamName(team.name);
         setNewTeamLogo(team.logo || '');
         setNewTeamColor(team.primaryColor || '#6366f1');
+        setNewTeamColor2(team.secondaryColor || '#4338ca');
     };
 
     const handlePlayerSubmit = async (e: React.FormEvent) => {
