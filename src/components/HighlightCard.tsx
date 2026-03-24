@@ -162,12 +162,15 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     </div>
                 </div>
 
+                {/* Vertical spacer to push content down and center it more */}
+                <div style={{ height: '140px' }} />
+
                 {/* Action label moved below info box */}
 
                 {/* ── PLAYER PHOTO + team logo badge ────────────────── */}
                 <div style={{
                     position: 'relative', zIndex: 10,
-                    marginTop: '56px',
+                    marginTop: '40px',
                     width: '620px', height: '620px',
                 }}>
                     {/* glow ring */}
@@ -234,7 +237,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                 {/* ── PLAYER INFO BOX ────────────────────────────── */}
                 <div style={{
                     position: 'relative', zIndex: 10,
-                    marginTop: '64px',
+                    marginTop: '50px',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     width: '100%', padding: '0 64px',
                 }}>
@@ -265,7 +268,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                 {/* ── EVENT label (Action Label) ─────────────────────── */}
                 <div id="event-label-container" style={{
                     position: 'relative', zIndex: 10,
-                    marginTop: '56px',
+                    marginTop: '48px',
                     background: `linear-gradient(90deg, ${palette.accent}, ${palette.accent}dd)`,
                     padding: '28px 100px',
                     borderRadius: '24px',
