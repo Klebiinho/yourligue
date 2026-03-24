@@ -32,12 +32,19 @@ async function downloadBlob(blob: Blob, fileName: string) {
     const a = document.createElement('a');
     a.href = url;
     a.download = fileName;
+    
+    // Ensure consistent download on PC
+    a.style.display = 'none';
     document.body.appendChild(a);
-    a.click();
+    
+    // Some browsers need a tiny delay to register the element in the DOM
     setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, 300);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 1000); // 1s cleanup should be enough
+    }, 50);
 }
 
 export const VideoGenerator: React.FC<VideoGeneratorProps> = ({

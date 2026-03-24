@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye, Share2 } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 import { VideoGenerator } from '../components/VideoGenerator';
@@ -90,6 +90,33 @@ const MatchControl = () => {
             description: '',
         });
     };
+
+    const getSuggestedMVPId = () => {
+        if (!match) return null;
+        const playerScores: { [playerId: string]: number } = {};
+        const allPlayers = [...homeTeam!.players, ...awayTeam!.players];
+
+        allPlayers.forEach(player => {
+            const playerEvents = match.events.filter(ev => ev.playerId === player.id);
+            let score = 0;
+            if (league?.sportType === 'basketball') {
+                const pt1 = playerEvents.filter(ev => ev.type === 'points_1').length;
+                const pt2 = playerEvents.filter(ev => ev.type === 'points_2').length;
+                const pt3 = playerEvents.filter(ev => ev.type === 'points_3').length;
+                score = (pt1 * 1) + (pt2 * 2) + (pt3 * 3) + playerEvents.filter(ev => ev.type === 'assist').length;
+            } else {
+                const goals = playerEvents.filter(ev => ['goal', 'penalty_goal', 'penalty_shootout_goal'].includes(ev.type)).length;
+                const assists = playerEvents.filter(ev => ev.type === 'assist').length;
+                score = goals + assists;
+            }
+            if (score > 0) playerScores[player.id] = score;
+        });
+
+        const sorted = Object.entries(playerScores).sort((a, b) => b[1] - a[1]);
+        return sorted.length > 0 ? sorted[0][0] : null;
+    };
+
+    const suggestedMVPId = getSuggestedMVPId();
 
     useEffect(() => {
         if (currentYtLiveStream) {
@@ -1058,10 +1085,15 @@ const MatchControl = () => {
                                                                 
                                                                 {/* Highlight/MVP Video Button (Visible when finished) */}
                                                                 {match.status === 'finished' && (
-                                                                    <div className="flex items-center gap-1">
+                                                                    <div className="flex items-center gap-1.5 ml-2">
+                                                                        {player.id === suggestedMVPId && (
+                                                                            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-warning/20 text-warning border border-warning/30 animate-pulse" title="Sugestão de Melhor da Partida">
+                                                                                <Award size={14} strokeWidth={3} />
+                                                                            </div>
+                                                                        )}
                                                                         <button 
                                                                             onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
-                                                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-pink-500/10 text-pink-500 hover:bg-pink-500 hover:text-white transition-all border border-pink-500/20"
+                                                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary/20 text-primary hover:bg-primary hover:text-white transition-all border border-primary/20 active:scale-95 shadow-lg shadow-primary/10"
                                                                             title="Gerar Vídeo de Destaque"
                                                                         >
                                                                             <Crown size={14} />
@@ -1113,13 +1145,20 @@ const MatchControl = () => {
                                                         )}
 
                                                         {match.status === 'finished' && (
-                                                            <button 
-                                                                onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
-                                                                className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-pink-500/10 text-pink-500 hover:bg-pink-500 hover:text-white transition-all border border-pink-500/20"
-                                                                title="Gerar Vídeo de Destaque"
-                                                            >
-                                                                <Crown size={14} />
-                                                            </button>
+                                                            <div className="flex items-center gap-1.5 flex-none">
+                                                                {player.id === suggestedMVPId && (
+                                                                    <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-warning/20 text-warning border border-warning/30 animate-pulse" title="Sugestão de Melhor da Partida">
+                                                                        <Award size={14} strokeWidth={3} />
+                                                                    </div>
+                                                                )}
+                                                                <button 
+                                                                    onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
+                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary/20 text-primary hover:bg-primary hover:text-white transition-all border border-primary/20 active:scale-95 shadow-lg shadow-primary/10"
+                                                                    title="Gerar Vídeo de Destaque"
+                                                                >
+                                                                    <Crown size={14} />
+                                                                </button>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 );
@@ -1357,10 +1396,10 @@ const MatchControl = () => {
                                                             event.type === 'assist' ? 'Assist' : 'Rebote',
                                                             e
                                                         )}
-                                                        className="w-8 h-8 hidden sm:flex items-center justify-center rounded-lg bg-pink-500/10 text-pink-400 hover:bg-pink-500 hover:text-white transition-all sm:opacity-0 sm:group-hover:opacity-100 flex-none border border-pink-500/20"
+                                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary/20 text-primary hover:bg-primary hover:text-white transition-all border border-primary/20 active:scale-95 shadow-lg shadow-primary/10 flex-none"
                                                         title="Gerar Vídeo / Imagem"
                                                     >
-                                                        <Share2 size={14} />
+                                                        <Video size={14} />
                                                     </button>
                                                 )}
                                                 {!isPublicView && isAdmin && (

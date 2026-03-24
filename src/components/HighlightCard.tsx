@@ -45,16 +45,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
             Falta:  'FALTA!',
         };
 
-        const defaultDesc: Record<string, string> = {
-            Gol:    'Descreva como foi o gol...',
-            Ponto:  'Descreva como foi a cesta...',
-            Assist: 'Descreva a jogada...',
-            Rebote: 'Descreva o rebote...',
-            Falta:  'Descreva a falta...',
-            MVP:    '',
-        };
-
-        const displayDescription = description || defaultDesc[eventType] || '';
+        const displayDescription = description || '';
 
         const bgStyle = transparent ? {} : {
             background: `linear-gradient(160deg, ${palette.grad[0]} 0%, ${palette.grad[1]} 100%)`,
