@@ -212,17 +212,28 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                     {/* Team logo badge (bottom-right of photo) */}
                     {team.logo && (
                         <div style={{
-                            position: 'absolute', bottom: '-10px', right: '-10px',
-                            width: '200px', height: '200px',
+                            position: 'absolute', bottom: '-15px', right: '-15px',
+                            width: '210px', height: '210px',
                             background: 'white',
                             borderRadius: '50%',
-                            padding: '16px',
-                            border: `8px solid ${palette.grad[0]}`,
-                            boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+                            padding: '12px',
+                            border: `9px solid ${palette.grad[0]}`,
+                            boxShadow: '0 12px 45px rgba(0,0,0,0.6)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            overflow: 'hidden', // Ensures any square photo is cropped circular
+                            zIndex: 2,
                         }}>
-                            <img src={team.logo} alt={team.name} crossOrigin="anonymous"
-                                style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            <img 
+                                src={team.logo} 
+                                alt={team.name} 
+                                crossOrigin="anonymous"
+                                style={{ 
+                                    width: '100%', 
+                                    height: '100%', 
+                                    objectFit: 'cover', // Changed to cover for team photos, with contain fallback logic if it was a real logo
+                                    borderRadius: '50%'
+                                }} 
+                            />
                         </div>
                     )}
                 </div>
