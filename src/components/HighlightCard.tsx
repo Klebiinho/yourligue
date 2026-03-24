@@ -1,5 +1,4 @@
 import { forwardRef } from 'react';
-import { Trophy, Star, Target } from 'lucide-react';
 import type { Player, Team } from '../context/LeagueContext';
 
 interface HighlightCardProps {
@@ -8,114 +7,329 @@ interface HighlightCardProps {
     sportType: string;
     eventType: 'MVP' | 'Gol' | 'Ponto' | 'Assist' | 'Rebote' | 'Falta';
     stats: { [key: string]: number };
-    month?: string;
+    description?: string;
     transparent?: boolean;
     hideValues?: boolean;
 }
 
+// ── Sport-aware palette ───────────────────────────────────────────
+const PALETTES: Record<string, { grad: string[]; accent: string; glow: string }> = {
+    basketball: {
+        grad: ['#7c2d12', '#431407'],
+        accent: '#f97316',
+        glow: 'rgba(249,115,22,0.5)',
+    },
+    football: {
+        grad: ['#1e1b4b', '#0f172a'],
+        accent: '#6d28d9',
+        glow: 'rgba(109,40,217,0.5)',
+    },
+};
+
+// ── Helper: placeholder color when no photo ───────────────────────
+const AVATAR_PLACEHOLDER = 'rgba(255,255,255,0.08)';
+
 export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
-    ({ player, team, sportType, eventType, stats, transparent = false, hideValues = false }, ref) => {
-        
+    ({ player, team, sportType, eventType, stats, description, transparent = false, hideValues = false }, ref) => {
+
         if (!player || !team) return null;
 
-        const isBasket = sportType === 'basketball';
-        const primaryColor = isBasket ? 'from-orange-950 to-orange-900' : 'from-indigo-900 to-purple-900';
-        const bgColor = transparent ? 'bg-transparent' : `bg-gradient-to-br ${primaryColor}`;
-        
-        let title = "DESTAQUE DA PARTIDA";
-        let icon = <Trophy className="w-40 h-40 text-yellow-400 mx-auto mb-16" />;
-        
-        if (eventType === 'Gol') {
-            title = "GOLAAAAÇO!";
-            icon = <Target className="w-40 h-40 text-emerald-400 mx-auto mb-16" />;
-        } else if (eventType === 'Ponto') {
-            title = "CESTA!!!";
-            icon = <Target className="w-40 h-40 text-orange-400 mx-auto mb-16" />;
-        } else if (eventType === 'Assist') {
-            title = "GARÇOM!";
-            icon = <Star className="w-40 h-40 text-blue-300 mx-auto mb-16" />;
-        } else if (eventType === 'Rebote') {
-            title = "PAREDÃO!";
-            icon = <Trophy className="w-40 h-40 text-orange-400 mx-auto mb-16" />;
-        } else if (eventType === 'MVP') {
-            title = "MELHOR DO JOGO!";
-            icon = <Star className="w-40 h-40 text-yellow-400 mx-auto mb-16 shadow-[0_0_40px_rgba(250,204,21,0.4)]" />;
-        }
+        const palette = PALETTES[sportType] ?? PALETTES.football;
+
+        const labelMap: Record<string, string> = {
+            MVP:    'MELHOR DA PARTIDA',
+            Gol:    'GOLAAAAÇO!!!',
+            Ponto:  'CESTA!!!',
+            Assist: 'GARÇOM!',
+            Rebote: 'PAREDÃO!',
+            Falta:  'FALTA!',
+        };
+
+        const defaultDesc: Record<string, string> = {
+            Gol:    'Descreva como foi o gol...',
+            Ponto:  'Descreva como foi a cesta...',
+            Assist: 'Descreva a jogada...',
+            Rebote: 'Descreva o rebote...',
+            Falta:  'Descreva a falta...',
+            MVP:    '',
+        };
+
+        const displayDescription = description || defaultDesc[eventType] || '';
+
+        const bgStyle = transparent ? {} : {
+            background: `linear-gradient(160deg, ${palette.grad[0]} 0%, ${palette.grad[1]} 100%)`,
+        };
 
         return (
-            <div 
-                ref={ref} 
-                className={`w-[1080px] h-[1920px] ${bgColor} text-white flex flex-col items-center justify-between p-24 relative overflow-hidden`}
-                style={{ opacity: 1, transform: 'scale(1)' }}
+            <div
+                ref={ref}
+                style={{
+                    width: '1080px',
+                    height: '1920px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    color: 'white',
+                    fontFamily: "'Inter', 'Outfit', system-ui, sans-serif",
+                    ...bgStyle,
+                }}
             >
-                {/* Decorative Elements for Static Mode */}
+                {/* ── Background decorations ─────────────────────────── */}
                 {!transparent && (
-                    <div className="absolute inset-0 pointer-events-none">
-                       <div className="absolute top-[-10%] left-[-10%] w-[1000px] h-[1000px] bg-purple-500/20 rounded-full blur-[120px]" />
-                       <div className="absolute bottom-[-10%] right-[-10%] w-[1000px] h-[1000px] bg-indigo-500/20 rounded-full blur-[120px]" />
+                    <>
+                        {/* top-left blob */}
+                        <div style={{
+                            position: 'absolute', top: '-200px', left: '-200px',
+                            width: '900px', height: '900px', borderRadius: '50%',
+                            background: `radial-gradient(circle, ${palette.glow.replace('0.5', '0.35')} 0%, transparent 70%)`,
+                        }} />
+                        {/* bottom-right blob */}
+                        <div style={{
+                            position: 'absolute', bottom: '-300px', right: '-200px',
+                            width: '1000px', height: '1000px', borderRadius: '50%',
+                            background: `radial-gradient(circle, ${palette.glow.replace('0.5', '0.25')} 0%, transparent 70%)`,
+                        }} />
+                        {/* subtle grid */}
+                        <div style={{
+                            position: 'absolute', inset: 0,
+                            backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
+                            backgroundSize: '80px 80px',
+                        }} />
+                    </>
+                )}
+
+                {/* ── TOP: App branding strip ───────────────────────── */}
+                <div style={{
+                    width: '100%', padding: '48px 64px 0',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    position: 'relative', zIndex: 10,
+                }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '32px', fontWeight: '900', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>
+                            yourligue.app
+                        </span>
+                    </div>
+                    {/* Team logo top-right */}
+                    {team.logo && (
+                        <div style={{
+                            width: '120px', height: '120px',
+                            background: 'rgba(255,255,255,0.08)',
+                            borderRadius: '50%',
+                            border: '3px solid rgba(255,255,255,0.15)',
+                            padding: '12px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            backdropFilter: 'blur(12px)',
+                        }}>
+                            <img src={team.logo} alt={team.name} crossOrigin="anonymous"
+                                style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        </div>
+                    )}
+                </div>
+
+                {/* ── EVENT label ───────────────────────────────────── */}
+                <div style={{
+                    position: 'relative', zIndex: 10,
+                    marginTop: '48px',
+                    background: `linear-gradient(90deg, ${palette.accent}, ${palette.accent}bb)`,
+                    padding: '24px 80px',
+                    borderRadius: '999px',
+                    boxShadow: `0 0 60px ${palette.glow}`,
+                    border: '2px solid rgba(255,255,255,0.2)',
+                }}>
+                    <span style={{
+                        fontSize: '52px', fontWeight: '900', letterSpacing: '0.2em',
+                        textTransform: 'uppercase', color: 'white',
+                        textShadow: '0 2px 20px rgba(0,0,0,0.4)',
+                    }}>
+                        {labelMap[eventType] ?? eventType}
+                    </span>
+                </div>
+
+                {/* ── PLAYER PHOTO + team logo badge ────────────────── */}
+                <div style={{
+                    position: 'relative', zIndex: 10,
+                    marginTop: '56px',
+                    width: '620px', height: '620px',
+                }}>
+                    {/* glow ring */}
+                    <div style={{
+                        position: 'absolute', inset: '-12px', borderRadius: '50%',
+                        background: `conic-gradient(${palette.accent}, transparent, ${palette.accent})`,
+                        opacity: 0.5,
+                    }} />
+                    {/* photo or number fallback */}
+                    {player.photo ? (
+                        <img
+                            src={player.photo}
+                            alt={player.name}
+                            crossOrigin="anonymous"
+                            style={{
+                                width: '620px', height: '620px',
+                                objectFit: 'cover', borderRadius: '50%',
+                                border: '14px solid rgba(255,255,255,0.18)',
+                                boxShadow: `0 0 80px ${palette.glow}`,
+                            }}
+                        />
+                    ) : (
+                        <div style={{
+                            width: '620px', height: '620px', borderRadius: '50%',
+                            background: AVATAR_PLACEHOLDER,
+                            border: '14px solid rgba(255,255,255,0.18)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                            <span style={{ fontSize: '260px', fontWeight: '900', color: 'rgba(255,255,255,0.4)' }}>
+                                {player.number || '?'}
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Team logo badge (bottom-right of photo) */}
+                    {team.logo && (
+                        <div style={{
+                            position: 'absolute', bottom: '-10px', right: '-10px',
+                            width: '200px', height: '200px',
+                            background: 'white',
+                            borderRadius: '50%',
+                            padding: '16px',
+                            border: `8px solid ${palette.grad[0]}`,
+                            boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                            <img src={team.logo} alt={team.name} crossOrigin="anonymous"
+                                style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        </div>
+                    )}
+                </div>
+
+                {/* ── PLAYER NAME + NUMBER ──────────────────────────── */}
+                <div style={{
+                    position: 'relative', zIndex: 10,
+                    marginTop: '48px',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
+                    width: '100%', padding: '0 64px',
+                }}>
+                    {player.number && (
+                        <div style={{
+                            background: `linear-gradient(135deg, ${palette.accent}44, ${palette.accent}22)`,
+                            border: `3px solid ${palette.accent}`,
+                            borderRadius: '20px',
+                            padding: '8px 40px',
+                        }}>
+                            <span style={{
+                                fontSize: '52px', fontWeight: '900',
+                                color: palette.accent, letterSpacing: '0.05em',
+                            }}>
+                                #{player.number}
+                            </span>
+                        </div>
+                    )}
+                    <h2 style={{
+                        fontSize: '88px', fontWeight: '900', lineHeight: 1,
+                        textAlign: 'center', textTransform: 'uppercase', margin: 0,
+                        color: 'white', letterSpacing: '-1px',
+                        textShadow: '0 4px 30px rgba(0,0,0,0.5)',
+                        maxWidth: '100%', wordBreak: 'break-word',
+                    }}>
+                        {player.name}
+                    </h2>
+                    <span style={{
+                        fontSize: '38px', fontWeight: '700', letterSpacing: '0.15em',
+                        textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)',
+                    }}>
+                        {team.name}
+                    </span>
+                </div>
+
+                {/* ── Description quote (event description) ─────────── */}
+                {displayDescription && eventType !== 'MVP' && (
+                    <div style={{
+                        position: 'relative', zIndex: 10,
+                        marginTop: '40px',
+                        width: '100%', padding: '0 64px',
+                    }}>
+                        <div style={{
+                            background: 'rgba(255,255,255,0.06)',
+                            backdropFilter: 'blur(16px)',
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            borderLeft: `6px solid ${palette.accent}`,
+                            borderRadius: '20px',
+                            padding: '32px 48px',
+                        }}>
+                            <span style={{
+                                fontSize: '36px', fontWeight: '500', fontStyle: 'italic',
+                                color: 'rgba(255,255,255,0.8)', lineHeight: 1.5,
+                                display: 'block', textAlign: 'center',
+                            }}>
+                                "{displayDescription}"
+                            </span>
+                        </div>
                     </div>
                 )}
 
-                <div className="z-10 text-center mt-20 w-full">
-                    {icon}
-                    <h1 className="text-[100px] font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 drop-shadow-lg uppercase leading-none">
-                        {title}
-                    </h1>
-                    <h2 className="text-[50px] font-bold text-gray-300 tracking-widest mt-8 uppercase w-full line-clamp-1">
-                        {team.name}
-                    </h2>
-                </div>
-                {/* Info */}
-                <div className="z-10 flex flex-col items-center mt-10">
-                    <div className="bg-white/10 backdrop-blur-md px-10 py-4 rounded-full border border-white/30 mb-8 animate-pulse">
-                        <span className="text-4xl font-black text-white tracking-[0.3em] uppercase">
-                            {eventType === 'MVP' ? 'MELHOR DA PARTIDA' : (eventType === 'Gol' ? 'GOL!!!' : (eventType === 'Ponto' ? 'CESTA!!!' : eventType))}
-                        </span>
-                    </div>
-                    <div className="relative w-[600px] h-[600px] mb-16">
-                        {player?.photo ? (
-                            <img 
-                                src={player.photo} 
-                                alt={player.name} 
-                                className="w-full h-full object-cover rounded-full border-[16px] border-white/20 shadow-[0_0_100px_rgba(255,255,255,0.2)]"
-                                crossOrigin="anonymous"
-                            />
-                        ) : (
-                            <div className="w-full h-full bg-white/10 rounded-full border-[16px] border-white/20 flex items-center justify-center backdrop-blur-md shadow-[0_0_100px_rgba(255,255,255,0.1)]">
-                                <span className="text-[300px] font-bold text-white/50">{player.number || '?'}</span>
-                            </div>
-                        )}
-                        {team?.logo && (
-                            <div className="absolute -bottom-8 -right-8 w-64 h-64 bg-white rounded-full p-4 shadow-2xl flex items-center justify-center border-8 border-indigo-900">
-                                <img src={team.logo} alt={team.name} className="w-full h-full object-contain" crossOrigin="anonymous" />
-                            </div>
-                        )}
-                    </div>
-                    
-                    <div className="flex flex-col items-center gap-6">
-                        {player.number && <span className="text-[100px] font-black text-yellow-400 bg-black/20 px-12 py-4 rounded-full backdrop-blur-md leading-none">#{player.number}</span>}
-                        <h2 className="text-[90px] font-black leading-none text-center bg-clip-text drop-shadow-xl">{player.name}</h2>
-                    </div>
-                </div>
-
-                <div className="z-10 grid grid-cols-2 gap-12 w-full max-w-[1000px] mx-auto mb-32 mt-12">
+                {/* ── STATS grid ────────────────────────────────────── */}
+                <div style={{
+                    position: 'relative', zIndex: 10,
+                    marginTop: displayDescription && eventType !== 'MVP' ? '32px' : '56px',
+                    width: '100%', padding: '0 64px',
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${Math.min(Object.keys(stats).length, 3)}, 1fr)`,
+                    gap: '28px',
+                }}>
                     {Object.entries(stats).map(([label, value], i) => (
-                        <div key={label} className="bg-black/20 backdrop-blur-xl rounded-[40px] p-12 flex flex-col items-center border-[4px] border-white/10 shadow-2xl">
-                            <p className="text-[40px] text-gray-300 font-semibold uppercase tracking-wider mb-4">{label}</p>
-                            {/* If hideValues is true, we leave the box empty so the Canvas can draw the counting numbers! */}
-                            <p 
-                                id={`metric-${i}`} 
-                                className="text-[120px] font-black leading-none text-white drop-shadow-lg"
-                                style={{ opacity: hideValues ? 0 : 1 }}
+                        <div key={label} style={{
+                            background: 'rgba(255,255,255,0.07)',
+                            backdropFilter: 'blur(20px)',
+                            border: '2px solid rgba(255,255,255,0.12)',
+                            borderRadius: '32px',
+                            padding: '40px 28px',
+                            display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', gap: '16px',
+                        }}>
+                            <span style={{
+                                fontSize: '32px', fontWeight: '700',
+                                textTransform: 'uppercase', letterSpacing: '0.1em',
+                                color: 'rgba(255,255,255,0.5)',
+                            }}>
+                                {label}
+                            </span>
+                            <span
+                                id={`metric-${i}`}
+                                style={{
+                                    fontSize: '110px', fontWeight: '900', lineHeight: 1,
+                                    color: 'white',
+                                    textShadow: `0 0 40px ${palette.glow}`,
+                                    opacity: hideValues ? 0 : 1,
+                                    display: 'block',
+                                }}
                             >
                                 {value}
-                            </p>
+                            </span>
                         </div>
                     ))}
                 </div>
 
-                <div className="z-10 text-center pb-12 w-full absolute bottom-12 left-0">
-                    <p className="text-[45px] font-black tracking-widest text-white/30 uppercase">GERADO POR YOURLIGUE.APP</p>
+                {/* ── Bottom watermark ─────────────────────────────── */}
+                <div style={{
+                    position: 'absolute', bottom: '44px', left: 0, right: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: '16px', zIndex: 10,
+                }}>
+                    <div style={{
+                        height: '2px', flex: 1, maxWidth: '200px',
+                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2))',
+                    }} />
+                    <span style={{
+                        fontSize: '28px', fontWeight: '900', letterSpacing: '0.25em',
+                        textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)',
+                    }}>
+                        yourligue.app
+                    </span>
+                    <div style={{
+                        height: '2px', flex: 1, maxWidth: '200px',
+                        background: 'linear-gradient(90deg, rgba(255,255,255,0.2), transparent)',
+                    }} />
                 </div>
             </div>
         );

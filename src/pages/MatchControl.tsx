@@ -50,6 +50,7 @@ const MatchControl = () => {
         sportType: string;
         eventType: 'MVP' | 'Gol' | 'Ponto' | 'Assist' | 'Rebote' | 'Falta';
         stats: { [key: string]: number };
+        description?: string;
     } | null>(null);
 
     const handleGenerateHighlight = (playerId: string, eventType: 'MVP' | 'Gol' | 'Ponto' | 'Assist' | 'Rebote' | 'Falta', e?: React.MouseEvent) => {
@@ -85,7 +86,8 @@ const MatchControl = () => {
             team,
             sportType: league?.sportType || 'football',
             eventType,
-            stats
+            stats,
+            description: '',
         });
     };
 

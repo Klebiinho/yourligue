@@ -1,21 +1,43 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
-import download from 'downloadjs';
 import type { Player, Team } from '../context/LeagueContext';
 import { HighlightCard } from './HighlightCard';
-import { Loader2, Share2, Video } from 'lucide-react';
-
-interface Stats {
-    [key: string]: number;
-}
+import { Loader2, ImageDown, Video, X, Pencil } from 'lucide-react';
 
 interface VideoGeneratorProps {
     player: Player;
     team: Team;
     sportType: string;
     eventType: 'MVP' | 'Gol' | 'Ponto' | 'Assist' | 'Rebote' | 'Falta';
-    stats: Stats;
+    stats: { [key: string]: number };
     onClose?: () => void;
+}
+
+// Shared download helper – works on desktop and mobile
+async function downloadBlob(blob: Blob, fileName: string) {
+    // Try Web Share first (mobile)
+    const file = new File([blob], fileName, { type: blob.type });
+    const shareData = { title: 'Meu Destaque na Partida', files: [file] };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        try {
+            await navigator.share(shareData);
+            return;
+        } catch (err: any) {
+            if (err.name === 'AbortError') return; // user cancelled
+        }
+    }
+    // Fallback: force-download via object URL
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 300);
 }
 
 export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
@@ -24,7 +46,7 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
     sportType,
     eventType,
     stats,
-    onClose
+    onClose,
 }) => {
     const cardRef = useRef<HTMLDivElement>(null);
     const transparentCardRef = useRef<HTMLDivElement>(null);
@@ -33,52 +55,40 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
     const [generating, setGenerating] = useState(false);
     const [isRecordingFlow, setIsRecordingFlow] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [description, setDescription] = useState('');
+    const [showDescField, setShowDescField] = useState(eventType !== 'MVP');
 
-    const shareMedia = async (blob: Blob, fileName: string, title: string) => {
-        const file = new File([blob], fileName, { type: blob.type });
-        const shareData = { title, text: 'Confira meu destaque na partida!', files: [file] };
-
-        if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-            try {
-                await navigator.share(shareData);
-                alert("Compartilhado com sucesso!");
-            } catch (err: any) {
-                if (err.name !== 'AbortError') {
-                    download(blob, fileName, blob.type);
-                }
-            }
-        } else {
-            download(blob, fileName, blob.type);
-        }
-    };
-
-    const handleShareImage = async () => {
+    // Static image download
+    const handleDownloadImage = async () => {
         if (!cardRef.current) return;
         setGenerating(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 500)); // wait for images to load
-            
+            // Give browser time to render logo images
+            await new Promise(r => setTimeout(r, 600));
+
             const dataUrl = await toPng(cardRef.current, {
                 canvasWidth: 1080,
                 canvasHeight: 1920,
                 pixelRatio: 1,
-                backgroundColor: '#1e1b4b', // deep purple to avoid transparent edges
+                backgroundColor: '#1e1b4b',
                 cacheBust: true,
                 fetchRequestInit: { mode: 'cors' },
+                skipAutoScale: true,
             });
 
-            const blob = await (await fetch(dataUrl)).blob();
-            const fileName = `Destaque-${player.name.replace(/\s+/g, '-')}.png`;
-            await shareMedia(blob, fileName, "Meu Destaque na Partida");
-
+            const res = await fetch(dataUrl);
+            const blob = await res.blob();
+            const fileName = `Destaque-${player.name.replace(/\s+/g, '-')}-${Date.now()}.png`;
+            await downloadBlob(blob, fileName);
         } catch (err) {
-            console.error("Erro ao gerar imagem", err);
-            alert("Erro ao gerar imagem. Tente novamente.");
+            console.error('Error generating image', err);
+            alert('Erro ao gerar imagem. Verifique se as imagens permitem acesso público (CORS).');
         } finally {
             setGenerating(false);
         }
     };
 
+    // Animated video recording
     const handleRecordVideo = async () => {
         if (!canvasRef.current || !transparentCardRef.current) return;
         setIsRecordingFlow(true);
@@ -86,8 +96,9 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
         setProgress(0);
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(r => setTimeout(r, 600));
 
+            // Capture the static layout without values (video will draw them animating)
             const contentDataUrl = await toPng(transparentCardRef.current, {
                 canvasWidth: 1080,
                 canvasHeight: 1920,
@@ -95,144 +106,175 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                 backgroundColor: 'transparent',
                 cacheBust: true,
                 fetchRequestInit: { mode: 'cors' },
+                skipAutoScale: true,
             });
 
             const contentImg = new Image();
             contentImg.src = contentDataUrl;
-            await new Promise(resolve => { contentImg.onload = resolve; });
+            await new Promise(r => { contentImg.onload = r; });
 
             const canvas = canvasRef.current;
-            const ctx = canvas.getContext("2d");
-            if (!ctx) throw new Error("Canvas context failed");
+            const ctx = canvas.getContext('2d')!;
+            if (!ctx) throw new Error('Canvas context failed');
+
+            // Pick the best supported codec
+            const mimeType = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m)) ?? 'video/webm';
+            const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
 
             const stream = canvas.captureStream(60);
-            const mediaRecorder = new MediaRecorder(stream, {
-                mimeType: MediaRecorder.isTypeSupported("video/mp4") ? "video/mp4" : "video/webm"
-            });
-
+            const mediaRecorder = new MediaRecorder(stream, { mimeType });
             const chunks: Blob[] = [];
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) chunks.push(e.data);
-            };
 
-            mediaRecorder.onstop = () => {
-                // If the user's browser recorded webm, keep webm extension, but mp4 is preferred if supported
-                const ext = MediaRecorder.isTypeSupported("video/mp4") ? "mp4" : "webm";
-                const mime = ext === 'mp4' ? 'video/mp4' : 'video/webm';
-                const blob = new Blob(chunks, { type: mime });
-                const fileName = `Destaque-${player.name.replace(/\s+/g, '-')}.${ext}`;
-
-                shareMedia(blob, fileName, "Meu Destaque na Partida");
-
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+            mediaRecorder.onstop = async () => {
+                const blob = new Blob(chunks, { type: mimeType });
+                const fileName = `Destaque-${player.name.replace(/\s+/g, '-')}-${Date.now()}.${ext}`;
+                await downloadBlob(blob, fileName);
                 setIsRecordingFlow(false);
                 setGenerating(false);
                 setProgress(0);
             };
 
-            mediaRecorder.start();
+            mediaRecorder.start(100); // request data every 100ms
 
-            let frame = 0;
-            const fps = 60;
-            const totalFrames = fps * 8; // 8 seconds duration
-            
-            // Collect target values for animation
-            const targetStatsKeys = Object.keys(stats);
-            const targetStatsValues = Object.values(stats);
+            // ── Sport palette for canvas ──────────────────────────────
+            const isBasket = sportType === 'basketball';
+            const bgTop    = isBasket ? '#7c2d12' : '#1e1b4b';
+            const bgBot    = isBasket ? '#431407' : '#0f172a';
+            const accentR  = isBasket ? 249 : 109;
+            const accentG  = isBasket ? 115 : 40;
+            const accentB  = isBasket ? 22  : 217;
 
-            // Coords helper
-            const getCoords = (id: string, fallx: number, fally: number) => {
+            // ── Resolve stat element positions from DOM ────────────────
+            const getElemCenter = (id: string): { x: number; y: number } | null => {
                 const el = transparentCardRef.current?.querySelector(`#${id}`);
-                if (!el) return { x: fallx, y: fally };
+                if (!el) return null;
                 const cRect = transparentCardRef.current!.getBoundingClientRect();
                 const eRect = el.getBoundingClientRect();
                 const scaleX = 1080 / (cRect.width || 1080);
                 const scaleY = 1920 / (cRect.height || 1920);
                 return {
-                    x: ((eRect.left - cRect.left) + (eRect.width / 2)) * scaleX,
-                    y: ((eRect.top - cRect.top) + (eRect.height / 2)) * scaleY
+                    x: (eRect.left - cRect.left + eRect.width / 2) * scaleX,
+                    y: (eRect.top - cRect.top + eRect.height / 2) * scaleY,
                 };
             };
+            const statKeys   = Object.keys(stats);
+            const statValues = Object.values(stats);
+            const statPos    = statKeys.map((_, i) => getElemCenter(`metric-${i}`));
 
-            // Estimate positions based on number of stats
-            const statPositions = targetStatsKeys.map((_, i) => getCoords(`metric-${i}`, 540, 1500)); 
-
+            const DURATION = 8000; // ms
+            const FPS      = 60;
+            const INTERVAL = 1000 / FPS;
+            let frame = 0;
+            let lastTime = Date.now();
             const startTime = Date.now();
-            let lastFrameTime = Date.now();
-            const fpsInterval = 1000 / fps;
+
+            const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+            const easeOutBack  = (t: number) => {
+                const c1 = 1.70158, c3 = c1 + 1;
+                return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+            };
 
             const animate = () => {
-                if (Date.now() - startTime >= 8000) {
+                const now = Date.now();
+                if (now - startTime >= DURATION) {
                     mediaRecorder.stop();
                     return;
                 }
-
                 requestAnimationFrame(animate);
+                if (now - lastTime < INTERVAL) return;
+                lastTime = now - ((now - lastTime) % INTERVAL);
 
-                const now = Date.now();
-                const elapsed = now - lastFrameTime;
-                if (elapsed < fpsInterval) return;
-                lastFrameTime = now - (elapsed % fpsInterval);
+                const t = (now - startTime) / DURATION; // 0→1 over total duration
 
-                // Background gradient
-                const gradient = ctx.createLinearGradient(0, 0, 1080, 1920);
-                gradient.addColorStop(0, "#1e1b4b");
-                gradient.addColorStop(1, "#312e81");
-                ctx.fillStyle = gradient;
+                // ── Draw background gradient ──────────────────────────
+                const bg = ctx.createLinearGradient(0, 0, 0, 1920);
+                bg.addColorStop(0, bgTop);
+                bg.addColorStop(1, bgBot);
+                ctx.fillStyle = bg;
                 ctx.fillRect(0, 0, 1080, 1920);
 
-                // Animated bubbles
-                const time = frame / 60;
-                
-                const s1 = 1 + Math.sin(time * 2) * 0.1;
-                const g1 = ctx.createRadialGradient(200, 200, 0, 200, 200, 600 * s1);
-                g1.addColorStop(0, "rgba(99, 102, 241, 0.3)");
-                g1.addColorStop(1, "rgba(99, 102, 241, 0)");
+                // ── Animated ambient light blobs ──────────────────────
+                const blobTime = frame / 60;
+                const s1 = 1 + Math.sin(blobTime * 1.3) * 0.12;
+                const g1 = ctx.createRadialGradient(180, 220, 0, 180, 220, 700 * s1);
+                g1.addColorStop(0, `rgba(${accentR},${accentG},${accentB},0.28)`);
+                g1.addColorStop(1, 'rgba(0,0,0,0)');
                 ctx.fillStyle = g1;
-                ctx.fillRect(-400, -400, 1200 * s1, 1200 * s1);
+                ctx.beginPath(); ctx.arc(180, 220, 700 * s1, 0, Math.PI * 2); ctx.fill();
 
-                const s2 = 1 + Math.sin(time * 1.5 + 1) * 0.15;
-                const g2 = ctx.createRadialGradient(880, 1600, 0, 880, 1600, 700 * s2);
-                g2.addColorStop(0, "rgba(168, 85, 247, 0.3)");
-                g2.addColorStop(1, "rgba(168, 85, 247, 0)");
+                const s2 = 1 + Math.sin(blobTime * 0.9 + 1.5) * 0.14;
+                const g2 = ctx.createRadialGradient(900, 1700, 0, 900, 1700, 800 * s2);
+                g2.addColorStop(0, `rgba(${accentR},${accentG},${accentB},0.22)`);
+                g2.addColorStop(1, 'rgba(0,0,0,0)');
                 ctx.fillStyle = g2;
-                ctx.fillRect(880 - 700 * s2, 1600 - 700 * s2, 1400 * s2, 1400 * s2);
+                ctx.beginPath(); ctx.arc(900, 1700, 800 * s2, 0, Math.PI * 2); ctx.fill();
 
-                // Slide Up
-                const entryProgress = Math.min(1, frame / 60); // 1s
-                const easeOut = 1 - Math.pow(1 - entryProgress, 3);
-                const yOffset = 150 * (1 - easeOut);
-                const opacity = Math.min(1, frame / 30);
+                // ── Subtle grid lines ─────────────────────────────────
+                ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+                ctx.lineWidth = 1;
+                for (let x = 0; x <= 1080; x += 80) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 1920); ctx.stroke();
+                }
+                for (let y = 0; y <= 1920; y += 80) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1080, y); ctx.stroke();
+                }
+
+                // ── Slide-in layout ───────────────────────────────────
+                const entryT  = Math.min(1, frame / 50);
+                const entryE  = easeOutCubic(entryT);
+                const yOffset = 120 * (1 - entryE);
+                const opacity = Math.min(1, frame / 25);
 
                 ctx.save();
                 ctx.globalAlpha = opacity;
                 ctx.translate(0, yOffset);
                 ctx.drawImage(contentImg, 0, 0, 1080, 1920);
+                ctx.restore();
 
-                // Draw numbers counting up
-                if (opacity > 0.1) {
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-                    ctx.fillStyle = "white";
-                    ctx.font = `900 120px 'Inter', system-ui, sans-serif`;
+                // ── Animated stat numbers ─────────────────────────────
+                // Start: frame 15 (0.25s), duration: 80 frames (1.33s)
+                if (frame >= 15) {
+                    const numRaw  = Math.min(1, (frame - 15) / 80);
+                    const numEase = easeOutBack(numRaw);
+                    const fontSize = 110;
 
-                    const numProgress = Math.max(0, Math.min(1, (frame - 20) / 90)); // Start at frame 20, duration 1.5s
-                    const numEase = 1 - Math.pow(1 - numProgress, 3);
+                    ctx.textAlign    = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.font         = `900 ${fontSize}px "Inter", system-ui, sans-serif`;
 
-                    targetStatsValues.forEach((targetVal, i) => {
-                        const currentVal = Math.round(targetVal * numEase);
-                        const pos = statPositions[i];
-                        if (pos) {
-                            ctx.shadowColor = "rgba(0,0,0,0.5)";
-                            ctx.shadowBlur = 10;
-                            ctx.fillText(currentVal.toString(), pos.x, pos.y);
-                            ctx.shadowBlur = 0;
-                        }
+                    statValues.forEach((target, i) => {
+                        const pos = statPos[i];
+                        if (!pos) return;
+
+                        const current = Math.round(target * numEase);
+
+                        // shadow
+                        ctx.shadowColor = `rgba(${accentR},${accentG},${accentB},0.7)`;
+                        ctx.shadowBlur  = 40;
+
+                        ctx.globalAlpha = opacity;
+                        ctx.fillStyle   = 'white';
+                        ctx.fillText(current.toString(), pos.x, pos.y);
+                        ctx.shadowBlur  = 0;
+                        ctx.globalAlpha = 1;
                     });
                 }
 
-                ctx.restore();
+                // ── Shine sweep ───────────────────────────────────────
+                if (t > 0.05 && t < 0.35) {
+                    const sweepT = (t - 0.05) / 0.3;
+                    const sweepX = -200 + sweepT * 1480;
+                    const shine = ctx.createLinearGradient(sweepX - 200, 0, sweepX + 200, 0);
+                    shine.addColorStop(0, 'rgba(255,255,255,0)');
+                    shine.addColorStop(0.5, 'rgba(255,255,255,0.07)');
+                    shine.addColorStop(1, 'rgba(255,255,255,0)');
+                    ctx.fillStyle = shine;
+                    ctx.globalAlpha = 1;
+                    ctx.fillRect(0, 0, 1080, 1920);
+                }
 
-                setProgress(Math.round((frame / totalFrames) * 100));
+                setProgress(Math.round(t * 100));
                 frame++;
             };
 
@@ -240,86 +282,161 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
 
         } catch (err) {
             console.error(err);
-            alert("Falha ao gravar vídeo.");
+            alert('Falha ao gravar vídeo. Tente novamente.');
             setIsRecordingFlow(false);
             setGenerating(false);
         }
     };
 
+    // ── Preview scale: container 270x480, source 1080x1920 → scale 0.25 ──
+    const PREVIEW_W = 270;
+    const PREVIEW_H = 480;
+    const PREVIEW_SCALE = PREVIEW_W / 1080;
+
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            
-            {/* Hidden Renders */}
-            <div className="fixed top-0 left-[-9999px] opacity-0 pointer-events-none w-[1080px] h-[1920px]">
-                <HighlightCard 
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+
+            {/* ── Off-screen renders ────────────────────────────────── */}
+            <div style={{ position: 'fixed', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none', width: '1080px', height: '1920px' }}>
+                <HighlightCard
                     ref={cardRef}
-                    player={player}
-                    team={team}
-                    sportType={sportType}
-                    eventType={eventType}
-                    stats={stats}
+                    player={player} team={team}
+                    sportType={sportType} eventType={eventType}
+                    stats={stats} description={description}
                 />
-                <HighlightCard 
+                <HighlightCard
                     ref={transparentCardRef}
-                    player={player}
-                    team={team}
-                    sportType={sportType}
-                    eventType={eventType}
-                    stats={stats}
-                    transparent={true}
-                    hideValues={true}
+                    player={player} team={team}
+                    sportType={sportType} eventType={eventType}
+                    stats={stats} description={description}
+                    transparent hideValues
                 />
                 <canvas ref={canvasRef} width={1080} height={1920} />
             </div>
 
-            {/* Modal UI */}
-            <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-md shadow-2xl flex flex-col items-center animate-in zoom-in-95">
-                <h3 className="text-xl font-bold text-white mb-2">Gerar Highlight</h3>
-                <p className="text-slate-400 text-sm text-center mb-6">Compartilhe este momento épico no Instagram ou WhatsApp</p>
-
-                <div className="relative w-full max-w-[240px] aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl ring-4 ring-slate-800 bg-slate-950 mb-8">
-                    <div className="origin-top-left transform scale-[0.2222]">
-                        <HighlightCard 
-                            player={player}
-                            team={team}
-                            sportType={sportType}
-                            eventType={eventType}
-                            stats={stats}
-                        />
+            {/* ── Modal ─────────────────────────────────────────────── */}
+            <div
+                className="bg-slate-900 border border-slate-700/60 rounded-3xl shadow-2xl flex flex-col items-center overflow-hidden"
+                style={{ maxWidth: '520px', width: '100%', maxHeight: '95dvh', overflowY: 'auto' }}
+            >
+                {/* Header */}
+                <div className="w-full flex items-center justify-between p-5 border-b border-slate-700/50">
+                    <div>
+                        <h3 className="text-lg font-black text-white uppercase tracking-widest">Gerar Highlight</h3>
+                        <p className="text-slate-400 text-xs mt-1">Formato Instagram Stories 9:16</p>
                     </div>
-                    {/* Glossy Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none rounded-2xl" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 w-full">
-                    <button
-                        onClick={handleShareImage}
-                        disabled={generating}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50"
-                    >
-                        {generating && !isRecordingFlow ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />}
-                        {generating && !isRecordingFlow ? 'Gerando...' : 'Imagem'}
-                    </button>
-                    
-                    <button
-                        onClick={handleRecordVideo}
-                        disabled={generating}
-                        className="bg-pink-600 hover:bg-pink-700 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50"
-                    >
-                        {isRecordingFlow ? <Loader2 className="w-5 h-5 animate-spin" /> : <Video className="w-5 h-5" />}
-                        {isRecordingFlow ? `${progress}%` : 'Vídeo MP4'}
+                    <button onClick={onClose} disabled={generating}
+                        className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition disabled:opacity-40">
+                        <X size={18} />
                     </button>
                 </div>
 
-                <button 
-                    onClick={onClose}
-                    disabled={generating}
-                    className="mt-4 text-slate-400 hover:text-white transition uppercase text-sm font-bold tracking-widest disabled:opacity-50"
-                >
-                    Cancelar
-                </button>
+                <div className="p-5 w-full flex flex-col items-center gap-5">
+                    {/* Preview */}
+                    <div
+                        className="relative rounded-2xl overflow-hidden shadow-2xl ring-4 ring-slate-800"
+                        style={{ width: `${PREVIEW_W}px`, height: `${PREVIEW_H}px`, flexShrink: 0 }}
+                    >
+                        <div style={{ width: '1080px', height: '1920px', transform: `scale(${PREVIEW_SCALE})`, transformOrigin: 'top left' }}>
+                            <HighlightCard
+                                player={player} team={team}
+                                sportType={sportType} eventType={eventType}
+                                stats={stats} description={description}
+                            />
+                        </div>
+                        {/* Shine overlay */}
+                        <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-black/20 via-transparent to-white/10 rounded-2xl" />
+                    </div>
+
+                    {/* Description input */}
+                    {showDescField && eventType !== 'MVP' && (
+                        <div className="w-full">
+                            <label className="flex items-center gap-2 text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-2">
+                                <Pencil size={12} /> Descrição do lance <span className="text-slate-600">(opcional)</span>
+                            </label>
+                            <textarea
+                                rows={2}
+                                value={description}
+                                onChange={e => setDescription(e.target.value)}
+                                placeholder={
+                                    eventType === 'Gol' ? 'Ex: Chute de fora da área no ângulo direito...' :
+                                    eventType === 'Ponto' ? 'Ex: Bandeja espetacular no contra-ataque...' :
+                                    eventType === 'Assist' ? 'Ex: Passe de calcanhar na área...' :
+                                    'Descreva o lance...'
+                                }
+                                maxLength={120}
+                                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm placeholder:text-slate-600 resize-none focus:border-indigo-500 outline-none transition"
+                            />
+                            <p className="text-slate-600 text-[0.6rem] text-right mt-1">{description.length}/120</p>
+                        </div>
+                    )}
+                    {eventType === 'MVP' && (
+                        <button
+                            onClick={() => setShowDescField(v => !v)}
+                            className="text-[0.65rem] font-black text-slate-500 hover:text-slate-300 uppercase tracking-widest transition"
+                        >
+                            {showDescField ? '− Remover descrição' : '+ Adicionar descrição'}
+                        </button>
+                    )}
+
+                    {/* Action buttons */}
+                    <div className="grid grid-cols-2 gap-3 w-full">
+                        <button
+                            onClick={handleDownloadImage}
+                            disabled={generating}
+                            className="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-black text-xs py-4 px-4 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all disabled:opacity-40 shadow-lg shadow-indigo-900/30"
+                        >
+                            {generating && !isRecordingFlow ? (
+                                <Loader2 className="w-6 h-6 animate-spin" />
+                            ) : (
+                                <ImageDown className="w-6 h-6" />
+                            )}
+                            <span className="uppercase tracking-wider">
+                                {generating && !isRecordingFlow ? 'Gerando...' : 'Baixar Imagem'}
+                            </span>
+                            <span className="text-indigo-300 text-[0.55rem] font-normal">PNG · 1080×1920</span>
+                        </button>
+
+                        <button
+                            onClick={handleRecordVideo}
+                            disabled={generating}
+                            className="bg-pink-600 hover:bg-pink-500 active:scale-95 text-white font-black text-xs py-4 px-4 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all disabled:opacity-40 shadow-lg shadow-pink-900/30"
+                        >
+                            {isRecordingFlow ? (
+                                <>
+                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                    <span className="uppercase tracking-wider">{progress}%</span>
+                                    <span className="text-pink-300 text-[0.55rem] font-normal">Gravando…</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Video className="w-6 h-6" />
+                                    <span className="uppercase tracking-wider">Gerar Vídeo</span>
+                                    <span className="text-pink-300 text-[0.55rem] font-normal">8s · com animação</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Progress bar for video */}
+                    {isRecordingFlow && (
+                        <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-pink-500 rounded-full transition-all duration-200"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+                    )}
+
+                    <p className="text-slate-600 text-[0.6rem] text-center leading-relaxed">
+                        A imagem e o vídeo são salvos na <strong className="text-slate-500">galeria</strong> ou na pasta <strong className="text-slate-500">Downloads</strong>.<br />
+                        Para melhor qualidade, certifique-se que as fotos permitem acesso público (CORS).
+                    </p>
+                </div>
             </div>
-            
         </div>
     );
 };
+
+// Need to import React explicitly for JSX
+import React from 'react';
