@@ -1023,15 +1023,23 @@ const MatchControl = () => {
                                                 onPitch.map((player: Player) => {
                                                     const { yellowCards, isRedCarded } = getPlayerStatus(player.id);
                                                     return (
-                                                        <div key={player.id} className="flex items-center gap-2 p-3 rounded-xl border bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05] transition-all duration-300">
+                                                        <div key={player.id} className={`flex items-center gap-2 p-3 rounded-xl border transition-all duration-300 ${player.id === suggestedMVPId ? 'bg-warning/10 border-warning shadow-[0_0_20px_rgba(245,158,11,0.2)] scale-[1.02] z-10' : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05]'}`}>
                                                             <div className="relative flex-none">
-                                                                <TeamLogo src={player.photo} size={36} />
+                                                                <TeamLogo src={player.photo} size={player.id === suggestedMVPId ? 44 : 36} />
                                                                 {player.isCaptain && <Crown size={12} className="absolute -top-1 -right-1 text-warning fill-warning/20" />}
+                                                                {player.id === suggestedMVPId && (
+                                                                    <div className="absolute -bottom-2 -left-2 bg-warning text-black text-[0.45rem] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-lg">Sugestão</div>
+                                                                )}
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <h4 className="font-black text-white text-[0.7rem] truncate font-outfit uppercase leading-tight">
-                                                                    #{player.number} {player.name}
-                                                                </h4>
+                                                                <div className="flex items-center gap-2">
+                                                                    <h4 className={`font-black uppercase leading-tight font-outfit truncate ${player.id === suggestedMVPId ? 'text-warning text-sm' : 'text-white text-[0.7rem]'}`}>
+                                                                        #{player.number} {player.name}
+                                                                    </h4>
+                                                                </div>
+                                                                {player.id === suggestedMVPId && (
+                                                                    <div className="text-[0.5rem] font-black text-warning/70 uppercase tracking-widest -mt-1 mb-1">Sugestão de melhor da partida</div>
+                                                                )}
                                                                 <div className="flex items-center gap-1 mt-1 h-3.5">
                                                                     {Array.from({ length: yellowCards }).map((_, i) => (
                                                                         <div key={i} className={`w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm ${isRedCarded ? 'opacity-40' : ''}`} />
@@ -1086,11 +1094,7 @@ const MatchControl = () => {
                                                                 {/* Highlight/MVP Video Button (Visible when finished) */}
                                                                 {match.status === 'finished' && (
                                                                     <div className="flex items-center gap-1.5 ml-2">
-                                                                        {player.id === suggestedMVPId && (
-                                                                            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-warning/20 text-warning border border-warning/30 animate-pulse" title="Sugestão de Melhor da Partida">
-                                                                                <Award size={14} strokeWidth={3} />
-                                                                            </div>
-                                                                        )}
+                                                                        {/* Old suggestion badge removed */}
                                                                         <button 
                                                                             onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
                                                                             className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary/20 text-primary hover:bg-primary hover:text-white transition-all border border-primary/20 active:scale-95 shadow-lg shadow-primary/10"
@@ -1116,15 +1120,21 @@ const MatchControl = () => {
                                                 const wasSubbedOut = subOuts > subIns;
 
                                                 return (
-                                                    <div key={player.id} className={`flex items-center gap-2 p-3 rounded-xl border transition-all duration-300 ${isRedCarded ? 'bg-danger/10 border-danger/20 opacity-40' : wasSubbedOut ? 'bg-primary/5 border-primary/10 opacity-70' : 'bg-white/[0.01] border-white/[0.02] opacity-50'}`}>
+                                                    <div key={player.id} className={`flex items-center gap-2 p-3 rounded-xl border transition-all duration-300 ${player.id === suggestedMVPId ? 'bg-warning/10 border-warning shadow-[0_0_20px_rgba(245,158,11,0.2)] scale-[1.02] z-10' : isRedCarded ? 'bg-danger/10 border-danger/20 opacity-40' : wasSubbedOut ? 'bg-primary/5 border-primary/10 opacity-70' : 'bg-white/[0.01] border-white/[0.02] opacity-50'}`}>
                                                         <div className="relative flex-none">
-                                                            <TeamLogo src={player.photo} size={36} />
+                                                            <TeamLogo src={player.photo} size={player.id === suggestedMVPId ? 44 : 36} />
                                                             {isRedCarded && <XCircle size={12} className="absolute -top-1 -right-1 text-danger fill-danger/20" />}
+                                                            {player.id === suggestedMVPId && (
+                                                                <div className="absolute -bottom-2 -left-2 bg-warning text-black text-[0.45rem] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-lg">Sugestão</div>
+                                                            )}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <h4 className="font-black text-white text-[0.7rem] truncate font-outfit uppercase leading-tight">
+                                                            <h4 className={`font-black uppercase leading-tight font-outfit truncate ${player.id === suggestedMVPId ? 'text-warning text-sm' : 'text-white text-[0.7rem]'}`}>
                                                                 #{player.number} {player.name}
                                                             </h4>
+                                                            {player.id === suggestedMVPId && (
+                                                                <div className="text-[0.5rem] font-black text-warning/70 uppercase tracking-widest -mt-1 mb-1">Sugestão de melhor da partida</div>
+                                                            )}
                                                             <div className="flex items-center gap-1 mt-1 h-3.5">
                                                                 {isRedCarded ? (
                                                                     <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm" />
@@ -1146,11 +1156,7 @@ const MatchControl = () => {
 
                                                         {match.status === 'finished' && (
                                                             <div className="flex items-center gap-1.5 flex-none">
-                                                                {player.id === suggestedMVPId && (
-                                                                    <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-warning/20 text-warning border border-warning/30 animate-pulse" title="Sugestão de Melhor da Partida">
-                                                                        <Award size={14} strokeWidth={3} />
-                                                                    </div>
-                                                                )}
+                                                                {/* Old suggestion badge removed */}
                                                                 <button 
                                                                     onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
                                                                     className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary/20 text-primary hover:bg-primary hover:text-white transition-all border border-primary/20 active:scale-95 shadow-lg shadow-primary/10"

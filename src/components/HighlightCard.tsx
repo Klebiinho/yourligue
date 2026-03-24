@@ -271,7 +271,10 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                 {/* ── PLAYER INFO BOX ────────────────────────────── */}
                 <div style={{
                     position: 'relative', zIndex: 10,
-                    marginTop: displayDescription && eventType !== 'MVP' ? '64px' : '480px', 
+                    // Use much smaller margin for MVP to avoid hitting the bottom league name
+                    marginTop: eventType === 'MVP' 
+                        ? '140px' 
+                        : (displayDescription ? '64px' : '480px'), 
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     width: '100%', padding: '0 64px',
                 }}>
