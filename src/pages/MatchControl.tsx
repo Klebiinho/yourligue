@@ -1092,7 +1092,7 @@ const MatchControl = () => {
                                                                 {match.status === 'finished' && (
                                                                     <div className="flex items-center gap-1.5 ml-2 relative">
                                                                         {/* Suggestion text moved below buttons to avoid wrapping and keep single line */}
-                                                                        {player.id === suggestedMVPId && (
+                                                                        {!isPublicView && isAdmin && player.id === suggestedMVPId && (
                                                                             <span className="absolute -bottom-3 right-0 text-[0.45rem] font-black text-warning uppercase whitespace-nowrap bg-[#1a140a] px-2 py-0.5 rounded-full border border-warning/10 shadow-sm pointer-events-none">
                                                                                 ✨ Sugestão de melhor da partida
                                                                             </span>
@@ -1155,7 +1155,7 @@ const MatchControl = () => {
 
                                                         {match.status === 'finished' && (
                                                             <div className="flex items-center gap-1.5 flex-none relative">
-                                                                {player.id === suggestedMVPId && (
+                                                                {!isPublicView && isAdmin && player.id === suggestedMVPId && (
                                                                     <span className="absolute -bottom-3 right-0 text-[0.45rem] font-black text-warning uppercase whitespace-nowrap bg-[#1a140a] px-2 py-0.5 rounded-full border border-warning/10 shadow-sm">
                                                                         ✨ Sugestão de melhor da partida
                                                                     </span>

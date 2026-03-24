@@ -3,7 +3,7 @@ import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
 import TeamLogo from '../components/TeamLogo';
 import { useNavigate } from 'react-router-dom';
-import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Fingerprint, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Check, Edit2, Smartphone, ArrowUp, ArrowDown, MapPin } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Check, Edit2, Smartphone, ArrowUp, ArrowDown, MapPin } from 'lucide-react';
 
 const AD_POSITIONS = [
     { id: 'top', label: 'Topo da Página' },
@@ -512,8 +512,12 @@ const Settings = () => {
                                      </div>
                                      <button type="button" onClick={handleGetGPS} disabled={isCapturingGPS}
                                          className="w-full py-3 bg-accent/10 border border-accent/20 text-accent rounded-xl font-black text-[0.6rem] uppercase tracking-widest hover:bg-accent hover:text-white transition-all flex items-center justify-center gap-2 mt-4">
-                                         <Fingerprint size={16} /> 
-                                         {isCapturingGPS ? 'Obtendo Localização...' : 'Usar Minha Localização Atual'}
+                                         {isCapturingGPS ? (
+                                             <>
+                                                 <div className="w-3 h-3 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                                                 Obtendo Localização...
+                                             </>
+                                         ) : 'Usar Minha Localização Atual'}
                                      </button>
                                      <p className="text-[0.55rem] text-slate-600 italic font-medium mt-2">A localização é necessária para que sua liga apareça na aba "Ligas Próximas" dos usuários.</p>
                                  </div>
@@ -922,20 +926,23 @@ const Settings = () => {
                                 </div>
                             </div>
 
-                            <div className="p-6 rounded-2xl bg-black/40 border border-white/5 flex flex-col gap-2 transition-all group">
-                                <div className="flex items-center gap-3">
-                                    <Fingerprint size={16} className="text-slate-600 group-hover:text-primary transition-colors" />
-                                    <span className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest">ID do Sistema</span>
+                            {isAdmin && (
+                                <div className="p-6 rounded-2xl bg-black/40 border border-white/5 flex flex-col gap-2 transition-all group">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest">ID do Sistema</span>
+                                    </div>
+                                    <p className="font-mono text-[0.65rem] text-slate-500 break-all select-all hover:text-white transition-colors">{user?.id}</p>
                                 </div>
-                                <p className="font-mono text-[0.65rem] text-slate-500 break-all select-all hover:text-white transition-colors">{user?.id}</p>
-                            </div>
+                            )}
                         </div>
 
-                        <div className="mt-10 p-6 rounded-2xl bg-primary/5 border border-primary/20 text-center">
-                            <p className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em] transition-all group-hover:tracking-widest">
-                                Versão 2.4.0-PRO • Tailwind UI
-                            </p>
-                        </div>
+                        {isAdmin && (
+                            <div className="mt-10 p-6 rounded-2xl bg-primary/5 border border-primary/20 text-center">
+                                <p className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em] transition-all group-hover:tracking-widest">
+                                    Versão 2.4.0-PRO • Tailwind UI
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {/* YouTube Integration */}
