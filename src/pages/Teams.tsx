@@ -39,19 +39,18 @@ const Teams = () => {
 
     const currentTeam = teams.find(t => t.id === activeTeamId);
 
-    const extractColorFromImage = (dataUrl: string) => {
+    const extractColorFromImage = (dataUrl: string, onDone?: (hex: string) => void) => {
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.onload = () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
-            canvas.width = 64; canvas.height = 64; // Small scale for speed
+            canvas.width = 64; canvas.height = 64;
             ctx.drawImage(img, 0, 0, 64, 64);
             const data = ctx.getImageData(0, 0, 64, 64).data;
             let r = 0, g = 0, b = 0, count = 0;
             for (let i = 0; i < data.length; i += 4) {
-                // Ignore transparent and nearly black/white pixels
                 const alpha = data[i + 3];
                 const sum = data[i] + data[i+1] + data[i+2];
                 if (alpha > 125 && sum > 60 && sum < 700) { 
@@ -60,12 +59,29 @@ const Teams = () => {
                 }
             }
             if (count > 0) {
-                const toHex = (n: number) => Math.round(n / count).toString(16).padStart(2, '0');
-                setNewTeamColor(`#${toHex(r)}${toHex(g)}${toHex(b)}`);
+                const toHexValue = (n: number) => Math.round(n / count).toString(16).padStart(2, '0');
+                const hex = `#${toHexValue(r)}${toHexValue(g)}${toHexValue(b)}`;
+                if (onDone) onDone(hex);
+                else setNewTeamColor(hex);
             }
         };
         img.src = dataUrl;
     };
+
+    // ── Retroactive Color Identification ─────────────────────
+    useEffect(() => {
+        if (!isAdmin || isPublicView || !teams.length) return;
+
+        const teamsWithoutColor = teams.filter(t => !t.primaryColor && t.logo);
+        if (teamsWithoutColor.length > 0) {
+            console.log(`[Color Sync] Processando ${teamsWithoutColor.length} times sem cor...`);
+            teamsWithoutColor.forEach(team => {
+                extractColorFromImage(team.logo, (hex) => {
+                    updateTeam(team.id, { primary_color: hex });
+                });
+            });
+        }
+    }, [teams.length, isAdmin, isPublicView]);
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) => {
         const file = e.target.files?.[0];
@@ -241,26 +257,6 @@ const Teams = () => {
                                             </button>
                                         </div>
                                     )}
-                                </div>
-
-                                <div className="space-y-1.5 pb-2">
-                                    <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
-                                        <span>Cor do Time</span>
-                                        <span className="text-white/40 font-mono text-[0.6rem]">{newTeamColor}</span>
-                                    </label>
-                                    <div className="flex items-center gap-3">
-                                        <div 
-                                            className="w-12 h-12 rounded-xl border border-white/20 shadow-lg flex-none"
-                                            style={{ backgroundColor: newTeamColor }}
-                                        />
-                                        <input 
-                                            type="color" 
-                                            value={newTeamColor} 
-                                            onChange={e => setNewTeamColor(e.target.value)}
-                                            className="flex-1 h-12 bg-black/40 border border-white/10 rounded-xl px-2 py-1 cursor-pointer outline-none focus:border-primary transition-all"
-                                        />
-                                    </div>
-                                    <p className="text-[0.55rem] text-slate-600 mt-1 italic">Esta cor será usada nos vídeos e artes de destaque do clube.</p>
                                 </div>
 
                                 {teamError && <ErrorMsg msg={teamError} />}
