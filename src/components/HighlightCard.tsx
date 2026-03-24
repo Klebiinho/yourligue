@@ -56,7 +56,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
 
         const labelMap: Record<string, string> = {
             MVP:    'MELHOR DA PARTIDA',
-            Gol:    'GOLAAAAÇO!!!',
+            Gol:    'GOOOOOL',
             Ponto:  'CESTA!!!',
             Assist: 'GARÇOM!',
             Rebote: 'PAREDÃO!',
@@ -68,23 +68,33 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
         const bgStyle = transparent ? {} : {
             background: `linear-gradient(160deg, ${palette.grad[0]} 0%, ${palette.grad[1]} 100%)`,
         };
-
         return (
-            <div
-                ref={ref}
-                style={{
-                    width: '1080px',
-                    height: '1920px',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    color: 'white',
-                    fontFamily: "'Inter', 'Outfit', system-ui, sans-serif",
-                    ...bgStyle,
-                }}
-            >
+            <>
+                <style dangerouslySetInnerHTML={{ __html: `
+                    @keyframes wave-text {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-12px); }
+                    }
+                    .wave-char {
+                        display: inline-block;
+                        animation: wave-text 1.2s infinite ease-in-out;
+                    }
+                `}} />
+                <div
+                    ref={ref}
+                    style={{
+                        width: '1080px',
+                        height: '1920px',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        color: 'white',
+                        fontFamily: "'Inter', 'Outfit', system-ui, sans-serif",
+                        ...bgStyle,
+                    }}
+                >
                 {/* ── Layer 2: Background Watermark Logo ───────────────── */}
                 {team.logo && !transparent && (
                     <div style={{
@@ -164,10 +174,22 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                         fontSize: '56px', fontWeight: '950', letterSpacing: '0.25em',
                         textTransform: 'uppercase', color: 'white',
                         textShadow: '0 4px 30px rgba(0,0,0,0.6)',
-                        display: 'block',
+                        display: 'flex',
+                        gap: '2px',
                         transform: 'skewX(10deg)', // Un-skew text
                     }}>
-                        {labelMap[eventType] ?? eventType}
+                        {(labelMap[eventType] ?? eventType).split('').map((char, index) => (
+                            <span 
+                                key={index} 
+                                className="wave-char" 
+                                style={{ 
+                                    animationDelay: `${index * 0.08}s`,
+                                    marginRight: char === ' ' ? '30px' : '0' 
+                                }}
+                            >
+                                {char}
+                            </span>
+                        ))}
                     </span>
                 </div>
 
@@ -372,7 +394,8 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                         background: 'linear-gradient(90deg, rgba(255,255,255,0.2), transparent)',
                     }} />
                 </div>
-            </div>
+                </div>
+            </>
         );
     }
 );
