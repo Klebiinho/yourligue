@@ -163,7 +163,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                 </div>
 
                 {/* Vertical spacer to push content down and center it more */}
-                <div style={{ height: '240px' }} />
+                <div style={{ height: '360px' }} />
 
                 {/* Action label moved below info box */}
 
