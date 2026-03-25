@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import type { Player, Team } from '../context/LeagueContext';
 import { HighlightCard } from './HighlightCard';
@@ -60,10 +60,57 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const [generating, setGenerating] = useState(false);
+    const [preloading, setPreloading] = useState(true);
     const [isRecordingFlow, setIsRecordingFlow] = useState(false);
     const [progress, setProgress] = useState(0);
     const [description, setDescription] = useState('');
     const [showDescField, setShowDescField] = useState(eventType !== 'MVP');
+    
+    // Base64 preloaded assets to bypass CORS on canvas
+    const [preloadedAssets, setPreloadedAssets] = useState<{ playerPhoto?: string, teamLogo?: string }>({});
+
+    // Asset Preloader – crucial for mobile/canvas CORS
+    useEffect(() => {
+        let isMounted = true;
+        const preload = async () => {
+            setPreloading(true);
+            const assets: { playerPhoto?: string, teamLogo?: string } = {};
+
+            try {
+                const fetchAsBase64 = async (url: string) => {
+                    if (!url) return undefined;
+                    try {
+                        const response = await fetch(url, { mode: 'cors' });
+                        const blob = await response.blob();
+                        return new Promise<string>((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result as string);
+                            reader.readAsDataURL(blob);
+                        });
+                    } catch (e) {
+                        console.warn('Preload failed for', url, e);
+                        return url; // Fallback to original
+                    }
+                };
+
+                const [pImg, tImg] = await Promise.all([
+                    player.photo ? fetchAsBase64(player.photo) : Promise.resolve(undefined),
+                    team.logo ? fetchAsBase64(team.logo) : Promise.resolve(undefined)
+                ]);
+
+                if (isMounted) {
+                    setPreloadedAssets({ playerPhoto: pImg, teamLogo: tImg });
+                }
+            } catch (err) {
+                console.error('All preloads failed', err);
+            } finally {
+                if (isMounted) setPreloading(false);
+            }
+        };
+
+        preload();
+        return () => { isMounted = false; };
+    }, [player.id, player.photo, team.id, team.logo]);
 
     // Static image download
     const handleDownloadImage = async () => {
@@ -373,26 +420,39 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
     const PREVIEW_H = 480;
     const PREVIEW_SCALE = PREVIEW_W / 1080;
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+    // Prepare optimized data for rendering (substitute base64)
+    const pData = useMemo(() => ({ ...player, photo: preloadedAssets.playerPhoto || player.photo }), [player, preloadedAssets.playerPhoto]);
+    const tData = useMemo(() => ({ ...team, logo: preloadedAssets.teamLogo || team.logo }), [team, preloadedAssets.teamLogo]);
 
-            {/* ── Off-screen renders ────────────────────────────────── */}
-            <div style={{ position: 'fixed', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none', width: '1080px', height: '1920px' }}>
-                <HighlightCard
-                    ref={cardRef}
-                    player={player} team={team}
-                    sportType={sportType} eventType={eventType}
-                    stats={stats} description={description}
-                />
-                <HighlightCard
-                    ref={transparentCardRef}
-                    player={player} team={team}
-                    sportType={sportType} eventType={eventType}
-                    stats={stats} description={description}
-                    transparent hideValues
-                />
-                <canvas ref={canvasRef} width={1080} height={1920} />
-            </div>
+    return (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-fade-in overflow-y-auto">
+            
+            {preloading && (
+                <div className="fixed inset-0 bg-black/60 z-[130] flex flex-col items-center justify-center gap-4 animate-fade-in backdrop-blur-md cursor-wait">
+                    <Loader2 className="animate-spin text-primary" size={48} />
+                    <span className="text-white font-black uppercase tracking-widest text-xs">Otimizando Imagens...</span>
+                </div>
+            )}
+
+            {/* ── Off-screen renders (Only for generation) ────────────────── */}
+            {generating && (
+                <div style={{ position: 'fixed', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none', width: '1080px', height: '1920px' }}>
+                    <HighlightCard
+                        ref={cardRef}
+                        player={pData} team={tData}
+                        sportType={sportType} eventType={eventType}
+                        stats={stats} description={description}
+                    />
+                    <HighlightCard
+                        ref={transparentCardRef}
+                        player={pData} team={tData}
+                        sportType={sportType} eventType={eventType}
+                        stats={stats} description={description}
+                        transparent hideValues
+                    />
+                    <canvas ref={canvasRef} width={1080} height={1920} />
+                </div>
+            )}
 
             {/* ── Modal ─────────────────────────────────────────────── */}
             <div
@@ -401,9 +461,14 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
             >
                 {/* Header */}
                 <div className="w-full flex items-center justify-between p-5 border-b border-slate-700/50">
-                    <div>
-                        <h3 className="text-lg font-black text-white uppercase tracking-widest">Gerar Highlight</h3>
-                        <p className="text-slate-400 text-xs mt-1">Formato Instagram Stories 9:16</p>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary">
+                            <Video size={18} />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-black text-white uppercase tracking-widest">Flash Destaque</h3>
+                            <p className="text-slate-400 text-xs mt-1">Gere um vídeo épico deste lance</p>
+                        </div>
                     </div>
                     <button onClick={onClose} disabled={generating}
                         className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition disabled:opacity-40">
@@ -419,7 +484,7 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                     >
                         <div style={{ width: '1080px', height: '1920px', transform: `scale(${PREVIEW_SCALE})`, transformOrigin: 'top left' }}>
                             <HighlightCard
-                                player={player} team={team}
+                                player={pData} team={tData}
                                 sportType={sportType} eventType={eventType}
                                 stats={stats} description={description}
                             />
@@ -517,6 +582,3 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
         </div>
     );
 };
-
-// Need to import React explicitly for JSX
-import React from 'react';

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
 import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye } from 'lucide-react';
@@ -91,10 +91,10 @@ const MatchControl = () => {
         });
     };
 
-    const getSuggestedMVPId = () => {
-        if (!match) return null;
+    const suggestedMVPId = useMemo(() => {
+        if (!match || !homeTeam || !awayTeam) return null;
         const playerScores: { [playerId: string]: number } = {};
-        const allPlayers = [...homeTeam!.players, ...awayTeam!.players];
+        const allPlayers = [...homeTeam.players, ...awayTeam.players];
 
         allPlayers.forEach(player => {
             const playerEvents = match.events.filter(ev => ev.playerId === player.id);
@@ -107,16 +107,14 @@ const MatchControl = () => {
             } else {
                 const goals = playerEvents.filter(ev => ['goal', 'penalty_goal', 'penalty_shootout_goal'].includes(ev.type)).length;
                 const assists = playerEvents.filter(ev => ev.type === 'assist').length;
-                score = goals + assists;
+                score = (goals * 1.5) + assists; // Weight goals slightly more for MVP tiebreaks
             }
             if (score > 0) playerScores[player.id] = score;
         });
 
         const sorted = Object.entries(playerScores).sort((a, b) => b[1] - a[1]);
         return sorted.length > 0 ? sorted[0][0] : null;
-    };
-
-    const suggestedMVPId = getSuggestedMVPId();
+    }, [match?.id, match?.events, league?.sportType, homeTeam?.id, awayTeam?.id]);
 
     useEffect(() => {
         if (currentYtLiveStream) {
@@ -151,12 +149,28 @@ const MatchControl = () => {
     }, [match?.halfLength, match?.extraTime, match?.period]);
 
 
+    // Optimized player status lookup table to avoid O(N*M) filtering in render
+    const playerStatusMap = useMemo(() => {
+        const stats: Record<string, { isRedCarded: boolean, yellowCards: number, hasDirectRed: boolean }> = {};
+        if (!match) return stats;
+
+        match.events.forEach((e: MatchEvent) => {
+            if (!e.playerId) return;
+            if (!stats[e.playerId]) stats[e.playerId] = { isRedCarded: false, yellowCards: 0, hasDirectRed: false };
+            
+            if (e.type === 'yellow_card') {
+                stats[e.playerId].yellowCards++;
+                if (stats[e.playerId].yellowCards >= 2) stats[e.playerId].isRedCarded = true;
+            } else if (e.type === 'red_card') {
+                stats[e.playerId].hasDirectRed = true;
+                stats[e.playerId].isRedCarded = true;
+            }
+        });
+        return stats;
+    }, [match?.events]);
+
     const getPlayerStatus = (playerId: string) => {
-        const playerEvents = match?.events.filter((e: MatchEvent) => e.playerId === playerId) || [];
-        const yellowCards = playerEvents.filter((e: MatchEvent) => e.type === 'yellow_card').length;
-        const hasDirectRed = playerEvents.some((e: MatchEvent) => e.type === 'red_card');
-        const isRedCarded = hasDirectRed || yellowCards >= 2;
-        return { isRedCarded, yellowCards, hasDirectRed };
+        return playerStatusMap[playerId] || { isRedCarded: false, yellowCards: 0, hasDirectRed: false };
     };
 
     const handleUndoLastCard = (playerId: string) => {
@@ -549,7 +563,7 @@ const MatchControl = () => {
         }
         return null;
     };
-    const shootoutWinnerId = calculateShootoutWinner();
+    const shootoutWinnerId = useMemo(() => calculateShootoutWinner(), [match?.events, period]);
 
     return (
         <div className="animate-fade-in relative pb-10">
