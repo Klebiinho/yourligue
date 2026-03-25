@@ -304,7 +304,42 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     // ─── Memoized Enriched Data (No Refetch) ─────────────────────
     const teams = useMemo(() => {
         if (!rawTeams.length) return [];
-        const allEvents = rawMatches.flatMap(m => m.events);
+
+        // ── PERFORMANCE: Single O(N) pass over all events to build lookup maps ──
+        // Instead of multiple .filter() calls per player per stat type,
+        // we scan events once and group by playerId.
+        type PlayerAcc = {
+            goals: number; assists: number; ownGoals: number; yellowCards: number;
+            redCards: number; points1: number; points2: number; points3: number;
+            rebounds: number; blocks: number; steals: number; fouls: number;
+        };
+        const playerStatsMap = new Map<string, PlayerAcc>();
+
+        rawMatches.forEach(m => m.events.forEach(e => {
+            if (!e.playerId) return;
+            if (!playerStatsMap.has(e.playerId)) {
+                playerStatsMap.set(e.playerId, { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0 });
+            }
+            const s = playerStatsMap.get(e.playerId)!;
+            switch (e.type) {
+                case 'goal': case 'penalty_goal': s.goals++; break;
+                case 'assist': s.assists++; break;
+                case 'own_goal': s.ownGoals++; break;
+                case 'yellow_card': s.yellowCards++; s.fouls++; break;
+                case 'red_card': s.redCards++; s.fouls++; break;
+                case 'points_1': s.points1++; break;
+                case 'points_2': s.points2++; break;
+                case 'points_3': s.points3++; break;
+                case 'rebound': s.rebounds++; break;
+                case 'block': s.blocks++; break;
+                case 'steal': s.steals++; break;
+                case 'foul': s.fouls++; break;
+            }
+        }));
+
+        const pwWin = league?.pointsForWin ?? 3;
+        const pwDraw = league?.pointsForDraw ?? 1;
+        const pwLoss = league?.pointsForLoss ?? 0;
         
         return rawTeams.map(t => {
             const teamMatches = rawMatches.filter(
@@ -314,7 +349,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             let wins = 0, draws = 0, losses = 0, goalsFor = 0, goalsAgainst = 0;
             const form: ('W' | 'D' | 'L')[] = [];
 
-            // Sort team matches by date to get form
             const sortedTeamMatches = [...teamMatches].sort((a, b) => 
                 new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
             );
@@ -336,34 +370,30 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 else form.push('L');
             });
 
-            const points = wins * (league?.pointsForWin ?? 3) + draws * (league?.pointsForDraw ?? 1) + losses * (league?.pointsForLoss ?? 0);
+            const points = wins * pwWin + draws * pwDraw + losses * pwLoss;
 
             return {
                 ...t,
-                players: t.players.map(p => ({
-                    ...p,
-                    stats: {
-                        goals: allEvents.filter(e => e.playerId === p.id && (e.type === 'goal' || e.type === 'penalty_goal')).length,
-                        assists: allEvents.filter(e => e.playerId === p.id && e.type === 'assist').length,
-                        ownGoals: allEvents.filter(e => e.playerId === p.id && e.type === 'own_goal').length,
-                        yellowCards: allEvents.filter(e => e.playerId === p.id && e.type === 'yellow_card').length,
-                        redCards: allEvents.filter(e => e.playerId === p.id && e.type === 'red_card').length,
-                        points: allEvents.filter(e => e.playerId === p.id && e.type === 'points_1').length * 1 +
-                               allEvents.filter(e => e.playerId === p.id && e.type === 'points_2').length * 2 +
-                               allEvents.filter(e => e.playerId === p.id && e.type === 'points_3').length * 3,
-                        points1: allEvents.filter(e => e.playerId === p.id && e.type === 'points_1').length,
-                        points2: allEvents.filter(e => e.playerId === p.id && e.type === 'points_2').length,
-                        points3: allEvents.filter(e => e.playerId === p.id && e.type === 'points_3').length,
-                        rebounds: allEvents.filter(e => e.playerId === p.id && e.type === 'rebound').length,
-                        blocks: allEvents.filter(e => e.playerId === p.id && e.type === 'block').length,
-                        steals: allEvents.filter(e => e.playerId === p.id && e.type === 'steal').length,
-                        fouls: allEvents.filter(e => e.playerId === p.id && (e.type === 'foul' || e.type === 'yellow_card' || e.type === 'red_card')).length
-                    }
-                })),
+                players: t.players.map(p => {
+                    const s = playerStatsMap.get(p.id) || { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0 };
+                    return {
+                        ...p,
+                        stats: {
+                            goals: s.goals,
+                            assists: s.assists,
+                            ownGoals: s.ownGoals,
+                            yellowCards: s.yellowCards,
+                            redCards: s.redCards,
+                            points: s.points1 * 1 + s.points2 * 2 + s.points3 * 3,
+                            points1: s.points1, points2: s.points2, points3: s.points3,
+                            rebounds: s.rebounds, blocks: s.blocks, steals: s.steals, fouls: s.fouls
+                        }
+                    };
+                }),
                 stats: { matches: teamMatches.length, wins, draws, losses, goalsFor, goalsAgainst, points, form: form.reverse() }
             };
         });
-    }, [rawTeams, rawMatches, league]);
+    }, [rawTeams, rawMatches, league?.pointsForWin, league?.pointsForDraw, league?.pointsForLoss]);
     
     // ── YouTube Integration ─────────────────────────────────────
     const ytService = YouTubeService.getInstance();
@@ -431,11 +461,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         // Safety timeout for global loading
         const globalTimeout = setTimeout(() => {
-            if (loading) {
-                console.warn('LeagueContext: Global loading timeout reached.');
-                setLoading(false);
-            }
-        }, 10000);
+            if (loading) setLoading(false);
+        }, 5000);
 
         if (!user) {
             setLeagues([]);
@@ -448,38 +475,23 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
         
         loadLeagues().finally(() => clearTimeout(globalTimeout));
-    }, [user, isPublicView]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id, isPublicView]);
 
     const loadLeagues = async () => {
         if (!user) return;
-        console.log('LeagueContext: loadLeagues iniciado', { hasUser: !!user });
         // SILENT REFRESH: Only show active loading if we don't have leagues yet
         if (leagues.length === 0) setLoading(true);
 
         try {
-            // Load owned leagues
-            const { data: ownedData } = await supabase
-                .from('leagues')
-                .select(`
-                    *,
-                    follower_count:followed_leagues(count)
-                `)
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: true });
+            // Load owned & followed leagues in parallel
+            const [ownedRes, followsRes] = await Promise.all([
+                supabase.from('leagues').select('*, follower_count:followed_leagues(count)').eq('user_id', user.id).order('created_at', { ascending: true }),
+                supabase.from('followed_leagues').select('leagues(*, follower_count:followed_leagues(count))').eq('user_id', user.id)
+            ]);
 
-            // Load followed leagues
-            const { data: followsData } = await supabase
-                .from('followed_leagues')
-                .select(`
-                    leagues(
-                        *,
-                        follower_count:followed_leagues(count)
-                    )
-                `)
-                .eq('user_id', user.id);
-
-            if (ownedData) {
-                const mapped: League[] = ownedData.map(mapDBLeague);
+            if (ownedRes.data) {
+                const mapped: League[] = ownedRes.data.map(mapDBLeague);
                 setLeagues(mapped);
                 if (mapped.length > 0 && !league && !isPublicView) {
                     const saved = localStorage.getItem('selectedLeagueId');
@@ -488,8 +500,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
 
-            if (followsData) {
-                const mapped: League[] = followsData
+            if (followsRes.data) {
+                const mapped: League[] = followsRes.data
                     .filter(f => f.leagues)
                     .map(f => mapDBLeague(f.leagues));
                 setFollowedLeagues(mapped);
@@ -497,7 +509,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         } catch (err) {
             console.error('LeagueContext: Erro em loadLeagues:', err);
         } finally {
-            console.log('LeagueContext: loadLeagues finalizado');
             setLoading(false);
         }
     };
@@ -678,24 +689,28 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     // ── Load league data (teams, matches, brackets) ────────────
+    // Use refs to avoid stale closure issues and prevent needless dependency array changes
+    const loadUserInteractionsRef = useRef(loadUserInteractions);
+    const loadSupportCountsRef = useRef(loadSupportCounts);
+    useEffect(() => { loadUserInteractionsRef.current = loadUserInteractions; }, [loadUserInteractions]);
+    useEffect(() => { loadSupportCountsRef.current = loadSupportCounts; }, [loadSupportCounts]);
+
     const loadLeagueData = useCallback(async (leagueId: string, background = false) => {
         if (!background) setDataLoading(true);
-        loadUserInteractions(leagueId);
-        loadSupportCounts(leagueId);
 
-        // Fetch everything in parallel with optimized queries and limits
+        // Load interactions/counts in background without blocking main data
+        loadUserInteractionsRef.current(leagueId);
+        loadSupportCountsRef.current(leagueId);
+
+        // Fetch everything in parallel
         const [teamsRes, matchesRes, bracketsRes, adsRes] = await Promise.all([
-            // Limit player columns to avoid huge payload overhead if not needed immediately
             supabase.from('teams').select('*, players(*)').eq('league_id', leagueId).order('created_at'),
-            
-            // Limit matches to a reasonable window (150 matches) for initial load
             supabase.from('matches')
                 .select('*, match_events(*)')
                 .eq('league_id', leagueId)
                 .order('updated_at', { ascending: false })
                 .order('created_at', { ascending: false })
-                .limit(150), // Optimization: Prevent loading thousands of historical matches at once
-            
+                .limit(150),
             supabase.from('brackets').select('*').eq('league_id', leagueId).order('match_order'),
             supabase.from('ads').select('*').eq('league_id', leagueId).order('display_order', { ascending: true })
         ]);
@@ -704,24 +719,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         if (matchesRes.data) setRawMatches(matchesRes.data.map(mapDBMatch));
         if (bracketsRes.data) setBrackets(bracketsRes.data.map(mapDBBracket));
         if (adsRes.data) setAds(adsRes.data.map((a: any) => ({
-            id: a.id,
-            league_id: a.league_id,
-            title: a.title,
-            desktop_media_url: a.desktop_media_url,
-            mobile_media_url: a.mobile_media_url,
-            square_media_url: a.square_media_url,
-            media_type: a.media_type,
-            positions: a.positions,
-            object_position: a.object_position,
-            link_url: a.link_url,
-            duration: a.duration,
-            active: a.active,
-            display_order: a.display_order || 0,
-            created_at: a.created_at
+            id: a.id, league_id: a.league_id, title: a.title,
+            desktop_media_url: a.desktop_media_url, mobile_media_url: a.mobile_media_url,
+            square_media_url: a.square_media_url, media_type: a.media_type,
+            positions: a.positions, object_position: a.object_position,
+            link_url: a.link_url, duration: a.duration, active: a.active,
+            display_order: a.display_order || 0, created_at: a.created_at
         })));
 
         setDataLoading(false);
-    }, [loadUserInteractions, loadSupportCounts]);
+    // Stable callback: no external deps that change on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         if (!league) {
@@ -733,8 +742,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('selectedLeagueId', league.id);
 
         // ─── CENTRALIZED REALTIME (GOLDEN RULE: ZERO REFETCH) ───────
-        console.log(`[Realtime] Connecting to league channel: ${league.id}`);
-        
         const channel = supabase.channel(`league-central-${league.id}`);
 
         // 1. Tables with league_id filter (efficient)
@@ -745,7 +752,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }, payload => {
             const { table, eventType, new: newRow, old: oldRow } = payload;
             const row = (newRow || oldRow) as any;
-            console.log(`[Realtime Filtered] ${table} ${eventType}`, row.id);
 
             switch (table) {
                 case 'matches':
@@ -847,7 +853,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 return { ...m, events };
             }));
 
-            // Goal Notification
             if (eventType === 'INSERT' && (row.type === 'goal' || row.type === 'penalty_goal')) {
                 const team = teamsRef.current.find(t => t.id === row.team_id);
                 addNotification({
@@ -890,7 +895,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         });
 
         channel.on('broadcast', { event: 'players-reordered' }, ({ payload }) => {
-            console.log('[Realtime Broadcast] Players Reordered', payload);
             setRawTeams(prev => prev.map(t => {
                 if (t.id === payload.teamId) {
                     const sortedPlayers = [...t.players].sort((a, b) => {
@@ -908,15 +912,13 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             }));
         });
 
-        channel.subscribe(status => {
-            console.log(`[Realtime] Subscription status: ${status}`);
-        });
+        channel.subscribe();
 
         return () => {
-            console.log('[Realtime] Cleaning up channel');
             supabase.removeChannel(channel);
         };
-    }, [league?.id, loadLeagueData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [league?.id]);
 
     const addNotification = (notif: LeagueNotification) => {
         setNotifications(prev => [notif, ...prev].slice(0, 5));
