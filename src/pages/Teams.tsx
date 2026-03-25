@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLeague, type Player } from '../context/LeagueContext';
 import { Shield, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, Star, PlusCircle, GripVertical, ArrowDownUp, Heart, Wind, Compass } from 'lucide-react';
@@ -110,19 +110,33 @@ const Teams = () => {
     };
 
     // ── Retroactive Color Identification ─────────────────────
-    useEffect(() => {
-        if (!isAdmin || isPublicView || !teams.length) return;
+    // Track which teams we've already processed THIS session to avoid infinite loops
+    const processedColorIds = useRef<Set<string>>(new Set());
+    const teamsRef = useRef<typeof teams>(teams);
+    useEffect(() => { teamsRef.current = teams; }, [teams]);
 
-        const teamsWithoutColor = teams.filter(t => !t.primaryColor && t.logo);
-        if (teamsWithoutColor.length > 0) {
-            console.log(`[Color Sync] Processando ${teamsWithoutColor.length} times sem cor...`);
-            teamsWithoutColor.forEach(team => {
+    useEffect(() => {
+        if (!isAdmin || isPublicView) return;
+
+        // Filter to teams that have no color AND haven't been processed yet this session
+        const toProcess = teamsRef.current.filter(
+            t => !t.primaryColor && t.logo && !processedColorIds.current.has(t.id)
+        );
+        if (toProcess.length === 0) return;
+
+        // Mark them immediately as "queued" so re-renders don't re-queue them
+        toProcess.forEach((t: typeof teams[0]) => processedColorIds.current.add(t.id));
+
+        // Stagger processing to avoid blocking the main thread
+        toProcess.forEach((team: typeof teams[0], idx: number) => {
+            setTimeout(() => {
                 extractColorFromImage(team.logo, (colors) => {
                     updateTeam(team.id, { primary_color: colors.p, secondary_color: colors.s });
                 });
-            });
-        }
-    }, [teams.length, isAdmin, isPublicView]);
+            }, idx * 300); // 300ms between each to avoid hammering
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAdmin, isPublicView]);
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) => {
         const file = e.target.files?.[0];
