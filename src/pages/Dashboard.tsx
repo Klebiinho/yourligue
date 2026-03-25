@@ -23,33 +23,28 @@ const Dashboard = () => {
     if (dataLoading) return (
         <div className="animate-fade-in space-y-6 md:space-y-8 pb-10">
             <header>
-                <div className="flex items-start justify-between gap-3">
-                    <div>
-                        <h1 className="text-xl sm:text-2xl md:text-4xl font-outfit font-extrabold tracking-tight leading-tight">
-                            {league?.name ?? '…'}
-                        </h1>
-                        <p className="text-slate-500 mt-0.5 text-xs sm:text-sm">Carregando dados da liga...</p>
-                    </div>
-                </div>
+                <h1 className="text-xl sm:text-2xl md:text-4xl font-outfit font-extrabold tracking-tight leading-tight opacity-50">
+                    {league?.name ?? '…'}
+                </h1>
+                <p className="text-slate-600 mt-1 text-xs font-black uppercase tracking-widest">Carregando dados...</p>
             </header>
-            {/* Skeleton columns */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 {[0,1,2,3].map(i => (
-                    <div key={i} className="glass-panel p-5 animate-pulse">
-                        <div className="h-8 bg-white/5 rounded-xl mb-2 w-1/2" />
-                        <div className="h-4 bg-white/5 rounded-lg w-3/4" />
+                    <div key={i} className="glass-panel p-5 animate-pulse space-y-2">
+                        <div className="h-8 bg-white/[0.08] rounded-xl w-1/2" />
+                        <div className="h-3 bg-white/[0.05] rounded-lg w-3/4" />
                     </div>
                 ))}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-8">
-                <div className="lg:col-span-2 glass-panel p-6 animate-pulse space-y-4">
-                    {[0,1,2,3].map(i => (
-                        <div key={i} className="h-14 bg-white/5 rounded-2xl" />
+                <div className="lg:col-span-2 glass-panel p-6 animate-pulse space-y-3">
+                    {[0,1,2,3,4].map(i => (
+                        <div key={i} className="h-14 bg-white/[0.06] rounded-2xl" />
                     ))}
                 </div>
-                <div className="glass-panel p-6 animate-pulse space-y-4">
+                <div className="glass-panel p-6 animate-pulse space-y-3">
                     {[0,1,2,3,4].map(i => (
-                        <div key={i} className="h-10 bg-white/5 rounded-2xl" />
+                        <div key={i} className="h-10 bg-white/[0.06] rounded-2xl" />
                     ))}
                 </div>
             </div>

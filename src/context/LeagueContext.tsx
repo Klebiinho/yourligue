@@ -706,32 +706,36 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         loadUserInteractionsRef.current(leagueId);
         loadSupportCountsRef.current(leagueId);
 
-        // Fetch everything in parallel
-        const [teamsRes, matchesRes, bracketsRes, adsRes] = await Promise.all([
-            supabase.from('teams').select('*, players(*)').eq('league_id', leagueId).order('created_at'),
-            supabase.from('matches')
-                .select('*, match_events(*)')
-                .eq('league_id', leagueId)
-                .order('updated_at', { ascending: false })
-                .order('created_at', { ascending: false })
-                .limit(150),
-            supabase.from('brackets').select('*').eq('league_id', leagueId).order('match_order'),
-            supabase.from('ads').select('*').eq('league_id', leagueId).order('display_order', { ascending: true })
-        ]);
+        try {
+            const [teamsRes, matchesRes, bracketsRes, adsRes] = await Promise.all([
+                supabase.from('teams').select('*, players(*)').eq('league_id', leagueId).order('created_at'),
+                supabase.from('matches')
+                    .select('*, match_events(*)')
+                    .eq('league_id', leagueId)
+                    .order('updated_at', { ascending: false })
+                    .order('created_at', { ascending: false })
+                    .limit(150),
+                supabase.from('brackets').select('*').eq('league_id', leagueId).order('match_order'),
+                supabase.from('ads').select('*').eq('league_id', leagueId).order('display_order', { ascending: true })
+            ]);
 
-        if (teamsRes.data) setRawTeams(teamsRes.data.map(mapDBTeam));
-        if (matchesRes.data) setRawMatches(matchesRes.data.map(mapDBMatch));
-        if (bracketsRes.data) setBrackets(bracketsRes.data.map(mapDBBracket));
-        if (adsRes.data) setAds(adsRes.data.map((a: any) => ({
-            id: a.id, league_id: a.league_id, title: a.title,
-            desktop_media_url: a.desktop_media_url, mobile_media_url: a.mobile_media_url,
-            square_media_url: a.square_media_url, media_type: a.media_type,
-            positions: a.positions, object_position: a.object_position,
-            link_url: a.link_url, duration: a.duration, active: a.active,
-            display_order: a.display_order || 0, created_at: a.created_at
-        })));
-
-        setDataLoading(false);
+            if (teamsRes.data) setRawTeams(teamsRes.data.map(mapDBTeam));
+            if (matchesRes.data) setRawMatches(matchesRes.data.map(mapDBMatch));
+            if (bracketsRes.data) setBrackets(bracketsRes.data.map(mapDBBracket));
+            if (adsRes.data) setAds(adsRes.data.map((a: any) => ({
+                id: a.id, league_id: a.league_id, title: a.title,
+                desktop_media_url: a.desktop_media_url, mobile_media_url: a.mobile_media_url,
+                square_media_url: a.square_media_url, media_type: a.media_type,
+                positions: a.positions, object_position: a.object_position,
+                link_url: a.link_url, duration: a.duration, active: a.active,
+                display_order: a.display_order || 0, created_at: a.created_at
+            })));
+        } catch (err) {
+            console.error('loadLeagueData error:', err);
+        } finally {
+            // CRITICAL: Always reset loading state, even on error
+            setDataLoading(false);
+        }
     // Stable callback: no external deps that change on every render
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -1058,17 +1062,16 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const selectLeague = (id: string) => {
         const found = leagues.find(l => l.id === id);
         if (found) {
-            // ── CRITICAL: Clear stale data BEFORE switching league ──
-            // Without this, the old league's teams/matches stay visible
-            // until the new data arrives from Supabase.
+            // Clear stale data immediately so the UI doesn't flash old league data.
+            // loadLeagueData will be triggered automatically by the useEffect
+            // that watches league?.id changes.
             setRawTeams([]);
             setRawMatches([]);
             setBrackets([]);
-            setDataLoading(true);
             setIsPublicView(false);
             setLeague(found);
-            // Immediately start loading instead of waiting for the useEffect cycle
-            loadLeagueData(found.id);
+            // NOTE: do NOT call loadLeagueData here — the useEffect handles it
+            // Calling it twice caused race conditions and the black screen.
         }
     };
 
