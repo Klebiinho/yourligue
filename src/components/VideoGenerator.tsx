@@ -74,7 +74,6 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
         let isMounted = true;
         const preload = async () => {
             setPreloading(true);
-            const assets: { playerPhoto?: string, teamLogo?: string } = {};
 
             try {
                 const fetchAsBase64 = async (url: string) => {
