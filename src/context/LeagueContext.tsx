@@ -617,21 +617,25 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const loadPublicLeague = useCallback(async (slugOrId: string) => {
         if (!slugOrId) return false;
-        // SILENT REFRESH: Only show loading screen if this is the first time or league is different
-        if (!league || (league.id !== slugOrId && league.slug !== slugOrId)) {
+
+        const isDifferentLeague = !league || (league.id !== slugOrId && league.slug !== slugOrId);
+
+        // Clear stale data immediately if switching to a different league
+        if (isDifferentLeague) {
+            setRawTeams([]);
+            setRawMatches([]);
+            setBrackets([]);
             setLoading(true);
         }
         setIsPublicView(true);
 
-        console.log('LeagueContext: loadPublicLeague iniciado para:', slugOrId);
         try {
-            // Try slug first
+            // Try slug first, then UUID
             let { data, error } = await supabase.from('leagues').select(`
                 *,
                 follower_count:followed_leagues(count)
             `).eq('slug', slugOrId).single();
 
-            // If not found (or error) and looks like UUID, try ID
             if ((!data || error) && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId)) {
                 const { data: idData } = await supabase.from('leagues').select(`
                     *,
@@ -643,7 +647,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             if (data) {
                 const lg: League = mapDBLeague(data);
                 setLeague(lg);
-                loadLeagueData(lg.id); // Garante que times e matches sejam carregados
+                loadLeagueData(lg.id);
                 return true;
             } else {
                 setLeague(null);
@@ -653,9 +657,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             setLeague(null);
             return false;
         } finally {
-            console.log('LeagueContext: loadPublicLeague finalizado');
             setLoading(false);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const loadUserInteractions = useCallback(async (leagueId: string) => {
@@ -1054,8 +1058,17 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const selectLeague = (id: string) => {
         const found = leagues.find(l => l.id === id);
         if (found) {
-            setLeague(found);
+            // ── CRITICAL: Clear stale data BEFORE switching league ──
+            // Without this, the old league's teams/matches stay visible
+            // until the new data arrives from Supabase.
+            setRawTeams([]);
+            setRawMatches([]);
+            setBrackets([]);
+            setDataLoading(true);
             setIsPublicView(false);
+            setLeague(found);
+            // Immediately start loading instead of waiting for the useEffect cycle
+            loadLeagueData(found.id);
         }
     };
 
