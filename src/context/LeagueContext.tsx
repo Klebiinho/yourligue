@@ -653,12 +653,12 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         const isDifferentLeague = !league || (league.slug !== slugOrId && league.id !== slugOrId);
         
         try {
-            console.log('LeagueContext: loadPublicLeague starting', { slugOrId, isDifferentLeague });
             if (isDifferentLeague) {
+                setLoading(true);
+                // Group resets to avoid multiple rapid re-renders
                 setRawTeams([]);
                 setRawMatches([]);
                 setBrackets([]);
-                setLoading(true);
             }
             
             setIsPublicView(true);
@@ -680,9 +680,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
             if (data) {
                 const lg: League = mapDBLeague(data);
-                console.log('LeagueContext: Public league found', lg.id);
                 setLeague(lg);
-                // Note: The [league?.id] useEffect will handle loadLeagueData
                 return true;
             } else {
                 console.warn('LeagueContext: Public league not found');
@@ -738,8 +736,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const loadLeagueData = useCallback(async (leagueId: string, background = false) => {
         if (!leagueId) return;
-        
-        console.log(`LeagueContext: loadLeagueData starting${background ? ' (bg)' : ''}`, leagueId);
         
         // Load interactions/counts in background without blocking main data
         loadUserInteractionsRef.current(leagueId);

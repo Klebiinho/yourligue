@@ -1,23 +1,23 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LeagueProvider, useLeague } from './context/LeagueContext';
 
-// Pages
-import AuthPage from './pages/AuthPage';
-import LeagueSelector from './pages/LeagueSelector';
-import Dashboard from './pages/Dashboard';
-import Teams from './pages/Teams';
-import Matches from './pages/Matches';
-import Standings from './pages/Standings';
-import Bracket from './pages/Bracket';
-import Settings from './pages/Settings';
-import MatchControl from './pages/MatchControl';
-import LiveMatches from './pages/LiveMatches';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfService from './pages/TermsOfService';
-import MatchOverlay from './pages/MatchOverlay';
-import Sitemap from './pages/Sitemap';
+// Pages - Code Splitting
+const AuthPage = lazy(() => import('./pages/AuthPage'));
+const LeagueSelector = lazy(() => import('./pages/LeagueSelector'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Teams = lazy(() => import('./pages/Teams'));
+const Matches = lazy(() => import('./pages/Matches'));
+const Standings = lazy(() => import('./pages/Standings'));
+const Bracket = lazy(() => import('./pages/Bracket'));
+const Settings = lazy(() => import('./pages/Settings'));
+const MatchControl = lazy(() => import('./pages/MatchControl'));
+const LiveMatches = lazy(() => import('./pages/LiveMatches'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const MatchOverlay = lazy(() => import('./pages/MatchOverlay'));
+const Sitemap = lazy(() => import('./pages/Sitemap'));
 
 // Components
 import Sidebar from './components/Sidebar';
@@ -46,8 +46,7 @@ const NotFoundScreen = ({ message, onRetry }: { message: string; onRetry?: () =>
     </div>
 );
 
-// ── MainContent ────────────────────────────────────────────────────────────────
-// ⚠️ RULES OF HOOKS: ALL hooks must be called UNCONDITIONALLY at the top.
+import { useEffect, useState } from 'react';
 //    Early returns only happen AFTER all hooks have been declared.
 
 const MainContent = () => {
@@ -106,45 +105,47 @@ const MainContent = () => {
             {!isOverlayPage && <Sidebar />}
             <main className={slug || isPublicPage || isOverlayPage ? 'w-full min-h-screen' : 'md:pl-64 min-h-screen'}>
                 <div className="p-4 md:p-8 lg:p-10 pb-24 md:pb-10 max-w-[1600px] mx-auto w-full">
-                    <Routes>
-                        {/* Static Pages */}
-                        <Route path="/privacidade" element={<PrivacyPolicy />} />
-                        <Route path="/termos" element={<TermsOfService />} />
-                        <Route path="/sitemap" element={<Sitemap />} />
-                        <Route path="/match/:matchId/overlay" element={<MatchOverlay />} />
+                    <Suspense fallback={<LoadingScreen />}>
+                        <Routes>
+                            {/* Static Pages */}
+                            <Route path="/privacidade" element={<PrivacyPolicy />} />
+                            <Route path="/termos" element={<TermsOfService />} />
+                            <Route path="/sitemap" element={<Sitemap />} />
+                            <Route path="/match/:matchId/overlay" element={<MatchOverlay />} />
 
-                        {/* Authenticated Private Area */}
-                        {!slug && (
-                            <>
-                                <Route path="/" element={<Dashboard />} />
-                                <Route path="/leagues" element={<LeagueSelector />} />
-                                <Route path="/teams" element={<Teams />} />
-                                <Route path="/teams/:teamId" element={<Teams />} />
-                                <Route path="/matches" element={<Matches />} />
-                                <Route path="/standings" element={<Standings />} />
-                                <Route path="/bracket" element={<Bracket />} />
-                                <Route path="/live" element={<LiveMatches />} />
-                                <Route path="/match/:matchId" element={<MatchControl />} />
-                                <Route path="/settings" element={<Settings />} />
-                            </>
-                        )}
+                            {/* Authenticated Private Area */}
+                            {!slug && (
+                                <>
+                                    <Route path="/" element={<Dashboard />} />
+                                    <Route path="/leagues" element={<LeagueSelector />} />
+                                    <Route path="/teams" element={<Teams />} />
+                                    <Route path="/teams/:teamId" element={<Teams />} />
+                                    <Route path="/matches" element={<Matches />} />
+                                    <Route path="/standings" element={<Standings />} />
+                                    <Route path="/bracket" element={<Bracket />} />
+                                    <Route path="/live" element={<LiveMatches />} />
+                                    <Route path="/match/:matchId" element={<MatchControl />} />
+                                    <Route path="/settings" element={<Settings />} />
+                                </>
+                            )}
 
-                        {/* Public League View (slug-based) */}
-                        {slug && (
-                            <>
-                                <Route path="/view/:slug" element={<Dashboard />} />
-                                <Route path="/view/:slug/teams" element={<Teams />} />
-                                <Route path="/view/:slug/teams/:teamId" element={<Teams />} />
-                                <Route path="/view/:slug/matches" element={<Matches />} />
-                                <Route path="/view/:slug/standings" element={<Standings />} />
-                                <Route path="/view/:slug/bracket" element={<Bracket />} />
-                                <Route path="/view/:slug/live" element={<LiveMatches />} />
-                                <Route path="/view/:slug/match/:matchId" element={<MatchControl />} />
-                            </>
-                        )}
+                            {/* Public League View (slug-based) */}
+                            {slug && (
+                                <>
+                                    <Route path="/view/:slug" element={<Dashboard />} />
+                                    <Route path="/view/:slug/teams" element={<Teams />} />
+                                    <Route path="/view/:slug/teams/:teamId" element={<Teams />} />
+                                    <Route path="/view/:slug/matches" element={<Matches />} />
+                                    <Route path="/view/:slug/standings" element={<Standings />} />
+                                    <Route path="/view/:slug/bracket" element={<Bracket />} />
+                                    <Route path="/view/:slug/live" element={<LiveMatches />} />
+                                    <Route path="/view/:slug/match/:matchId" element={<MatchControl />} />
+                                </>
+                            )}
 
-                        <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
+                            <Route path="*" element={<Navigate to="/" replace />} />
+                        </Routes>
+                    </Suspense>
                 </div>
                 <AuthModal />
                 <NotificationTray />

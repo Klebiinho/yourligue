@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye, Loader2 } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
-import { VideoGenerator } from '../components/VideoGenerator';
+import { lazy, Suspense } from 'react';
+const VideoGenerator = lazy(() => import('../components/VideoGenerator').then(m => ({ default: m.VideoGenerator })));
 
 const MatchControl = () => {
     const { matchId } = useParams<{ matchId: string }>();
@@ -1577,14 +1578,16 @@ const MatchControl = () => {
             
             {/* Highlight Generator Overlay */}
             {highlightData && (
-                <VideoGenerator 
-                    player={highlightData.player}
-                    team={highlightData.team}
-                    sportType={highlightData.sportType}
-                    eventType={highlightData.eventType}
-                    stats={highlightData.stats}
-                    onClose={() => setHighlightData(null)}
-                />
+                <Suspense fallback={<div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>}>
+                    <VideoGenerator 
+                        player={highlightData.player}
+                        team={highlightData.team}
+                        sportType={highlightData.sportType}
+                        eventType={highlightData.eventType}
+                        stats={highlightData.stats}
+                        onClose={() => setHighlightData(null)}
+                    />
+                </Suspense>
             )}
         </div>
     );
