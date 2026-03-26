@@ -11,8 +11,10 @@ const Dashboard = () => {
     const { league, teams, matches, loading, dataLoading, isPublicView, isAdmin, leagueBasePath, followedLeagues, followLeague, unfollowLeague, setShowAuthModal, userInteractions, interactWithTeam } = useLeague();
     const { user } = useAuth();
     const navigate = useNavigate();
-    
-    const isBasket = league?.sportType === 'basketball';
+
+    // ── ALL HOOKS MUST BE DECLARED HERE, BEFORE ANY RETURN ──────────
+    const [activeTab, setActiveTab] = useState<'matches' | 'standings' | 'scorers'>('matches');
+    const [showTopRankModal, setShowTopRankModal] = useState<{ open: boolean, type: 'goals' | 'assists' | 'rebounds' }>({ open: false, type: 'goals' });
 
     if (loading) return (
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -29,7 +31,7 @@ const Dashboard = () => {
                 <p className="text-slate-600 mt-1 text-xs font-black uppercase tracking-widest">Carregando dados...</p>
             </header>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-                {[0,1,2,3].map(i => (
+                {[0, 1, 2, 3].map(i => (
                     <div key={i} className="glass-panel p-5 animate-pulse space-y-2">
                         <div className="h-8 bg-white/[0.08] rounded-xl w-1/2" />
                         <div className="h-3 bg-white/[0.05] rounded-lg w-3/4" />
@@ -38,18 +40,20 @@ const Dashboard = () => {
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-8">
                 <div className="lg:col-span-2 glass-panel p-6 animate-pulse space-y-3">
-                    {[0,1,2,3,4].map(i => (
+                    {[0, 1, 2, 3, 4].map(i => (
                         <div key={i} className="h-14 bg-white/[0.06] rounded-2xl" />
                     ))}
                 </div>
                 <div className="glass-panel p-6 animate-pulse space-y-3">
-                    {[0,1,2,3,4].map(i => (
+                    {[0, 1, 2, 3, 4].map(i => (
                         <div key={i} className="h-10 bg-white/[0.06] rounded-2xl" />
                     ))}
                 </div>
             </div>
         </div>
     );
+
+    const isBasket = league?.sportType === 'basketball';
 
     const liveMatches = matches.filter(m => m.status === 'live');
     const upcomingMatches = matches.filter(m => m.status === 'scheduled')
@@ -67,9 +71,9 @@ const Dashboard = () => {
     const formatDate = (dt?: string) =>
         dt ? new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 
-    const calcPoints = (t: typeof teams[0]) => 
-        (t.stats?.wins || 0) * (league?.pointsForWin || 3) + 
-        (t.stats?.draws || 0) * (league?.pointsForDraw || 1) + 
+    const calcPoints = (t: typeof teams[0]) =>
+        (t.stats?.wins || 0) * (league?.pointsForWin || 3) +
+        (t.stats?.draws || 0) * (league?.pointsForDraw || 1) +
         (t.stats?.losses || 0) * (league?.pointsForLoss || 0);
 
     const sortedTeams = [...teams].sort((a, b) => {
@@ -84,9 +88,6 @@ const Dashboard = () => {
     }).filter(p => (isBasket ? (p.stats?.points || 0) : (p.stats?.goals || 0)) > 0).slice(0, 5);
     const topAssisters = [...allPlayers].sort((a, b) => (b.stats?.assists || 0) - (a.stats?.assists || 0)).filter(p => (p.stats?.assists || 0) > 0).slice(0, 5);
     const topRebounders = [...allPlayers].sort((a, b) => (b.stats?.rebounds || 0) - (a.stats?.rebounds || 0)).filter(p => (p.stats?.rebounds || 0) > 0).slice(0, 5);
-
-    const [activeTab, setActiveTab] = useState<'matches' | 'standings' | 'scorers'>('matches');
-    const [showTopRankModal, setShowTopRankModal] = useState<{ open: boolean, type: 'goals' | 'assists' | 'rebounds' }>({ open: false, type: 'goals' });
 
     return (
         <div className="animate-fade-in space-y-6 md:space-y-8 pb-10">

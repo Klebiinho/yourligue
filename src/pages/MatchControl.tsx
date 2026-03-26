@@ -169,6 +169,31 @@ const MatchControl = () => {
         return stats;
     }, [match?.events]);
 
+    const calculateShootoutWinner = () => {
+        if (!match || period !== 'Pênaltis') return null;
+        const shootoutEvents = match.events.filter((e: MatchEvent) => e.type.startsWith('penalty_shootout_'));
+        const homeEvents = shootoutEvents.filter(e => e.teamId === match.homeTeamId);
+        const awayEvents = shootoutEvents.filter(e => e.teamId === match.awayTeamId);
+        const homeGoals = homeEvents.filter(e => e.type === 'penalty_shootout_goal').length;
+        const awayGoals = awayEvents.filter(e => e.type === 'penalty_shootout_goal').length;
+        const homeTaken = homeEvents.length;
+        const awayTaken = awayEvents.length;
+
+        if (homeTaken <= 5 && awayTaken <= 5) {
+            const homeRem = 5 - homeTaken;
+            const awayRem = 5 - awayTaken;
+            if (homeGoals > awayGoals + awayRem) return match.homeTeamId;
+            if (awayGoals > homeGoals + homeRem) return match.awayTeamId;
+            if (homeTaken === 5 && awayTaken === 5 && homeGoals !== awayGoals) {
+                return homeGoals > awayGoals ? match.homeTeamId : match.awayTeamId;
+            }
+        } else if (homeTaken === awayTaken && homeGoals !== awayGoals) {
+            return homeGoals > awayGoals ? match.homeTeamId : match.awayTeamId;
+        }
+        return null;
+    };
+    const shootoutWinnerId = useMemo(() => calculateShootoutWinner(), [match?.events, period]);
+
     const getPlayerStatus = (playerId: string) => {
         return playerStatusMap[playerId] || { isRedCarded: false, yellowCards: 0, hasDirectRed: false };
     };
@@ -540,30 +565,6 @@ const MatchControl = () => {
     };
 
 
-    const calculateShootoutWinner = () => {
-        if (period !== 'Pênaltis') return null;
-        const shootoutEvents = match.events.filter(e => e.type.startsWith('penalty_shootout_'));
-        const homeEvents = shootoutEvents.filter(e => e.teamId === match.homeTeamId);
-        const awayEvents = shootoutEvents.filter(e => e.teamId === match.awayTeamId);
-        const homeGoals = homeEvents.filter(e => e.type === 'penalty_shootout_goal').length;
-        const awayGoals = awayEvents.filter(e => e.type === 'penalty_shootout_goal').length;
-        const homeTaken = homeEvents.length;
-        const awayTaken = awayEvents.length;
-
-        if (homeTaken <= 5 && awayTaken <= 5) {
-            const homeRem = 5 - homeTaken;
-            const awayRem = 5 - awayTaken;
-            if (homeGoals > awayGoals + awayRem) return match.homeTeamId;
-            if (awayGoals > homeGoals + homeRem) return match.awayTeamId;
-            if (homeTaken === 5 && awayTaken === 5 && homeGoals !== awayGoals) {
-                return homeGoals > awayGoals ? match.homeTeamId : match.awayTeamId;
-            }
-        } else if (homeTaken === awayTaken && homeGoals !== awayGoals) {
-            return homeGoals > awayGoals ? match.homeTeamId : match.awayTeamId;
-        }
-        return null;
-    };
-    const shootoutWinnerId = useMemo(() => calculateShootoutWinner(), [match?.events, period]);
 
     return (
         <div className="animate-fade-in relative pb-10">
