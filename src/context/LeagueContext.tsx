@@ -760,19 +760,31 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
         try {
             const [teamsRes, matchesRes, bracketsRes, adsRes] = await Promise.all([
-                supabase.from('teams').select('*, players(*)').eq('league_id', leagueId).order('index', { ascending: true }),
+                supabase.from('teams').select('*, players(*)').eq('league_id', leagueId).order('name', { ascending: true }),
                 // Optimize: Limit matches and events to improve load speed
                 supabase.from('matches')
                     .select('*, match_events(*)')
                     .eq('league_id', leagueId)
-                    .order('match_date', { ascending: true })
+                    .order('scheduled_at', { ascending: true })
                     .limit(200),
-                supabase.from('brackets').select('*').eq('league_id', leagueId).order('match_order'),
+                supabase.from('brackets').select('*').eq('league_id', leagueId),
                 supabase.from('ads').select('*').eq('league_id', leagueId).order('display_order', { ascending: true })
             ]);
 
-            if (teamsRes.data) setRawTeams(teamsRes.data.map(mapDBTeam));
-            if (matchesRes.data) setRawMatches(matchesRes.data.map(mapDBMatch));
+            // Add debug logs for each response
+            if (teamsRes.error) console.error('LeagueContext: teams fetch error:', teamsRes.error);
+            if (matchesRes.error) console.error('LeagueContext: matches fetch error:', matchesRes.error);
+            if (bracketsRes.error) console.error('LeagueContext: brackets fetch error:', bracketsRes.error);
+            if (adsRes.error) console.error('LeagueContext: ads fetch error:', adsRes.error);
+
+            if (teamsRes.data) {
+                console.log('LeagueContext: Loaded', teamsRes.data.length, 'teams');
+                setRawTeams(teamsRes.data.map(mapDBTeam));
+            }
+            if (matchesRes.data) {
+                console.log('LeagueContext: Loaded', matchesRes.data.length, 'matches');
+                setRawMatches(matchesRes.data.map(mapDBMatch));
+            }
             if (bracketsRes.data) setBrackets(bracketsRes.data.map(mapDBBracket));
             if (adsRes.data) setAds(adsRes.data.map((a: any) => ({
                 id: a.id, league_id: a.league_id, title: a.title,
@@ -785,7 +797,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             
             console.log('LeagueContext: Data fetch successful');
         } catch (err) {
-            console.error('LeagueContext: loadLeagueData error:', err);
+            console.error('LeagueContext: loadLeagueData error (catch):', err);
         } finally {
             if (dataTimeout) clearTimeout(dataTimeout);
             setDataLoading(false);

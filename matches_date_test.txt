@@ -1,0 +1,20 @@
+HTTP/1.1 400 Bad Request
+Date: Thu, 26 Mar 2026 02:44:11 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 96
+Connection: keep-alive
+Server: cloudflare
+CF-Ray: 9e22cfe16f84a164-GRU
+CF-Cache-Status: DYNAMIC
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+X-Content-Type-Options: nosniff
+proxy-status: PostgREST; error=42703
+sb-gateway-version: 1
+sb-project-ref: igbaydpamtpubqklsfnq
+sb-request-id: 019d2807-28ec-7d5f-8737-60f4de260d21
+x-envoy-attempt-count: 1
+x-envoy-upstream-service-time: 114
+Set-Cookie: __cf_bm=5gPGo2RnAVqT4AA0uJpb3A8QqyDv0kN7n5aMwkIWFR8-1774493051-1.0.1.1-vcl9QE0bvgIM88syFwvK7wN3xuN_4rRA1LODfIffPj2hvIvloihTvT9jlGGGe4r1p7NgOZZtOgKH6NhjxLjGBF.wpFhsV1RF5.xbCjzlV7o; path=/; expires=Thu, 26-Mar-26 03:14:11 GMT; domain=.supabase.co; HttpOnly; Secure; SameSite=None
+alt-svc: h3=":443"; ma=86400
+
+{"code":"42703","details":null,"hint":null,"message":"column matches.match_date does not exist"}

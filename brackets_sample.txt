@@ -1,0 +1,22 @@
+HTTP/1.1 200 OK
+Date: Thu, 26 Mar 2026 02:39:12 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 2
+Connection: keep-alive
+Server: cloudflare
+Content-Range: */*
+CF-Ray: 9e22c898fa290124-GRU
+CF-Cache-Status: DYNAMIC
+Content-Location: /brackets?select=%2A
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+X-Content-Type-Options: nosniff
+content-profile: public
+sb-gateway-version: 1
+sb-project-ref: igbaydpamtpubqklsfnq
+sb-request-id: 019d2802-9ba4-778e-90ce-daf22ecb7f7e
+x-envoy-attempt-count: 1
+x-envoy-upstream-service-time: 111
+Set-Cookie: __cf_bm=yePEQYLfh4dk4n2flgQc31KDZN3nV3MdgZWRT99H.j8-1774492752-1.0.1.1-7.kBsfZl5nKEC7kwuAvrpDM06vF4jMgMTUZWG4zmDbjnXxnU0.izsHXG0YJpfYOmVVV2hDu_gU1XPWdT1oPrW_0FMiOqcWnBPZL6_fhRT_0; path=/; expires=Thu, 26-Mar-26 03:09:12 GMT; domain=.supabase.co; HttpOnly; Secure; SameSite=None
+alt-svc: h3=":443"; ma=86400
+
+[]

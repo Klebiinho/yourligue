@@ -1,0 +1,23 @@
+HTTP/1.1 200 OK
+Date: Thu, 26 Mar 2026 02:45:12 GMT
+Content-Type: application/json; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: cloudflare
+Content-Range: 0-0/*
+CF-Ray: 9e22d160ba0fd249-GRU
+CF-Cache-Status: DYNAMIC
+Content-Location: /matches?select=%2A
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+Vary: Accept-Encoding
+X-Content-Type-Options: nosniff
+content-profile: public
+sb-gateway-version: 1
+sb-project-ref: igbaydpamtpubqklsfnq
+sb-request-id: 019d2808-187b-711a-b0f6-32d440046d35
+x-envoy-attempt-count: 1
+x-envoy-upstream-service-time: 71
+Set-Cookie: __cf_bm=XQqRsIn5IHULTj4D1YJ7GIQAYkwF._5YgM8ieeF35xM-1774493112-1.0.1.1-SYhHvFiTGn51QHNTSGUcV1BhlYs0pJgYIp.FKpX5dChxekHCVfIqoiM0nBI0bDrHKEWYCKO1IjiJ1MTcniX4u3cpIbz0cO2r8LO8mbx3kyg; path=/; expires=Thu, 26-Mar-26 03:15:12 GMT; domain=.supabase.co; HttpOnly; Secure; SameSite=None
+alt-svc: h3=":443"; ma=86400
+
+[{"id":"b0cb9cbb-6edf-4a0f-bf78-c680a8d511b3","league_id":"4b5e84be-8677-407e-bdd1-4d59474eb836","home_team_id":"27e45192-0e55-4deb-9707-f932776b5f18","away_team_id":"72fecfbc-a558-40d3-ab93-586744ddca06","home_score":1,"away_score":1,"status":"finished","timer":40,"youtube_live_id":null,"half_length":45,"extra_time":0,"period":"Encerrado","scheduled_at":"2026-03-13T22:05:04.658213+00:00","location":null,"created_at":"2026-03-14T21:03:47.241649+00:00","updated_at":"2026-03-16T19:27:43.353725+00:00"}]

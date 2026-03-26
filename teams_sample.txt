@@ -1,0 +1,23 @@
+HTTP/1.1 200 OK
+Date: Thu, 26 Mar 2026 02:38:48 GMT
+Content-Type: application/json; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: cloudflare
+Content-Range: 0-0/*
+CF-Ray: 9e22c7ffeff3c585-GRU
+CF-Cache-Status: DYNAMIC
+Content-Location: /teams?select=%2A
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+Vary: Accept-Encoding
+X-Content-Type-Options: nosniff
+content-profile: public
+sb-gateway-version: 1
+sb-project-ref: igbaydpamtpubqklsfnq
+sb-request-id: 019d2802-3bf8-743a-87e6-781b29881575
+x-envoy-attempt-count: 1
+x-envoy-upstream-service-time: 279
+Set-Cookie: __cf_bm=hLE2mk0hExJherct_hOF2e_9OR0Zcly3DkBtTB5b5BU-1774492728-1.0.1.1-kv0bpWB9iXwTACfPY5WevIm.7TR6XWhomk6PR9LWbAUvv.UppbFmU_UiHVHVDTJbX5hThSIrcJSpkGDCT62uXR79vgC07Wc0OrUwIZh2VvI; path=/; expires=Thu, 26-Mar-26 03:08:48 GMT; domain=.supabase.co; HttpOnly; Secure; SameSite=None
+alt-svc: h3=":443"; ma=86400
+
+[{"id":"1c4d6c73-f44f-4b0f-855a-2be6b680ec38","league_id":"6eeb6f82-c1a9-45f0-8fd5-ad879d781957","name":"Equipe B","logo":"","group_name":"A","created_at":"2026-03-16T23:01:19.637653+00:00","primary_color":null,"secondary_color":null}]
