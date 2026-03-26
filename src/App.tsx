@@ -24,98 +24,96 @@ import Sidebar from './components/Sidebar';
 import AuthModal from './components/AuthModal';
 import NotificationTray from './components/NotificationTray';
 
+// ── Shared UI ──────────────────────────────────────────────────────────────────
+
 const LoadingScreen = () => (
-    <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center gap-8 z-[999]">
+    <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center gap-6 z-[999]">
         <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
         <p className="text-white font-outfit font-black text-xl uppercase tracking-widest animate-pulse">Carregando...</p>
     </div>
 );
 
-const NotFoundScreen = ({ message, onRetry }: { message: string, onRetry?: () => void }) => (
+const NotFoundScreen = ({ message, onRetry }: { message: string; onRetry?: () => void }) => (
     <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center p-6 text-center z-[999]">
         <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mb-6 border border-red-500/20">
-            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
         </div>
         <h1 className="text-white font-outfit font-black text-2xl uppercase mb-2">Página não encontrada</h1>
         <p className="text-slate-400 mb-8 max-w-sm">{message}</p>
-        <button onClick={onRetry} className="bg-primary text-white px-8 py-3 rounded-xl font-bold uppercase text-xs">Tentar Novamente</button>
+        {onRetry && <button onClick={onRetry} className="bg-primary text-white px-8 py-3 rounded-xl font-bold uppercase text-xs">Tentar Novamente</button>}
     </div>
 );
 
-const App = () => {
-    const hasConfig = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!hasConfig) {
-        return (
-            <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center p-6 text-center z-[9999]">
-                <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mb-6 border border-red-500/20 animate-pulse">
-                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                </div>
-                <h1 className="text-white font-outfit font-black text-3xl uppercase tracking-tighter mb-4">Configuração Necessária</h1>
-                <p className="text-slate-400 max-w-md mb-8 leading-relaxed font-medium">As variáveis do Supabase não foram detectadas. Na Vercel, adicione VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.</p>
-                <button onClick={() => window.location.reload()} className="bg-red-500 text-white px-10 py-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl shadow-red-500/20">Tentar Novamente</button>
-            </div>
-        );
-    }
-
-    return (
-        <BrowserRouter>
-            <AuthProvider>
-                <LeagueProvider>
-                    <MainContent />
-                </LeagueProvider>
-            </AuthProvider>
-        </BrowserRouter>
-    );
-};
+// ── MainContent ────────────────────────────────────────────────────────────────
+// ⚠️ RULES OF HOOKS: ALL hooks must be called UNCONDITIONALLY at the top.
+//    Early returns only happen AFTER all hooks have been declared.
 
 const MainContent = () => {
+    // 1. ALL hooks declared first — no exceptions
     const { user, loading: authLoading } = useAuth();
     const { league, leagues, loading: leagueLoading, loadPublicLeague } = useLeague();
     const { slug } = useParams<{ slug: string }>();
-    const location = useLocation();
     const navigate = useNavigate();
+    const location = useLocation();
     const [notFound, setNotFound] = useState(false);
 
-    // Initial public league loading (for direct links)
+    // 2. Effects — always run, no conditions around the hook itself
     useEffect(() => {
         if (slug) {
-            loadPublicLeague(slug).then(success => setNotFound(!success));
+            setNotFound(false);
+            loadPublicLeague(slug).then(success => {
+                if (!success) setNotFound(true);
+            });
         }
     }, [slug, loadPublicLeague]);
 
-    // Clean auth residues from URL
     useEffect(() => {
         if (user && window.location.hash.includes('access_token=')) {
-            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            window.history.replaceState(null, '', location.pathname + location.search);
         }
-    }, [user]);
+    }, [user, location]);
 
-    if (authLoading || (leagueLoading && slug && !notFound)) return <LoadingScreen />;
-    if (slug && notFound) return <NotFoundScreen message="Esta liga não existe." onRetry={() => navigate('/', { replace: true })} />;
-    if (slug && !league) return <LoadingScreen />;
+    // 3. ONLY NOW can we do early returns (all hooks above are guaranteed to run)
+    if (authLoading || (leagueLoading && !!slug && !notFound)) {
+        return <LoadingScreen />;
+    }
 
-    // Unauthenticated access logic
+    if (slug && notFound) {
+        return <NotFoundScreen message="Esta liga não existe ou o link está incorreto." onRetry={() => navigate('/', { replace: true })} />;
+    }
+
+    if (slug && !league) {
+        return <LoadingScreen />;
+    }
+
     const isPublicPage = ['/privacidade', '/termos', '/sitemap'].includes(location.pathname);
-    if (!user && !slug && !isPublicPage) return <AuthPage />;
 
-    // Authenticated but no league logic
+    if (!user && !slug && !isPublicPage) {
+        return <AuthPage />;
+    }
+
     if (user && !league && leagues.length === 0 && location.pathname !== '/leagues') {
         return <LeagueSelector />;
     }
 
+    const isOverlayPage = location.pathname.includes('/overlay');
+
+    // 4. Full render with all routes
     return (
         <div className="min-h-screen bg-[#07070a] text-white font-inter">
-            {!['/match/:matchId/overlay'].some(p => location.pathname.includes(p.replace(':matchId', ''))) && <Sidebar />}
-            <main className={slug || isPublicPage ? "w-full min-h-screen" : "md:pl-64 min-h-screen"}>
+            {!isOverlayPage && <Sidebar />}
+            <main className={slug || isPublicPage || isOverlayPage ? 'w-full min-h-screen' : 'md:pl-64 min-h-screen'}>
                 <div className="p-4 md:p-8 lg:p-10 pb-24 md:pb-10 max-w-[1600px] mx-auto w-full">
                     <Routes>
+                        {/* Static Pages */}
                         <Route path="/privacidade" element={<PrivacyPolicy />} />
                         <Route path="/termos" element={<TermsOfService />} />
                         <Route path="/sitemap" element={<Sitemap />} />
                         <Route path="/match/:matchId/overlay" element={<MatchOverlay />} />
-                        
-                        {/* Private Dashboard Area */}
+
+                        {/* Authenticated Private Area */}
                         {!slug && (
                             <>
                                 <Route path="/" element={<Dashboard />} />
@@ -131,11 +129,12 @@ const MainContent = () => {
                             </>
                         )}
 
-                        {/* Public League Area (slug view) */}
+                        {/* Public League View (slug-based) */}
                         {slug && (
                             <>
                                 <Route path="/view/:slug" element={<Dashboard />} />
                                 <Route path="/view/:slug/teams" element={<Teams />} />
+                                <Route path="/view/:slug/teams/:teamId" element={<Teams />} />
                                 <Route path="/view/:slug/matches" element={<Matches />} />
                                 <Route path="/view/:slug/standings" element={<Standings />} />
                                 <Route path="/view/:slug/bracket" element={<Bracket />} />
@@ -154,5 +153,45 @@ const MainContent = () => {
     );
 };
 
+// ── Root App ───────────────────────────────────────────────────────────────────
+
+const App = () => {
+    const hasConfig =
+        !!import.meta.env.VITE_SUPABASE_URL &&
+        !!import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!hasConfig) {
+        return (
+            <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center p-6 text-center z-[9999]">
+                <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mb-6 border border-red-500/20 animate-pulse">
+                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h1 className="text-white font-outfit font-black text-3xl uppercase tracking-tighter mb-4">Configuração Necessária</h1>
+                <p className="text-slate-400 max-w-md mb-8 leading-relaxed">
+                    As variáveis do Supabase não foram detectadas.<br />
+                    Na Vercel, adicione <code className="text-red-400 bg-red-400/10 px-1 rounded">VITE_SUPABASE_URL</code> e <code className="text-red-400 bg-red-400/10 px-1 rounded">VITE_SUPABASE_ANON_KEY</code>.
+                </p>
+                <button onClick={() => window.location.reload()} className="bg-red-500 text-white px-10 py-4 rounded-2xl font-black uppercase text-xs tracking-widest">
+                    Tentar Novamente
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <BrowserRouter>
+            <AuthProvider>
+                <LeagueProvider>
+                    <Routes>
+                        <Route path="/view/:slug/*" element={<MainContent />} />
+                        <Route path="/*" element={<MainContent />} />
+                    </Routes>
+                </LeagueProvider>
+            </AuthProvider>
+        </BrowserRouter>
+    );
+};
 
 export default App;
