@@ -459,22 +459,40 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     // ── Load all leagues for user ──────────────────────────────
     useEffect(() => {
+        console.log('LeagueContext: Global useEffect triggered', { userId: user?.id, isPublicView, loading });
+        
         // Safety timeout for global loading
         const globalTimeout = setTimeout(() => {
-            if (loading) setLoading(false);
-        }, 5000);
+            setLoading(prev => {
+                if (prev) {
+                    console.warn('LeagueContext: Global loading safety timeout reached. Forcing false.');
+                    return false;
+                }
+                return prev;
+            });
+        }, 6000);
 
         if (!user) {
+            console.log('LeagueContext: No user session found');
             setLeagues([]);
             if (!isPublicView) {
                 setLeague(null);
                 setLoading(false);
                 clearTimeout(globalTimeout);
+            } else {
+                // If it IS public view, we don't clear loading here 
+                // because loadPublicLeague is responsible for it.
+                // But we still want a safety net in case it fails silently.
             }
             return;
         }
         
-        loadLeagues().finally(() => clearTimeout(globalTimeout));
+        loadLeagues().finally(() => {
+            console.log('LeagueContext: loadLeagues finished');
+            clearTimeout(globalTimeout);
+        });
+        
+        return () => clearTimeout(globalTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, isPublicView]);
 
@@ -620,50 +638,55 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const loadPublicLeague = useCallback(async (slugOrId: string) => {
         if (!slugOrId) return false;
-
-        const isDifferentLeague = !league || (league.id !== slugOrId && league.slug !== slugOrId);
-
-        // Clear stale data immediately if switching to a different league
-        if (isDifferentLeague) {
-            setRawTeams([]);
-            setRawMatches([]);
-            setBrackets([]);
-            setLoading(true);
-        }
-        setIsPublicView(true);
-
+        
+        const isDifferentLeague = !league || (league.slug !== slugOrId && league.id !== slugOrId);
+        
         try {
-            // Try slug first, then UUID
+            console.log('LeagueContext: loadPublicLeague starting', { slugOrId, isDifferentLeague });
+            if (isDifferentLeague) {
+                setRawTeams([]);
+                setRawMatches([]);
+                setBrackets([]);
+                setLoading(true);
+            }
+            
+            setIsPublicView(true);
+
+            // Fetch by slug
             let { data, error } = await supabase.from('leagues').select(`
                 *,
                 follower_count:followed_leagues(count)
-            `).eq('slug', slugOrId).single();
+            `).eq('slug', slugOrId).maybeSingle();
 
+            // If not found by slug, maybe it was an ID (UUID)
             if ((!data || error) && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId)) {
                 const { data: idData } = await supabase.from('leagues').select(`
                     *,
                     follower_count:followed_leagues(count)
-                `).eq('id', slugOrId).single();
+                `).eq('id', slugOrId).maybeSingle();
                 data = idData;
             }
 
             if (data) {
                 const lg: League = mapDBLeague(data);
+                console.log('LeagueContext: Public league found', lg.id);
                 setLeague(lg);
-                loadLeagueData(lg.id);
+                // Note: The [league?.id] useEffect will handle loadLeagueData
                 return true;
             } else {
+                console.warn('LeagueContext: Public league not found');
                 setLeague(null);
                 return false;
             }
         } catch (err) {
-            setLeague(null);
+            console.error('LeagueContext: Error in loadPublicLeague:', err);
             return false;
         } finally {
             setLoading(false);
+            console.log('LeagueContext: loadPublicLeague completed');
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [league?.id, league?.slug]);
 
     const loadUserInteractions = useCallback(async (leagueId: string) => {
         if (!user) { setUserInteractions([]); return; }
@@ -703,21 +726,36 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => { loadSupportCountsRef.current = loadSupportCounts; }, [loadSupportCounts]);
 
     const loadLeagueData = useCallback(async (leagueId: string, background = false) => {
-        if (!background) setDataLoading(true);
-
+        if (!leagueId) return;
+        
+        console.log(`LeagueContext: loadLeagueData starting${background ? ' (bg)' : ''}`, leagueId);
+        
         // Load interactions/counts in background without blocking main data
         loadUserInteractionsRef.current(leagueId);
         loadSupportCountsRef.current(leagueId);
 
+        let dataTimeout: any = null;
+        if (!background) {
+            setDataLoading(true);
+            dataTimeout = setTimeout(() => {
+                setDataLoading(prev => {
+                    if (prev) {
+                        console.warn('LeagueContext: dataLoading safety timeout reached for league:', leagueId);
+                        return false;
+                    }
+                    return prev;
+                });
+            }, 8000); // 8 seconds for deep data fetching
+        }
+
         try {
             const [teamsRes, matchesRes, bracketsRes, adsRes] = await Promise.all([
-                supabase.from('teams').select('*, players(*)').eq('league_id', leagueId).order('created_at'),
+                supabase.from('teams').select('*, players(*)').eq('league_id', leagueId).order('index', { ascending: true }),
                 supabase.from('matches')
                     .select('*, match_events(*)')
                     .eq('league_id', leagueId)
-                    .order('updated_at', { ascending: false })
-                    .order('created_at', { ascending: false })
-                    .limit(150),
+                    .order('match_date', { ascending: true })
+                    .limit(500),
                 supabase.from('brackets').select('*').eq('league_id', leagueId).order('match_order'),
                 supabase.from('ads').select('*').eq('league_id', leagueId).order('display_order', { ascending: true })
             ]);
@@ -733,11 +771,14 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 link_url: a.link_url, duration: a.duration, active: a.active,
                 display_order: a.display_order || 0, created_at: a.created_at
             })));
+            
+            console.log('LeagueContext: Data fetch successful');
         } catch (err) {
-            console.error('loadLeagueData error:', err);
+            console.error('LeagueContext: loadLeagueData error:', err);
         } finally {
-            // CRITICAL: Always reset loading state, even on error
+            if (dataTimeout) clearTimeout(dataTimeout);
             setDataLoading(false);
+            console.log('LeagueContext: loadLeagueData finished');
         }
     // Stable callback: no external deps that change on every render
     // eslint-disable-next-line react-hooks/exhaustive-deps
