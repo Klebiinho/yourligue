@@ -1,11 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye, Loader2 } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
-import { lazy, Suspense } from 'react';
-const VideoGenerator = lazy(() => import('../components/VideoGenerator').then(m => ({ default: m.VideoGenerator })));
 
 const MatchControl = () => {
     const { matchId } = useParams<{ matchId: string }>();
@@ -45,52 +43,6 @@ const MatchControl = () => {
     const [isEditingYtUrl, setIsEditingYtUrl] = useState(false);
     const [editingYtUrl, setEditingYtUrl] = useState(match?.youtubeLiveId || '');
 
-    const [highlightData, setHighlightData] = useState<{
-        player: Player;
-        team: Team;
-        sportType: string;
-        eventType: 'MVP' | 'Gol' | 'Ponto' | 'Assist' | 'Rebote' | 'Falta';
-        stats: { [key: string]: number };
-        description?: string;
-    } | null>(null);
-
-    const handleGenerateHighlight = (playerId: string, eventType: 'MVP' | 'Gol' | 'Ponto' | 'Assist' | 'Rebote' | 'Falta', e?: React.MouseEvent) => {
-        if (e) {
-            e.stopPropagation();
-            e.preventDefault();
-        }
-        const player = [...homeTeam!.players, ...awayTeam!.players].find(p => p.id === playerId);
-        if (!player) return;
-        
-        const team = homeTeam!.players.some(p => p.id === playerId) ? homeTeam : awayTeam;
-        if (!team) return;
-
-        const playerEvents = match!.events.filter(ev => ev.playerId === playerId);
-        const pt1 = playerEvents.filter(ev => ev.type === 'points_1').length;
-        const pt2 = playerEvents.filter(ev => ev.type === 'points_2').length;
-        const pt3 = playerEvents.filter(ev => ev.type === 'points_3').length;
-        const totalPoints = (pt1 * 1) + (pt2 * 2) + (pt3 * 3);
-
-        const stats: { [key: string]: number } = {};
-        
-        if (league?.sportType === 'basketball') {
-            stats['PTS'] = totalPoints;
-            stats['REB'] = playerEvents.filter(ev => ev.type === 'rebound').length;
-            stats['AST'] = playerEvents.filter(ev => ev.type === 'assist').length;
-        } else {
-            stats['Gols'] = playerEvents.filter(ev => ['goal', 'penalty_goal', 'penalty_shootout_goal'].includes(ev.type)).length;
-            stats['AST'] = playerEvents.filter(ev => ev.type === 'assist').length;
-        }
-
-        setHighlightData({
-            player,
-            team,
-            sportType: league?.sportType || 'football',
-            eventType,
-            stats,
-            description: '',
-        });
-    };
 
     const suggestedMVPId = useMemo(() => {
         if (!match || !homeTeam || !awayTeam) return null;
@@ -1104,22 +1056,11 @@ const MatchControl = () => {
                                                                     </div>
                                                                 )}
                                                                 
-                                                                {/* Highlight/MVP Video Button (Visible when finished) */}
-                                                                {match.status === 'finished' && (
+                                                                {match.status === 'finished' && !isPublicView && isAdmin && player.id === suggestedMVPId && (
                                                                     <div className="flex items-center gap-1.5 ml-2 relative">
-                                                                        {/* Suggestion text moved below buttons to avoid wrapping and keep single line */}
-                                                                        {!isPublicView && isAdmin && player.id === suggestedMVPId && (
-                                                                            <span className="absolute -bottom-3 right-0 text-[0.45rem] font-black text-warning uppercase whitespace-nowrap bg-[#1a140a] px-2 py-0.5 rounded-full border border-warning/10 shadow-sm pointer-events-none">
-                                                                                ✨ Sugestão de melhor da partida
-                                                                            </span>
-                                                                        )}
-                                                                        <button 
-                                                                            onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
-                                                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary/20 text-primary hover:bg-primary hover:text-white transition-all border border-primary/20 active:scale-95 shadow-lg shadow-primary/10"
-                                                                            title="Gerar Vídeo de Destaque"
-                                                                        >
-                                                                            <Crown size={14} />
-                                                                        </button>
+                                                                        <span className="absolute -bottom-3 right-0 text-[0.45rem] font-black text-warning uppercase whitespace-nowrap bg-[#1a140a] px-2 py-0.5 rounded-full border border-warning/10 shadow-sm pointer-events-none">
+                                                                            ✨ Sugestão de melhor da partida
+                                                                        </span>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1169,21 +1110,11 @@ const MatchControl = () => {
                                                             </button>
                                                         )}
 
-                                                        {match.status === 'finished' && (
+                                                        {match.status === 'finished' && !isPublicView && isAdmin && player.id === suggestedMVPId && (
                                                             <div className="flex items-center gap-1.5 flex-none relative">
-                                                                {!isPublicView && isAdmin && player.id === suggestedMVPId && (
-                                                                    <span className="absolute -bottom-3 right-0 text-[0.45rem] font-black text-warning uppercase whitespace-nowrap bg-[#1a140a] px-2 py-0.5 rounded-full border border-warning/10 shadow-sm">
-                                                                        ✨ Sugestão de melhor da partida
-                                                                    </span>
-                                                                )}
-                                                                {/* Old suggestion badge removed */}
-                                                                <button 
-                                                                    onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
-                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary/20 text-primary hover:bg-primary hover:text-white transition-all border border-primary/20 active:scale-95 shadow-lg shadow-primary/10"
-                                                                    title="Gerar Vídeo de Destaque"
-                                                                >
-                                                                    <Crown size={14} />
-                                                                </button>
+                                                                <span className="absolute -bottom-3 right-0 text-[0.45rem] font-black text-warning uppercase whitespace-nowrap bg-[#1a140a] px-2 py-0.5 rounded-full border border-warning/10 shadow-sm">
+                                                                    ✨ Sugestão de melhor da partida
+                                                                </span>
                                                             </div>
                                                         )}
                                                     </div>
@@ -1413,21 +1344,6 @@ const MatchControl = () => {
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                {['goal', 'penalty_goal', 'penalty_shootout_goal', 'assist', 'points_1', 'points_2', 'points_3', 'rebound', 'block', 'steal'].includes(event.type) && (
-                                                    <button 
-                                                        onClick={(e) => handleGenerateHighlight(
-                                                            event.playerId, 
-                                                            ['goal', 'penalty_goal', 'penalty_shootout_goal'].includes(event.type) ? 'Gol' :
-                                                            ['points_1', 'points_2', 'points_3'].includes(event.type) ? 'Ponto' :
-                                                            event.type === 'assist' ? 'Assist' : 'Rebote',
-                                                            e
-                                                        )}
-                                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary/20 text-primary hover:bg-primary hover:text-white transition-all border border-primary/20 active:scale-95 shadow-lg shadow-primary/10 flex-none"
-                                                        title="Gerar Vídeo / Imagem"
-                                                    >
-                                                        <Video size={14} />
-                                                    </button>
-                                                )}
                                                 {!isPublicView && isAdmin && (
                                                     <button onClick={() => removeEvent(matchId!, event.id)}
                                                         className="w-8 h-8 flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all sm:opacity-0 sm:group-hover:opacity-100 flex-none border border-danger/20">
@@ -1576,19 +1492,6 @@ const MatchControl = () => {
                 </div>
             )}
             
-            {/* Highlight Generator Overlay */}
-            {highlightData && (
-                <Suspense fallback={<div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>}>
-                    <VideoGenerator 
-                        player={highlightData.player}
-                        team={highlightData.team}
-                        sportType={highlightData.sportType}
-                        eventType={highlightData.eventType}
-                        stats={highlightData.stats}
-                        onClose={() => setHighlightData(null)}
-                    />
-                </Suspense>
-            )}
         </div>
     );
 };

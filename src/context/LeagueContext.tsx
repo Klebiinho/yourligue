@@ -650,15 +650,15 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const loadPublicLeague = useCallback(async (slugOrId: string) => {
         if (!slugOrId) return false;
         
-        const isDifferentLeague = !league || (league.slug !== slugOrId && league.id !== slugOrId);
-        
         try {
-            if (isDifferentLeague) {
+            if (!league || (league.slug !== slugOrId && league.id !== slugOrId)) {
+                console.log('LeagueContext: Resetting data for new public league');
                 setLoading(true);
-                // Group resets to avoid multiple rapid re-renders
                 setRawTeams([]);
                 setRawMatches([]);
                 setBrackets([]);
+                setUserInteractions([]);
+                setSupportCounts({});
             }
             
             setIsPublicView(true);
