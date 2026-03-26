@@ -209,23 +209,49 @@ const AppRouter = () => {
   );
 };
 
-const App = () => (
-  <BrowserRouter>
-    <AuthProvider>
-      <LeagueProvider>
-        <Routes>
-          <Route path="/privacidade" element={<PrivacyPolicy />} />
-          <Route path="/termos" element={<TermsOfService />} />
-          <Route path="/sitemap" element={<Sitemap />} />
-          <Route path="/match/:matchId/overlay" element={<MatchOverlay />} />
-          <Route path="/view/:slug/*" element={<AppRouter />} />
-          <Route path="/*" element={<AppRouter />} />
-        </Routes>
-        <AuthModal />
-        <NotificationTray />
-      </LeagueProvider>
-    </AuthProvider>
-  </BrowserRouter>
-);
+const App = () => {
+  const hasConfig = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!hasConfig) {
+    return (
+      <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center p-6 text-center z-[9999]">
+        <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mb-6 border border-red-500/20 animate-pulse">
+          <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+        </div>
+        <h1 className="text-white font-outfit font-black text-3xl uppercase tracking-tighter mb-4">Configuração Necessária</h1>
+        <p className="text-slate-400 max-w-md mb-8 leading-relaxed font-medium">
+          As variáveis de ambiente do Supabase não foram detectadas.
+          <br/><br/>
+          Na Vercel, acesse <b>Settings &gt; Environment Variables</b> e adicione:<br/>
+          <code className="text-red-400 bg-red-400/10 px-2 py-0.5 rounded mt-2 block select-all">VITE_SUPABASE_URL</code>
+          <code className="text-red-400 bg-red-400/10 px-2 py-0.5 rounded mt-1 block select-all">VITE_SUPABASE_ANON_KEY</code>
+        </p>
+        <button onClick={() => window.location.reload()} className="bg-red-500 hover:brightness-110 text-white px-10 py-4 rounded-2xl font-black uppercase text-xs tracking-[0.2em] transition-all shadow-xl shadow-red-500/20">
+          Tentar Novamente
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <LeagueProvider>
+          <Routes>
+            <Route path="/privacidade" element={<PrivacyPolicy />} />
+            <Route path="/termos" element={<TermsOfService />} />
+            <Route path="/sitemap" element={<Sitemap />} />
+            <Route path="/match/:matchId/overlay" element={<MatchOverlay />} />
+            <Route path="/view/:slug/*" element={<AppRouter />} />
+            <Route path="/*" element={<AppRouter />} />
+          </Routes>
+          <AuthModal />
+          <NotificationTray />
+        </LeagueProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+};
 
 export default App;
+

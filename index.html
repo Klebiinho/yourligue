@@ -10,6 +10,20 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      window.onerror = function(msg, url, line, col, error) {
+        var root = document.getElementById('root');
+        if (root && root.innerHTML === '') {
+          root.innerHTML = '<div style="background:#111;color:#f44;padding:40px;font-family:sans-serif;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">' +
+            '<h1 style="font-size:32px;margin-bottom:10px;">JavaScript Error Detected</h1>' +
+            '<p style="color:#888;max-width:400px;margin-bottom:20px;">The application crashed before it could start. Please check the logs below.</p>' +
+            '<pre style="background:#000;padding:20px;border-radius:10px;text-align:left;font-size:12px;overflow:auto;max-width:90vw;">' + 
+            msg + '\n' + url + ' L:' + line + '</pre>' +
+            '<button onclick="location.reload()" style="margin-top:20px;padding:12px 24px;background:#f44;color:white;border:none;border-radius:12px;font-weight:bold;cursor:pointer;">Tentar Novamente</button>' +
+            '</div>';
+        }
+      };
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
