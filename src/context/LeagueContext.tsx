@@ -695,7 +695,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             console.log('LeagueContext: loadPublicLeague completed');
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [league?.id, league?.slug]);
+    }, []);
 
     const loadUserInteractions = useCallback(async (leagueId: string) => {
         if (!user) { setUserInteractions([]); return; }

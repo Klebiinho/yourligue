@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LeagueProvider, useLeague } from './context/LeagueContext';
 
@@ -52,21 +52,24 @@ import { useEffect, useState } from 'react';
 const MainContent = () => {
     // 1. ALL hooks declared first — no exceptions
     const { user, loading: authLoading } = useAuth();
-    const { league, leagues, loading: leagueLoading, loadPublicLeague } = useLeague();
-    const { slug } = useParams<{ slug: string }>();
+    const { league, leagues, loadPublicLeague } = useLeague();
     const navigate = useNavigate();
     const location = useLocation();
     const [notFound, setNotFound] = useState(false);
 
+    // Reliable slug extraction since MainContent is outside the Routes definitions
+    const pathParts = location.pathname.split('/');
+    const slugFromUrl = location.pathname.startsWith('/view/') ? pathParts[2] : undefined;
+
     // 2. Effects — always run, no conditions around the hook itself
     useEffect(() => {
-        if (slug) {
+        if (slugFromUrl) {
             setNotFound(false);
-            loadPublicLeague(slug).then(success => {
+            loadPublicLeague(slugFromUrl).then(success => {
                 if (!success) setNotFound(true);
             });
         }
-    }, [slug, loadPublicLeague]);
+    }, [slugFromUrl, loadPublicLeague]);
 
     useEffect(() => {
         if (user && window.location.hash.includes('access_token=')) {
@@ -75,21 +78,21 @@ const MainContent = () => {
     }, [user, location]);
 
     // 3. ONLY NOW can we do early returns (all hooks above are guaranteed to run)
-    if (authLoading || (leagueLoading && !!slug && !notFound)) {
+    if (authLoading) {
         return <LoadingScreen />;
     }
 
-    if (slug && notFound) {
+    if (slugFromUrl && notFound) {
         return <NotFoundScreen message="Esta liga não existe ou o link está incorreto." onRetry={() => navigate('/', { replace: true })} />;
     }
 
-    if (slug && !league) {
+    if (slugFromUrl && !league) {
         return <LoadingScreen />;
     }
 
     const isPublicPage = ['/privacidade', '/termos', '/sitemap'].includes(location.pathname);
 
-    if (!user && !slug && !isPublicPage) {
+    if (!user && !slugFromUrl && !isPublicPage) {
         return <AuthPage />;
     }
 
@@ -103,7 +106,7 @@ const MainContent = () => {
     return (
         <div className="min-h-screen bg-[#07070a] text-white font-inter">
             {!isOverlayPage && <Sidebar />}
-            <main className={slug || isPublicPage || isOverlayPage ? 'w-full min-h-screen' : 'md:pl-64 min-h-screen'}>
+            <main className={slugFromUrl || isPublicPage || isOverlayPage ? 'w-full min-h-screen' : 'md:pl-64 min-h-screen'}>
                 <div className="p-4 md:p-8 lg:p-10 pb-24 md:pb-10 max-w-[1600px] mx-auto w-full">
                     <Suspense fallback={<LoadingScreen />}>
                         <Routes>
@@ -114,7 +117,8 @@ const MainContent = () => {
                             <Route path="/match/:matchId/overlay" element={<MatchOverlay />} />
 
                             {/* Authenticated Private Area */}
-                            {!slug && (
+                            {/* Authenticated Private Area */}
+                            {!slugFromUrl && (
                                 <>
                                     <Route path="/" element={<Dashboard />} />
                                     <Route path="/leagues" element={<LeagueSelector />} />
@@ -130,7 +134,7 @@ const MainContent = () => {
                             )}
 
                             {/* Public League View (slug-based) */}
-                            {slug && (
+                            {slugFromUrl && (
                                 <>
                                     <Route path="/view/:slug" element={<Dashboard />} />
                                     <Route path="/view/:slug/teams" element={<Teams />} />
