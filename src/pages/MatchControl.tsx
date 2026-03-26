@@ -4,6 +4,7 @@ import { useLeague, type MatchEvent, type Player, type Match, type Team } from '
 import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
+import { VideoGenerator } from '../components/VideoGenerator';
 
 const MatchControl = () => {
     const { matchId } = useParams<{ matchId: string }>();
@@ -42,6 +43,12 @@ const MatchControl = () => {
     const [finishedMatchVideoUrl, setFinishedMatchVideoUrl] = useState(match?.youtubeLiveId || '');
     const [isEditingYtUrl, setIsEditingYtUrl] = useState(false);
     const [editingYtUrl, setEditingYtUrl] = useState(match?.youtubeLiveId || '');
+    const [highlightData, setHighlightData] = useState<{
+        playerId: string;
+        teamId: string;
+        type: 'MVP' | 'Gol' | 'Ponto' | 'Assist' | 'Rebote' | 'Falta';
+        isModalOpen: boolean;
+    } | null>(null);
 
 
     const suggestedMVPId = useMemo(() => {
@@ -68,6 +75,21 @@ const MatchControl = () => {
         const sorted = Object.entries(playerScores).sort((a, b) => b[1] - a[1]);
         return sorted.length > 0 ? sorted[0][0] : null;
     }, [match?.id, match?.events, league?.sportType, homeTeam?.id, awayTeam?.id]);
+
+    const handleGenerateHighlight = (playerId: string, type: any, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        const player = [...(homeTeam?.players || []), ...(awayTeam?.players || [])].find(p => p.id === playerId);
+        const teamId = (homeTeam?.players.some(p => p.id === playerId) ? homeTeam?.id : awayTeam?.id) || '';
+        
+        if (player) {
+            setHighlightData({
+                playerId: player.id,
+                teamId,
+                type,
+                isModalOpen: true
+            });
+        }
+    };
 
     useEffect(() => {
         if (currentYtLiveStream) {
@@ -1056,11 +1078,27 @@ const MatchControl = () => {
                                                                     </div>
                                                                 )}
                                                                 
-                                                                {match.status === 'finished' && !isPublicView && isAdmin && player.id === suggestedMVPId && (
+                                                                {match.status === 'finished' && !isPublicView && isAdmin && (
                                                                     <div className="flex items-center gap-1.5 ml-2 relative">
-                                                                        <span className="absolute -bottom-3 right-0 text-[0.45rem] font-black text-warning uppercase whitespace-nowrap bg-[#1a140a] px-2 py-0.5 rounded-full border border-warning/10 shadow-sm pointer-events-none">
-                                                                            ✨ Sugestão de melhor da partida
-                                                                        </span>
+                                                                        <button 
+                                                                            onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
+                                                                            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all shadow-lg active:scale-95 border-2 ${player.id === suggestedMVPId ? 'bg-warning border-warning/30 text-black shadow-warning/30' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-warning/20 hover:text-warning hover:border-warning/30'}`}
+                                                                            title="Gerar Card de Melhor da Partida"
+                                                                        >
+                                                                            <Crown size={16} fill={player.id === suggestedMVPId ? "currentColor" : "none"} strokeWidth={3} />
+                                                                        </button>
+                                                                        <button 
+                                                                            onClick={(e) => handleGenerateHighlight(player.id, 'Gol', e)}
+                                                                            className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/5 border-2 border-white/10 text-slate-500 hover:bg-accent/20 hover:text-accent hover:border-accent/30 transition-all shadow-lg active:scale-95"
+                                                                            title="Gerar Card de Destaque"
+                                                                        >
+                                                                            <Video size={16} strokeWidth={3} />
+                                                                        </button>
+                                                                        {player.id === suggestedMVPId && (
+                                                                            <span className="absolute -bottom-3 right-0 text-[0.45rem] font-black text-warning uppercase whitespace-nowrap bg-[#1a140a] px-2 py-0.5 rounded-full border border-warning/10 shadow-sm pointer-events-none animate-pulse">
+                                                                                ✨ Sugestão
+                                                                            </span>
+                                                                        )}
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1110,11 +1148,27 @@ const MatchControl = () => {
                                                             </button>
                                                         )}
 
-                                                        {match.status === 'finished' && !isPublicView && isAdmin && player.id === suggestedMVPId && (
+                                                        {match.status === 'finished' && !isPublicView && isAdmin && (
                                                             <div className="flex items-center gap-1.5 flex-none relative">
-                                                                <span className="absolute -bottom-3 right-0 text-[0.45rem] font-black text-warning uppercase whitespace-nowrap bg-[#1a140a] px-2 py-0.5 rounded-full border border-warning/10 shadow-sm">
-                                                                    ✨ Sugestão de melhor da partida
-                                                                </span>
+                                                                <button 
+                                                                    onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
+                                                                    className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all active:scale-95 border ${player.id === suggestedMVPId ? 'bg-warning border-warning/30 text-black shadow-lg shadow-warning/20' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-warning/20 hover:text-warning'}`}
+                                                                    title="Gerar Card de Melhor da Partida"
+                                                                >
+                                                                    <Crown size={14} fill={player.id === suggestedMVPId ? "currentColor" : "none"} />
+                                                                </button>
+                                                                <button 
+                                                                    onClick={(e) => handleGenerateHighlight(player.id, 'Gol', e)}
+                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-slate-500 hover:bg-accent/20 hover:text-accent transition-all active:scale-95"
+                                                                    title="Gerar Card de Destaque"
+                                                                >
+                                                                    <Video size={14} />
+                                                                </button>
+                                                                {player.id === suggestedMVPId && (
+                                                                    <span className="absolute -bottom-3 right-0 text-[0.45rem] font-black text-warning uppercase whitespace-nowrap bg-[#1a140a] px-2 py-0.5 rounded-full border border-warning/10 shadow-sm">
+                                                                        ✨ Sugestão
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>
@@ -1345,10 +1399,21 @@ const MatchControl = () => {
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 {!isPublicView && isAdmin && (
-                                                    <button onClick={() => removeEvent(matchId!, event.id)}
-                                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all sm:opacity-0 sm:group-hover:opacity-100 flex-none border border-danger/20">
-                                                        <XCircle size={14} />
-                                                    </button>
+                                                    <div className="flex items-center gap-1.5">
+                                                        {(event.type === 'goal' || event.type === 'penalty_goal' || event.type.startsWith('points_')) && (
+                                                            <button 
+                                                                onClick={(e) => handleGenerateHighlight(event.playerId!, event.type.startsWith('points_') ? 'Ponto' : 'Gol', e)}
+                                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-accent/10 text-accent hover:bg-accent hover:text-white transition-all border border-accent/20"
+                                                                title="Gerar Vídeo deste Momento"
+                                                            >
+                                                                <Video size={12} strokeWidth={3} />
+                                                            </button>
+                                                        )}
+                                                        <button onClick={() => removeEvent(matchId!, event.id)}
+                                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all sm:opacity-0 sm:group-hover:opacity-100 flex-none border border-danger/20">
+                                                            <XCircle size={14} />
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -1491,6 +1556,38 @@ const MatchControl = () => {
                     </div>
                 </div>
             )}
+
+            {highlightData && (() => {
+                const player = [...(homeTeam?.players || []), ...(awayTeam?.players || [])].find(p => p.id === highlightData.playerId);
+                const team = (homeTeam?.id === highlightData.teamId ? homeTeam : awayTeam);
+                if (!player || !team) return null;
+
+                // Calculate stats for MVP or highlight
+                const pEvents = match?.events.filter(e => e.playerId === player.id) || [];
+                const stats: Record<string, number> = {};
+                if (league?.sportType === 'basketball') {
+                    const pt1 = pEvents.filter(e => e.type === 'points_1').length;
+                    const pt2 = pEvents.filter(e => e.type === 'points_2').length;
+                    const pt3 = pEvents.filter(e => e.type === 'points_3').length;
+                    stats['Pontos'] = pt1 + (pt2 * 2) + (pt3 * 3);
+                    stats['Assists'] = pEvents.filter(e => e.type === 'assist').length;
+                    stats['Rebotes'] = pEvents.filter(e => e.type === 'rebound').length;
+                } else {
+                    stats['Gols'] = pEvents.filter(e => e.type === 'goal' || e.type === 'penalty_goal').length;
+                    stats['Assists'] = pEvents.filter(e => e.type === 'assist').length;
+                }
+
+                return (
+                    <VideoGenerator
+                        onClose={() => setHighlightData(null)}
+                        player={player}
+                        team={team}
+                        eventType={highlightData.type}
+                        sportType={league?.sportType || 'football'}
+                        stats={stats}
+                    />
+                );
+            })()}
             
         </div>
     );

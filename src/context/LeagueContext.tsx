@@ -484,17 +484,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }, 6000);
 
         if (!user) {
-            console.log('LeagueContext: No user session found');
+            console.log('LeagueContext: No user session found (waiting or logged out)');
             setLeagues([]);
-            if (!isPublicView) {
+            // Don't clear the league state immediately to avoid UI jumps during 
+            // initial auth mounting, except if we are SURE we aren't in a public view
+            if (!isPublicView && !localStorage.getItem('selectedLeagueId')) {
                 setLeague(null);
-                setLoading(false);
-                clearTimeout(globalTimeout);
-            } else {
-                // If it IS public view, we don't clear loading here 
-                // because loadPublicLeague is responsible for it.
-                // But we still want a safety net in case it fails silently.
             }
+            // If we don't have a user, we can't be loading non-public leagues
+            if (!isPublicView) {
+                setLoading(false);
+            }
+            clearTimeout(globalTimeout);
             return;
         }
         
@@ -737,12 +738,14 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const loadLeagueData = useCallback(async (leagueId: string, background = false) => {
         if (!leagueId) return;
         
-        // Load interactions/counts in background without blocking main data
         loadUserInteractionsRef.current(leagueId);
         loadSupportCountsRef.current(leagueId);
 
+        // SILENT REFRESH: If we already have data, don't show the full-screen loader
+        const hasAnyData = rawTeams.length > 0 || rawMatches.length > 0;
+        
         let dataTimeout: any = null;
-        if (!background) {
+        if (!background && !hasAnyData) {
             setDataLoading(true);
             dataTimeout = setTimeout(() => {
                 setDataLoading(prev => {
@@ -752,17 +755,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     }
                     return prev;
                 });
-            }, 8000); // 8 seconds for deep data fetching
+            }, 8000); 
         }
 
         try {
             const [teamsRes, matchesRes, bracketsRes, adsRes] = await Promise.all([
                 supabase.from('teams').select('*, players(*)').eq('league_id', leagueId).order('index', { ascending: true }),
+                // Optimize: Limit matches and events to improve load speed
                 supabase.from('matches')
                     .select('*, match_events(*)')
                     .eq('league_id', leagueId)
                     .order('match_date', { ascending: true })
-                    .limit(500),
+                    .limit(200),
                 supabase.from('brackets').select('*').eq('league_id', leagueId).order('match_order'),
                 supabase.from('ads').select('*').eq('league_id', leagueId).order('display_order', { ascending: true })
             ]);
@@ -787,9 +791,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             setDataLoading(false);
             console.log('LeagueContext: loadLeagueData finished');
         }
-    // Stable callback: no external deps that change on every render
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [rawTeams.length, rawMatches.length]);
 
     useEffect(() => {
         if (!league) {
