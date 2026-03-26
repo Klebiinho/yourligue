@@ -395,9 +395,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         });
     }, [rawTeams, rawMatches, league?.pointsForWin, league?.pointsForDraw, league?.pointsForLoss]);
     
-    // Transparent alias for external usage
-    const matches = rawMatches;
-    
     // ── YouTube Integration ─────────────────────────────────────
     const ytService = YouTubeService.getInstance();
     const [ytToken, setYtToken] = useState<string | null>(localStorage.getItem('yt_access_token'));
