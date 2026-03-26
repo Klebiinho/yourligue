@@ -395,6 +395,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         });
     }, [rawTeams, rawMatches, league?.pointsForWin, league?.pointsForDraw, league?.pointsForLoss]);
     
+    // Transparent alias for external usage
+    const matches = rawMatches;
+    
     // ── YouTube Integration ─────────────────────────────────────
     const ytService = YouTubeService.getInstance();
     const [ytToken, setYtToken] = useState<string | null>(localStorage.getItem('yt_access_token'));
@@ -479,11 +482,14 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     }, [user?.id, isPublicView]);
 
     const loadLeagues = async () => {
-        if (!user) return;
-        // SILENT REFRESH: Only show active loading if we don't have leagues yet
-        if (leagues.length === 0) setLoading(true);
-
         try {
+            if (!user) {
+                setLoading(false);
+                return;
+            }
+            // SILENT REFRESH: Only show active loading if we don't have leagues yet
+            if (leagues.length === 0) setLoading(true);
+
             // Load owned & followed leagues in parallel
             const [ownedRes, followsRes] = await Promise.all([
                 supabase.from('leagues').select('*, follower_count:followed_leagues(count)').eq('user_id', user.id).order('created_at', { ascending: true }),
