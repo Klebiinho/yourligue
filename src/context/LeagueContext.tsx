@@ -315,8 +315,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         };
         const playerStatsMap = new Map<string, PlayerAcc>();
 
-        rawMatches.forEach(m => m.events.forEach(e => {
-            if (!e.playerId) return;
+        rawMatches.forEach(m => (m.events || []).forEach(e => {
+            if (!e || !e.playerId) return;
             if (!playerStatsMap.has(e.playerId)) {
                 playerStatsMap.set(e.playerId, { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0 });
             }
@@ -342,6 +342,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         const pwLoss = league?.pointsForLoss ?? 0;
         
         return rawTeams.map(t => {
+            if (!t) return null as any;
             const teamMatches = rawMatches.filter(
                 m => (m.status === 'finished' || m.status === 'live') && (m.homeTeamId === t.id || m.awayTeamId === t.id)
             );
@@ -349,22 +350,31 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             let wins = 0, draws = 0, losses = 0, goalsFor = 0, goalsAgainst = 0;
             const form: ('W' | 'D' | 'L')[] = [];
 
+            // Sort matches for accurate form calculation
             const sortedTeamMatches = [...teamMatches].sort((a, b) => 
                 new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
             );
 
             teamMatches.forEach(m => {
+                if (!m) return;
                 const isHome = m.homeTeamId === t.id;
-                const gf = isHome ? m.homeScore : m.awayScore;
-                const ga = isHome ? m.awayScore : m.homeScore;
+                const gf = (isHome ? m.homeScore : m.awayScore) || 0;
+                const ga = (isHome ? m.awayScore : m.homeScore) || 0;
                 goalsFor += gf; goalsAgainst += ga;
-                if (gf > ga) wins++; else if (gf === ga) draws++; else losses++;
+                
+                if (m.status === 'finished') {
+                    if (gf > ga) wins++;
+                    else if (gf < ga) losses++;
+                    else draws++;
+                }
             });
 
+            // Calculate form from last 5 games
             sortedTeamMatches.slice(0, 5).forEach(m => {
+                if (m.status !== 'finished') return;
                 const isHome = m.homeTeamId === t.id;
-                const gf = isHome ? m.homeScore : m.awayScore;
-                const ga = isHome ? m.awayScore : m.homeScore;
+                const gf = (isHome ? m.homeScore : m.awayScore) || 0;
+                const ga = (isHome ? m.awayScore : m.homeScore) || 0;
                 if (gf > ga) form.push('W');
                 else if (gf === ga) form.push('D');
                 else form.push('L');
@@ -374,7 +384,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
             return {
                 ...t,
-                players: t.players.map(p => {
+                players: (t.players || []).map(p => {
                     const s = playerStatsMap.get(p.id) || { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0 };
                     return {
                         ...p,
@@ -384,16 +394,17 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                             ownGoals: s.ownGoals,
                             yellowCards: s.yellowCards,
                             redCards: s.redCards,
-                            points: s.points1 * 1 + s.points2 * 2 + s.points3 * 3,
-                            points1: s.points1, points2: s.points2, points3: s.points3,
-                            rebounds: s.rebounds, blocks: s.blocks, steals: s.steals, fouls: s.fouls
+                            points: (s.points1 || 0) * 1 + (s.points2 || 0) * 2 + (s.points3 || 0) * 3,
+                            points1: s.points1 || 0, points2: s.points2 || 0, points3: s.points3 || 0,
+                            rebounds: s.rebounds || 0, blocks: s.blocks || 0, steals: s.steals || 0, fouls: s.fouls || 0
                         }
                     };
                 }),
-                stats: { matches: teamMatches.length, wins, draws, losses, goalsFor, goalsAgainst, points, form: form.reverse() }
+                stats: { matches: teamMatches.filter(m => m.status === 'finished').length, wins, draws, losses, goalsFor, goalsAgainst, points, form: form.reverse() }
             };
         });
     }, [rawTeams, rawMatches, league?.pointsForWin, league?.pointsForDraw, league?.pointsForLoss]);
+
     
     // ── YouTube Integration ─────────────────────────────────────
     const ytService = YouTubeService.getInstance();

@@ -2,24 +2,24 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LeagueProvider, useLeague } from './context/LeagueContext';
-import AuthPage from './pages/AuthPage.tsx';
-import LeagueSelector from './pages/LeagueSelector.tsx';
+import AuthPage from './pages/AuthPage';
+import LeagueSelector from './pages/LeagueSelector';
 import Sidebar from './components/Sidebar';
-import Dashboard from './pages/Dashboard.tsx';
-import Teams from './pages/Teams.tsx';
-import TeamsDashboard from './pages/TeamsDashboard.tsx';
-import Matches from './pages/Matches.tsx';
-import Standings from './pages/Standings.tsx';
-import Bracket from './pages/Bracket.tsx';
-import Settings from './pages/Settings.tsx';
-import MatchControl from './pages/MatchControl.tsx';
-import LiveMatches from './pages/LiveMatches.tsx';
-import AuthModal from './components/AuthModal.tsx';
-import NotificationTray from './components/NotificationTray.tsx';
-import PrivacyPolicy from './pages/PrivacyPolicy.tsx';
-import TermsOfService from './pages/TermsOfService.tsx';
-import MatchOverlay from './pages/MatchOverlay.tsx';
-import Sitemap from './pages/Sitemap.tsx';
+import Dashboard from './pages/Dashboard';
+import Teams from './pages/Teams';
+import TeamsDashboard from './pages/TeamsDashboard';
+import Matches from './pages/Matches';
+import Standings from './pages/Standings';
+import Bracket from './pages/Bracket';
+import Settings from './pages/Settings';
+import MatchControl from './pages/MatchControl';
+import LiveMatches from './pages/LiveMatches';
+import AuthModal from './components/AuthModal';
+import NotificationTray from './components/NotificationTray';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import MatchOverlay from './pages/MatchOverlay';
+import Sitemap from './pages/Sitemap';
 
 
 const LoadingScreen = () => (
@@ -132,6 +132,27 @@ const AppRouter = () => {
   }, [user, loading, navigate]);
 
 
+
+  const hasConfig = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!hasConfig) {
+    return (
+      <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center p-6 text-center z-[9999]">
+        <div className="w-20 h-20 bg-danger/10 text-danger rounded-3xl flex items-center justify-center mb-6 border border-danger/20 animate-pulse">
+          <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+        </div>
+        <h1 className="text-white font-outfit font-black text-3xl uppercase tracking-tighter mb-4">Erro de Configuração</h1>
+        <p className="text-slate-400 max-w-md mb-8 leading-relaxed font-medium">
+          As chaves de acesso ao banco de dados (Supabase) não foram encontradas. 
+          <br/><br/>
+          Se você está na <b>Vercel</b>, certifique-se de adicionar <b>VITE_SUPABASE_URL</b> e <b>VITE_SUPABASE_ANON_KEY</b> nas Variáveis de Ambiente do projeto.
+        </p>
+        <button onClick={() => window.location.reload()} className="bg-primary hover:brightness-110 text-white px-10 py-4 rounded-2xl font-black uppercase text-xs tracking-[0.2em] transition-all shadow-xl shadow-primary/20">
+          Tentar Novamente
+        </button>
+      </div>
+    );
+  }
 
   if (loading || (leagueLoading && !notFound)) return <LoadingScreen />;
 
