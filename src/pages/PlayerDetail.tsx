@@ -105,11 +105,11 @@ const PlayerDetail = () => {
             {/* Profile Header Card */}
             <div className="relative mb-10">
                 {/* Background Decor */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 rounded-[2.5rem] -rotate-1 scale-[1.02] opacity-50" />
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 rounded-[2.5rem] -rotate-1 scale-[1.02] opacity-50 pointer-events-none" />
                 
                 <div className="relative glass-panel p-8 sm:p-12 overflow-hidden">
                     {/* Big Team Logo Background */}
-                    <div className="absolute -right-10 -bottom-10 opacity-[0.03] rotate-12">
+                    <div className="absolute -right-10 -bottom-10 opacity-[0.03] rotate-12 pointer-events-none">
                         <TeamLogo src={team.logo} size={300} />
                     </div>
 
