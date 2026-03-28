@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
 import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye, User } from 'lucide-react';
@@ -126,9 +126,10 @@ const MatchControl = () => {
     }, [penaltyPickers, mId]);
 
     useEffect(() => {
-        if (!mId) return;
-        if (confirmedPenaltyShooters.home.length || confirmedPenaltyShooters.away.length) {
-            localStorage.setItem(`yl_shooters_${mId}`, JSON.stringify(confirmedPenaltyShooters));
+        if (mId) {
+            if (confirmedPenaltyShooters.home.length || confirmedPenaltyShooters.away.length) {
+                localStorage.setItem(`yl_shooters_${mId}`, JSON.stringify(confirmedPenaltyShooters));
+            }
         }
     }, [confirmedPenaltyShooters, mId]);
 
@@ -136,19 +137,12 @@ const MatchControl = () => {
         if (match) {
             setHalfLength(match.halfLength || (league?.sportType === 'basketball' ? 10 : 45));
             setExtraTime(match.extraTime || 0);
-            setPeriod(match.period || (league?.sportType === 'basketball' ? '1º Quarto' : '1º Tempo'));
+            setPeriod(match.period || (league?.sportType === 'basketball' ? '1º Tempo' : '1º Tempo'));
         }
     }, [match?.id, match?.halfLength, match?.extraTime, match?.period]);
 
-    if (leagueLoading || (dataLoading && !match)) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                <p className="text-slate-500 font-black uppercase tracking-widest text-[0.6rem]">Acessando dados da partida...</p>
-            </div>
-        );
-    }
-
+    // ─── HOOKS MUST BE ABOVE ALL RETURNS (FIXING ERROR #310) ──────────
+    
     // Optimized player status lookup table to avoid O(N*M) filtering in render
     const playerStatusMap = useMemo(() => {
         const stats: Record<string, { isRedCarded: boolean, yellowCards: number, hasDirectRed: boolean }> = {};
@@ -169,7 +163,7 @@ const MatchControl = () => {
         return stats;
     }, [match?.events]);
 
-    const calculateShootoutWinner = () => {
+    const calculateShootoutWinner = useCallback(() => {
         if (!match || period !== 'Pênaltis') return null;
         const shootoutEvents = match.events.filter((e: MatchEvent) => e.type.startsWith('penalty_shootout_'));
         const homeEvents = shootoutEvents.filter(e => e.teamId === match.homeTeamId);
@@ -191,8 +185,20 @@ const MatchControl = () => {
             return homeGoals > awayGoals ? match.homeTeamId : match.awayTeamId;
         }
         return null;
-    };
-    const shootoutWinnerId = useMemo(() => calculateShootoutWinner(), [match?.events, period]);
+    }, [match, period]);
+
+    const shootoutWinnerId = useMemo(() => calculateShootoutWinner(), [calculateShootoutWinner]);
+
+    // ─── EARLY RETURNS (AFTER HOOKS) ──────────────────────────────────
+
+    if (leagueLoading || (dataLoading && !match)) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                <p className="text-slate-500 font-black uppercase tracking-widest text-[0.6rem]">Acessando dados da partida...</p>
+            </div>
+        );
+    }
 
     if (!match || !homeTeam || !awayTeam) {
         return (
