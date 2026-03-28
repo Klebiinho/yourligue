@@ -149,24 +149,6 @@ const MatchControl = () => {
         );
     }
 
-    if (!match || !homeTeam || !awayTeam) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
-                <div className="w-20 h-20 bg-danger/10 text-danger rounded-3xl flex items-center justify-center border border-danger/20">
-                    <AlertCircle size={40} />
-                </div>
-                <div className="space-y-1">
-                    <h2 className="text-xl font-black text-white uppercase font-outfit">Partida não encontrada</h2>
-                    <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">Os dados desta partida podem ter sido removidos ou o link está incorreto.</p>
-                </div>
-                <button onClick={() => navigate(-1)} className="bg-white/5 border border-white/10 text-white px-8 py-3 rounded-xl font-black uppercase text-xs hover:bg-white/10 transition-all">
-                    Voltar para Partidas
-                </button>
-            </div>
-        );
-    }
-
-
     // Optimized player status lookup table to avoid O(N*M) filtering in render
     const playerStatusMap = useMemo(() => {
         const stats: Record<string, { isRedCarded: boolean, yellowCards: number, hasDirectRed: boolean }> = {};
@@ -211,6 +193,25 @@ const MatchControl = () => {
         return null;
     };
     const shootoutWinnerId = useMemo(() => calculateShootoutWinner(), [match?.events, period]);
+
+    if (!match || !homeTeam || !awayTeam) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
+                <div className="w-20 h-20 bg-danger/10 text-danger rounded-3xl flex items-center justify-center border border-danger/20">
+                    <AlertCircle size={40} />
+                </div>
+                <div className="space-y-1">
+                    <h2 className="text-xl font-black text-white uppercase font-outfit">Partida não encontrada</h2>
+                    <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">Os dados desta partida podem ter sido removidos ou o link está incorreto.</p>
+                </div>
+                <button onClick={() => navigate(-1)} className="bg-white/5 border border-white/10 text-white px-8 py-3 rounded-xl font-black uppercase text-xs hover:bg-white/10 transition-all">
+                    Voltar para Partidas
+                </button>
+            </div>
+        );
+    }
+
+
 
     const getPlayerStatus = (playerId: string) => {
         return playerStatusMap[playerId] || { isRedCarded: false, yellowCards: 0, hasDirectRed: false };
