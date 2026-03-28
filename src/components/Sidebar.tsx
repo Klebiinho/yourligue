@@ -23,8 +23,8 @@ const Sidebar = () => {
     const location = useLocation();
     const [moreOpen, setMoreOpen] = useState(false);
 
-    // Hide all navigation when on the leagues hub page
-    const isOnLeaguesPage = location.pathname === '/leagues';
+    // Hide all navigation when on the leagues hub page OR the root path /
+    const isOnLeaguesPage = location.pathname === '/leagues' || location.pathname === '/';
     const showNavigation = !!league && !isOnLeaguesPage;
 
     // Prefix paths if in a league view, but exclude global paths

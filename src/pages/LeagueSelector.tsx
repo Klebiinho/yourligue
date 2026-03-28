@@ -6,7 +6,7 @@ import { Trophy, Plus, Trash2, LogOut, Edit2, Check, X, RefreshCw, User, Setting
 import TeamLogo from '../components/TeamLogo';
 
 const LeagueSelector = () => {
-    const { leagues, followedLeagues, league, createLeague, deleteLeague, selectLeague, updateLeague, loadLeagues, searchLeagues, followLeague, unfollowLeague, loadPublicLeague, fetchNearbyLeagues } = useLeague();
+    const { leagues, followedLeagues, league, createLeague, deleteLeague, selectLeague, updateLeague, loadLeagues, searchLeagues, followLeague, unfollowLeague, loadPublicLeague, fetchNearbyLeagues, setShowAuthModal } = useLeague();
     const { user, signOut } = useAuth();
     const [activeTab, setActiveTab] = useState<'owned' | 'following' | 'nearby' | 'explore'>(user ? 'owned' : 'explore');
     const [nearbyLeagues, setNearbyLeagues] = useState<any[]>([]);
@@ -156,7 +156,7 @@ const LeagueSelector = () => {
                                 <LogOut size={16} /> <span className="hidden sm:inline">Sair</span>
                             </button>
                         ) : (
-                            <button onClick={() => navigate('/auth')} className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-white transition-all active:scale-95 flex items-center gap-2 font-black text-[0.65rem] uppercase tracking-widest px-5">
+                            <button onClick={() => setShowAuthModal(true)} className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-white transition-all active:scale-95 flex items-center gap-2 font-black text-[0.65rem] uppercase tracking-widest px-5">
                                 <User size={16} /> <span className="hidden sm:inline">Fazer Login</span>
                             </button>
                         )}
@@ -438,7 +438,7 @@ const LeagueSelector = () => {
                         <h3 className="text-lg font-outfit font-black text-white uppercase tracking-widest">Quer criar sua própria liga?</h3>
                         <p className="text-slate-400 text-sm max-w-md mx-auto">Faça login para criar, gerenciar e acompanhar suas ligas favoritas.</p>
                         <button 
-                            onClick={() => navigate('/auth')}
+                            onClick={() => setShowAuthModal(true)}
                             className="px-10 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all"
                         >
                             Fazer Login / Cadastrar

@@ -117,7 +117,7 @@ const MainContent = () => {
                         <Route path="match/:matchId/overlay" element={<MatchOverlay />} />
 
                         {/* Shared routes using relative paths works for both / and /:slug */}
-                        <Route index element={(slug || (location.pathname === '/' && league)) ? <Dashboard /> : <LeagueSelector />} />
+                        <Route index element={(slug) ? <Dashboard /> : <LeagueSelector />} />
                         <Route path="home" element={<Dashboard />} />
                         <Route path="teams" element={<Teams />} />
                         <Route path="teams/:teamId" element={<Teams />} />
@@ -136,10 +136,10 @@ const MainContent = () => {
                         <Route path="match/:matchId/overlay" element={<MatchOverlay />} />
 
                         {/* Fallback */}
-                        <Route path="*" element={<Navigate to={slug ? `/${slug}/home` : "/leagues"} replace />} />
+                        <Route path="*" element={<Navigate to={slug ? `/${slug}/home` : "/"} replace />} />
                     </Routes>
                 </div>
-                {!isOverlayPage && !isLeaguesPage && <Footer />}
+                {!isOverlayPage && !isLeaguesPage && location.pathname !== '/' && <Footer />}
                 <AuthModal />
                 <NotificationTray />
             </main>
