@@ -11,7 +11,7 @@ const Dashboard = () => {
     const { 
         league, teams: rawTeams, matches: rawMatches, loading, dataLoading, isPublicView, isAdmin, leagueBasePath, 
         followedLeagues, followLeague, unfollowLeague, setShowAuthModal, userInteractions, 
-        interactWithTeam, loadPlayerPhotos, getMatchSlug, getTeamSlug 
+        interactWithTeam, loadPlayerPhotos, getMatchSlug, getTeamSlug, getPlayerSlug 
     } = useLeague();
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -405,22 +405,25 @@ const Dashboard = () => {
                                     </div>
                                 ) : (
                                     topScorers.map((player, i) => (
-                                        <div key={player.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-white/[0.05] transition-colors group">
+                                        <div key={player.id} 
+                                            onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/${getPlayerSlug(player)}/player`); }}
+                                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-white/[0.05] transition-colors group cursor-pointer"
+                                        >
                                             <span className={`w-5 h-5 flex items-center justify-center rounded-md font-black text-[0.55rem] font-outfit flex-none ${i === 0 ? 'bg-warning/20 text-warning' : 'text-slate-500'}`}>
                                                 {i + 1}
                                             </span>
-                                            <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden flex-none">
+                                            <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden flex-none pointer-events-none">
                                                 {player.photo ? (
                                                     <img src={player.photo} className="w-full h-full object-cover" alt={player.name} />
                                                 ) : (
                                                     <span className="font-black text-[0.6rem] text-slate-400">{player.number}</span>
                                                 )}
                                             </div>
-                                            <div className="flex-1 min-w-0 flex flex-col">
+                                            <div className="flex-1 min-w-0 flex flex-col pointer-events-none">
                                                 <span className="font-bold truncate text-[0.65rem] sm:text-xs text-white group-hover:text-warning transition-colors">{player.name}</span>
                                                 <span className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest truncate leading-tight">{player.team.name}</span>
                                             </div>
-                                            <div className="flex flex-col items-end flex-none min-w-[32px]">
+                                            <div className="flex flex-col items-end flex-none min-w-[32px] pointer-events-none">
                                                 <span className="font-black text-accent text-sm sm:text-base font-outfit leading-none">{isBasket ? (player.stats?.points || 0) : (player.stats?.goals || 0)}</span>
                                                 <span className="text-[0.45rem] text-slate-500 font-black uppercase">{isBasket ? 'Pts' : 'Gols'}</span>
                                             </div>
@@ -450,22 +453,24 @@ const Dashboard = () => {
                                     </div>
                                 ) : (
                                     topAssisters.map((player, i) => (
-                                        <div key={player.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-white/[0.05] transition-all group">
+                                        <div key={player.id} 
+                                            onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/${getPlayerSlug(player)}/player`); }}
+                                            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-white/[0.05] transition-all group cursor-pointer">
                                             <span className={`w-5 h-5 flex items-center justify-center rounded-md font-black text-[0.55rem] font-outfit flex-none ${i === 0 ? 'bg-primary/20 text-primary' : 'text-slate-500'}`}>
                                                 {i + 1}
                                             </span>
-                                            <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden flex-none">
+                                            <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden flex-none pointer-events-none">
                                                 {player.photo ? (
                                                     <img src={player.photo} className="w-full h-full object-cover" alt={player.name} />
                                                 ) : (
                                                     <span className="font-black text-[0.6rem] text-slate-400">{player.number}</span>
                                                 )}
                                             </div>
-                                            <div className="flex-1 min-w-0 flex flex-col">
+                                            <div className="flex-1 min-w-0 flex flex-col pointer-events-none">
                                                 <span className="font-bold truncate text-[0.65rem] sm:text-xs text-white group-hover:text-primary transition-colors">{player.name}</span>
                                                 <span className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest truncate leading-tight">{player.team.name}</span>
                                             </div>
-                                            <div className="flex flex-col items-end flex-none min-w-[32px]">
+                                            <div className="flex flex-col items-end flex-none min-w-[32px] pointer-events-none">
                                                 <span className="font-black text-primary text-sm sm:text-base font-outfit leading-none">{player.stats?.assists || 0}</span>
                                                 <span className="text-[0.45rem] text-slate-500 font-black uppercase">Assis.</span>
                                             </div>

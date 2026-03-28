@@ -248,7 +248,7 @@ const Bracket = () => {
                                     <div className="p-4 space-y-2">
                                         {groups[gn].map((t, idx) => (
                                             <div key={t.id} 
-                                                onClick={() => navigate(`${leagueBasePath}/teams/${t.id}`)}
+                                                onClick={() => navigate(`${leagueBasePath}/${getTeamSlug(t)}/team`)}
                                                 className="flex items-center gap-4 p-3.5 rounded-xl bg-white/3 border border-white/5 hover:bg-white/10 transition-all group cursor-pointer">
                                                 <div className="relative">
                                                     <TeamLogo src={t.logo} size={36} />

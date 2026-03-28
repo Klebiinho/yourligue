@@ -15,7 +15,12 @@ export type Player = {
     isReserve?: boolean;
     displayOrder?: number;
     slug?: string;
-    stats: { goals: number; assists: number; ownGoals: number; yellowCards: number; redCards: number; points?: number; points1?: number; points2?: number; points3?: number; rebounds?: number; blocks?: number; steals?: number; fouls?: number; };
+    stats: { 
+        goals: number; assists: number; ownGoals: number; yellowCards: number; redCards: number; 
+        points?: number; points1?: number; points2?: number; points3?: number; 
+        rebounds?: number; blocks?: number; steals?: number; fouls?: number;
+        mvp: number; matchesPlayed: number; cleanSheets: number; goalsConceded: number;
+    };
 };
 
 export type Team = {
@@ -56,6 +61,7 @@ export type Match = {
     location?: string;
     updatedAt?: string;
     slug?: string;
+    mvpPlayerId?: string;
 };
 
 export type BracketMatch = {
@@ -259,7 +265,11 @@ const mapDBPlayer = (p: any): Player => ({
     isCaptain: p.is_captain || false,
     isReserve: p.is_reserve || false,
     displayOrder: p.display_order || 0,
-    stats: { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0 }
+    stats: { 
+        goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, 
+        points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0,
+        mvp: 0, matchesPlayed: 0, cleanSheets: 0, goalsConceded: 0
+    }
 });
 
 const mapDBTeam = (t: any): Team => {
@@ -325,30 +335,43 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             goals: number; assists: number; ownGoals: number; yellowCards: number;
             redCards: number; points1: number; points2: number; points3: number;
             rebounds: number; blocks: number; steals: number; fouls: number;
+            mvp: number; matchesPlayed: number; cleanSheets: number; goalsConceded: number;
         };
         const playerStatsMap = new Map<string, PlayerAcc>();
 
-        rawMatches.forEach(m => (m.events || []).forEach(e => {
-            if (!e || !e.playerId) return;
-            if (!playerStatsMap.has(e.playerId)) {
-                playerStatsMap.set(e.playerId, { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0 });
+        rawMatches.forEach(m => {
+            const events = m.events || [];
+            
+            // Handle MVP
+            if (m.status === 'finished' && m.mvpPlayerId) {
+                if (!playerStatsMap.has(m.mvpPlayerId)) {
+                    playerStatsMap.set(m.mvpPlayerId, { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0, mvp: 0, matchesPlayed: 0, cleanSheets: 0, goalsConceded: 0 });
+                }
+                playerStatsMap.get(m.mvpPlayerId)!.mvp++;
             }
-            const s = playerStatsMap.get(e.playerId)!;
-            switch (e.type) {
-                case 'goal': case 'penalty_goal': s.goals++; break;
-                case 'assist': s.assists++; break;
-                case 'own_goal': s.ownGoals++; break;
-                case 'yellow_card': s.yellowCards++; s.fouls++; break;
-                case 'red_card': s.redCards++; s.fouls++; break;
-                case 'points_1': s.points1++; break;
-                case 'points_2': s.points2++; break;
-                case 'points_3': s.points3++; break;
-                case 'rebound': s.rebounds++; break;
-                case 'block': s.blocks++; break;
-                case 'steal': s.steals++; break;
-                case 'foul': s.fouls++; break;
-            }
-        }));
+
+            events.forEach(e => {
+                if (!e || !e.playerId) return;
+                if (!playerStatsMap.has(e.playerId)) {
+                    playerStatsMap.set(e.playerId, { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0, mvp: 0, matchesPlayed: 0, cleanSheets: 0, goalsConceded: 0 });
+                }
+                const s = playerStatsMap.get(e.playerId)!;
+                switch (e.type) {
+                    case 'goal': case 'penalty_goal': s.goals++; break;
+                    case 'assist': s.assists++; break;
+                    case 'own_goal': s.ownGoals++; break;
+                    case 'yellow_card': s.yellowCards++; s.fouls++; break;
+                    case 'red_card': s.redCards++; s.fouls++; break;
+                    case 'points_1': s.points1++; break;
+                    case 'points_2': s.points2++; break;
+                    case 'points_3': s.points3++; break;
+                    case 'rebound': s.rebounds++; break;
+                    case 'block': s.blocks++; break;
+                    case 'steal': s.steals++; break;
+                    case 'foul': s.fouls++; break;
+                }
+            });
+        });
 
         const pwWin = league?.pointsForWin ?? 3;
         const pwDraw = league?.pointsForDraw ?? 1;
@@ -399,7 +422,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             return {
                 ...t,
                 players: (t.players || []).map(p => {
-                    const s = playerStatsMap.get(p.id) || { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0 };
+                    const s = playerStatsMap.get(p.id) || { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0, mvp: 0, matchesPlayed: 0, cleanSheets: 0, goalsConceded: 0 };
                     return {
                         ...p,
                         stats: {
@@ -410,7 +433,20 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                             redCards: s.redCards,
                             points: (s.points1 || 0) * 1 + (s.points2 || 0) * 2 + (s.points3 || 0) * 3,
                             points1: s.points1 || 0, points2: s.points2 || 0, points3: s.points3 || 0,
-                            rebounds: s.rebounds || 0, blocks: s.blocks || 0, steals: s.steals || 0, fouls: s.fouls || 0
+                            rebounds: s.rebounds || 0, blocks: s.blocks || 0, steals: s.steals || 0, fouls: s.fouls || 0,
+                            mvp: s.mvp || 0,
+                            matchesPlayed: teamMatches.filter(m => m.status === 'finished').length, // Simplification: all rostered players get match counted if team plays
+                            cleanSheets: teamMatches.filter(m => {
+                                if (m.status !== 'finished') return false;
+                                const isHome = m.homeTeamId === t.id;
+                                const opponentScore = isHome ? m.awayScore : m.homeScore;
+                                return opponentScore === 0;
+                            }).length,
+                            goalsConceded: teamMatches.reduce((acc, m) => {
+                                if (m.status !== 'finished') return acc;
+                                const isHome = m.homeTeamId === t.id;
+                                return acc + (isHome ? m.awayScore : m.homeScore);
+                            }, 0)
                         }
                     };
                 }),

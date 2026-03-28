@@ -18,6 +18,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import MatchOverlay from './pages/MatchOverlay';
 import Sitemap from './pages/Sitemap';
+import PlayerDetail from './pages/PlayerDetail';
 
 // Components
 import Sidebar from './components/Sidebar';
@@ -124,6 +125,7 @@ const MainContent = () => {
                         <Route path="matches" element={<Matches />} />
                         <Route path="matches/:matchId" element={<MatchControl />} />
                         <Route path=":matchSlug/match" element={<MatchControl />} />
+                        <Route path=":playerSlug/player" element={<PlayerDetail />} />
                         <Route path="standings" element={<Standings />} />
                         <Route path="bracket" element={<Bracket />} />
                         <Route path="live" element={<LiveMatches />} />
@@ -137,7 +139,7 @@ const MainContent = () => {
                         <Route path="*" element={<Navigate to={slug ? `/${slug}/home` : "/leagues"} replace />} />
                     </Routes>
                 </div>
-                {!isOverlayPage && <Footer />}
+                {!isOverlayPage && !isLeaguesPage && <Footer />}
                 <AuthModal />
                 <NotificationTray />
             </main>

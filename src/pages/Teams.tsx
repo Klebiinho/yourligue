@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type Player } from '../context/LeagueContext';
 import { Shield, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, Star, PlusCircle, GripVertical, ArrowDownUp, Heart, Wind, Compass } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
@@ -9,9 +9,11 @@ const Teams = () => {
     const { 
         league, teams, addTeam, updateTeam, deleteTeam, addPlayer, removePlayer, updatePlayer, 
         toggleCaptain, reorderPlayers, isPublicView, isAdmin, interactWithTeam, 
-        userInteractions, supportCounts, loadTeamPhotos, getTeamSlug 
+        userInteractions, supportCounts, loadTeamPhotos, getTeamSlug, getPlayerSlug, leagueBasePath 
     } = useLeague();
-    const { teamId: teamIdParam, teamSlug } = useParams<{ teamId?: string; teamSlug?: string }>();
+    const { teamId: teamIdParam, teamSlug } = useParams<{ teamId?: string; teamSlug?: string; slug?: string }>();
+    const navigate = useNavigate();
+    const lSlug = useParams<{ slug?: string }>().slug || league?.slug || league?.id;
     
     // Resolve which team is active based on ID or slug
     const resolvedTeamId = useMemo(() => {
@@ -406,7 +408,10 @@ const Teams = () => {
                                 </p>
                             ) : (
                                 filteredTeams.map(team => (
-                                    <div key={team.id} onClick={() => setActiveTeamId(team.id)}
+                                    <div key={team.id} onClick={() => {
+                                        const tSlug = getTeamSlug(team);
+                                        navigate(`/${lSlug}/${tSlug}/team`);
+                                    }}
                                         className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 border relative group/team ${activeTeamId === team.id
                                             ? 'bg-primary/10 border-primary/25 shadow-sm'
                                             : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05]'
@@ -616,11 +621,14 @@ const Teams = () => {
                                                     </div>
 
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2 mb-0.5">
-                                                            <span className="w-7 h-7 flex items-center justify-center rounded-lg bg-black/30 font-black font-outfit text-white border border-white/5 text-[0.65rem] flex-none">
+                                                        <div 
+                                                            onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/${getPlayerSlug(player)}/player`); }}
+                                                            className="flex items-center gap-2 mb-0.5 cursor-pointer group/name"
+                                                        >
+                                                            <span className="w-7 h-7 flex items-center justify-center rounded-lg bg-black/30 font-black font-outfit text-white border border-white/5 text-[0.65rem] flex-none group-hover/name:bg-primary/20 group-hover/name:text-primary transition-all">
                                                                 {player.number}
                                                             </span>
-                                                            <h4 className="font-outfit font-black text-white uppercase text-xs sm:text-sm tracking-wide truncate">{player.name}</h4>
+                                                            <h4 className="font-outfit font-black text-white uppercase text-xs sm:text-sm tracking-wide truncate group-hover/name:text-primary transition-all">{player.name}</h4>
                                                         </div>
                                                         <div className="flex items-center gap-2">
                                                             <span className={`text-[0.55rem] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${player.isReserve ? 'text-warning bg-warning/10 border-warning/20' : 'text-accent bg-accent/10 border-accent/20'}`}>

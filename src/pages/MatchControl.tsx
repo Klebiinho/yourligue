@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye, User } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 import { VideoGenerator } from '../components/VideoGenerator';
@@ -49,15 +49,6 @@ const MatchControl = () => {
     const [showFinishModal, setShowFinishModal] = useState(false);
     const [finishedMatchVideoUrl, setFinishedMatchVideoUrl] = useState(match?.youtubeLiveId || '');
     const [isEditingYtUrl, setIsEditingYtUrl] = useState(false);
-    const [editingYtUrl, setEditingYtUrl] = useState(match?.youtubeLiveId || '');
-    const [highlightData, setHighlightData] = useState<{
-        playerId: string;
-        teamId: string;
-        type: 'MVP' | 'Gol' | 'Ponto' | 'Assist' | 'Rebote' | 'Falta';
-        isModalOpen: boolean;
-    } | null>(null);
-
-
     const suggestedMVPId = useMemo(() => {
         if (!match || !homeTeam || !awayTeam) return null;
         const playerScores: { [playerId: string]: number } = {};
@@ -82,6 +73,26 @@ const MatchControl = () => {
         const sorted = Object.entries(playerScores).sort((a, b) => b[1] - a[1]);
         return sorted.length > 0 ? sorted[0][0] : null;
     }, [match?.id, match?.events, league?.sportType, homeTeam?.id, awayTeam?.id]);
+
+    const [editingYtUrl, setEditingYtUrl] = useState(match?.youtubeLiveId || '');
+    const [selectedMVPId, setSelectedMVPId] = useState<string | undefined>(match?.mvpPlayerId || (suggestedMVPId || undefined));
+    
+    // Set suggested MVP as default if no MVP is selected yet
+    useEffect(() => {
+        if (!selectedMVPId && suggestedMVPId && showFinishModal) {
+            setSelectedMVPId(suggestedMVPId);
+        }
+    }, [suggestedMVPId, showFinishModal, selectedMVPId]);
+
+    const [highlightData, setHighlightData] = useState<{
+        playerId: string;
+        teamId: string;
+        type: 'MVP' | 'Gol' | 'Ponto' | 'Assist' | 'Rebote' | 'Falta';
+        isModalOpen: boolean;
+    } | null>(null);
+
+
+    // ... moved below to fix usage ...
 
     const handleGenerateHighlight = (playerId: string, type: any, e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
@@ -344,9 +355,13 @@ const MatchControl = () => {
         } catch { }
 
         await endMatch(mId, localSeconds);
-        if (videoId) {
-            await updateMatch(mId, { youtubeLiveId: videoId });
-        }
+        
+        const updates: Partial<Match> = {
+            youtubeLiveId: videoId || undefined,
+            mvpPlayerId: selectedMVPId
+        };
+        
+        await updateMatch(mId, updates);
         
         setShowFinishModal(false);
         navigate(`${leagueBasePath}/matches`);
@@ -1525,6 +1540,29 @@ const MatchControl = () => {
                                 <p className="text-[0.55rem] text-slate-600 font-bold uppercase tracking-tight italic">
                                     Deixe em branco se não houver vídeo. Se você transmitiu ao vivo pelo app, o link já deve estar acima.
                                 </p>
+                            </div>
+
+                            <div className="space-y-4 pt-4 border-t border-white/5">
+                                <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <Crown size={14} className="text-warning" /> Melhor da Partida (MVP)
+                                </label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[200px] overflow-y-auto pr-1 no-scrollbar">
+                                    {[...(homeTeam?.players || []), ...(awayTeam?.players || [])].sort((a,b) => a.name.localeCompare(b.name)).map(p => (
+                                        <button 
+                                            key={p.id}
+                                            onClick={() => setSelectedMVPId(p.id)}
+                                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${selectedMVPId === p.id ? 'bg-warning/20 border-warning shadow-[0_0_15px_rgba(251,191,36,0.2)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                                        >
+                                            <div className="w-8 h-8 rounded-full bg-black/40 overflow-hidden flex-none">
+                                                {p.photo ? <img src={p.photo} className="w-full h-full object-cover" /> : <User size={16} className="m-auto text-slate-700" />}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <span className={`text-[0.7rem] font-black uppercase truncate block ${selectedMVPId === p.id ? 'text-warning' : 'text-white'}`}>{p.name}</span>
+                                                <span className="text-[0.55rem] text-slate-500 font-bold uppercase tracking-widest">{p.id === suggestedMVPId ? '⭐ Sugestão do Sistema' : p.position}</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-3 pt-2">
