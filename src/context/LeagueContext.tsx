@@ -562,7 +562,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const isAdmin = !!user && !!league && league.userId === user.id;
 
-    const leagueBasePath = isPublicView && league ? `/view/${league.slug || league.id}` : '';
+    const leagueBasePath = league ? `/${league.slug || league.id}` : '';
 
     // ── Load all leagues for user ──────────────────────────────
     useEffect(() => {

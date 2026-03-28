@@ -56,7 +56,8 @@ const MainContent = () => {
     const [notFound, setNotFound] = useState(false);
 
     useEffect(() => {
-        if (slug) {
+        const fixedPaths = ['leagues', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sitemap'];
+        if (slug && !fixedPaths.includes(slug)) {
             setNotFound(false);
             loadPublicLeague(slug).then(success => {
                 if (!success) setNotFound(true);
@@ -109,6 +110,7 @@ const MainContent = () => {
 
                         {/* Shared routes using relative paths works for both / and /view/:slug */}
                         <Route index element={<Dashboard />} />
+                        <Route path="home" element={<Dashboard />} />
                         <Route path="leagues" element={<LeagueSelector />} />
                         <Route path="teams" element={<Teams />} />
                         <Route path="teams/:teamId" element={<Teams />} />
@@ -149,7 +151,9 @@ const App = () => {
             <AuthProvider>
                 <LeagueProvider>
                     <Routes>
-                        <Route path="/view/:slug/*" element={<MainContent />} />
+                        <Route path="/leagues/*" element={<MainContent />} />
+                        <Route path="/auth/*" element={<MainContent />} />
+                        <Route path="/:slug/*" element={<MainContent />} />
                         <Route path="/*" element={<MainContent />} />
                     </Routes>
                 </LeagueProvider>

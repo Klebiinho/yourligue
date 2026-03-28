@@ -57,7 +57,7 @@ const LeagueSelector = () => {
 
     const handleViewLeague = async (l: any) => {
         const success = await loadPublicLeague(l.slug || l.id);
-        if (success) navigate(`/view/${l.slug || l.id}`);
+        if (success) navigate(`/${l.slug || l.id}/home`);
     };
 
     const handleRequestLocation = async () => {
@@ -191,7 +191,7 @@ const LeagueSelector = () => {
                             leagues.map(l => (
                                 <LeagueItem
                                     key={l.id} league={l} currentLeagueId={league?.id}
-                                    onSelect={() => { if (editingId !== l.id) { selectLeague(l.id); navigate('/'); } }}
+                                    onSelect={() => { if (editingId !== l.id) { selectLeague(l.id); navigate(`/${l.slug || l.id}/home`); } }}
                                     isEditing={editingId === l.id}
                                     editName={editName}
                                     onEditNameChange={(val: string) => setEditName(val)}
@@ -357,7 +357,7 @@ const LeagueSelector = () => {
                                         sportType: newSport
                                     });
                                     if (!res.error) {
-                                        setNewName(''); setNewSport('soccer'); setShowCreate(false); navigate('/');
+                                        setNewName(''); setNewSport('soccer'); setShowCreate(false); navigate(`/${res.data.slug || res.data.id}/home`);
                                     }
                                 } catch (err) {
                                     console.error(err);
