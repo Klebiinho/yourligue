@@ -1065,98 +1065,98 @@ const MatchControl = () => {
                                             ) : (
                                                 onPitch.map((player: Player) => {
                                                     const { yellowCards, isRedCarded } = getPlayerStatus(player.id);
+                                                    const isGestor = !isPublicView && isAdmin;
+                                                    
                                                     return (
-                                                        <div key={player.id} className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-xl border transition-all duration-300 ${player.id === suggestedMVPId ? 'bg-warning/10 border-warning shadow-[0_0_20px_rgba(245,158,11,0.2)] scale-[1.02] z-10' : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05]'}`}>
+                                                        <div key={player.id} className={`flex ${isGestor ? 'flex-col gap-2.5 p-2.5' : 'flex-col sm:flex-row items-start sm:items-center gap-3 p-3'} rounded-xl border transition-all duration-300 ${player.id === suggestedMVPId ? 'bg-warning/10 border-warning shadow-[0_0_20px_rgba(245,158,11,0.2)] scale-[1.02] z-10' : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05]'}`}>
                                                             {/* User Info Section */}
-                                                            <div className="flex items-center gap-3 w-full sm:w-auto">
+                                                            <div className={`flex items-center gap-3 ${isGestor ? 'w-full' : 'w-full sm:w-auto'}`}>
                                                                 <div className="relative flex-none">
-                                                                    <TeamLogo src={player.photo} size={player.id === suggestedMVPId ? 44 : 36} />
-                                                                    {player.isCaptain && <Crown size={12} className="absolute -top-1 -right-1 text-warning fill-warning/20" />}
+                                                                    <TeamLogo src={player.photo} size={isGestor ? 32 : (player.id === suggestedMVPId ? 44 : 36)} />
+                                                                    {player.isCaptain && <Crown size={isGestor ? 10 : 12} className="absolute -top-1 -right-1 text-warning fill-warning/20" />}
                                                                     {player.id === suggestedMVPId && (
-                                                                        <div className="absolute -bottom-2 -left-2 bg-warning text-black text-[0.45rem] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-lg">Sugestão</div>
+                                                                        <div className="absolute -bottom-2 -left-2 bg-warning text-black text-[0.4rem] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-lg">MVP</div>
                                                                     )}
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
                                                                     <h4 
                                                                         onClick={() => navigate(`${leagueBasePath}/${getPlayerSlug(player)}/player`)}
-                                                                        className={`font-black uppercase leading-tight font-outfit truncate player-clickable ${player.id === suggestedMVPId ? 'text-warning text-sm' : 'text-white text-xs sm:text-sm'}`}
+                                                                        className={`font-black uppercase leading-tight font-outfit truncate player-clickable ${isGestor ? 'text-[0.65rem]' : (player.id === suggestedMVPId ? 'text-warning text-sm' : 'text-white text-xs sm:text-sm')}`}
                                                                     >
                                                                         #{player.number} {player.name}
                                                                     </h4>
                                                                     
-                                                                    {/* Event Badges (Minutes) */}
-                                                                    <div className="flex flex-wrap gap-1 mt-1.5 min-h-[16px]">
-                                                                        {match.events.filter(e => e.playerId === player.id).map(e => (
-                                                                            <div key={e.id} className="event-badge" title={`${e.minute}' - ${e.type}`}>
-                                                                                {e.type === 'goal' ? '⚽' : 
-                                                                                 e.type === 'yellow_card' ? '🟨' : 
-                                                                                 e.type === 'red_card' ? '🟥' : 
-                                                                                 e.type === 'assist' ? '🅰️' : 
-                                                                                 e.type.includes('points') ? '🏀' : ''} {e.minute}'
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                    <div className="flex items-center gap-1 mt-1 h-3.5">
+                                                                    <div className="flex items-center gap-1 mt-0.5 h-3.5">
                                                                         {Array.from({ length: yellowCards }).map((_, i) => (
-                                                                            <div key={i} className={`w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm ${isRedCarded ? 'opacity-40' : ''}`} />
+                                                                            <div key={i} className={`w-1.5 h-3 bg-warning rounded-[1px] border border-black/20 shadow-sm ${isRedCarded ? 'opacity-40' : ''}`} />
                                                                         ))}
                                                                         {isRedCarded && (
-                                                                            <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm ml-0.5" />
+                                                                            <div className="w-1.5 h-3 bg-danger rounded-[1px] border border-black/20 shadow-sm ml-0.5" />
                                                                         )}
+                                                                        
+                                                                        {/* Event Icons (Short) */}
+                                                                        <div className="flex gap-1 ml-2">
+                                                                            {match.events.filter(e => e.playerId === player.id).map(e => {
+                                                                                if (e.type === 'goal') return <span key={e.id} className="text-[0.6rem]">⚽</span>;
+                                                                                if (e.type === 'assist') return <span key={e.id} className="text-[0.6rem]">🅰️</span>;
+                                                                                if (e.type.includes('points')) return <span key={e.id} className="text-[0.6rem]">🏀</span>;
+                                                                                return null;
+                                                                            })}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
-
+                                                            
                                                             {/* Actions Section */}
-                                                            <div className="flex items-center justify-end gap-1 w-full sm:w-auto pt-2 sm:pt-0 border-t border-white/5 sm:border-0 overflow-x-auto no-scrollbar">
+                                                            <div className={`flex items-center gap-1 w-full ${isGestor ? 'justify-start pt-2 border-t border-white/5' : 'justify-end sm:w-auto pt-2 sm:pt-0 border-t border-white/5 sm:border-0'} overflow-x-auto no-scrollbar`}>
                                                                 {!isPublicView && isAdmin && (
                                                                     <div className="flex items-center gap-1 flex-none">
                                                                         {league?.sportType === 'basketball' ? (
                                                                             <>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 1)} 
-                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/10 text-accent font-black text-[0.6rem] hover:bg-accent hover:text-white transition-all">+1</button>
+                                                                                    className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/10 text-accent font-black text-[0.55rem] hover:bg-accent hover:text-white transition-all">+1</button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 2)} 
-                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/20 text-accent font-black text-[0.65rem] hover:bg-accent hover:text-white transition-all">+2</button>
+                                                                                    className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/20 text-accent font-black text-[0.6rem] hover:bg-accent hover:text-white transition-all">+2</button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 3)} 
-                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/30 text-accent font-black text-[0.7rem] hover:bg-accent hover:text-white transition-all">+3</button>
+                                                                                    className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/30 text-accent font-black text-[0.65rem] hover:bg-accent hover:text-white transition-all">+3</button>
                                                                                 <div className="w-px h-4 bg-white/10 mx-1 flex-none" />
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handleAssist(team.id, player.id)} 
-                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/10 text-warning font-black text-[0.55rem] hover:bg-warning hover:text-white transition-all">ASS</button>
+                                                                                    className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-warning/10 text-warning font-black text-[0.5rem] hover:bg-warning hover:text-white transition-all">ASS</button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handleStat(team.id, player.id, 'rebound')} 
-                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-orange-500/10 text-orange-400 font-black text-[0.55rem] hover:bg-orange-500 hover:text-white transition-all">REB</button>
+                                                                                    className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-orange-500/10 text-orange-400 font-black text-[0.5rem] hover:bg-orange-500 hover:text-white transition-all">REB</button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handleStat(team.id, player.id, 'foul')} 
-                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger font-black text-[0.55rem] hover:bg-danger hover:text-white transition-all">FAL</button>
+                                                                                    className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger font-black text-[0.5rem] hover:bg-danger hover:text-white transition-all">FAL</button>
                                                                             </>
                                                                         ) : (
                                                                             <>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleGol(team.id, player.id)} 
-                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Gol"><Target size={14} /></button>
+                                                                                    className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Gol"><Target size={12} /></button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleAssist(team.id, player.id)} 
-                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Assistência"><Award size={14} /></button>
+                                                                                    className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Assistência"><Award size={12} /></button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleGolContra(team.id, player.id)} 
-                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Gol Contra"><XCircle size={14} /></button>
+                                                                                    className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Gol Contra"><XCircle size={12} /></button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleCartao(team.id, player.id, 'yellow_card')} 
-                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning transition-all text-xs disabled:opacity-30" title="Amarelo">🟨</button>
+                                                                                    className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning transition-all text-[0.6rem] disabled:opacity-30" title="Amarelo">🟨</button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleCartao(team.id, player.id, 'red_card')} 
-                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger transition-all text-xs disabled:opacity-30" title="Vermelho">🟥</button>
+                                                                                    className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger transition-all text-[0.6rem] disabled:opacity-30" title="Vermelho">🟥</button>
                                                                             </>
                                                                         )}
                                                                         <button disabled={match.status !== 'live' && !period.includes('Intervalo') || isRedCarded} onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} 
-                                                                            className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Substituir"><ArrowLeftRight size={14} /></button>
+                                                                            className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Substituir"><ArrowLeftRight size={12} /></button>
                                                                     </div>
                                                                 )}
-
+                                                                
                                                                 {match.status === 'finished' && !isPublicView && isAdmin && (
                                                                     <div className="flex items-center gap-1.5 flex-none relative">
                                                                         <button onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
-                                                                            className={`w-9 h-9 flex-none flex items-center justify-center rounded-xl transition-all shadow-lg active:scale-95 border-2 ${player.id === suggestedMVPId ? 'bg-warning border-warning/30 text-black' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-warning/20 hover:text-warning'}`}
+                                                                            className={`w-8 h-8 flex-none flex items-center justify-center rounded-xl transition-all shadow-lg active:scale-95 border-2 ${player.id === suggestedMVPId ? 'bg-warning border-warning/30 text-black' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-warning/20 hover:text-warning'}`}
                                                                             title="Gerar Card de Melhor da Partida">
-                                                                            <Crown size={16} fill={player.id === suggestedMVPId ? "currentColor" : "none"} strokeWidth={3} />
+                                                                            <Crown size={14} fill={player.id === suggestedMVPId ? "currentColor" : "none"} strokeWidth={3} />
                                                                         </button>
                                                                         <button onClick={(e) => handleGenerateHighlight(player.id, 'Gol', e)}
-                                                                            className="w-9 h-9 flex-none flex items-center justify-center rounded-xl bg-white/5 border-2 border-white/10 text-slate-500 hover:bg-accent/20 hover:text-accent transition-all active:scale-95"
+                                                                            className="w-8 h-8 flex-none flex items-center justify-center rounded-xl bg-white/5 border-2 border-white/10 text-slate-500 hover:bg-accent/20 hover:text-accent transition-all active:scale-95"
                                                                             title="Gerar Card de Destaque">
-                                                                            <Video size={16} strokeWidth={3} />
+                                                                            <Video size={14} strokeWidth={3} />
                                                                         </button>
                                                                     </div>
                                                                 )}
