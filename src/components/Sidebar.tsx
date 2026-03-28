@@ -171,7 +171,7 @@ const Sidebar = () => {
             <aside className="hidden md:flex flex-col fixed top-0 left-0 h-screen w-64 bg-[#050508]/80 backdrop-blur-2xl border-r border-white/[0.05] z-40 shadow-2xl">
                 {/* League Header */}
                 <div
-                    onClick={() => navigate('/leagues')}
+                    onClick={() => navigate(getLink('/'))}
                     className="flex items-center gap-3.5 p-5 mb-2 cursor-pointer hover:bg-white/[0.03] transition-colors rounded-2xl m-3 border border-white/[0.03] group"
                 >
                     <div className="relative flex-none">
@@ -202,7 +202,7 @@ const Sidebar = () => {
                             <button
                                 onClick={() => {
                                     setIsPublicView(false);
-                                    navigate('/');
+                                    navigate(league ? `/view/${league.slug || league.id}` : '/');
                                 }}
                                 className="w-full flex items-center gap-3 px-4 py-3 bg-accent/20 text-accent border border-accent/30 rounded-xl hover:bg-accent/30 transition-all font-black text-xs uppercase tracking-widest shadow-lg shadow-accent/10 group"
                             >

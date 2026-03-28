@@ -41,7 +41,7 @@ const Matches = () => {
         } else {
             const { error: err, matchId } = await createMatch({ homeTeamId, awayTeamId, scheduledAt, location, youtubeLiveId: videoId });
             if (err) { setError(err); return; }
-            if (matchId) navigate(`/match/${matchId}`);
+            if (matchId) navigate(`${leagueBasePath}/match/${matchId}`);
         }
         resetForm();
         setFormOpen(false);

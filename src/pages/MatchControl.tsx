@@ -315,7 +315,7 @@ const MatchControl = () => {
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500 gap-4 opacity-75">
             <AlertCircle size={48} strokeWidth={1} />
             <p className="font-outfit font-black uppercase tracking-widest text-xs">Partida não encontrada</p>
-            <button onClick={() => navigate('/')} className="text-primary font-bold hover:underline">Voltar ao Início</button>
+            <button onClick={() => navigate(leagueBasePath || '/')} className="text-primary font-bold hover:underline">Voltar ao Início</button>
         </div>
     );
 
@@ -439,7 +439,7 @@ const MatchControl = () => {
         }
         
         setShowFinishModal(false);
-        navigate('/matches');
+        navigate(`${leagueBasePath}/matches`);
     };
 
     const handleGol = (teamId: string, playerId: string) => { 
@@ -709,7 +709,7 @@ const MatchControl = () => {
                 </div>
             )}
             {/* Back Button */}
-            <button onClick={() => navigate('/matches')} className="flex items-center gap-2 text-slate-500 hover:text-white text-xs font-black uppercase tracking-widest mb-6 transition-colors group">
+            <button onClick={() => navigate(`${leagueBasePath}/matches`)} className="flex items-center gap-2 text-slate-500 hover:text-white text-xs font-black uppercase tracking-widest mb-6 transition-colors group">
                 <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Voltar às Partidas
             </button>
 
