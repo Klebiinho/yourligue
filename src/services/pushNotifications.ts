@@ -75,6 +75,15 @@ async function registerWebPush(userId: string) {
         return;
     }
 
+    // Validação de Chaves: Se ainda são os placeholders, não tentamos registrar para evitar erro no console
+    const hasValidKey = VAPID_KEY && VAPID_KEY !== 'SUA_CHAVE_VAPID_AQUI';
+    const hasValidConfig = firebaseConfig.apiKey !== 'SUA_API_KEY_AQUI';
+
+    if (!hasValidKey || !hasValidConfig) {
+        console.info('Push Notifications: Firebase ou VAPID não configurados. Pulando registro web push.');
+        return;
+    }
+
     try {
         // Pede a notificação do Chrome/Safari
         const permission = await Notification.requestPermission();
@@ -113,7 +122,7 @@ async function registerWebPush(userId: string) {
              console.warn('O usuário negou o envio de Notificações via Navegador.');
         }
     } catch (err) {
-        console.error("Falha ao configurar Firebase Web Push", err);
+        console.warn("Push Notifications: Falha ao configurar Firebase Web Push (visto em ambientes sem HTTPS ou com chaves inválidas)", err);
     }
 }
 
