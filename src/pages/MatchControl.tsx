@@ -141,8 +141,8 @@ const MatchControl = () => {
         }
     }, [match?.id, match?.halfLength, match?.extraTime, match?.period]);
 
-    // ─── HOOKS MUST BE ABOVE ALL RETURNS (FIXING ERROR #310) ──────────
-    
+    // ─── HOOKS (MUST BE ABOVE ALL RETURNS) ───────────────────────────
+
     // Optimized player status lookup table to avoid O(N*M) filtering in render
     const playerStatusMap = useMemo(() => {
         const stats: Record<string, { isRedCarded: boolean, yellowCards: number, hasDirectRed: boolean }> = {};
@@ -189,7 +189,34 @@ const MatchControl = () => {
 
     const shootoutWinnerId = useMemo(() => calculateShootoutWinner(), [calculateShootoutWinner]);
 
-    // ─── EARLY RETURNS (AFTER HOOKS) ──────────────────────────────────
+    // ── SMART TIMER CALCULATION ──
+    useEffect(() => {
+        let interval: number;
+        
+        const updateTimerDisplay = () => {
+            if (!match) return;
+
+            if (match.status === 'live') {
+                const lastUpdateStr = match.updatedAt || new Date().toISOString();
+                const lastUpdate = new Date(lastUpdateStr).getTime();
+                const now = Date.now();
+                const diffInSeconds = Math.max(0, Math.floor((now - lastUpdate) / 1000));
+                const calculatedSeconds = (match.timer || 0) + diffInSeconds;
+
+                setLocalSeconds(calculatedSeconds);
+                setTimerRunning(true);
+            } else {
+                setLocalSeconds(match.timer || 0);
+                setTimerRunning(false);
+            }
+        };
+
+        updateTimerDisplay();
+        interval = window.setInterval(updateTimerDisplay, 1000);
+        return () => clearInterval(interval);
+    }, [match?.id, match?.status, match?.timer, match?.updatedAt]);
+
+    // ─── EARLY RETURNS (ONLY AFTER ALL HOOKS) ─────────────────────────
 
     if (leagueLoading || (dataLoading && !match)) {
         return (
