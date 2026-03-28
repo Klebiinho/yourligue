@@ -57,7 +57,7 @@ const MainContent = () => {
     const [notFound, setNotFound] = useState(false);
 
     useEffect(() => {
-        const fixedPaths = ['leagues', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sitemap'];
+        const fixedPaths = ['leagues', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sitemap', 'match'];
         if (slug && !fixedPaths.includes(slug)) {
             setNotFound(false);
             loadPublicLeague(slug).then(success => {
