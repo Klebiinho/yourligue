@@ -867,11 +867,7 @@ const MatchControl = () => {
                                   'Finalizar Jogo'}
                              </button>
                         </>
-                    ) : (
-                        <div className="text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.2em] py-2">
-                            Acompanhando Partida em Tempo Real
-                        </div>
-                    )}
+                    ) : null}
                 </div>
             </div>
             {isPublicView && <AdBanner position="between" className="mt-4" />}
@@ -1074,8 +1070,8 @@ const MatchControl = () => {
                                                                 <div className="relative flex-none">
                                                                     <TeamLogo src={player.photo} size={isGestor ? 32 : (player.id === suggestedMVPId ? 44 : 36)} />
                                                                     {player.isCaptain && <Crown size={isGestor ? 10 : 12} className="absolute -top-1 -right-1 text-warning fill-warning/20" />}
-                                                                    {player.id === suggestedMVPId && (
-                                                                        <div className="absolute -bottom-2 -left-2 bg-warning text-black text-[0.4rem] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-lg">MVP</div>
+                                                                     {player.id === suggestedMVPId && (
+                                                                        <div className="absolute -bottom-1 -left-1 bg-warning text-black text-[0.4rem] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-lg z-20">MVP</div>
                                                                     )}
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
@@ -1181,7 +1177,7 @@ const MatchControl = () => {
                                                             <TeamLogo src={player.photo} size={player.id === suggestedMVPId ? 44 : 36} />
                                                             {isRedCarded && <XCircle size={12} className="absolute -top-1 -right-1 text-danger fill-danger/20" />}
                                                             {player.id === suggestedMVPId && (
-                                                                <div className="absolute -bottom-2 -left-2 bg-warning text-black text-[0.45rem] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-lg">Sugestão</div>
+                                                                <div className="absolute -bottom-1 -left-1 bg-warning text-black text-[0.45rem] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-lg z-20">Sugestão</div>
                                                             )}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
