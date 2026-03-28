@@ -649,6 +649,14 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, isPublicView]);
 
+    // GUARANTEE: Owners always start in Gestor Mode
+    useEffect(() => {
+        if (user && league && league.userId === user.id && isPublicView) {
+            console.log('LeagueContext: Ownership discovered, forcing Gestor Mode');
+            setIsPublicView(false);
+        }
+    }, [user?.id, league?.id, isPublicView]);
+
     const loadLeagues = async () => {
         try {
             if (!user) {
@@ -810,10 +818,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 // Silent update in background if it's the same league
             }
             
-            if (!isSameLeague) {
-                setIsPublicView(true);
-            }
-
             // Fetch by slug
             let { data: slugData } = await supabase.from('leagues').select(`
                 *,
