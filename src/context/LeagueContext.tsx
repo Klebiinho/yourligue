@@ -737,35 +737,48 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const searchLeagues = async (query: string): Promise<League[]> => {
-        // Obter todas as ligas e contar acompanhantes
-        // Para ordenar por 'mais acompanhantes', precisamos de uma consulta que conte a tabela followed_leagues
-        const { data, error } = await supabase
-            .from('leagues')
-            .select(`
-                *,
-                follower_count:followed_leagues(count)
-            `);
+        try {
+            // Se não houver query, vamos pegar as populares (ordenadas por seguidores)
+            // Se houver query, filtramos no backend para performance
+            let baseQuery = supabase
+                .from('leagues')
+                .select(`
+                    id, name, logo, slug, sport_type,
+                    follower_count:followed_leagues(count)
+                `)
+                .limit(30);
 
-        if (error) {
-            console.error('Error searching leagues:', error);
+            if (query) {
+                baseQuery = baseQuery.ilike('name', `%${query}%`);
+            } else {
+                // Se sem busca, pegamos as "ativas" recentemente ou por seguidores
+                // Nota: Infelizmente o PostgREST não permite ordenar por um count agregado diretamente sem uma view
+                // Então vamos apenas limitar o resultado inicial
+                baseQuery = baseQuery.order('name', { ascending: true });
+            }
+
+            const { data, error } = await baseQuery;
+
+            if (error) {
+                console.error('Error searching leagues:', error);
+                return [];
+            }
+
+            let results = data || [];
+
+            // Ordenação local por seguidores (agora em um conjunto menor de dados - 30 itens)
+            const sortedResults = [...results].sort((a, b) => {
+                const countA = (a.follower_count && a.follower_count[0]?.count) || 0;
+                const countB = (b.follower_count && b.follower_count[0]?.count) || 0;
+                if (countB !== countA) return countB - countA;
+                return a.name.localeCompare(b.name);
+            });
+
+            return sortedResults.map(mapDBLeague);
+        } catch (err) {
+            console.error('LeagueContext: searchLeagues crash:', err);
             return [];
         }
-
-        let filtered = data || [];
-
-        if (query) {
-            filtered = filtered.filter(l => (l.name || "").toLowerCase().includes(query.toLowerCase()));
-        }
-
-        // Ordenar por acompanhantes (desc) e depois por nome
-        const results = filtered.sort((a, b) => {
-            const countA = (a.follower_count && a.follower_count[0]?.count) || 0;
-            const countB = (b.follower_count && b.follower_count[0]?.count) || 0;
-            if (countB !== countA) return countB - countA;
-            return a.name.localeCompare(b.name);
-        }).slice(0, 15);
-
-        return results.map(mapDBLeague);
     };
 
     const fetchNearbyLeagues = async (lat: number, lng: number, radiusKm: number): Promise<League[]> => {
