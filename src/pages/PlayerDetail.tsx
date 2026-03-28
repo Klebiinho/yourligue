@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type Team, type Match } from '../context/LeagueContext';
-import { User, Target, Zap, Clock, ArrowLeft, Star, TrendingUp, Medal, History, Crown, ShieldAlert, CheckCircle, Activity, Edit3, Trash2, Camera, ShieldCheck, X } from 'lucide-react';
+import { User, Target, Zap, Clock, ArrowLeft, Star, TrendingUp, Medal, History, Crown, ShieldAlert, CheckCircle, Activity, Edit3, Trash2, Camera, X } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const PlayerDetail = () => {
@@ -319,6 +319,7 @@ const PlayerDetail = () => {
                                         </div>
                                     </div>
                                 </div>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Tipo de Inscrição</label>
