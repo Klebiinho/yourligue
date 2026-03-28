@@ -776,31 +776,39 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const loadUserInteractions = useCallback(async (leagueId: string) => {
         if (!user) { setUserInteractions([]); return; }
-        const { data } = await supabase.from('user_team_interactions').select('*').eq('user_id', user.id).eq('league_id', leagueId);
-        if (data) {
-            setUserInteractions(data.map(i => ({
-                id: i.id, teamId: i.team_id, leagueId: i.league_id, interactionType: i.interaction_type
-            })));
+        try {
+            const { data } = await supabase.from('user_team_interactions').select('*').eq('user_id', user.id).eq('league_id', leagueId);
+            if (data) {
+                setUserInteractions(data.map(i => ({
+                    id: i.id, teamId: i.team_id, leagueId: i.league_id, interactionType: i.interaction_type
+                })));
+            }
+        } catch (e) {
+            console.warn('LeagueContext: Error loading user interactions', e);
         }
     }, [user]);
 
     const loadSupportCounts = useCallback(async (leagueId: string) => {
-        const { data } = await supabase.rpc('get_league_support_counts', { l_id: leagueId });
-        // Fallback if RPC doesn't exist yet, we'll try a manual count
-        if (data) {
-            const counts: Record<string, number> = {};
-            data.forEach((item: any) => { counts[item.team_id] = item.count; });
-            setSupportCounts(counts);
-        } else {
-            const { data: interactionData } = await supabase.from('user_team_interactions')
-                .select('team_id').eq('league_id', leagueId).eq('interaction_type', 'supporting');
-            if (interactionData) {
+        try {
+            const { data } = await supabase.rpc('get_league_support_counts', { l_id: leagueId });
+            // Fallback if RPC doesn't exist yet, we'll try a manual count
+            if (data) {
                 const counts: Record<string, number> = {};
-                interactionData.forEach((item: any) => {
-                    counts[item.team_id] = (counts[item.team_id] || 0) + 1;
-                });
+                data.forEach((item: any) => { counts[item.team_id] = item.count; });
                 setSupportCounts(counts);
+            } else {
+                const { data: interactionData } = await supabase.from('user_team_interactions')
+                    .select('team_id').eq('league_id', leagueId).eq('interaction_type', 'supporting');
+                if (interactionData) {
+                    const counts: Record<string, number> = {};
+                    interactionData.forEach((item: any) => {
+                        counts[item.team_id] = (counts[item.team_id] || 0) + 1;
+                    });
+                    setSupportCounts(counts);
+                }
             }
+        } catch (e) {
+            console.warn('LeagueContext: Error loading support counts', e);
         }
     }, []);
 
