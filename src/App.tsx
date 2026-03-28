@@ -111,7 +111,7 @@ const MainContent = () => {
                         <Route path="match/:matchId/overlay" element={<MatchOverlay />} />
 
                         {/* Shared routes using relative paths works for both / and /:slug */}
-                        <Route index element={<Dashboard />} />
+                        <Route index element={(slug || (location.pathname === '/' && league)) ? <Dashboard /> : <LeagueSelector />} />
                         <Route path="home" element={<Dashboard />} />
                         <Route path="teams" element={<Teams />} />
                         <Route path="teams/:teamId" element={<Teams />} />
