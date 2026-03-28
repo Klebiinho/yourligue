@@ -435,7 +435,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                             points1: s.points1 || 0, points2: s.points2 || 0, points3: s.points3 || 0,
                             rebounds: s.rebounds || 0, blocks: s.blocks || 0, steals: s.steals || 0, fouls: s.fouls || 0,
                             mvp: s.mvp || 0,
-                            matchesPlayed: teamMatches.filter(m => m.status === 'finished').length, // Simplification: all rostered players get match counted if team plays
+                            matchesPlayed: teamMatches.filter(m => m.status === 'finished').length,
                             cleanSheets: teamMatches.filter(m => {
                                 if (m.status !== 'finished') return false;
                                 const isHome = m.homeTeamId === t.id;
@@ -736,14 +736,13 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         await Promise.all(updates);
     };
 
-    const searchLeagues = async (query: string): Promise<League[]> => {
+    const searchLeagues = useCallback(async (query: string): Promise<League[]> => {
         try {
-            // Se não houver query, vamos pegar as populares (ordenadas por seguidores)
-            // Se houver query, filtramos no backend para performance
+            // BACKEND FILTERING: Full object select with limit to ensure performance
             let baseQuery = supabase
                 .from('leagues')
                 .select(`
-                    id, name, logo, slug, sport_type,
+                    *,
                     follower_count:followed_leagues(count)
                 `)
                 .limit(30);
@@ -751,9 +750,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             if (query) {
                 baseQuery = baseQuery.ilike('name', `%${query}%`);
             } else {
-                // Se sem busca, pegamos as "ativas" recentemente ou por seguidores
-                // Nota: Infelizmente o PostgREST não permite ordenar por um count agregado diretamente sem uma view
-                // Então vamos apenas limitar o resultado inicial
                 baseQuery = baseQuery.order('name', { ascending: true });
             }
 
@@ -764,22 +760,19 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 return [];
             }
 
-            let results = data || [];
-
             // Ordenação local por seguidores (agora em um conjunto menor de dados - 30 itens)
-            const sortedResults = [...results].sort((a, b) => {
-                const countA = (a.follower_count && a.follower_count[0]?.count) || 0;
-                const countB = (b.follower_count && b.follower_count[0]?.count) || 0;
-                if (countB !== countA) return countB - countA;
-                return a.name.localeCompare(b.name);
+            const sortedResults = (data || []).map(mapDBLeague).sort((a, b) => {
+                const countA = a.follower_count?.[0]?.count || 0;
+                const countB = b.follower_count?.[0]?.count || 0;
+                return countB - countA;
             });
 
-            return sortedResults.map(mapDBLeague);
+            return sortedResults;
         } catch (err) {
             console.error('LeagueContext: searchLeagues crash:', err);
             return [];
         }
-    };
+    }, []);
 
     const fetchNearbyLeagues = async (lat: number, lng: number, radiusKm: number): Promise<League[]> => {
         const { data, error } = await supabase.rpc('get_nearby_leagues', {
@@ -821,22 +814,24 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             }
 
             // Fetch by slug
-            let { data, error } = await supabase.from('leagues').select(`
+            let { data: slugData, error: slugError } = await supabase.from('leagues').select(`
                 *,
                 follower_count:followed_leagues(count)
-            `).eq('slug', slugOrId).maybeSingle();
+            `).eq('slug', slugOrId).limit(1);
+
+            let row = slugData?.[0];
 
             // If not found by slug, maybe it was an ID (UUID)
-            if ((!data || error) && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId)) {
+            if (!row && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId)) {
                 const { data: idData } = await supabase.from('leagues').select(`
                     *,
                     follower_count:followed_leagues(count)
-                `).eq('id', slugOrId).maybeSingle();
-                data = idData;
+                `).eq('id', slugOrId).limit(1);
+                row = idData?.[0];
             }
 
-            if (data) {
-                const mapped = mapDBLeague(data);
+            if (row) {
+                const mapped = mapDBLeague(row);
                 
                 // Only update state if something changed or it's a new league
                 if (!isSameLeague || JSON.stringify(mapped) !== JSON.stringify(league)) {
