@@ -31,7 +31,7 @@ const AVATAR_PLACEHOLDER = 'rgba(255,255,255,0.08)';
 
 export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
     ({ player, team, sportType, eventType, stats, description, transparent = false, hideValues = false }, ref) => {
-        const { league } = useLeague();
+        const { league, leagueBasePath } = useLeague();
 
         if (!player || !team) return null;
 
@@ -165,7 +165,7 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                 }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontSize: '32px', fontWeight: '900', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>
-                            yourligue.vercel.app
+                            {window.location.host}{leagueBasePath}
                         </span>
                     </div>
                 </div>
