@@ -8,7 +8,7 @@ import TeamLogo from '../components/TeamLogo';
 const LeagueSelector = () => {
     const { leagues, followedLeagues, league, createLeague, deleteLeague, selectLeague, updateLeague, loadLeagues, searchLeagues, followLeague, unfollowLeague, loadPublicLeague, fetchNearbyLeagues } = useLeague();
     const { user, signOut } = useAuth();
-    const [activeTab, setActiveTab] = useState<'owned' | 'following' | 'nearby' | 'explore'>('owned');
+    const [activeTab, setActiveTab] = useState<'owned' | 'following' | 'nearby' | 'explore'>(user ? 'owned' : 'explore');
     const [nearbyLeagues, setNearbyLeagues] = useState<any[]>([]);
     const [hasSearchedNearby, setHasSearchedNearby] = useState(false);
     const [isLocating, setIsLocating] = useState(false);
@@ -105,40 +105,54 @@ const LeagueSelector = () => {
                             <h1 className="text-2xl md:text-3xl font-outfit font-black text-white uppercase tracking-tight leading-none mb-1">Central de Ligas</h1>
                             <div className="flex items-center gap-2 text-slate-500 font-bold text-[0.65rem] uppercase tracking-widest justify-center sm:justify-start">
                                 <User size={12} className="text-primary" />
-                                <span className="truncate max-w-[150px]">{user?.user_metadata?.name || user?.email}</span>
+                                <span className="truncate max-w-[150px]">
+                                    {user ? (user.user_metadata?.name || user.email) : 'Visitante'}
+                                </span>
                             </div>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-2 relative z-10">
-                        <button onClick={loadLeagues} className="p-3 rounded-xl bg-white/3 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95" title="Recarregar">
-                            <RefreshCw size={18} />
-                        </button>
-                        <button onClick={async () => { 
-                            await signOut(); 
-                            navigate('/auth', { replace: true }); 
-                        }} className="p-3 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger hover:text-white transition-all active:scale-95 flex items-center gap-2 font-black text-[0.65rem] uppercase tracking-widest px-5">
-                            <LogOut size={16} /> <span className="hidden sm:inline">Sair</span>
-                        </button>
+                        {user && (
+                            <button onClick={loadLeagues} className="p-3 rounded-xl bg-white/3 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95" title="Recarregar">
+                                <RefreshCw size={18} />
+                            </button>
+                        )}
+                        {user ? (
+                            <button onClick={async () => { 
+                                await signOut(); 
+                                navigate('/auth', { replace: true }); 
+                            }} className="p-3 rounded-xl bg-danger/10 border border-danger/20 text-danger hover:bg-danger hover:text-white transition-all active:scale-95 flex items-center gap-2 font-black text-[0.65rem] uppercase tracking-widest px-5">
+                                <LogOut size={16} /> <span className="hidden sm:inline">Sair</span>
+                            </button>
+                        ) : (
+                            <button onClick={() => navigate('/auth')} className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-white transition-all active:scale-95 flex items-center gap-2 font-black text-[0.65rem] uppercase tracking-widest px-5">
+                                <User size={16} /> <span className="hidden sm:inline">Fazer Login</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 
                 {/* Tabs */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 bg-white/3 p-1.5 rounded-2xl mb-6 border border-white/5">
-                    <button
-                        onClick={() => setActiveTab('owned')}
-                        className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'owned' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
-                    >
-                        <Shield size={14} className="sm:hidden" /> <span className="hidden sm:inline"><Shield size={14} /></span>
-                        <span className="text-center">Minhas Ligas</span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('following')}
-                        className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'following' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
-                    >
-                        <Bell size={14} className="sm:hidden" /> <span className="hidden sm:inline"><Bell size={14} /></span>
-                        <span className="text-center">Seguindo</span>
-                    </button>
+                <div className={`grid ${user ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2'} gap-1.5 bg-white/3 p-1.5 rounded-2xl mb-6 border border-white/5`}>
+                    {user && (
+                        <button
+                            onClick={() => setActiveTab('owned')}
+                            className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'owned' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                        >
+                            <Shield size={14} className="sm:hidden" /> <span className="hidden sm:inline"><Shield size={14} /></span>
+                            <span className="text-center">Minhas Ligas</span>
+                        </button>
+                    )}
+                    {user && (
+                        <button
+                            onClick={() => setActiveTab('following')}
+                            className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'following' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                        >
+                            <Bell size={14} className="sm:hidden" /> <span className="hidden sm:inline"><Bell size={14} /></span>
+                            <span className="text-center">Seguindo</span>
+                        </button>
+                    )}
                     <button
                         onClick={() => { 
                             setActiveTab('nearby'); 
@@ -333,7 +347,7 @@ const LeagueSelector = () => {
                 </div>
 
                 {/* Footer Action Area - Only for "Owned" tab */}
-                {activeTab === 'owned' && (
+                {activeTab === 'owned' && user && (
                     <div className="space-y-4">
                         {showCreate ? (
                             <form onSubmit={async (e) => {
@@ -407,6 +421,23 @@ const LeagueSelector = () => {
                                 <span className="font-outfit font-black uppercase text-sm tracking-[0.2em] text-slate-400 group-hover:text-white transition-colors relative z-10">Fundar Nova Liga</span>
                             </button>
                         )}
+                    </div>
+                )}
+
+                {/* Guest CTA - shown when not logged in */}
+                {!user && (
+                    <div className="glass-panel p-6 md:p-8 text-center space-y-4 border border-primary/10 bg-primary/[0.03]">
+                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto border border-primary/20">
+                            <User size={28} className="text-primary" />
+                        </div>
+                        <h3 className="text-lg font-outfit font-black text-white uppercase tracking-widest">Quer criar sua própria liga?</h3>
+                        <p className="text-slate-400 text-sm max-w-md mx-auto">Faça login para criar, gerenciar e acompanhar suas ligas favoritas.</p>
+                        <button 
+                            onClick={() => navigate('/auth')}
+                            className="px-10 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all"
+                        >
+                            Fazer Login / Cadastrar
+                        </button>
                     </div>
                 )}
             </div>
