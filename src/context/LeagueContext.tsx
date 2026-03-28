@@ -500,7 +500,10 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const matches = useMemo(() => rawMatches, [rawMatches]);
     const [loading, setLoading] = useState(true);
     const [dataLoading, setDataLoading] = useState(false);
-    const [isPublicView, setIsPublicView] = useState(false);
+    const [isPublicView, setIsPublicView] = useState(() => {
+        const saved = localStorage.getItem('isPublicView');
+        return saved !== null ? saved === 'true' : false;
+    });
     const [userInteractions, setUserInteractions] = useState<TeamInteraction[]>([]);
     const [pendingInteraction, setPendingInteraction] = useState<{ teamId: string, type: TeamInteraction['interactionType'] } | null>(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
@@ -649,13 +652,20 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, isPublicView]);
 
-    // GUARANTEE: Owners always start in Gestor Mode
     useEffect(() => {
-        if (user && league && league.userId === user.id && isPublicView) {
-            console.log('LeagueContext: Ownership discovered, forcing Gestor Mode');
-            setIsPublicView(false);
+        localStorage.setItem('isPublicView', isPublicView.toString());
+    }, [isPublicView]);
+
+    // GUARANTEE: Owners start in Gestor Mode on first load of a league
+    useEffect(() => {
+        if (user && league && league.userId === user.id) {
+            const hasSetPreference = localStorage.getItem('isPublicView') !== null;
+            if (!hasSetPreference) {
+                console.log('LeagueContext: Ownership discovered, setting default Gestor Mode');
+                setIsPublicView(false);
+            }
         }
-    }, [user?.id, league?.id]); // Only run on login or league change, not on manual toggle
+    }, [user?.id, league?.id]); // Only run on login or league change
 
     const loadLeagues = async () => {
         try {
@@ -845,7 +855,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     
                     // If the user is the owner, default to Admin Mode (not public view)
                     if (user && mapped.userId === user.id) {
-                        setIsPublicView(false);
+                        const savedPref = localStorage.getItem('isPublicView');
+                        if (savedPref === null) setIsPublicView(false);
+                        else setIsPublicView(savedPref === 'true');
                     } else {
                         setIsPublicView(true);
                     }
