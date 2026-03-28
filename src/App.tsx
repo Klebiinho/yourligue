@@ -82,8 +82,10 @@ const MainContent = () => {
     }
 
     const isPublicPage = ['/privacidade', '/termos', '/sitemap'].includes(location.pathname);
+    const hasLeague = !!league || !!slug;
 
-    if (!user && !slug && !isPublicPage) {
+    // Only force login if not a public page AND not viewing a league AND not logged in
+    if (!user && !hasLeague && !isPublicPage) {
         return <AuthPage />;
     }
 

@@ -175,6 +175,8 @@ interface LeagueContextType {
     setIsPublicView: (val: boolean) => void;
     isAdmin: boolean;
     loadPublicLeague: (id: string) => Promise<boolean>;
+    loadTeamPhotos: (teamId: string) => Promise<void>;
+    loadPlayerPhotos: (playerIds: string[]) => Promise<void>;
     followLeague: (leagueId: string) => Promise<void>;
     unfollowLeague: (leagueId: string) => Promise<void>;
     searchLeagues: (query: string) => Promise<League[]>;
@@ -486,9 +488,17 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         if (!user) {
             console.log('LeagueContext: No user session found (waiting or logged out)');
             setLeagues([]);
+            
+            // Try to recover last visited league even without login
+            const savedLeagueId = localStorage.getItem('selectedLeagueId');
+            if (savedLeagueId && !league) {
+                console.log('LeagueContext: Found saved league ID, fetching public data...', savedLeagueId);
+                loadPublicLeague(savedLeagueId);
+            }
+
             // Don't clear the league state immediately to avoid UI jumps during 
             // initial auth mounting, except if we are SURE we aren't in a public view
-            if (!isPublicView && !localStorage.getItem('selectedLeagueId')) {
+            if (!isPublicView && !savedLeagueId) {
                 setLeague(null);
             }
             // If we don't have a user, we can't be loading non-public leagues
@@ -760,7 +770,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
         try {
             const [teamsRes, matchesRes, bracketsRes, adsRes] = await Promise.all([
-                supabase.from('teams').select('*, players(*)').eq('league_id', leagueId).order('name', { ascending: true }),
+                // Optimize: Explicitly exclude 'photo' column from players to reduce payload size
+                supabase.from('teams')
+                    .select('*, players(id, name, number, position, team_id, is_captain, is_reserve, display_order)')
+                    .eq('league_id', leagueId)
+                    .order('name', { ascending: true }),
                 // Optimize: Limit matches and events to improve load speed
                 supabase.from('matches')
                     .select('*, match_events(*)')
@@ -1924,6 +1938,19 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const loadPlayerPhotos = useCallback(async (playerIds: string[]) => {
+        if (!playerIds || playerIds.length === 0) return;
+        try {
+            const { data } = await supabase.from('players').select('id, photo').in('id', playerIds).not('photo', 'eq', '');
+            if (!data || data.length === 0) return;
+            const photoMap = new Map(data.map(p => [p.id, p.photo]));
+            setRawTeams(prev => prev.map(t => ({
+                ...t,
+                players: t.players.map(p => ({ ...p, photo: photoMap.get(p.id) || p.photo }))
+            })));
+        } catch (err) { console.error('Error loading specific player photos:', err); }
+    }, []);
+
     const removeInteraction = async (interactionId: string) => {
         await supabase.from('user_team_interactions').delete().eq('id', interactionId);
         if (league) loadUserInteractions(league.id);
@@ -1942,7 +1969,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             addEvent, removeEvent,
             generateBracket, updateBracket, loadLeagues, isPublicView, setIsPublicView, isAdmin, loadPublicLeague,
             userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
-            showAuthModal, setShowAuthModal,
+            showAuthModal, setShowAuthModal, loadTeamPhotos, loadPlayerPhotos,
             supportCounts, notifications, clearNotification, leagueBasePath,
             ads, addAd, updateAd, deleteAd, reorderAds,
             ytToken, ytLogin, ytLogout, isYtAuthenticated, currentYtLiveStream, recoverStreamDetails,

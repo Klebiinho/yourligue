@@ -6,7 +6,11 @@ import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const Teams = () => {
-    const { league, teams, addTeam, updateTeam, deleteTeam, addPlayer, removePlayer, updatePlayer, toggleCaptain, reorderPlayers, isPublicView, isAdmin, interactWithTeam, userInteractions, supportCounts } = useLeague();
+    const { 
+        league, teams, addTeam, updateTeam, deleteTeam, addPlayer, removePlayer, updatePlayer, 
+        toggleCaptain, reorderPlayers, isPublicView, isAdmin, interactWithTeam, 
+        userInteractions, supportCounts, loadTeamPhotos 
+    } = useLeague();
     const { teamId } = useParams<{ teamId: string }>();
     const [activeTeamId, setActiveTeamId] = useState<string | null>(teamId || teams[0]?.id || null);
     const [isEditingTeam, setIsEditingTeam] = useState<string | null>(null);
@@ -17,7 +21,13 @@ const Teams = () => {
         } else if (!activeTeamId && teams.length > 0) {
             setActiveTeamId(teams[0].id);
         }
-    }, [teamId, teams]);
+    }, [teamId, teams, activeTeamId]);
+
+    useEffect(() => {
+        if (activeTeamId) {
+            loadTeamPhotos(activeTeamId);
+        }
+    }, [activeTeamId, loadTeamPhotos]);
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLogo, setNewTeamLogo] = useState('');
     const [newTeamColor, setNewTeamColor] = useState('#6366f1'); 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Bell, BellOff, Heart, Wind, ArrowUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -8,13 +8,39 @@ import AdBanner from '../components/AdBanner';
 import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
-    const { league, teams, matches, loading, dataLoading, isPublicView, isAdmin, leagueBasePath, followedLeagues, followLeague, unfollowLeague, setShowAuthModal, userInteractions, interactWithTeam } = useLeague();
+    const { 
+        league, teams, matches, loading, dataLoading, isPublicView, isAdmin, leagueBasePath, 
+        followedLeagues, followLeague, unfollowLeague, setShowAuthModal, userInteractions, 
+        interactWithTeam, loadPlayerPhotos 
+    } = useLeague();
     const { user } = useAuth();
     const navigate = useNavigate();
 
     // ── ALL HOOKS MUST BE DECLARED HERE, BEFORE ANY RETURN ──────────
     const [activeTab, setActiveTab] = useState<'matches' | 'standings' | 'scorers'>('matches');
     const [showTopRankModal, setShowTopRankModal] = useState<{ open: boolean, type: 'goals' | 'assists' | 'rebounds' }>({ open: false, type: 'goals' });
+
+    const isBasket = league?.sportType === 'basketball';
+    const allPlayers = teams.flatMap(t => t.players.map(p => ({ ...p, team: t })));
+
+    const topScorers = [...allPlayers].sort((a, b) => {
+        const valA = isBasket ? (a.stats?.points || 0) : (a.stats?.goals || 0);
+        const valB = isBasket ? (b.stats?.points || 0) : (b.stats?.goals || 0);
+        return valB - valA;
+    }).filter(p => (isBasket ? (p.stats?.points || 0) : (p.stats?.goals || 0)) > 0).slice(0, 5);
+    const topAssisters = [...allPlayers].sort((a, b) => (b.stats?.assists || 0) - (a.stats?.assists || 0)).filter(p => (p.stats?.assists || 0) > 0).slice(0, 5);
+    const topRebounders = [...allPlayers].sort((a, b) => (b.stats?.rebounds || 0) - (a.stats?.rebounds || 0)).filter(p => (p.stats?.rebounds || 0) > 0).slice(0, 5);
+
+    useEffect(() => {
+        if (!dataLoading && teams.length > 0) {
+            const ids = new Set([
+                ...topScorers.map(p => p.id),
+                ...topAssisters.map(p => p.id),
+                ...topRebounders.map(p => p.id)
+            ]);
+            if (ids.size > 0) loadPlayerPhotos(Array.from(ids));
+        }
+    }, [dataLoading, teams.length, loadPlayerPhotos]); // We rely on top arrays which depend on teams states
 
     if (loading) return (
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -53,7 +79,7 @@ const Dashboard = () => {
         </div>
     );
 
-    const isBasket = league?.sportType === 'basketball';
+
 
     const liveMatches = matches.filter(m => m.status === 'live');
     const upcomingMatches = matches.filter(m => m.status === 'scheduled')
@@ -79,15 +105,6 @@ const Dashboard = () => {
     const sortedTeams = [...teams].sort((a, b) => {
         return calcPoints(b) - calcPoints(a);
     });
-
-    const allPlayers = teams.flatMap(t => t.players.map(p => ({ ...p, team: t })));
-    const topScorers = [...allPlayers].sort((a, b) => {
-        const valA = isBasket ? (a.stats?.points || 0) : (a.stats?.goals || 0);
-        const valB = isBasket ? (b.stats?.points || 0) : (b.stats?.goals || 0);
-        return valB - valA;
-    }).filter(p => (isBasket ? (p.stats?.points || 0) : (p.stats?.goals || 0)) > 0).slice(0, 5);
-    const topAssisters = [...allPlayers].sort((a, b) => (b.stats?.assists || 0) - (a.stats?.assists || 0)).filter(p => (p.stats?.assists || 0) > 0).slice(0, 5);
-    const topRebounders = [...allPlayers].sort((a, b) => (b.stats?.rebounds || 0) - (a.stats?.rebounds || 0)).filter(p => (p.stats?.rebounds || 0) > 0).slice(0, 5);
 
     return (
         <div className="animate-fade-in space-y-6 md:space-y-8 pb-10">
