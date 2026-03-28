@@ -49,54 +49,51 @@ const PlayerDetail = () => {
         });
     };
 
-    // Find the player across all teams
+    const isBasket = league?.sportType === 'basketball';
     const playerWithTeam = useMemo(() => {
-        for (const team of (teams as Team[])) {
+        if (!playerSlug || !teams.length) return null;
+        for (const team of teams) {
             const player = team.players.find(p => getPlayerSlug(p) === playerSlug);
             if (player) return { player, team };
         }
         return null;
-    }, [teams, playerSlug, getPlayerSlug]);
+    }, [playerSlug, teams, getPlayerSlug]);
 
-    if (!playerWithTeam && !leagueLoading) {
+    if (leagueLoading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
-                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10">
-                    <User size={40} className="text-slate-600" />
-                </div>
-                <h2 className="text-2xl font-black font-outfit uppercase tracking-tight mb-2">Atleta não encontrado</h2>
-                <p className="text-slate-500 mb-8 max-w-xs">Não conseguimos localizar este jogador na liga atual.</p>
-                <button onClick={() => navigate(-1)} className="bg-primary text-white px-8 py-3 rounded-2xl font-black uppercase text-xs tracking-widest">
-                    Voltar
-                </button>
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
 
-    if (!playerWithTeam) return null;
+    if (!playerWithTeam) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center p-4">
+                <div className="glass-panel p-10 text-center max-w-sm">
+                    <User size={64} className="mx-auto text-slate-800 mb-6 opacity-20" />
+                    <h1 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter italic">Atleta não encontrado</h1>
+                    <p className="text-slate-500 mb-8 text-sm">O atleta que você procura não está cadastrado nesta liga.</p>
+                    <button onClick={() => navigate(-1)} className="w-full bg-white/5 hover:bg-white/10 text-white font-black py-4 rounded-xl uppercase tracking-widest text-[0.6rem] transition-all border border-white/5">
+                        Voltar para a Liga
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     const { player, team } = playerWithTeam;
-    const isBasket = league?.sportType === 'basketball';
-    const isGK = (player.position || '').toLowerCase().includes('goleiro') || (player.position || '').toLowerCase().includes('gk') || (player.position || '').toLowerCase().includes('gol');
-    
-    // Player matches
-    const playerMatches = (matches as Match[]).filter(m => 
-        (m.homeTeamId === team.id || m.awayTeamId === team.id) && 
-        m.status === 'finished'
-    ).sort((a,b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+    const playerMatches = matches.filter(m => m.events.some(e => e.playerId === player.id));
+    const isGK = player.position === 'Goleiro';
 
-    // Calculate specific stats from matches (performance trend)
-    const recentStats = playerMatches.slice(0, 5).map(m => {
-        const playerEvents = (m.events || []).filter(e => e.playerId === player.id);
-        if (isBasket) {
-            const p1 = playerEvents.filter(e => e.type === 'points_1').length;
-            const p2 = playerEvents.filter(e => e.type === 'points_2').length;
-            const p3 = playerEvents.filter(e => e.type === 'points_3').length;
-            return { label: m.updatedAt ? new Date(m.updatedAt).toLocaleDateString() : '?', val: (p1*1 + p2*2 + p3*3) };
-        } else {
-            return { label: m.updatedAt ? new Date(m.updatedAt).toLocaleDateString() : '?', val: playerEvents.filter(e => e.type === 'goal' || e.type === 'penalty_goal').length };
-        }
-    }).reverse();
+    const recentStats = playerMatches.slice(0, 5).reverse().map(m => {
+        const events = m.events.filter(e => e.playerId === player.id);
+        const val = isBasket 
+            ? events.filter(e => e.type.startsWith('points_')).reduce((acc,e) => acc + (parseInt(e.type.split('_')[1])), 0)
+            : events.filter(e => e.type === 'goal' || e.type === 'penalty_goal').length;
+        
+        return { label: m.updatedAt ? new Date(m.updatedAt).toLocaleDateString([], { month: 'numeric', day: 'numeric' }) : 'J', val };
+    });
 
     const stats = [
         { label: 'Partidas', value: player.stats.matchesPlayed, icon: <Activity className="text-slate-400" /> },
@@ -233,7 +230,6 @@ const PlayerDetail = () => {
                             alert('Atleta atualizado com sucesso!');
                             setIsEditing(false);
                             
-                            // Se o nome mudou, o slug mudou. Precisamos navegar para a nova URL
                             const newSlug = form.name.toLowerCase()
                                 .normalize('NFD')
                                 .replace(/[\u0300-\u036f]/g, '')
@@ -297,7 +293,7 @@ const PlayerDetail = () => {
                                                 value={form.position} onChange={e => setForm({...form, position: e.target.value})}
                                                 className="w-full bg-[#111119] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none font-bold appearance-none"
                                             >
-                                                {league?.sportType === 'basketball' ? (
+                                                {isBasket ? (
                                                     <>
                                                         <option>Armador</option>
                                                         <option>Ala-Armador</option>
@@ -320,6 +316,7 @@ const PlayerDetail = () => {
                                     </div>
                                 </div>
                             </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Tipo de Inscrição</label>
@@ -393,7 +390,6 @@ const PlayerDetail = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Desempenho Recente */}
                 <div className="lg:col-span-2 space-y-6">
                     <h2 className="text-sm font-black font-outfit uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
                         <TrendingUp size={18} className="text-accent" /> Histórico Recente
@@ -416,7 +412,7 @@ const PlayerDetail = () => {
                                                 <span className="absolute -top-7 text-[0.65rem] font-black text-accent opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 px-2 py-1 rounded-md border border-white/5">{s.val}</span>
                                                 <div 
                                                     style={{ height: `${Math.max(5, height)}%` }}
-                                                    className={`w-full max-w-[40px] rounded-t-lg transition-all duration-700 delay-[${i*100}ms] ${i === recentStats.length-1 ? 'bg-gradient-to-t from-primary/50 to-primary shadow-[0_0_20px_rgba(109,40,217,0.3)]' : 'bg-white/10 group-hover:bg-white/20'}`}
+                                                    className={`w-full max-w-[40px] rounded-t-lg transition-all duration-700 ${i === recentStats.length-1 ? 'bg-gradient-to-t from-primary/50 to-primary shadow-[0_0_20px_rgba(109,40,217,0.3)]' : 'bg-white/10 group-hover:bg-white/20'}`}
                                                 />
                                             </div>
                                             <span className="mt-4 text-[0.55rem] font-black text-slate-600 uppercase tracking-tighter sm:tracking-widest rotate-[-15deg] whitespace-nowrap">{s.label}</span>
@@ -428,7 +424,6 @@ const PlayerDetail = () => {
                     </div>
                 </div>
 
-                {/* Ultimas Partidas */}
                 <div className="space-y-6">
                     <h2 className="text-sm font-black font-outfit uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
                         <Clock size={18} className="text-primary" /> Últimos Jogos
