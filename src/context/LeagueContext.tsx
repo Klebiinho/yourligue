@@ -767,7 +767,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 // Silent update in background if it's the same league
             }
             
-            setIsPublicView(true);
+            if (!isSameLeague) {
+                setIsPublicView(true);
+            }
 
             // Fetch by slug
             let { data, error } = await supabase.from('leagues').select(`

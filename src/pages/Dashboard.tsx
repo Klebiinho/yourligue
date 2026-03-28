@@ -189,7 +189,7 @@ const Dashboard = () => {
                         <button
                             onClick={() => {
                                 const baseUrl = window.location.origin;
-                                const url = `${baseUrl}/view/${league.slug || league.id}`;
+                                const url = `${baseUrl}/${league.slug || league.id}/home`;
                                 navigator.clipboard.writeText(url);
                                 alert('Link da visão de telespectador copiado!');
                             }}

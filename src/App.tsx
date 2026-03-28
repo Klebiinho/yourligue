@@ -108,7 +108,7 @@ const MainContent = () => {
                         <Route path="sitemap" element={<Sitemap />} />
                         <Route path="match/:matchId/overlay" element={<MatchOverlay />} />
 
-                        {/* Shared routes using relative paths works for both / and /view/:slug */}
+                        {/* Shared routes using relative paths works for both / and /:slug */}
                         <Route index element={<Dashboard />} />
                         <Route path="home" element={<Dashboard />} />
                         <Route path="leagues" element={<LeagueSelector />} />
@@ -122,7 +122,7 @@ const MainContent = () => {
                         <Route path="settings" element={<Settings />} />
 
                         {/* Fallback */}
-                        <Route path="*" element={<Navigate to={slug ? `/view/${slug}` : "/"} replace />} />
+                        <Route path="*" element={<Navigate to={slug ? `/${slug}/home` : "/"} replace />} />
                     </Routes>
                 </div>
                 {!isOverlayPage && <Footer />}
