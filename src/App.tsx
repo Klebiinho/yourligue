@@ -166,11 +166,11 @@ const App = () => {
             <AuthProvider>
                 <LeagueProvider>
                     <Routes>
-                        <Route path="/leagues" element={<MainContent />} />
-                        <Route path="/auth" element={<MainContent />} />
-                        <Route path="/politica-de-privacidade" element={<MainContent />} />
-                        <Route path="/termos-de-uso" element={<MainContent />} />
-                        <Route path="/sitemap" element={<MainContent />} />
+                        <Route path="/leagues/*" element={<MainContent />} />
+                        <Route path="/auth/*" element={<MainContent />} />
+                        <Route path="/politica-de-privacidade/*" element={<MainContent />} />
+                        <Route path="/termos-de-uso/*" element={<MainContent />} />
+                        <Route path="/sitemap/*" element={<MainContent />} />
                         <Route path="/:slug/*" element={<MainContent />} />
                         <Route path="/*" element={<MainContent />} />
                     </Routes>
