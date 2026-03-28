@@ -229,8 +229,8 @@ for (let line of lines) {
         if (currentSection === 'Paginas') {
              let rawTitle = title.toLowerCase();
              if (rawTitle === 'mapa do site') title = "sitemap";
-             if (title === "Termos de Uso") title = "termos";
-             if (title === "Política de Privacidade") title = "privacidade";
+             if (title === "Termos de Uso") title = "termos-de-uso";
+             if (title === "Política de Privacidade") title = "politica-de-privacidade";
              if (title === "Sobre Nós") title = "sobre-nos";
         }
         

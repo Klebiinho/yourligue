@@ -83,7 +83,7 @@ const MainContent = () => {
         return <LoadingScreen />;
     }
 
-    const isPublicPage = ['/politica-de-privacidade', '/termos-de-uso', '/sitemap'].includes(location.pathname);
+    const isPublicPage = ['/politica-de-privacidade', '/termos-de-uso', '/sitemap', '/auth', '/leagues'].includes(location.pathname);
     const hasLeague = !!league || !!slug;
 
     // Only force login if not a public page AND not viewing a league AND not logged in
@@ -106,12 +106,13 @@ const MainContent = () => {
                         <Route path="politica-de-privacidade" element={<PrivacyPolicy />} />
                         <Route path="termos-de-uso" element={<TermsOfService />} />
                         <Route path="sitemap" element={<Sitemap />} />
+                        <Route path="auth" element={<AuthPage />} />
+                        <Route path="leagues" element={<LeagueSelector />} />
                         <Route path="match/:matchId/overlay" element={<MatchOverlay />} />
 
                         {/* Shared routes using relative paths works for both / and /:slug */}
                         <Route index element={<Dashboard />} />
                         <Route path="home" element={<Dashboard />} />
-                        <Route path="leagues" element={<LeagueSelector />} />
                         <Route path="teams" element={<Teams />} />
                         <Route path="teams/:teamId" element={<Teams />} />
                         <Route path="matches" element={<Matches />} />
