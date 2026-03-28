@@ -529,7 +529,7 @@ const MatchControl = () => {
 
     const handleGol = (teamId: string, playerId: string) => { 
         if (!mId || !match || (period.includes('Intervalo') && period !== 'Pênaltis')) return;
-        const canSave = match.status === 'live' || period === 'Pênaltis';
+        const canSave = match.status === 'live' || period === 'Pênaltis' || (match.status === 'finished' && !isPublicView && isAdmin);
         if (!canSave) return;
         if (period === 'Pênaltis') {
             addEvent(mId, { type: 'penalty_shootout_goal', teamId, playerId, minute: 121 });
@@ -538,37 +538,37 @@ const MatchControl = () => {
         }
     };
     const handleMiss = (teamId: string, playerId: string) => {
-        if (mId && (match?.status === 'live' || period === 'Pênaltis') && period === 'Pênaltis') {
+        if (mId && (match?.status === 'live' || match?.status === 'finished' || period === 'Pênaltis') && period === 'Pênaltis') {
             addEvent(mId, { type: 'penalty_shootout_miss', teamId, playerId, minute: 121 });
         }
     };
     const handleAssist = (teamId: string, playerId: string) => { 
-        if (mId && match?.status === 'live' && !period.includes('Intervalo') && period !== 'Pênaltis') 
+        if (mId && (match?.status === 'live' || (match?.status === 'finished' && !isPublicView && isAdmin)) && !period.includes('Intervalo') && period !== 'Pênaltis') 
             addEvent(mId, { type: 'assist', teamId, playerId, minute: currentMinute }); 
     };
     const handleGolContra = (teamId: string, playerId: string) => { 
-        if (mId && match?.status === 'live' && !period.includes('Intervalo') && period !== 'Pênaltis') 
+        if (mId && (match?.status === 'live' || (match?.status === 'finished' && !isPublicView && isAdmin)) && !period.includes('Intervalo') && period !== 'Pênaltis') 
             addEvent(mId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); 
     };
     const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { 
-        if (mId && match?.status === 'live' && !period.includes('Intervalo')) 
+        if (mId && (match?.status === 'live' || (match?.status === 'finished' && !isPublicView && isAdmin)) && !period.includes('Intervalo')) 
             addEvent(mId, { type, teamId, playerId, minute: currentMinute }); 
     };
     
     // Basketball specific events
     const handlePoints = (teamId: string, playerId: string, points: 1 | 2 | 3) => {
-        if (!mId || match?.status !== 'live' || period.includes('Intervalo')) return;
+        if (!mId || (match?.status !== 'live' && !(match?.status === 'finished' && !isPublicView && isAdmin)) || period.includes('Intervalo')) return;
         const type = points === 1 ? 'points_1' : points === 2 ? 'points_2' : 'points_3';
         addEvent(mId, { type, teamId, playerId, minute: currentMinute });
     };
 
     const handleStat = (teamId: string, playerId: string, type: 'rebound' | 'block' | 'steal' | 'foul') => {
-        if (!mId || match?.status !== 'live' || period.includes('Intervalo')) return;
+        if (!mId || (match?.status !== 'live' && !(match?.status === 'finished' && !isPublicView && isAdmin)) || period.includes('Intervalo')) return;
         addEvent(mId, { type, teamId, playerId, minute: currentMinute });
     };
 
     const handleSubstitution = (teamId: string, playerInId: string, playerOutId: string) => {
-        if (mId && (match?.status === 'live' || period.includes('Intervalo'))) {
+        if (mId && (match?.status === 'live' || match?.status === 'finished' || period.includes('Intervalo'))) {
             const limit = league?.substitutionsLimit || 5;
             const teamSubstitutions = (match?.events || []).filter(e => e.type === 'substitution' && e.teamId === teamId).length;
             
@@ -841,7 +841,7 @@ const MatchControl = () => {
 
                 {/* Controls */}
                 <div className="flex items-center justify-center gap-2 sm:gap-3 mt-5 border-t border-white/[0.05] pt-5">
-                    {!isPublicView && isAdmin ? (
+                    {!isPublicView && isAdmin && match.status !== 'finished' ? (
                         <>
                             <button onClick={handleToggleTimer}
                                 className={`flex-1 sm:flex-none px-4 sm:px-8 py-3 rounded-xl font-black text-[0.65rem] uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${timerRunning ? 'bg-white/5 border border-white/10 text-slate-400 hover:text-white' : 'bg-primary text-white shadow-primary/30 hover:brightness-110'
@@ -1113,35 +1113,35 @@ const MatchControl = () => {
                                                                     <div className="flex items-center gap-1 flex-none">
                                                                         {league?.sportType === 'basketball' ? (
                                                                             <>
-                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 1)} 
+                                                                                <button disabled={(match.status !== 'live' && match.status !== 'finished') || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 1)} 
                                                                                     className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/10 text-accent font-black text-[0.55rem] hover:bg-accent hover:text-white transition-all">+1</button>
-                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 2)} 
+                                                                                <button disabled={(match.status !== 'live' && match.status !== 'finished') || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 2)} 
                                                                                     className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/20 text-accent font-black text-[0.6rem] hover:bg-accent hover:text-white transition-all">+2</button>
-                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 3)} 
+                                                                                <button disabled={(match.status !== 'live' && match.status !== 'finished') || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 3)} 
                                                                                     className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/30 text-accent font-black text-[0.65rem] hover:bg-accent hover:text-white transition-all">+3</button>
                                                                                 <div className="w-px h-4 bg-white/10 mx-1 flex-none" />
-                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handleAssist(team.id, player.id)} 
+                                                                                <button disabled={(match.status !== 'live' && match.status !== 'finished') || period.includes('Intervalo')} onClick={() => handleAssist(team.id, player.id)} 
                                                                                     className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-warning/10 text-warning font-black text-[0.5rem] hover:bg-warning hover:text-white transition-all">ASS</button>
-                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handleStat(team.id, player.id, 'rebound')} 
+                                                                                <button disabled={(match.status !== 'live' && match.status !== 'finished') || period.includes('Intervalo')} onClick={() => handleStat(team.id, player.id, 'rebound')} 
                                                                                     className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-orange-500/10 text-orange-400 font-black text-[0.5rem] hover:bg-orange-500 hover:text-white transition-all">REB</button>
-                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handleStat(team.id, player.id, 'foul')} 
+                                                                                <button disabled={(match.status !== 'live' && match.status !== 'finished') || period.includes('Intervalo')} onClick={() => handleStat(team.id, player.id, 'foul')} 
                                                                                     className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger font-black text-[0.5rem] hover:bg-danger hover:text-white transition-all">FAL</button>
                                                                             </>
                                                                         ) : (
                                                                             <>
-                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleGol(team.id, player.id)} 
+                                                                                <button disabled={(match.status !== 'live' && match.status !== 'finished') || period.includes('Intervalo') || isRedCarded} onClick={() => handleGol(team.id, player.id)} 
                                                                                     className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Gol"><Target size={12} /></button>
-                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleAssist(team.id, player.id)} 
+                                                                                <button disabled={(match.status !== 'live' && match.status !== 'finished') || period.includes('Intervalo') || isRedCarded} onClick={() => handleAssist(team.id, player.id)} 
                                                                                     className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Assistência"><Award size={12} /></button>
-                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleGolContra(team.id, player.id)} 
+                                                                                <button disabled={(match.status !== 'live' && match.status !== 'finished') || period.includes('Intervalo') || isRedCarded} onClick={() => handleGolContra(team.id, player.id)} 
                                                                                     className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Gol Contra"><XCircle size={12} /></button>
-                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleCartao(team.id, player.id, 'yellow_card')} 
+                                                                                <button disabled={(match.status !== 'live' && match.status !== 'finished') || period.includes('Intervalo') || isRedCarded} onClick={() => handleCartao(team.id, player.id, 'yellow_card')} 
                                                                                     className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning transition-all text-[0.6rem] disabled:opacity-30" title="Amarelo">🟨</button>
-                                                                                <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleCartao(team.id, player.id, 'red_card')} 
+                                                                                <button disabled={(match.status !== 'live' && match.status !== 'finished') || period.includes('Intervalo') || isRedCarded} onClick={() => handleCartao(team.id, player.id, 'red_card')} 
                                                                                     className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger transition-all text-[0.6rem] disabled:opacity-30" title="Vermelho">🟥</button>
                                                                             </>
                                                                         )}
-                                                                        <button disabled={match.status !== 'live' && !period.includes('Intervalo') || isRedCarded} onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} 
+                                                                        <button disabled={(match.status !== 'live' && match.status !== 'finished' && !period.includes('Intervalo')) || isRedCarded} onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} 
                                                                             className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Substituir"><ArrowLeftRight size={12} /></button>
                                                                     </div>
                                                                 )}
@@ -1202,7 +1202,7 @@ const MatchControl = () => {
                                                             </div>
                                                         </div>
                                                         {!isPublicView && isAdmin && (isRedCarded || yellowCards > 0) && (
-                                                            <button disabled={match.status !== 'live'} onClick={() => handleUndoLastCard(player.id)} className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 text-warning/50 hover:text-warning transition-all ${match.status !== 'live' ? 'opacity-30 cursor-not-allowed' : ''}`} title="Anular Cartão">
+                                                            <button disabled={match.status !== 'live' && match.status !== 'finished'} onClick={() => handleUndoLastCard(player.id)} className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 text-warning/50 hover:text-warning transition-all ${match.status !== 'live' && match.status !== 'finished' ? 'opacity-30 cursor-not-allowed' : ''}`} title="Anular Cartão">
                                                                 <Trash2 size={12} />
                                                             </button>
                                                         )}
