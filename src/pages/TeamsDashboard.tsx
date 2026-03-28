@@ -40,11 +40,41 @@ const TeamsDashboard = () => {
 
     const selectedTeam = teams.find(t => t.id === selectedTeamId);
 
+    const compressImage = (base64: string): Promise<string> => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = base64;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const MAX_SIZE = 1024;
+
+                if (width > height && width > MAX_SIZE) {
+                    height *= MAX_SIZE / width;
+                    width = MAX_SIZE;
+                } else if (height > MAX_SIZE) {
+                    width *= MAX_SIZE / height;
+                    height = MAX_SIZE;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.8));
+            };
+        });
+    };
+
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) => {
         const file = e.target.files?.[0];
         if (file) {
             const r = new FileReader();
-            r.onloadend = () => setter(r.result as string);
+            r.onloadend = async () => {
+                const optimized = await compressImage(r.result as string);
+                setter(optimized);
+            };
             r.readAsDataURL(file);
         }
     };
