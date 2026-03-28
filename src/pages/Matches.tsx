@@ -266,14 +266,14 @@ const Matches = () => {
                                     </div>
 
                                     {/* Center */}
-                                    <div className="flex flex-col items-center gap-2 flex-none min-w-[70px] sm:min-w-[100px]">
+                                    <div className="flex flex-col items-center gap-2 flex-none min-w-[90px] sm:min-w-[120px]">
                                         {(isLive || isFinished) ? (
-                                            <div className="flex items-center gap-2 sm:gap-4 font-outfit font-black text-2xl sm:text-4xl relative">
+                                            <div className="placar-blur flex items-center gap-3 sm:gap-5 font-outfit font-black text-2xl sm:text-4xl px-4 py-2 rounded-2xl relative">
                                                 <div className="flex flex-col items-center">
                                                     {hasShootout && <span className="text-[0.6rem] text-primary/80 font-black mb-1 leading-none">{homePenaltyScore}</span>}
                                                     <span className={isLive ? 'text-primary' : 'text-white'}>{match.homeScore}</span>
                                                 </div>
-                                                <span className="text-slate-800 text-xs sm:text-sm mt-auto pb-1 sm:pb-2">✕</span>
+                                                <span className="text-slate-700 text-xs sm:text-sm mt-auto pb-1 sm:pb-2">✕</span>
                                                 <div className="flex flex-col items-center">
                                                     {hasShootout && <span className="text-[0.6rem] text-accent/80 font-black mb-1 leading-none">{awayPenaltyScore}</span>}
                                                     <span className={isLive ? 'text-accent' : 'text-white'}>{match.awayScore}</span>

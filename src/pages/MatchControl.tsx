@@ -769,7 +769,7 @@ const MatchControl = () => {
             </button>
 
             {/* ── SCOREBOARD ─────────────────────────────────────────── */}
-            <div className="glass-panel sticky top-2 z-40 p-4 sm:p-6 md:p-8 mb-6 md:mb-8 shadow-2xl overflow-hidden">
+            <div className="placar-blur sticky top-2 z-40 p-4 sm:p-6 md:p-8 mb-6 md:mb-8 shadow-2xl overflow-hidden rounded-[2rem]">
                 {/* Scoreboard inner content */}
                 <div className="flex items-center gap-3 sm:gap-6 relative z-10">
                     {/* Home Team */}
