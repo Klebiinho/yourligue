@@ -525,7 +525,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     // ─── SESSION CACHE (Solving "Site sem memória") ──────────────
     useEffect(() => {
-        if (league) {
+        if (league && rawTeams.length > 0) { // Only cache if there's actual data to avoid poisoning
             try {
                 const cacheKey = `league_cache_${league.id}`;
                 const cacheData = JSON.stringify({
@@ -919,9 +919,15 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
         // Try cache for instant mount
         const recovered = tryRecoverFromCache(leagueId);
-        const hasData = (rawTeams.length > 0 && rawMatches.length > 0) || recovered;
         
-        if (!background && !hasData) setDataLoading(true);
+        // Safety: Even if recovered, if teams are empty, we don't have enough data to skip loading
+        const hasActualData = rawTeams.length > 0 || (recovered && teamsRef.current.length > 0);
+        
+        if (!background && !hasActualData) {
+            console.log('LeagueContext: Data missing or empty cache, showing loader');
+            setDataLoading(true);
+        }
+
 
         try {
             // PHASE 1: CORE DATA (Essential per-frame metadata)
@@ -943,10 +949,12 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
             if (teamsRes.data) {
                 const mappedTeams = teamsRes.data.map(mapDBTeam);
+                console.log('LeagueContext: Teams loaded:', mappedTeams.length);
                 setRawTeams(mappedTeams);
                 teamsRef.current = mappedTeams;
             }
             if (matchesRes.data) {
+                console.log('LeagueContext: Matches loaded:', matchesRes.data.length);
                 setRawMatches(matchesRes.data.map(mapDBMatch));
             }
             if (bracketsRes.data) setBrackets(bracketsRes.data.map(mapDBBracket));
@@ -955,6 +963,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     ...a, display_order: a.display_order || 0
                 })));
             }
+
 
             // PHASE 2: LAZY LOADING HEAVY DATA (Background)
             const loadHeavyData = async () => {
