@@ -306,9 +306,10 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     
     // ─── Memoized Enriched Data (No Refetch) ─────────────────────
     const teams = useMemo(() => {
-        if (!rawTeams.length) return [];
+        if (!rawTeams || !Array.isArray(rawTeams) || rawTeams.length === 0) return [];
 
-        // ── PERFORMANCE: Single O(N) pass over all events to build lookup maps ──
+        try {
+            // ── PERFORMANCE: Single O(N) pass over all events to build lookup maps ──
         // Instead of multiple .filter() calls per player per stat type,
         // we scan events once and group by playerId.
         type PlayerAcc = {
@@ -406,6 +407,10 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 stats: { matches: teamMatches.filter(m => m.status === 'finished').length, wins, draws, losses, goalsFor, goalsAgainst, points, form: form.reverse() }
             };
         });
+        } catch (err) {
+            console.error('LeagueContext: Error memoizing teams:', err);
+            return [];
+        }
     }, [rawTeams, rawMatches, league?.pointsForWin, league?.pointsForDraw, league?.pointsForLoss]);
 
     
@@ -914,6 +919,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         } catch (err) {
             console.error('LeagueContext: Performance load failed:', err);
         } finally {
+            setLoading(false);
             setDataLoading(false);
             loadingRef.current = null;
         }
@@ -1256,16 +1262,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const selectLeague = (id: string) => {
         const found = leagues.find(l => l.id === id);
         if (found) {
+            // Safety: Set loading immediately so components that rely on the new league
+            // don't try to render with empty teams/matches data before the loader starts.
+            setLoading(true);
+            setDataLoading(true);
+
             // Clear stale data immediately so the UI doesn't flash old league data.
-            // loadLeagueData will be triggered automatically by the useEffect
-            // that watches league?.id changes.
             setRawTeams([]);
             setRawMatches([]);
             setBrackets([]);
             setIsPublicView(false);
             setLeague(found);
-            // NOTE: do NOT call loadLeagueData here — the useEffect handles it
-            // Calling it twice caused race conditions and the black screen.
+            localStorage.setItem('selectedLeagueId', id);
         }
     };
 

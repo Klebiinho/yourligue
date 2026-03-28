@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Bell, BellOff, Heart, Wind, ArrowUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -9,20 +9,39 @@ import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
     const { 
-        league, teams, matches, loading, dataLoading, isPublicView, isAdmin, leagueBasePath, 
+        league, teams: rawTeams, matches: rawMatches, loading, dataLoading, isPublicView, isAdmin, leagueBasePath, 
         followedLeagues, followLeague, unfollowLeague, setShowAuthModal, userInteractions, 
         interactWithTeam, loadPlayerPhotos 
     } = useLeague();
     const { user } = useAuth();
     const navigate = useNavigate();
 
+    const teams = useMemo(() => {
+        if (!rawTeams || !Array.isArray(rawTeams) || rawTeams.length === 0) return [];
+        return rawTeams;
+    }, [rawTeams]);
+
+    const matches = useMemo(() => {
+        if (!rawMatches || !Array.isArray(rawMatches)) return [];
+        return rawMatches;
+    }, [rawMatches]);
+
     // ── ALL HOOKS MUST BE DECLARED HERE, BEFORE ANY RETURN ──────────
     const [activeTab, setActiveTab] = useState<'matches' | 'standings' | 'scorers'>('matches');
     const [showTopRankModal, setShowTopRankModal] = useState<{ open: boolean, type: 'goals' | 'assists' | 'rebounds' }>({ open: false, type: 'goals' });
 
     const isBasket = league?.sportType === 'basketball';
-    const allPlayers = teams.flatMap(t => (t.players || []).map(p => ({ ...p, team: t })));
-    const getStat = (p: any) => isBasket ? (p.stats?.points || 0) : (p.stats?.goals || 0);
+    
+    // Safety check for teams - if it's missing or empty, allPlayers is empty
+    const allPlayers = (teams || []).flatMap(t => {
+        if (!t || !t.players) return [];
+        return t.players.map(p => ({ ...p, team: t }));
+    });
+
+    const getStat = (p: any) => {
+        if (!p || !p.stats) return 0;
+        return isBasket ? (p.stats.points || 0) : (p.stats.goals || 0);
+    };
 
     const topScorers = [...allPlayers]
         .sort((a, b) => getStat(b) - getStat(a))
@@ -89,11 +108,15 @@ const Dashboard = () => {
 
 
 
-    const liveMatches = matches.filter(m => m.status === 'live');
-    const upcomingMatches = matches.filter(m => m.status === 'scheduled')
-        .sort((a, b) => new Date(a.scheduledAt || 0).getTime() - new Date(b.scheduledAt || 0).getTime())
+    const liveMatches = (matches || []).filter(m => m && m.status === 'live');
+    const upcomingMatches = (matches || []).filter(m => m && m.status === 'scheduled')
+        .sort((a, b) => {
+            const timeA = a.scheduledAt ? new Date(a.scheduledAt).getTime() : 0;
+            const timeB = b.scheduledAt ? new Date(b.scheduledAt).getTime() : 0;
+            return timeA - timeB;
+        })
         .slice(0, 5);
-    const totalGoals = teams.reduce((acc, t) => acc + (t.stats?.goalsFor || 0), 0);
+    const totalGoals = (teams || []).reduce((acc, t) => acc + (t?.stats?.goalsFor || 0), 0);
 
     const stats = [
         { label: 'Times', value: teams.length, icon: <Users size={18} />, gradientFrom: 'from-primary/20', border: 'border-primary/20', text: 'text-primary' },
@@ -105,10 +128,12 @@ const Dashboard = () => {
     const formatDate = (dt?: string) =>
         dt ? new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 
-    const calcPoints = (t: typeof teams[0]) =>
-        (t.stats?.wins || 0) * (league?.pointsForWin || 3) +
-        (t.stats?.draws || 0) * (league?.pointsForDraw || 1) +
-        (t.stats?.losses || 0) * (league?.pointsForLoss || 0);
+    const calcPoints = (t: any) => {
+        if (!t?.stats) return 0;
+        return (t.stats.wins || 0) * (league?.pointsForWin || 3) +
+            (t.stats.draws || 0) * (league?.pointsForDraw || 1) +
+            (t.stats.losses || 0) * (league?.pointsForLoss || 0);
+    };
 
     const sortedTeams = [...teams].sort((a, b) => {
         return calcPoints(b) - calcPoints(a);
