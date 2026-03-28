@@ -445,7 +445,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                             goalsConceded: teamMatches.reduce((acc, m) => {
                                 if (m.status !== 'finished') return acc;
                                 const isHome = m.homeTeamId === t.id;
-                                return acc + (isHome ? m.awayScore : m.homeScore);
+                                const score = isHome ? (m.awayScore ?? 0) : (m.homeScore ?? 0);
+                                return acc + score;
                             }, 0)
                         }
                     };
@@ -814,7 +815,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             }
 
             // Fetch by slug
-            let { data: slugData, error: slugError } = await supabase.from('leagues').select(`
+            let { data: slugData } = await supabase.from('leagues').select(`
                 *,
                 follower_count:followed_leagues(count)
             `).eq('slug', slugOrId).limit(1);
