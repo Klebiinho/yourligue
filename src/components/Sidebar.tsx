@@ -79,19 +79,22 @@ const Sidebar = () => {
                                         <ArrowLeftRight size={16} className="text-slate-600 flex-none group-hover:rotate-180 transition-transform duration-500" />
                                     </button>
 
-                                    {isPublicView && isAdmin && (
+                                    {isAdmin && (
                                         <button onClick={() => {
-                                            setIsPublicView(false);
-                                            navigate('/');
+                                            setIsPublicView(!isPublicView);
                                             setMoreOpen(false);
                                         }}
-                                            className="w-full flex items-center gap-4 px-5 py-4 bg-accent/10 hover:bg-accent/20 transition-all border-b border-white/[0.05] group">
-                                            <div className="w-10 h-10 rounded-2xl bg-accent flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg shadow-accent/20 animate-pulse">
+                                            className={`w-full flex items-center gap-4 px-5 py-4 ${isPublicView ? 'bg-accent/10 hover:bg-accent/20' : 'bg-primary/10 hover:bg-primary/20'} transition-all border-b border-white/[0.05] group`}>
+                                            <div className={`w-10 h-10 rounded-2xl ${isPublicView ? 'bg-accent' : 'bg-primary'} flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg ${isPublicView ? 'shadow-accent/20' : 'shadow-primary/20'}`}>
                                                 <Settings size={20} />
                                             </div>
                                             <div className="flex-1 text-left">
-                                                <p className="text-xs font-black text-accent font-outfit uppercase tracking-wide leading-tight">Mudar para Modo Gestor</p>
-                                                <p className="text-[0.55rem] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Gerenciar Liga / Configurações</p>
+                                                <p className={`text-xs font-black ${isPublicView ? 'text-accent' : 'text-primary'} font-outfit uppercase tracking-wide leading-tight`}>
+                                                    {isPublicView ? 'Mudar para Modo Gestor' : 'Visualizar Preview'}
+                                                </p>
+                                                <p className="text-[0.55rem] text-slate-500 font-bold uppercase tracking-widest mt-0.5">
+                                                    {isPublicView ? 'Gerenciar Liga / Configurações' : 'Ver como visitante'}
+                                                </p>
                                             </div>
                                         </button>
                                     )}
@@ -168,6 +171,21 @@ const Sidebar = () => {
                         {/* iPhone home indicator space */}
                         <div className="h-[env(safe-area-inset-bottom,0px)]" />
                     </nav>
+                    
+                    {/* Fixed Admin Toggle for Mobile owners */}
+                    {isAdmin && (
+                        <button
+                            onClick={() => setIsPublicView(!isPublicView)}
+                            className={`fixed top-4 right-4 z-50 p-3 rounded-2xl shadow-2xl transition-all border border-white/20 active:scale-90 ${
+                                isPublicView 
+                                ? 'bg-accent text-white shadow-accent/40 rotate-0' 
+                                : 'bg-primary text-white shadow-primary/40'
+                            }`}
+                        >
+                            <Settings size={20} className={isPublicView ? 'animate-pulse' : ''} />
+                            <div className="absolute top-0 right-0 -mr-1 -mt-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-bounce" />
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -204,17 +222,23 @@ const Sidebar = () => {
                     <p className="text-[0.55rem] font-black text-slate-700 uppercase tracking-[0.2em] px-3 py-2">
                         {(isPublicView || !isAdmin) ? 'Acompanhamento' : 'Menu Principal'}
                     </p>
-                    {isPublicView && isAdmin && (
+                    {isAdmin && (
                         <div className="px-3 py-2">
                             <button
                                 onClick={() => {
-                                    setIsPublicView(false);
-                                    navigate(league ? `/${league.slug || league.id}/home` : '/');
+                                    setIsPublicView(!isPublicView);
+                                    if (isPublicView) {
+                                        navigate(league ? `/${league.slug || league.id}/home` : '/');
+                                    }
                                 }}
-                                className="w-full flex items-center gap-3 px-4 py-3 bg-accent/20 text-accent border border-accent/30 rounded-xl hover:bg-accent/30 transition-all font-black text-xs uppercase tracking-widest shadow-lg shadow-accent/10 group"
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-black text-xs uppercase tracking-widest shadow-lg group border ${
+                                    isPublicView 
+                                    ? 'bg-accent/20 text-accent border-accent/30 hover:bg-accent/30 shadow-accent/10' 
+                                    : 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30 shadow-primary/10'
+                                }`}
                             >
-                                <Settings size={18} className="group-hover:rotate-90 transition-transform duration-500" />
-                                <span>Modo Gestor</span>
+                                <Settings size={18} className={`transition-transform duration-500 ${isPublicView ? '' : 'rotate-90'}`} />
+                                <span>{isPublicView ? 'Modo Gestor' : 'Modo Preview'}</span>
                             </button>
                         </div>
                     )}

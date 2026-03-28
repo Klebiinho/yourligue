@@ -838,6 +838,13 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 if (!isSameLeague || JSON.stringify(mapped) !== JSON.stringify(league)) {
                     setLeague(mapped);
                     localStorage.setItem('selectedLeagueId', mapped.id);
+                    
+                    // If the user is the owner, default to Admin Mode (not public view)
+                    if (user && mapped.userId === user.id) {
+                        setIsPublicView(false);
+                    } else {
+                        setIsPublicView(true);
+                    }
                 }
                 
                 // If it's the SAME league, loadLeagueData will be called by useEffect [league?.id]
