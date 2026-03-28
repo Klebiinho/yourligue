@@ -24,10 +24,15 @@ const Sidebar = () => {
     const navigate = useNavigate();
     const [moreOpen, setMoreOpen] = useState(false);
 
-    // Prefix paths if in a league view
-    const getLink = (to: string) => (league && (league.slug || league.id))
-        ? `/${league.slug || league.id}${to === '/' ? '/home' : to}`
-        : to;
+    // Prefix paths if in a league view, but exclude global paths
+    const getLink = (to: string) => {
+        const globalPaths = ['/leagues', '/auth', '/politica-de-privacidade', '/termos-de-uso', '/sitemap'];
+        if (globalPaths.includes(to)) return to;
+        
+        return (league && (league.slug || league.id))
+            ? `/${league.slug || league.id}${to === '/' ? '/home' : to}`
+            : to;
+    };
 
     // Filter nav items: if it's public view OR user is not an admin, show only base items
     const filteredNavItems = (isPublicView || !isAdmin)
