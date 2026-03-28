@@ -775,7 +775,7 @@ const MatchControl = () => {
                                 </>
                             )}
                         </div>
-                        {isAdmin && (
+                        {isAdmin && !isPublicView && (
                             <button 
                                 onClick={handleOpenYtSetup}
                                 className="flex items-center gap-2 px-3 py-1.5 bg-primary/20 hover:bg-primary/30 text-primary rounded-lg border border-primary/20 transition-all active:scale-95 mt-1"
