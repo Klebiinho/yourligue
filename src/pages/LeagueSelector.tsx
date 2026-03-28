@@ -356,7 +356,7 @@ const LeagueSelector = () => {
                                         overtimeHalfLength: 15,
                                         sportType: newSport
                                     });
-                                    if (!res.error) {
+                                    if (!res.error && res.data) {
                                         setNewName(''); setNewSport('soccer'); setShowCreate(false); navigate(`/${res.data.slug || res.data.id}/home`);
                                     }
                                 } catch (err) {

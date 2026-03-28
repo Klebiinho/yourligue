@@ -136,7 +136,7 @@ interface LeagueContextType {
     dataLoading: boolean;
 
     // League actions
-    createLeague: (data: Omit<League, 'id' | 'slug' | 'userId'>) => Promise<{ error: string | null }>;
+    createLeague: (data: Omit<League, 'id' | 'slug' | 'userId'>) => Promise<{ error: string | null; data?: League }>;
     updateLeague: (data: Partial<League>) => Promise<void>;
     deleteLeague: (id: string) => Promise<void>;
     selectLeague: (id: string) => void;
@@ -1240,7 +1240,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 const lg: League = mapDBLeague(row);
                 setLeagues(prev => [...prev, lg]);
                 setLeague(lg);
-                return { error: null };
+                return { error: null, data: lg };
             }
             return { error: 'Erro desconhecido ao cadastrar liga.' };
         } catch (err: any) {
