@@ -480,15 +480,47 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     // ─── SESSION CACHE (Solving "Site sem memória") ──────────────
     useEffect(() => {
         if (league) {
-            sessionStorage.setItem(`league_cache_${league.id}`, JSON.stringify({
-                league,
-                teams: rawTeams,
-                matches: rawMatches,
-                ads,
-                brackets,
-                timestamp: Date.now()
-            }));
-            localStorage.setItem('selectedLeagueId', league.id);
+            try {
+                const cacheKey = `league_cache_${league.id}`;
+                const cacheData = JSON.stringify({
+                    league,
+                    teams: rawTeams,
+                    matches: rawMatches.slice(0, 50), // Limit matches in cache to save space
+                    ads,
+                    brackets,
+                    timestamp: Date.now()
+                });
+                
+                sessionStorage.setItem(cacheKey, cacheData);
+            } catch (e: any) {
+                if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+                    console.warn('LeagueContext: Storage quota exceeded. Clearing old caches.');
+                    // Strategy: Clear all league caches and try again for the current one
+                    Object.keys(sessionStorage).forEach(key => {
+                        if (key.startsWith('league_cache_')) {
+                            sessionStorage.removeItem(key);
+                        }
+                    });
+                    
+                    // Final attempt after cleanup (only for the current league)
+                    try {
+                        sessionStorage.setItem(`league_cache_${league.id}`, JSON.stringify({
+                            league,
+                            teams: rawTeams,
+                            matches: rawMatches.slice(0, 20), // Even more aggressive limit on retry
+                            timestamp: Date.now()
+                        }));
+                    } catch (retryError) {
+                        console.error('LeagueContext: Persistent quota failure', retryError);
+                    }
+                }
+            }
+            
+            try {
+                localStorage.setItem('selectedLeagueId', league.id);
+            } catch (e) {
+                console.warn('LeagueContext: LocalStorage error', e);
+            }
         }
     }, [league, rawTeams, rawMatches, ads, brackets]);
 
