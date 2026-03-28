@@ -818,14 +818,23 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const loadLeagueData = useCallback(async (leagueId: string, background = false) => {
         if (!leagueId) return;
         
+        // Prevent simultaneous duplicate loads for the same league
+        if (loadingRef.current === leagueId) return;
+        loadingRef.current = leagueId;
+
+        console.log('LeagueContext: Syncing league data...', leagueId, background ? '(background)' : '(active)');
+        
         loadUserInteractionsRef.current(leagueId);
         loadSupportCountsRef.current(leagueId);
 
-        // SILENT REFRESH: If we already have data, don't show the full-screen loader
-        const hasAnyData = rawTeams.length > 0 || rawMatches.length > 0;
+        // Instant UI: Try to recover from session cache first
+        const recovered = tryRecoverFromCache(leagueId);
+
+        // SILENT REFRESH: If we have cached data OR it's a background update, don't show full-screen loader
+        const hasData = (rawTeams.length > 0 && rawMatches.length > 0) || recovered;
         
         let dataTimeout: any = null;
-        if (!background && !hasAnyData) {
+        if (!background && !hasData) {
             setDataLoading(true);
             dataTimeout = setTimeout(() => {
                 setDataLoading(prev => {
@@ -845,7 +854,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     .select('*, players(id, name, number, position, team_id, is_captain, is_reserve, display_order)')
                     .eq('league_id', leagueId)
                     .order('name', { ascending: true }),
-                // Optimize: Limit matches and events to improve load speed
+                // Optimize: Limit matches to improve load speed
                 supabase.from('matches')
                     .select('*, match_events(*)')
                     .eq('league_id', leagueId)
@@ -855,29 +864,27 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 supabase.from('ads').select('*').eq('league_id', leagueId).order('display_order', { ascending: true })
             ]);
 
-            // Add debug logs for each response
-            if (teamsRes.error) console.error('LeagueContext: teams fetch error:', teamsRes.error);
-            if (matchesRes.error) console.error('LeagueContext: matches fetch error:', matchesRes.error);
-            if (bracketsRes.error) console.error('LeagueContext: brackets fetch error:', bracketsRes.error);
-            if (adsRes.error) console.error('LeagueContext: ads fetch error:', adsRes.error);
-
             if (teamsRes.data) {
-                console.log('LeagueContext: Loaded', teamsRes.data.length, 'teams');
-                setRawTeams(teamsRes.data.map(mapDBTeam));
+                const mappedTeams = teamsRes.data.map(mapDBTeam);
+                setRawTeams(mappedTeams);
+                teamsRef.current = mappedTeams;
             }
             if (matchesRes.data) {
-                console.log('LeagueContext: Loaded', matchesRes.data.length, 'matches');
                 setRawMatches(matchesRes.data.map(mapDBMatch));
             }
-            if (bracketsRes.data) setBrackets(bracketsRes.data.map(mapDBBracket));
-            if (adsRes.data) setAds(adsRes.data.map((a: any) => ({
-                id: a.id, league_id: a.league_id, title: a.title,
-                desktop_media_url: a.desktop_media_url, mobile_media_url: a.mobile_media_url,
-                square_media_url: a.square_media_url, media_type: a.media_type,
-                positions: a.positions, object_position: a.object_position,
-                link_url: a.link_url, duration: a.duration, active: a.active,
-                display_order: a.display_order || 0, created_at: a.created_at
-            })));
+            if (bracketsRes.data) {
+                setBrackets(bracketsRes.data.map(mapDBBracket));
+            }
+            if (adsRes.data) {
+                setAds(adsRes.data.map((a: any) => ({
+                    id: a.id, league_id: a.league_id, title: a.title,
+                    desktop_media_url: a.desktop_media_url, mobile_media_url: a.mobile_media_url,
+                    square_media_url: a.square_media_url, media_type: a.media_type,
+                    positions: a.positions, object_position: a.object_position,
+                    link_url: a.link_url, duration: a.duration, active: a.active,
+                    display_order: a.display_order || 0, created_at: a.created_at
+                })));
+            }
             
             console.log('LeagueContext: Data fetch successful');
         } catch (err) {
@@ -885,9 +892,10 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             if (dataTimeout) clearTimeout(dataTimeout);
             setDataLoading(false);
+            loadingRef.current = null;
             console.log('LeagueContext: loadLeagueData finished');
         }
-    }, [isPublicView, mapDBTeam, mapDBMatch, mapDBBracket, loadUserInteractions, loadSupportCounts]);
+    }, [rawTeams.length, rawMatches.length, tryRecoverFromCache]);
 
     const loadTeamPhotos = useCallback(async (teamId: string) => {
         if (!teamId) return;
