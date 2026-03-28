@@ -592,11 +592,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             if (ownedRes.data) {
                 const mapped: League[] = ownedRes.data.map(mapDBLeague);
                 setLeagues(mapped);
-                if (mapped.length > 0 && !league && !isPublicView) {
-                    const saved = localStorage.getItem('selectedLeagueId');
-                    const found = saved ? mapped.find(l => l.id === saved) : null;
-                    setLeague(found ?? mapped[0]);
-                }
+                // Auto-selection of first league removed to prioritize the League Selector on boot
             }
 
             if (followsRes.data) {

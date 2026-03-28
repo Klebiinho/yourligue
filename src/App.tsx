@@ -48,7 +48,7 @@ const NotFoundScreen = ({ message, onRetry }: { message: string; onRetry?: () =>
 
 const MainContent = () => {
     const { user, loading: authLoading } = useAuth();
-    const { league, leagues, loading: leagueLoading, loadPublicLeague } = useLeague();
+    const { league, loading: leagueLoading, loadPublicLeague } = useLeague();
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
     const location = useLocation();
@@ -89,7 +89,7 @@ const MainContent = () => {
         return <AuthPage />;
     }
 
-    if (user && !league && leagues.length === 0 && !leagueLoading && location.pathname !== '/leagues' && !slug) {
+    if (user && !league && !leagueLoading && location.pathname === '/' && !slug) {
         return <LeagueSelector />;
     }
 
