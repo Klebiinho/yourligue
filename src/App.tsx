@@ -103,11 +103,11 @@ const MainContent = () => {
             <main className={isOverlayPage ? 'w-full min-h-screen' : 'md:pl-64 min-h-screen'}>
                 <div className="p-4 md:p-8 lg:p-10 pb-24 md:pb-10 max-w-[1600px] mx-auto w-full">
                     <Routes>
-                        <Route path="politica-de-privacidade" element={<PrivacyPolicy />} />
-                        <Route path="termos-de-uso" element={<TermsOfService />} />
-                        <Route path="sitemap" element={<Sitemap />} />
-                        <Route path="auth" element={<AuthPage />} />
-                        <Route path="leagues" element={<LeagueSelector />} />
+                        <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
+                        <Route path="/termos-de-uso" element={<TermsOfService />} />
+                        <Route path="/sitemap" element={<Sitemap />} />
+                        <Route path="/auth" element={<AuthPage />} />
+                        <Route path="/leagues" element={<LeagueSelector />} />
                         <Route path="match/:matchId/overlay" element={<MatchOverlay />} />
 
                         {/* Shared routes using relative paths works for both / and /:slug */}
