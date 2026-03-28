@@ -171,21 +171,6 @@ const Sidebar = () => {
                         {/* iPhone home indicator space */}
                         <div className="h-[env(safe-area-inset-bottom,0px)]" />
                     </nav>
-                    
-                    {/* Fixed Admin Toggle for Mobile owners */}
-                    {isAdmin && (
-                        <button
-                            onClick={() => setIsPublicView(!isPublicView)}
-                            className={`fixed top-4 right-4 z-50 p-3 rounded-2xl shadow-2xl transition-all border border-white/20 active:scale-90 ${
-                                isPublicView 
-                                ? 'bg-accent text-white shadow-accent/40 rotate-0' 
-                                : 'bg-primary text-white shadow-primary/40'
-                            }`}
-                        >
-                            <Settings size={20} className={isPublicView ? 'animate-pulse' : ''} />
-                            <div className="absolute top-0 right-0 -mr-1 -mt-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-bounce" />
-                        </button>
-                    )}
                 </div>
             )}
 
