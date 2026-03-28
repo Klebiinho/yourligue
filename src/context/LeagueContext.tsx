@@ -947,6 +947,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 supabase.from('ads').select('*').eq('league_id', leagueId).order('display_order', { ascending: true })
             ]);
 
+            if (teamsRes.error) console.error('LeagueContext: Teams fetch error:', teamsRes.error);
+            if (matchesRes.error) console.error('LeagueContext: Matches fetch error:', matchesRes.error);
+            if (bracketsRes.error) console.error('LeagueContext: Brackets fetch error:', bracketsRes.error);
+            if (adsRes.error) console.error('LeagueContext: Ads fetch error (500 expected):', adsRes.error);
+
             if (teamsRes.data) {
                 const mappedTeams = teamsRes.data.map(mapDBTeam);
                 console.log('LeagueContext: Teams loaded:', mappedTeams.length);
