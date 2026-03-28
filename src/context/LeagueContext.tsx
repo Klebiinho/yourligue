@@ -2196,6 +2196,30 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
 
 
+    // ── Initial Logic & Recovery ─────────────────────────────
+    useEffect(() => {
+        const recover = async () => {
+            const isOverlayPage = location.pathname.includes('/overlay');
+            const isLeaguesPage = location.pathname === '/leagues' || location.pathname === '/';
+            const showSidebar = !!league && !isLeaguesPage && !isOverlayPage;
+            if (isLeaguesPage) {
+                console.log('LeagueContext: Hub path detected - skipping auto-recovery to ensure clean Hub landing');
+                // Cleanup to ensure Hub has 100% width and no stale data
+                setLeague(null);
+                setRawTeams([]);
+                setRawMatches([]);
+                return;
+            }
+
+            const lastLeagueId = localStorage.getItem('selectedLeagueId');
+            if (lastLeagueId) {
+                console.log('LeagueContext: Recovering last active league for non-Hub path:', lastLeagueId);
+                loadPublicLeague(lastLeagueId);
+            }
+        };
+        recover();
+    }, [loadPublicLeague]);
+
     return (
         <LeagueContext.Provider value={{
             league, leagues, followedLeagues, teams, matches, brackets, loading, dataLoading,

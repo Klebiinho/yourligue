@@ -66,6 +66,7 @@ const MainContent = () => {
         }
     }, [slug, loadPublicLeague]);
 
+
     useEffect(() => {
         if (user && window.location.hash.includes('access_token=')) {
             window.history.replaceState(null, '', location.pathname + location.search);
@@ -97,7 +98,7 @@ const MainContent = () => {
     }
 
     const isOverlayPage = location.pathname.includes('/overlay');
-    const isLeaguesPage = location.pathname === '/leagues';
+    const isLeaguesPage = location.pathname === '/leagues' || location.pathname === '/';
     const showSidebar = !!league && !isLeaguesPage && !isOverlayPage;
 
     return (
