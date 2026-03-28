@@ -23,6 +23,36 @@ const LeagueSelector = () => {
     const [searching, setSearching] = useState(false);
     const navigate = useNavigate();
 
+    // ── Tab Reordering Logic ───────────────────────────────────
+    const tabConfigs = [
+        { id: 'owned' as const, label: 'Minhas Ligas', Icon: Shield, authRequired: true },
+        { id: 'following' as const, label: 'Seguindo', Icon: Bell, authRequired: true },
+        { id: 'nearby' as const, label: 'Ligas Próximas', Icon: MapPin, authRequired: false },
+        { id: 'explore' as const, label: 'Explorar', Icon: Search, authRequired: false },
+    ];
+
+    let sortedTabs = user ? [...tabConfigs] : tabConfigs.filter(t => !t.authRequired);
+
+    if (user) {
+        // If no owned leagues, swap Minhas Ligas with Seguindo
+        if (leagues.length === 0) {
+            const idxO = sortedTabs.findIndex(t => t.id === 'owned');
+            const idxF = sortedTabs.findIndex(t => t.id === 'following');
+            if (idxO !== -1 && idxF !== -1) [sortedTabs[idxO], sortedTabs[idxF]] = [sortedTabs[idxF], sortedTabs[idxO]];
+        }
+        // If no followed leagues, swap Seguindo with Explorar
+        if (followedLeagues.length === 0) {
+            const idxF = sortedTabs.findIndex(t => t.id === 'following');
+            const idxE = sortedTabs.findIndex(t => t.id === 'explore');
+            if (idxF !== -1 && idxE !== -1) [sortedTabs[idxF], sortedTabs[idxE]] = [sortedTabs[idxE], sortedTabs[idxF]];
+        }
+    }
+
+    const handleTabClick = (tabId: 'owned' | 'following' | 'nearby' | 'explore') => {
+        setActiveTab(tabId);
+        if (tabId === 'nearby' && !hasSearchedNearby) handleRequestLocation();
+    };
+
     useEffect(() => {
         if (activeTab === 'explore') {
             const delayDebounceFn = setTimeout(async () => {
@@ -135,41 +165,16 @@ const LeagueSelector = () => {
 
                 {/* Tabs */}
                 <div className={`grid ${user ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2'} gap-1.5 bg-white/3 p-1.5 rounded-2xl mb-6 border border-white/5`}>
-                    {user && (
+                    {sortedTabs.map(({ id, label, Icon }) => (
                         <button
-                            onClick={() => setActiveTab('owned')}
-                            className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'owned' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                            key={id}
+                            onClick={() => handleTabClick(id)}
+                            className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === id ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                         >
-                            <Shield size={14} className="sm:hidden" /> <span className="hidden sm:inline"><Shield size={14} /></span>
-                            <span className="text-center">Minhas Ligas</span>
+                            <Icon size={14} className="sm:hidden" /> <span className="hidden sm:inline"><Icon size={14} /></span>
+                            <span className="text-center">{label}</span>
                         </button>
-                    )}
-                    {user && (
-                        <button
-                            onClick={() => setActiveTab('following')}
-                            className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'following' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
-                        >
-                            <Bell size={14} className="sm:hidden" /> <span className="hidden sm:inline"><Bell size={14} /></span>
-                            <span className="text-center">Seguindo</span>
-                        </button>
-                    )}
-                    <button
-                        onClick={() => { 
-                            setActiveTab('nearby'); 
-                            if (!hasSearchedNearby) handleRequestLocation(); 
-                        }}
-                        className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'nearby' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
-                    >
-                        <MapPin size={14} className="sm:hidden" /> <span className="hidden sm:inline"><MapPin size={14} /></span>
-                        <span className="text-center">Ligas Próximas</span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('explore')}
-                        className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === 'explore' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
-                    >
-                        <Search size={14} className="sm:hidden" /> <span className="hidden sm:inline"><Search size={14} /></span>
-                        <span className="text-center">Explorar</span>
-                    </button>
+                    ))}
                 </div>
 
                 {/* Explorer Search */}
