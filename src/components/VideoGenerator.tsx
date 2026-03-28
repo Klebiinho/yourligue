@@ -414,22 +414,37 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
         }
     };
 
-    // ── Preview scale: container 270x480, source 1080x1920 → scale 0.25 ──
-    const PREVIEW_W = 270;
-    const PREVIEW_H = 480;
+    // ── Dynamic Preview scale ──
+    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Calculate how much horizontal space we have for the preview
+    // Modal max-width is 520px, but on mobile it's windowWidth - padding
+    const horizontalPadding = windowWidth < 640 ? 40 : 80;
+    const availableWidth = Math.min(520, windowWidth) - horizontalPadding;
+    
+    // We want the preview to fit nicely. 
+    // Original card is 1080x1920.
+    const PREVIEW_W = Math.min(270, availableWidth);
     const PREVIEW_SCALE = PREVIEW_W / 1080;
+    const PREVIEW_H = 1920 * PREVIEW_SCALE;
 
     // Prepare optimized data for rendering (substitute base64)
     const pData = useMemo(() => ({ ...player, photo: preloadedAssets.playerPhoto || player.photo }), [player, preloadedAssets.playerPhoto]);
     const tData = useMemo(() => ({ ...team, logo: preloadedAssets.teamLogo || team.logo }), [team, preloadedAssets.teamLogo]);
 
     return (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-fade-in overflow-y-auto">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 bg-black/95 backdrop-blur-xl animate-fade-in overflow-hidden">
             
             {preloading && (
                 <div className="fixed inset-0 bg-black/60 z-[130] flex flex-col items-center justify-center gap-4 animate-fade-in backdrop-blur-md cursor-wait">
                     <Loader2 className="animate-spin text-primary" size={48} />
-                    <span className="text-white font-black uppercase tracking-widest text-xs">Otimizando Imagens...</span>
+                    <span className="text-white font-black uppercase tracking-widest text-[0.6rem]">Otimizando Imagens...</span>
                 </div>
             )}
 
@@ -455,31 +470,30 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
 
             {/* ── Modal ─────────────────────────────────────────────── */}
             <div
-                className="bg-slate-900 border border-slate-700/60 rounded-3xl shadow-2xl flex flex-col items-center overflow-hidden"
-                style={{ maxWidth: '520px', width: '100%', maxHeight: '95dvh', overflowY: 'auto' }}
+                className="bg-slate-900 border border-slate-700/60 rounded-3xl shadow-2xl flex flex-col items-center overflow-hidden w-full max-w-[520px] max-h-[96dvh]"
             >
                 {/* Header */}
-                <div className="w-full flex items-center justify-between p-5 border-b border-slate-700/50">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary">
-                            <Video size={18} />
+                <div className="w-full flex items-center justify-between p-3 sm:p-5 border-b border-slate-700/50 flex-none bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary flex-none">
+                            <Video size={16} className="sm:w-[18px]" />
                         </div>
-                        <div>
-                            <h3 className="text-lg font-black text-white uppercase tracking-widest">Flash Destaque</h3>
-                            <p className="text-slate-400 text-xs mt-1">Gere um vídeo épico deste lance</p>
+                        <div className="min-w-0">
+                            <h3 className="text-xs sm:text-lg font-black text-white uppercase tracking-widest truncate">Flash Destaque</h3>
+                            <p className="text-slate-400 text-[0.55rem] sm:text-xs mt-0.5 truncate">Gere vídeos épicos do lance</p>
                         </div>
                     </div>
-                    <button onClick={onClose} disabled={generating}
-                        className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition disabled:opacity-40">
-                        <X size={18} />
+                    <button onClick={onClose}
+                        className="w-8 h-8 sm:w-9 sm:h-9 flex-none flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition">
+                        <X size={16} className="sm:w-[18px]" />
                     </button>
                 </div>
 
-                <div className="p-5 w-full flex flex-col items-center gap-5">
+                <div className="p-4 sm:p-5 w-full flex flex-col items-center gap-4 sm:gap-5 overflow-y-auto no-scrollbar">
                     {/* Preview */}
                     <div
-                        className="relative rounded-2xl overflow-hidden shadow-2xl ring-4 ring-slate-800"
-                        style={{ width: `${PREVIEW_W}px`, height: `${PREVIEW_H}px`, flexShrink: 0 }}
+                        className="relative rounded-2xl overflow-hidden shadow-2xl ring-4 ring-slate-800 flex-none"
+                        style={{ width: `${PREVIEW_W}px`, height: `${PREVIEW_H}px` }}
                     >
                         <div style={{ width: '1080px', height: '1920px', transform: `scale(${PREVIEW_SCALE})`, transformOrigin: 'top left' }}>
                             <HighlightCard
@@ -524,39 +538,39 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                     )}
 
                     {/* Action buttons */}
-                    <div className="grid grid-cols-2 gap-3 w-full">
+                    <div className="grid grid-cols-2 gap-3 w-full flex-none">
                         <button
                             onClick={handleDownloadImage}
                             disabled={generating}
-                            className="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-black text-xs py-4 px-4 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all disabled:opacity-40 shadow-lg shadow-indigo-900/30"
+                            className="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-black text-[0.65rem] sm:text-xs py-3 sm:py-4 px-2 sm:px-4 rounded-2xl flex flex-col items-center justify-center gap-1 sm:gap-1.5 transition-all disabled:opacity-40 shadow-lg shadow-indigo-900/30"
                         >
                             {generating && !isRecordingFlow ? (
-                                <Loader2 className="w-6 h-6 animate-spin" />
+                                <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
                             ) : (
-                                <ImageDown className="w-6 h-6" />
+                                <ImageDown className="w-5 h-5 sm:w-6 sm:h-6" />
                             )}
-                            <span className="uppercase tracking-wider">
+                            <span className="uppercase tracking-wider truncate w-full px-1">
                                 {generating && !isRecordingFlow ? 'Gerando...' : 'Baixar Imagem'}
                             </span>
-                            <span className="text-indigo-300 text-[0.55rem] font-normal">PNG · 1080×1920</span>
+                            <span className="text-indigo-300 text-[0.5rem] sm:text-[0.55rem] font-normal">PNG · 1080×1920</span>
                         </button>
 
                         <button
                             onClick={handleRecordVideo}
                             disabled={generating}
-                            className="bg-pink-600 hover:bg-pink-500 active:scale-95 text-white font-black text-xs py-4 px-4 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all disabled:opacity-40 shadow-lg shadow-pink-900/30"
+                            className="bg-pink-600 hover:bg-pink-500 active:scale-95 text-white font-black text-[0.65rem] sm:text-xs py-3 sm:py-4 px-2 sm:px-4 rounded-2xl flex flex-col items-center justify-center gap-1 sm:gap-1.5 transition-all disabled:opacity-40 shadow-lg shadow-pink-900/30"
                         >
                             {isRecordingFlow ? (
                                 <>
-                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                    <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
                                     <span className="uppercase tracking-wider">{progress}%</span>
-                                    <span className="text-pink-300 text-[0.55rem] font-normal">Gravando…</span>
+                                    <span className="text-pink-300 text-[0.5rem] sm:text-[0.55rem] font-normal">Gravando…</span>
                                 </>
                             ) : (
                                 <>
-                                    <Video className="w-6 h-6" />
-                                    <span className="uppercase tracking-wider">Gerar Vídeo</span>
-                                    <span className="text-pink-300 text-[0.55rem] font-normal">8s · com animação</span>
+                                    <Video className="w-5 h-5 sm:w-6 sm:h-6" />
+                                    <span className="uppercase tracking-wider truncate w-full px-1">Gerar Vídeo</span>
+                                    <span className="text-pink-300 text-[0.5rem] sm:text-[0.55rem] font-normal">8s · Animado</span>
                                 </>
                             )}
                         </button>
@@ -564,7 +578,7 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
 
                     {/* Progress bar for video */}
                     {isRecordingFlow && (
-                        <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                        <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden flex-none">
                             <div
                                 className="h-full bg-pink-500 rounded-full transition-all duration-200"
                                 style={{ width: `${progress}%` }}
@@ -572,9 +586,9 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                         </div>
                     )}
 
-                    <p className="text-slate-600 text-[0.6rem] text-center leading-relaxed">
-                        A imagem e o vídeo são salvos na <strong className="text-slate-500">galeria</strong> ou na pasta <strong className="text-slate-500">Downloads</strong>.<br />
-                        Para melhor qualidade, certifique-se que as fotos permitem acesso público (CORS).
+                    <p className="text-slate-600 text-[0.55rem] sm:text-[0.6rem] text-center leading-relaxed flex-none pb-2">
+                        A imagem e o vídeo são salvos na <strong className="text-slate-500">galeria</strong> ou no dispositivo.<br />
+                        Para melhor qualidade, use fotos públicas equilibradas.
                     </p>
                 </div>
             </div>
