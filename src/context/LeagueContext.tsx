@@ -615,14 +615,14 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         
         // Safety timeout for global loading
         const globalTimeout = setTimeout(() => {
-            setLoading(prev => {
-                if (prev) {
-                    console.warn('LeagueContext: Global loading safety timeout reached. Forcing false.');
-                    return false;
-                }
-                return prev;
-            });
-        }, 6000);
+            if (loading || dataLoading) {
+                console.warn('LeagueContext: Global loading safety timeout reached. Forcing false states.');
+                setLoading(false);
+                setDataLoading(false);
+                loadingRef.current = null;
+            }
+        }, 12000); // Increased safety timeout for slower connections/heavy data
+
 
         if (!user) {
             console.log('LeagueContext: No user session found (waiting or logged out)');
@@ -853,6 +853,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             return false;
         } finally {
             setLoading(false);
+            setDataLoading(false); // Safety: ensure data loading is also reset
             console.log('LeagueContext: loadPublicLeague completed');
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -906,11 +907,12 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const loadLeagueData = useCallback(async (leagueId: string, background = false) => {
         if (!leagueId) return;
         
-        // Prevent simultaneous duplicate loads
-        if (loadingRef.current === leagueId) return;
+        // Prevent simultaneous duplicate loads for the same league
+        if (loadingRef.current === leagueId && !background) return;
         loadingRef.current = leagueId;
 
-        console.log('LeagueContext: High-speed sync triggered...', leagueId);
+        console.log('LeagueContext: Sync triggered for', leagueId, background ? '(background)' : '(full)');
+
         
         loadUserInteractionsRef.current(leagueId);
         loadSupportCountsRef.current(leagueId);
@@ -998,9 +1000,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         } catch (err) {
             console.error('LeagueContext: Performance load failed:', err);
         } finally {
-            setLoading(false);
-            setDataLoading(false);
-            loadingRef.current = null;
+            if (loadingRef.current === leagueId) {
+                setLoading(false);
+                setDataLoading(false);
+                loadingRef.current = null;
+            }
         }
     }, [rawTeams.length, rawMatches.length, tryRecoverFromCache]);
 
@@ -1358,17 +1362,23 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const selectLeague = (id: string) => {
         const found = leagues.find(l => l.id === id);
         if (found) {
-            // Safety: Set loading immediately so components that rely on the new league
-            // don't try to render with empty teams/matches data before the loader starts.
-            setLoading(true);
-            setDataLoading(true);
+            const isDifferent = !league || league.id !== id;
+            if (isDifferent) {
+                // Safety: Set loading immediately so components that rely on the new league
+                // don't try to render with empty teams/matches data before the loader starts.
+                setLoading(true);
+                setDataLoading(true);
 
-            // Clear stale data immediately so the UI doesn't flash old league data.
-            setRawTeams([]);
-            setRawMatches([]);
-            setBrackets([]);
-            setIsPublicView(false);
-            setLeague(found);
+                // Clear stale data immediately so the UI doesn't flash old league data.
+                setRawTeams([]);
+                setRawMatches([]);
+                setBrackets([]);
+                setIsPublicView(false);
+                setLeague(found);
+            } else {
+                console.log('LeagueContext: Same league selected, performing background sync');
+                loadLeagueData(id, true); // Trigger silent sync
+            }
             localStorage.setItem('selectedLeagueId', id);
         }
     };
