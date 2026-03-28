@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type Team, type Match } from '../context/LeagueContext';
-import { User, Target, Zap, Clock, ArrowLeft, Star, TrendingUp, Medal, History, Crown, ShieldAlert, CheckCircle, Activity } from 'lucide-react';
+import { User, Target, Zap, Clock, ArrowLeft, Star, TrendingUp, Medal, History, Crown, ShieldAlert, CheckCircle, Activity, Edit3, Trash2, Camera, ShieldCheck, X } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const PlayerDetail = () => {
@@ -9,8 +9,18 @@ const PlayerDetail = () => {
     const navigate = useNavigate();
     const { 
         league, teams, matches, getPlayerSlug, getTeamSlug, 
-        loading: leagueLoading 
+        loading: leagueLoading, isAdmin, isPublicView, updatePlayer, removePlayer
     } = useLeague();
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [form, setForm] = useState({
+        name: '',
+        number: 0,
+        position: '',
+        isCaptain: false,
+        isReserve: false,
+        photo: ''
+    });
 
     // Find the player across all teams
     const playerWithTeam = useMemo(() => {
@@ -144,14 +154,164 @@ const PlayerDetail = () => {
 
                         {/* Position Badge */}
                         <div className="flex flex-col items-center md:items-end gap-2 text-center md:text-right">
-                             <span className="text-slate-600 text-[0.6rem] font-black uppercase tracking-widest">Posição</span>
-                             <div className="px-6 py-2.5 bg-white/5 rounded-2xl border border-white/5 font-black uppercase text-xs tracking-widest text-white shadow-sm">
-                                 {player.position}
+                             <div className="flex flex-col gap-2">
+                                <span className="text-slate-600 text-[0.6rem] font-black uppercase tracking-widest">Posição</span>
+                                <div className="px-6 py-2.5 bg-white/5 rounded-2xl border border-white/5 font-black uppercase text-xs tracking-widest text-white shadow-sm">
+                                    {player.position}
+                                </div>
                              </div>
+
+                             {isAdmin && !isPublicView && (
+                                <button 
+                                    onClick={() => {
+                                        setForm({
+                                            name: player.name,
+                                            number: player.number,
+                                            position: player.position,
+                                            isCaptain: player.isCaptain || false,
+                                            isReserve: player.isReserve || false,
+                                            photo: player.photo || ''
+                                        });
+                                        setIsEditing(true);
+                                    }}
+                                    className="flex items-center gap-2 px-4 py-2 bg-primary/20 text-primary border border-primary/20 rounded-xl font-black uppercase text-[0.6rem] tracking-widest hover:bg-primary hover:text-white transition-all shadow-lg active:scale-95"
+                                >
+                                    <Edit3 size={12} /> Editar Atleta
+                                </button>
+                             )}
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Edit Modal */}
+            {isEditing && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={() => setIsEditing(false)} />
+                    <div className="relative w-full max-w-lg glass-panel p-6 sm:p-8 border border-white/10 shadow-[0_32px_128px_rgba(0,0,0,0.8)] animate-slide-up">
+                        <div className="flex items-center justify-between mb-8">
+                            <h2 className="text-2xl font-black font-outfit uppercase tracking-tight text-white flex items-center gap-3">
+                                <Edit3 className="text-primary" /> Editar Atleta
+                            </h2>
+                            <button onClick={() => setIsEditing(false)} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-all">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={async (e) => {
+                            e.preventDefault();
+                            const { error } = await updatePlayer(team.id, player.id, form);
+                            if (error) { alert(error); return; }
+                            setIsEditing(false);
+                        }} className="space-y-6">
+                            <div className="flex gap-6 items-start">
+                                <div className="flex-none text-center">
+                                    <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-2">Foto / Shield</label>
+                                    <label className="relative block group cursor-pointer">
+                                        <div className="w-24 h-24 rounded-2xl bg-black/40 border-2 border-white/10 overflow-hidden group-hover:border-primary/50 transition-all flex items-center justify-center">
+                                            {form.photo ? (
+                                                <img src={form.photo} className="w-full h-full object-cover" alt="Preview" />
+                                            ) : (
+                                                <Camera size={24} className="text-slate-800" />
+                                            )}
+                                            <div className="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                                                <Camera size={20} className="text-white" />
+                                            </div>
+                                        </div>
+                                        <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                const r = new FileReader();
+                                                r.onloadend = () => setForm({ ...form, photo: r.result as string });
+                                                r.readAsDataURL(file);
+                                            }
+                                        }} />
+                                    </label>
+                                </div>
+
+                                <div className="flex-1 space-y-4">
+                                    <div>
+                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-1">Nome de Exibição</label>
+                                        <input 
+                                            value={form.name} onChange={e => setForm({...form, name: e.target.value})}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none font-bold"
+                                            required 
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-1">Número</label>
+                                            <input 
+                                                type="number" value={form.number} onChange={e => setForm({...form, number: parseInt(e.target.value) || 0})}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none font-bold"
+                                                required 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-1">Posição</label>
+                                            <select 
+                                                value={form.position} onChange={e => setForm({...form, position: e.target.value})}
+                                                className="w-full bg-[#111119] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none font-bold appearance-none"
+                                            >
+                                                {league?.sportType === 'basketball' ? (
+                                                    <>
+                                                        <option>Armador</option>
+                                                        <option>Ala-Armador</option>
+                                                        <option>Ala</option>
+                                                        <option>Ala-Pivô</option>
+                                                        <option>Pivô</option>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <option>Goleiro</option>
+                                                        <option>Zagueiro</option>
+                                                        <option>Lateral</option>
+                                                        <option>Meio-Campo</option>
+                                                        <option>Ponta</option>
+                                                        <option>Atacante</option>
+                                                    </>
+                                                )}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <button type="button" 
+                                    onClick={() => setForm({...form, isCaptain: !form.isCaptain})}
+                                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-black uppercase text-[0.6rem] tracking-widest ${form.isCaptain ? 'bg-warning/10 border-warning text-warning' : 'bg-white/5 border-white/5 text-slate-500'}`}
+                                >
+                                    <Crown size={14} fill={form.isCaptain ? 'currentColor' : 'none'} /> {form.isCaptain ? 'Capitão' : 'Mudar Capitão'}
+                                </button>
+                                <button type="button" 
+                                    onClick={() => setForm({...form, isReserve: !form.isReserve})}
+                                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-black uppercase text-[0.6rem] tracking-widest ${form.isReserve ? 'bg-primary/10 border-primary text-primary' : 'bg-white/5 border-white/5 text-slate-500'}`}
+                                >
+                                    <ShieldCheck size={14} /> {form.isReserve ? 'No Banco' : 'Ser Reserva'}
+                                </button>
+                            </div>
+
+                            <div className="flex gap-4 pt-4 border-t border-white/5">
+                                <button type="button" 
+                                    onClick={async () => {
+                                        if (window.confirm(`Tem certeza que deseja remover ${player.name} de ${team.name}?`)) {
+                                            await removePlayer(team.id, player.id);
+                                            navigate(-1);
+                                        }
+                                    }}
+                                    className="p-3 bg-danger/10 text-danger rounded-xl hover:bg-danger hover:text-white transition-all"
+                                >
+                                    <Trash2 size={20} />
+                                </button>
+                                <button type="submit" className="flex-1 bg-primary text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:brightness-110 active:scale-95 transition-all">
+                                    Salvar Alterações
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Main Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
