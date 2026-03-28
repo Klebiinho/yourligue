@@ -817,7 +817,22 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             setDataLoading(false);
             console.log('LeagueContext: loadLeagueData finished');
         }
-    }, [rawTeams.length, rawMatches.length]);
+    }, [isPublicView, mapDBTeam, mapDBMatch, mapDBBracket, loadUserInteractions, loadSupportCounts]);
+
+    const loadTeamPhotos = useCallback(async (teamId: string) => {
+        if (!teamId) return;
+        try {
+            const { data } = await supabase.from('players').select('id, photo').eq('team_id', teamId).not('photo', 'eq', '');
+            if (!data || data.length === 0) return;
+            const photoMap = new Map(data.map(p => [p.id, p.photo]));
+            setRawTeams(prev => prev.map(t => {
+                if (t.id === teamId) {
+                    return { ...t, players: t.players.map(p => ({ ...p, photo: photoMap.get(p.id) || p.photo })) };
+                }
+                return t;
+            }));
+        } catch (err) { console.error('Error loading team photos:', err); }
+    }, []);
 
     useEffect(() => {
         if (!league) {
