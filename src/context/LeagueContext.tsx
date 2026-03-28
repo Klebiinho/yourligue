@@ -2199,9 +2199,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     // ── Initial Logic & Recovery ─────────────────────────────
     useEffect(() => {
         const recover = async () => {
-            const isOverlayPage = location.pathname.includes('/overlay');
-            const isLeaguesPage = location.pathname === '/leagues' || location.pathname === '/';
-            const showSidebar = !!league && !isLeaguesPage && !isOverlayPage;
+            const isLeaguesPage = window.location.pathname === '/leagues' || window.location.pathname === '/';
             if (isLeaguesPage) {
                 console.log('LeagueContext: Hub path detected - skipping auto-recovery to ensure clean Hub landing');
                 // Cleanup to ensure Hub has 100% width and no stale data
