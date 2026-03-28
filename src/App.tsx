@@ -99,7 +99,7 @@ const MainContent = () => {
     return (
         <div className="min-h-screen bg-[#07070a] text-white font-inter">
             {!isOverlayPage && <Sidebar />}
-            <main className={slug || isPublicPage || isOverlayPage ? 'w-full min-h-screen' : 'md:pl-64 min-h-screen'}>
+            <main className={isOverlayPage ? 'w-full min-h-screen' : 'md:pl-64 min-h-screen'}>
                 <div className="p-4 md:p-8 lg:p-10 pb-24 md:pb-10 max-w-[1600px] mx-auto w-full">
                     <Routes>
                         <Route path="politica-de-privacidade" element={<PrivacyPolicy />} />
