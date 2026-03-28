@@ -261,15 +261,6 @@ const Sidebar = () => {
 
                 {/* Footer */}
                 <div className="p-3 border-t border-white/[0.05] space-y-1">
-                    {!isPublicView && isAdmin && (
-                        <button
-                            onClick={() => navigate('/leagues')}
-                            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:text-white hover:bg-white/5 w-full transition-all group font-bold text-[0.75rem] tracking-wide"
-                        >
-                            <ArrowLeftRight size={14} className="group-hover:rotate-180 transition-transform duration-500 flex-none" />
-                            <span>Trocar Liga</span>
-                        </button>
-                    )}
                     
                     <button
                         onClick={() => navigate('/politica-de-privacidade')}
