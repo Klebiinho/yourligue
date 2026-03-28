@@ -69,7 +69,7 @@ const MainContent = () => {
         }
     }, [user, location]);
 
-    if (authLoading || (leagueLoading && !!slug && !notFound)) {
+    if (authLoading || (leagueLoading && !!slug && !notFound && !league)) {
         return <LoadingScreen />;
     }
 
@@ -89,7 +89,7 @@ const MainContent = () => {
         return <AuthPage />;
     }
 
-    if (user && !league && leagues.length === 0 && location.pathname !== '/leagues') {
+    if (user && !league && leagues.length === 0 && !leagueLoading && location.pathname !== '/leagues' && !slug) {
         return <LeagueSelector />;
     }
 

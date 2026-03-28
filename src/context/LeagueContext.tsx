@@ -470,6 +470,52 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const matchesRef = useRef<Match[]>([]);
     const interactionsRef = useRef<TeamInteraction[]>([]);
 
+    const loadingRef = useRef<string | null>(null);
+
+    // ─── SESSION CACHE (Solving "Site sem memória") ──────────────
+    useEffect(() => {
+        if (league) {
+            sessionStorage.setItem(`league_cache_${league.id}`, JSON.stringify({
+                league,
+                teams: rawTeams,
+                matches: rawMatches,
+                ads,
+                brackets,
+                timestamp: Date.now()
+            }));
+            localStorage.setItem('selectedLeagueId', league.id);
+        }
+    }, [league, rawTeams, rawMatches, ads, brackets]);
+
+    const tryRecoverFromCache = useCallback((leagueId: string) => {
+        const cached = sessionStorage.getItem(`league_cache_${leagueId}`);
+        if (cached) {
+            try {
+                const data = JSON.parse(cached);
+                // Only use cache if it's less than 30 minutes old for fresh start
+                if (Date.now() - data.timestamp < 30 * 60 * 1000) {
+                    setLeague(data.league);
+                    setRawTeams(data.teams);
+                    setRawMatches(data.matches);
+                    setAds(data.ads || []);
+                    setBrackets(data.brackets || []);
+                    teamsRef.current = data.teams;
+                    return true;
+                }
+            } catch (e) { console.error('Cache recovery failed', e); }
+        }
+        return false;
+    }, []);
+
+    // Warm boot from session cache if available
+    useEffect(() => {
+        const savedId = localStorage.getItem('selectedLeagueId');
+        if (savedId && !league) {
+            console.log('LeagueContext: Warm booting league from cache...', savedId);
+            tryRecoverFromCache(savedId);
+        }
+    }, [tryRecoverFromCache, league]);
+
     useEffect(() => { teamsRef.current = teams; }, [teams]);
     useEffect(() => { matchesRef.current = matches; }, [matches]);
     useEffect(() => { interactionsRef.current = userInteractions; }, [userInteractions]);
@@ -672,14 +718,20 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         if (!slugOrId) return false;
         
         try {
-            if (!league || (league.slug !== slugOrId && league.id !== slugOrId)) {
+            const isSameLeague = league && (league.slug === slugOrId || league.id === slugOrId);
+
+            if (!isSameLeague) {
                 console.log('LeagueContext: Resetting data for new public league');
                 setLoading(true);
+                setDataLoading(true); // Ensure full reload state for new league
                 setRawTeams([]);
                 setRawMatches([]);
                 setBrackets([]);
                 setUserInteractions([]);
                 setSupportCounts({});
+            } else {
+                console.log('LeagueContext: Same league requested, keeping current data for seamless transition');
+                // Silent update in background if it's the same league
             }
             
             setIsPublicView(true);
@@ -700,8 +752,16 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             }
 
             if (data) {
-                const lg: League = mapDBLeague(data);
-                setLeague(lg);
+                const mapped = mapDBLeague(data);
+                
+                // Only update state if something changed or it's a new league
+                if (!isSameLeague || JSON.stringify(mapped) !== JSON.stringify(league)) {
+                    setLeague(mapped);
+                    localStorage.setItem('selectedLeagueId', mapped.id);
+                }
+                
+                // If it's the SAME league, loadLeagueData will be called by useEffect [league?.id]
+                // But we already have the data, so it will be a background refresh.
                 return true;
             } else {
                 console.warn('LeagueContext: Public league not found');

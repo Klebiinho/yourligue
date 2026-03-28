@@ -48,7 +48,7 @@ const Dashboard = () => {
         </div>
     );
 
-    if (dataLoading) return (
+    if (dataLoading && teams.length === 0) return (
         <div className="animate-fade-in space-y-6 md:space-y-8 pb-10">
             <header>
                 <h1 className="text-xl sm:text-2xl md:text-4xl font-outfit font-extrabold tracking-tight leading-tight opacity-50">
