@@ -1,11 +1,17 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Users, Trash2, Edit2, PlusCircle, Star, TrendingUp, Crown, ShieldCheck } from 'lucide-react';
+import { Users, Trash2, Edit2, PlusCircle, Star, TrendingUp, Crown, ShieldCheck, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const TeamsDashboard = () => {
-    const { league, teams, addTeam, updateTeam, deleteTeam, addPlayer, updatePlayer, removePlayer, toggleCaptain } = useLeague();
+    const navigate = useNavigate();
+    const { 
+        league, teams, addTeam, updateTeam, deleteTeam, 
+        addPlayer, updatePlayer, removePlayer, toggleCaptain,
+        leagueBasePath, getPlayerSlug
+    } = useLeague();
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(teams[0]?.id || null);
     const [isAddingTeam, setIsAddingTeam] = useState(false);
     const [isEditingTeam, setIsEditingTeam] = useState<string | null>(null);
@@ -409,7 +415,12 @@ const TeamsDashboard = () => {
                 </div>
 
                 {/* Actions Section */}
-                <div className="flex items-center gap-1.5 md:opacity-0 md:group-hover:opacity-100 transition-all pr-1">
+                <div className="flex items-center gap-1 sm:gap-1.5 md:opacity-0 md:group-hover:opacity-100 transition-all pr-1">
+                    <button onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/${getPlayerSlug(p)}/player`); }}
+                        className="p-2.5 sm:p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-lg shadow-primary/5"
+                        title="Ver Perfil Completo">
+                        <User size={16} className="sm:w-[14px] sm:h-[14px]" />
+                    </button>
                     <button onClick={(e) => { e.stopPropagation(); toggleCaptain(teamId, p.id); }}
                         className={`p-2.5 sm:p-2 rounded-xl transition-all ${isStar ? 'bg-warning/20 text-warning shadow-lg shadow-warning/10' : 'text-slate-500 hover:text-white hover:bg-white/10'}`}
                         title="Destaque/Capitão">

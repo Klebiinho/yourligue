@@ -15,7 +15,7 @@ const MatchControl = () => {
         currentYtLiveStream, isYtAuthenticated, recoverStreamDetails,
         ytLogin, setYtLivePrivacy, startMatch, pauseMatch, 
         loading: leagueLoading, dataLoading, leagueBasePath,
-        getMatchSlug
+        getMatchSlug, getPlayerSlug
     } = useLeague();
 
     const match = useMemo(() => {
@@ -1070,9 +1070,25 @@ const MatchControl = () => {
                                                                     )}
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
-                                                                    <h4 className={`font-black uppercase leading-tight font-outfit truncate ${player.id === suggestedMVPId ? 'text-warning text-[0.7rem]' : 'text-white text-[0.7rem]'}`}>
+                                                                    <h4 
+                                                                        onClick={() => navigate(`${leagueBasePath}/${getPlayerSlug(player)}/player`)}
+                                                                        className={`font-black uppercase leading-tight font-outfit truncate player-clickable ${player.id === suggestedMVPId ? 'text-warning text-sm' : 'text-white text-xs sm:text-sm'}`}
+                                                                    >
                                                                         #{player.number} {player.name}
                                                                     </h4>
+                                                                    
+                                                                    {/* Event Badges (Minutes) */}
+                                                                    <div className="flex flex-wrap gap-1 mt-1.5 min-h-[16px]">
+                                                                        {match.events.filter(e => e.playerId === player.id).map(e => (
+                                                                            <div key={e.id} className="event-badge" title={`${e.minute}' - ${e.type}`}>
+                                                                                {e.type === 'goal' ? '⚽' : 
+                                                                                 e.type === 'yellow_card' ? '🟨' : 
+                                                                                 e.type === 'red_card' ? '🟥' : 
+                                                                                 e.type === 'assist' ? '🅰️' : 
+                                                                                 e.type.includes('points') ? '🏀' : ''} {e.minute}'
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
                                                                     <div className="flex items-center gap-1 mt-1 h-3.5">
                                                                         {Array.from({ length: yellowCards }).map((_, i) => (
                                                                             <div key={i} className={`w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm ${isRedCarded ? 'opacity-40' : ''}`} />
@@ -1394,7 +1410,10 @@ const MatchControl = () => {
                                                 {event.minute}'
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <span className="font-outfit font-black text-white uppercase truncate text-xs block">
+                                                <span 
+                                                    onClick={() => p && navigate(`${leagueBasePath}/${getPlayerSlug(p)}/player`)}
+                                                    className="font-outfit font-black text-white uppercase truncate text-xs block player-clickable"
+                                                >
                                                     {event.type === 'substitution' ? `${p?.name ?? '—'} ↔️ ${pOut?.name ?? '—'}` : (p?.name ?? '—')}
                                                 </span>
                                                 <span className={`text-[0.6rem] font-black uppercase tracking-tight ${colorMap[event.type] || 'text-slate-500'}`}>
