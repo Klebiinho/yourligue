@@ -212,9 +212,6 @@ const Sidebar = () => {
                             <button
                                 onClick={() => {
                                     setIsPublicView(!isPublicView);
-                                    if (isPublicView) {
-                                        navigate(league ? `/${league.slug || league.id}/home` : '/');
-                                    }
                                 }}
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-black text-xs uppercase tracking-widest shadow-lg group border ${
                                     isPublicView 
