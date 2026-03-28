@@ -272,7 +272,7 @@ const Sidebar = () => {
                     )}
                     
                     <button
-                        onClick={() => navigate('/privacidade')}
+                        onClick={() => navigate('/politica-de-privacidade')}
                         className="flex items-center gap-3 px-4 py-2 rounded-xl text-slate-600 hover:text-primary hover:bg-primary/5 w-full transition-all group font-bold text-[0.7rem] tracking-wide"
                     >
                         <Shield size={14} className="flex-none" />
@@ -280,7 +280,7 @@ const Sidebar = () => {
                     </button>
 
                     <button
-                        onClick={() => navigate('/termos')}
+                        onClick={() => navigate('/termos-de-uso')}
                         className="flex items-center gap-3 px-4 py-2 rounded-xl text-slate-600 hover:text-primary hover:bg-primary/5 w-full transition-all group font-bold text-[0.7rem] tracking-wide"
                     >
                         <FileText size={14} className="flex-none" />

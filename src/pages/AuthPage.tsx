@@ -187,10 +187,10 @@ const AuthPage = () => {
                     <p className="text-slate-500 text-[0.65rem] font-black uppercase tracking-[0.2em]">
                         YourLigue © 2026 · Todos os direitos reservados
                     </p>
-                    <div className="flex items-center justify-center gap-6">
-                        <a href="/privacidade" className="text-slate-600 hover:text-primary transition-colors text-[0.6rem] font-bold uppercase tracking-widest">Política de Privacidade</a>
-                        <div className="w-1 h-1 bg-slate-800 rounded-full" />
-                        <a href="/termos" className="text-slate-600 hover:text-primary transition-colors text-[0.6rem] font-bold uppercase tracking-widest">Termos de Serviço</a>
+                    <div className="flex items-center justify-center gap-6 mt-6">
+                        <a href="/politica-de-privacidade" className="text-slate-600 hover:text-primary transition-colors text-[0.6rem] font-bold uppercase tracking-widest">Política de Privacidade</a>
+                        <div className="w-1 h-1 rounded-full bg-slate-800" />
+                        <a href="/termos-de-uso" className="text-slate-600 hover:text-primary transition-colors text-[0.6rem] font-bold uppercase tracking-widest">Termos de Uso</a>
                     </div>
                 </div>
             </div>

@@ -23,6 +23,7 @@ import Sitemap from './pages/Sitemap';
 import Sidebar from './components/Sidebar';
 import AuthModal from './components/AuthModal';
 import NotificationTray from './components/NotificationTray';
+import Footer from './components/Footer';
 
 // ── Shared UI ──────────────────────────────────────────────────────────────────
 
@@ -81,7 +82,7 @@ const MainContent = () => {
         return <LoadingScreen />;
     }
 
-    const isPublicPage = ['/privacidade', '/termos', '/sitemap'].includes(location.pathname);
+    const isPublicPage = ['/politica-de-privacidade', '/termos-de-uso', '/sitemap'].includes(location.pathname);
     const hasLeague = !!league || !!slug;
 
     // Only force login if not a public page AND not viewing a league AND not logged in
@@ -101,8 +102,8 @@ const MainContent = () => {
             <main className={slug || isPublicPage || isOverlayPage ? 'w-full min-h-screen' : 'md:pl-64 min-h-screen'}>
                 <div className="p-4 md:p-8 lg:p-10 pb-24 md:pb-10 max-w-[1600px] mx-auto w-full">
                     <Routes>
-                        <Route path="privacidade" element={<PrivacyPolicy />} />
-                        <Route path="termos" element={<TermsOfService />} />
+                        <Route path="politica-de-privacidade" element={<PrivacyPolicy />} />
+                        <Route path="termos-de-uso" element={<TermsOfService />} />
                         <Route path="sitemap" element={<Sitemap />} />
                         <Route path="match/:matchId/overlay" element={<MatchOverlay />} />
 
@@ -122,6 +123,7 @@ const MainContent = () => {
                         <Route path="*" element={<Navigate to={slug ? `/view/${slug}` : "/"} replace />} />
                     </Routes>
                 </div>
+                {!isOverlayPage && <Footer />}
                 <AuthModal />
                 <NotificationTray />
             </main>

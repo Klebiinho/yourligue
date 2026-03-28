@@ -358,6 +358,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             const sortedTeamMatches = [...teamMatches].sort((a, b) => 
                 new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
             );
+            
 
             teamMatches.forEach(m => {
                 if (!m) return;
@@ -617,7 +618,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 setLoading(false);
                 return;
             }
-            // SILENT REFRESH: Only show active loading if we don't have leagues yet
             if (leagues.length === 0) setLoading(true);
 
             // Load owned & followed leagues in parallel
