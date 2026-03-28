@@ -21,15 +21,23 @@ const Dashboard = () => {
     const [showTopRankModal, setShowTopRankModal] = useState<{ open: boolean, type: 'goals' | 'assists' | 'rebounds' }>({ open: false, type: 'goals' });
 
     const isBasket = league?.sportType === 'basketball';
-    const allPlayers = teams.flatMap(t => t.players.map(p => ({ ...p, team: t })));
+    const allPlayers = teams.flatMap(t => (t.players || []).map(p => ({ ...p, team: t })));
+    const getStat = (p: any) => isBasket ? (p.stats?.points || 0) : (p.stats?.goals || 0);
 
-    const topScorers = [...allPlayers].sort((a, b) => {
-        const valA = isBasket ? (a.stats?.points || 0) : (a.stats?.goals || 0);
-        const valB = isBasket ? (b.stats?.points || 0) : (b.stats?.goals || 0);
-        return valB - valA;
-    }).filter(p => (isBasket ? (p.stats?.points || 0) : (p.stats?.goals || 0)) > 0).slice(0, 5);
-    const topAssisters = [...allPlayers].sort((a, b) => (b.stats?.assists || 0) - (a.stats?.assists || 0)).filter(p => (p.stats?.assists || 0) > 0).slice(0, 5);
-    const topRebounders = [...allPlayers].sort((a, b) => (b.stats?.rebounds || 0) - (a.stats?.rebounds || 0)).filter(p => (p.stats?.rebounds || 0) > 0).slice(0, 5);
+    const topScorers = [...allPlayers]
+        .sort((a, b) => getStat(b) - getStat(a))
+        .filter(p => getStat(p) > 0)
+        .slice(0, 5);
+        
+    const topAssisters = [...allPlayers]
+        .sort((a, b) => (b.stats?.assists || 0) - (a.stats?.assists || 0))
+        .filter(p => (p.stats?.assists || 0) > 0)
+        .slice(0, 5);
+        
+    const topRebounders = [...allPlayers]
+        .sort((a, b) => (b.stats?.rebounds || 0) - (a.stats?.rebounds || 0))
+        .filter(p => (p.stats?.rebounds || 0) > 0)
+        .slice(0, 5);
 
     useEffect(() => {
         if (!dataLoading && teams.length > 0) {
@@ -155,7 +163,7 @@ const Dashboard = () => {
                     {!isPublicView && isAdmin && league && (
                         <button
                             onClick={() => {
-                                const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+                                const baseUrl = window.location.origin;
                                 const url = `${baseUrl}/view/${league.slug || league.id}`;
                                 navigator.clipboard.writeText(url);
                                 alert('Link da visão de telespectador copiado!');

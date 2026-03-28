@@ -867,31 +867,45 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             }
 
             // PHASE 2: LAZY LOADING HEAVY DATA (Background)
-            // Dispatched parallel but doesn't block "loading = false"
-            (async () => {
-                const { data: playersData } = await supabase.from('players')
-                    .select('id, name, number, position, team_id, is_captain, is_reserve, display_order')
-                    .in('team_id', teamsRes.data?.map(t => t.id) || []);
-                
-                if (playersData) {
-                    setRawTeams(prev => prev.map(t => ({
-                        ...t,
-                        players: playersData.filter(p => p.team_id === t.id).map(mapDBPlayer)
-                    })));
-                }
+            const loadHeavyData = async () => {
+                try {
+                    const tIds = teamsRes.data?.map(t => t.id) || [];
+                    if (tIds.length === 0) return;
 
-                // If league has MORE than 100 matches, fetch the rest in background
-                if (matchesRes.data?.length === 100) {
-                   const { data: moreMatches } = await supabase.from('matches')
-                       .select('*, match_events(*)')
-                       .eq('league_id', leagueId)
-                       .order('updated_at', { ascending: false })
-                       .range(100, 300);
-                   if (moreMatches) {
-                       setRawMatches(prev => [...prev, ...moreMatches.map(mapDBMatch)]);
-                   }
+                    const { data: playersData, error: pErr } = await supabase.from('players')
+                        .select('id, name, number, position, team_id, is_captain, is_reserve, display_order')
+                        .in('team_id', tIds);
+                    
+                    if (pErr) throw pErr;
+
+                    if (playersData) {
+                        setRawTeams(prev => prev.map(t => ({
+                            ...t,
+                            players: playersData.filter(p => p.team_id === t.id).map(mapDBPlayer)
+                        })));
+                    }
+
+                    // If league has MORE than 100 matches, fetch the rest in background
+                    if (matchesRes.data && matchesRes.data.length >= 100) {
+                       const { data: moreMatches } = await supabase.from('matches')
+                           .select('*, match_events(*)')
+                           .eq('league_id', leagueId)
+                           .order('updated_at', { ascending: false })
+                           .range(100, 300);
+                       if (moreMatches) {
+                           setRawMatches(prev => {
+                               const existingIds = new Set(prev.map(m => m.id));
+                               const filtered = moreMatches.filter(m => !existingIds.has(m.id)).map(mapDBMatch);
+                               return [...prev, ...filtered];
+                           });
+                       }
+                    }
+                } catch (e) {
+                    console.warn('LeagueContext: Lazy load suppressed/failed:', e);
                 }
-            })();
+            };
+
+            loadHeavyData();
 
         } catch (err) {
             console.error('LeagueContext: Performance load failed:', err);
