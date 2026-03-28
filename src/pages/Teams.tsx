@@ -49,7 +49,7 @@ const Teams = () => {
     });
 
     const [teamSearch, setTeamSearch] = useState('');
-    const filteredTeams = teams.filter(t => t.name.toLowerCase().includes(teamSearch.toLowerCase()));
+    const filteredTeams = (teams || []).filter(t => (t?.name || "").toLowerCase().includes(teamSearch.toLowerCase()));
 
     const currentTeam = teams.find(t => t.id === activeTeamId);
 

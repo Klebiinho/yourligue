@@ -80,8 +80,8 @@ const Matches = () => {
             const ht = teams.find((t: any) => t.id === m.homeTeamId);
             const at = teams.find((t: any) => t.id === m.awayTeamId);
             const matchesQuery = !searchQuery || 
-                ht?.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                at?.name.toLowerCase().includes(searchQuery.toLowerCase());
+                (ht?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+                (at?.name || "").toLowerCase().includes(searchQuery.toLowerCase());
             const matchesTeam = !teamFilter || m.homeTeamId === teamFilter || m.awayTeamId === teamFilter;
             return matchesQuery && matchesTeam;
         })

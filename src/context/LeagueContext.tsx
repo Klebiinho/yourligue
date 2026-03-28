@@ -276,7 +276,7 @@ const mapDBBracket = (b: any): BracketMatch => ({
 });
 
 const mapDBLeague = (l: any): League => ({
-    id: l.id, name: l.name, logo: l.logo || '', maxTeams: l.max_teams,
+    id: l.id, name: l.name || 'Sem nome', logo: l.logo || '', maxTeams: l.max_teams || 20,
     pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
     pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
     overtimeHalfLength: l.overtime_half_length || 15,
@@ -685,8 +685,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
         let filtered = data || [];
 
-        if (query.trim()) {
-            filtered = filtered.filter(l => l.name.toLowerCase().includes(query.toLowerCase()));
+        if (query) {
+            filtered = filtered.filter(l => (l.name || "").toLowerCase().includes(query.toLowerCase()));
         }
 
         // Ordenar por acompanhantes (desc) e depois por nome
