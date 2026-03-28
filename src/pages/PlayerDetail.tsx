@@ -230,6 +230,9 @@ const PlayerDetail = () => {
                             const { error } = await updatePlayer(team.id, player.id, form);
                             if (error) { alert(error); return; }
                             
+                            alert('Atleta atualizado com sucesso!');
+                            setIsEditing(false);
+                            
                             // Se o nome mudou, o slug mudou. Precisamos navegar para a nova URL
                             const newSlug = form.name.toLowerCase()
                                 .normalize('NFD')
@@ -241,8 +244,6 @@ const PlayerDetail = () => {
                             if (newSlug !== playerSlug) {
                                 navigate(`/${leagueSlug}/${newSlug}/player`, { replace: true });
                             }
-                            
-                            setIsEditing(false);
                         }} className="space-y-6">
                             <div className="flex gap-6 items-start">
                                 <div className="flex-none text-center">
@@ -318,21 +319,27 @@ const PlayerDetail = () => {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <button type="button" 
-                                    onClick={() => setForm({...form, isCaptain: !form.isCaptain})}
-                                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-black uppercase text-[0.6rem] tracking-widest ${form.isCaptain ? 'bg-warning/10 border-warning text-warning' : 'bg-white/5 border-white/5 text-slate-500'}`}
-                                >
-                                    <Crown size={14} fill={form.isCaptain ? 'currentColor' : 'none'} /> {form.isCaptain ? 'Capitão' : 'Mudar Capitão'}
-                                </button>
-                                <button type="button" 
-                                    onClick={() => setForm({...form, isReserve: !form.isReserve})}
-                                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-black uppercase text-[0.6rem] tracking-widest ${form.isReserve ? 'bg-primary/10 border-primary text-primary' : 'bg-white/5 border-white/5 text-slate-500'}`}
-                                >
-                                    <ShieldCheck size={14} /> {form.isReserve ? 'No Banco' : 'Ser Reserva'}
-                                </button>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Tipo de Inscrição</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button type="button" onClick={() => setForm({...form, isReserve: false})}
+                                            className={`py-3 rounded-xl font-black text-[0.6rem] uppercase tracking-widest border-2 transition-all ${!form.isReserve ? 'bg-primary/20 border-primary text-primary shadow-lg' : 'bg-white/5 border-white/5 text-slate-500 hover:bg-white/10'}`}>
+                                            Titular
+                                        </button>
+                                        <button type="button" onClick={() => setForm({...form, isReserve: true, isCaptain: false})}
+                                            className={`py-3 rounded-xl font-black text-[0.6rem] uppercase tracking-widest border-2 transition-all ${form.isReserve ? 'bg-accent/20 border-accent text-accent shadow-lg' : 'bg-white/5 border-white/5 text-slate-500 hover:bg-white/10'}`}>
+                                            Reserva
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Liderança</label>
+                                    <button type="button" onClick={() => setForm({...form, isCaptain: !form.isCaptain, isReserve: !form.isCaptain ? false : form.isReserve})}
+                                        className={`w-full py-3 h-[42px] mt-px rounded-xl font-black text-[0.6rem] uppercase tracking-widest border-2 transition-all flex items-center justify-center gap-2 ${form.isCaptain ? 'bg-warning/20 border-warning text-warning shadow-lg' : 'bg-white/5 border-white/5 text-slate-500 hover:bg-white/10'}`}>
+                                        <Crown size={14} /> {form.isCaptain ? 'Capitão' : 'Torne Capitão'}
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="flex gap-4 pt-4 border-t border-white/5">

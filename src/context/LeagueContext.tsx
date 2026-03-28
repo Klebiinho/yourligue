@@ -1607,14 +1607,20 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 ...t, 
                 players: t.players.map(p => {
                     if (p.id === playerId) {
+                        const newIsCaptain = updatePayload.is_captain ?? p.isCaptain;
+                        // Regra de negócio: se virou capitão, não pode ser reserva.
+                        // Se não mudou capitão, usa o is_reserve do payload ou o antigo.
+                        const newIsReserve = newIsCaptain ? false : (updatePayload.is_reserve ?? p.isReserve);
+
                         return { 
                             ...p, 
                             ...data, 
                             slug: updatePayload.slug || p.slug,
-                            isCaptain: updatePayload.is_captain ?? p.isCaptain,
-                            isReserve: updatePayload.is_reserve ?? p.isReserve
+                            isCaptain: newIsCaptain,
+                            isReserve: newIsReserve
                         };
                     }
+                    // Desmarca outros capitães se um novo foi definido
                     if (updatePayload.is_captain === true && p.id !== playerId) return { ...p, isCaptain: false };
                     return p;
                 }) 
