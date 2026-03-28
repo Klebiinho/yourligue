@@ -25,7 +25,9 @@ const Sidebar = () => {
     const [moreOpen, setMoreOpen] = useState(false);
 
     // Prefix paths if in public view
-    const getLink = (to: string) => isPublicView ? `/view/${league?.slug || league?.id}${to === '/' ? '' : to}` : to;
+    const getLink = (to: string) => (isPublicView && (league?.slug || league?.id)) 
+        ? `/view/${league?.slug || league?.id}${to === '/' ? '' : to}` 
+        : to;
 
     // Filter nav items: if it's public view OR user is not an admin, show only base items
     const filteredNavItems = (isPublicView || !isAdmin)

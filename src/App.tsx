@@ -101,40 +101,25 @@ const MainContent = () => {
             <main className={slug || isPublicPage || isOverlayPage ? 'w-full min-h-screen' : 'md:pl-64 min-h-screen'}>
                 <div className="p-4 md:p-8 lg:p-10 pb-24 md:pb-10 max-w-[1600px] mx-auto w-full">
                     <Routes>
-                        <Route path="/privacidade" element={<PrivacyPolicy />} />
-                        <Route path="/termos" element={<TermsOfService />} />
-                        <Route path="/sitemap" element={<Sitemap />} />
-                        <Route path="/match/:matchId/overlay" element={<MatchOverlay />} />
+                        <Route path="privacidade" element={<PrivacyPolicy />} />
+                        <Route path="termos" element={<TermsOfService />} />
+                        <Route path="sitemap" element={<Sitemap />} />
+                        <Route path="match/:matchId/overlay" element={<MatchOverlay />} />
 
-                        {!slug && (
-                            <>
-                                <Route path="/" element={<Dashboard />} />
-                                <Route path="/leagues" element={<LeagueSelector />} />
-                                <Route path="/teams" element={<Teams />} />
-                                <Route path="/teams/:teamId" element={<Teams />} />
-                                <Route path="/matches" element={<Matches />} />
-                                <Route path="/standings" element={<Standings />} />
-                                <Route path="/bracket" element={<Bracket />} />
-                                <Route path="/live" element={<LiveMatches />} />
-                                <Route path="/match/:matchId" element={<MatchControl />} />
-                                <Route path="/settings" element={<Settings />} />
-                            </>
-                        )}
+                        {/* Shared routes using relative paths works for both / and /view/:slug */}
+                        <Route index element={<Dashboard />} />
+                        <Route path="leagues" element={<LeagueSelector />} />
+                        <Route path="teams" element={<Teams />} />
+                        <Route path="teams/:teamId" element={<Teams />} />
+                        <Route path="matches" element={<Matches />} />
+                        <Route path="standings" element={<Standings />} />
+                        <Route path="bracket" element={<Bracket />} />
+                        <Route path="live" element={<LiveMatches />} />
+                        <Route path="match/:matchId" element={<MatchControl />} />
+                        <Route path="settings" element={<Settings />} />
 
-                        {slug && (
-                            <>
-                                <Route path="/view/:slug" element={<Dashboard />} />
-                                <Route path="/view/:slug/teams" element={<Teams />} />
-                                <Route path="/view/:slug/teams/:teamId" element={<Teams />} />
-                                <Route path="/view/:slug/matches" element={<Matches />} />
-                                <Route path="/view/:slug/standings" element={<Standings />} />
-                                <Route path="/view/:slug/bracket" element={<Bracket />} />
-                                <Route path="/view/:slug/live" element={<LiveMatches />} />
-                                <Route path="/view/:slug/match/:matchId" element={<MatchControl />} />
-                            </>
-                        )}
-
-                        <Route path="*" element={<Navigate to="/" replace />} />
+                        {/* Fallback */}
+                        <Route path="*" element={<Navigate to={slug ? `/view/${slug}` : "/"} replace />} />
                     </Routes>
                 </div>
                 <AuthModal />
