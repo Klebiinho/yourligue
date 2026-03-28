@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Swords, Trophy, Settings, BarChart2, GitBranch, ArrowLeftRight, Grid3x3, X, Signal, Home, Shield, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, Trophy, Settings, GitBranch, ArrowLeftRight, Grid3x3, X, Signal, Home, Shield, FileText } from 'lucide-react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
 import TeamLogo from './TeamLogo';
@@ -11,7 +11,6 @@ const navItems = [
     { to: '/matches', icon: Swords, label: 'Partidas', shortLabel: 'Partidas' },
     { to: '/live', icon: Signal, label: 'Ao Vivo', shortLabel: 'Ao Vivo' },
     { to: '/teams', icon: Users, label: 'Times', shortLabel: 'Times' },
-    { to: '/teams-dashboard', icon: BarChart2, label: 'Painel', shortLabel: 'Painel' },
     { to: '/bracket', icon: GitBranch, label: 'Chaveamento', shortLabel: 'Chaveam.' },
     { to: '/settings', icon: Settings, label: 'Config.', shortLabel: 'Config.' },
 ];

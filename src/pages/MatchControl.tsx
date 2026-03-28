@@ -114,14 +114,39 @@ const MatchControl = () => {
         }
     }, [confirmedPenaltyShooters, matchId]);
 
-    // Sincronizar estados locais com dados do banco (Realtime)
     useEffect(() => {
         if (match) {
             setHalfLength(match.halfLength || (league?.sportType === 'basketball' ? 10 : 45));
             setExtraTime(match.extraTime || 0);
             setPeriod(match.period || (league?.sportType === 'basketball' ? '1º Quarto' : '1º Tempo'));
         }
-    }, [match?.halfLength, match?.extraTime, match?.period]);
+    }, [match?.id, match?.halfLength, match?.extraTime, match?.period]);
+
+    if (leagueLoading || (dataLoading && !match)) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                <p className="text-slate-500 font-black uppercase tracking-widest text-[0.6rem]">Acessando dados da partida...</p>
+            </div>
+        );
+    }
+
+    if (!match || !homeTeam || !awayTeam) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
+                <div className="w-20 h-20 bg-danger/10 text-danger rounded-3xl flex items-center justify-center border border-danger/20">
+                    <AlertCircle size={40} />
+                </div>
+                <div className="space-y-1">
+                    <h2 className="text-xl font-black text-white uppercase font-outfit">Partida não encontrada</h2>
+                    <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">Os dados desta partida podem ter sido removidos ou o link está incorreto.</p>
+                </div>
+                <button onClick={() => navigate(-1)} className="bg-white/5 border border-white/10 text-white px-8 py-3 rounded-xl font-black uppercase text-xs hover:bg-white/10 transition-all">
+                    Voltar para Partidas
+                </button>
+            </div>
+        );
+    }
 
 
     // Optimized player status lookup table to avoid O(N*M) filtering in render
@@ -1007,98 +1032,88 @@ const MatchControl = () => {
                                                 <span>Em Campo</span>
                                                 <span className="text-primary bg-primary/10 px-2 py-0.5 rounded-md">{onPitch.length}</span>
                                             </h3>
-                                            {onPitch.length === 0 ? (
+                                                                  {onPitch.length === 0 ? (
                                                 <p className="text-center text-slate-600 text-[0.65rem] uppercase tracking-widest py-4 font-black bg-white/[0.01] rounded-xl border border-dashed border-white/5">Ninguém em campo</p>
                                             ) : (
                                                 onPitch.map((player: Player) => {
                                                     const { yellowCards, isRedCarded } = getPlayerStatus(player.id);
                                                     return (
-                                                        <div key={player.id} className={`flex items-center gap-2 p-3 rounded-xl border transition-all duration-300 ${player.id === suggestedMVPId ? 'bg-warning/10 border-warning shadow-[0_0_20px_rgba(245,158,11,0.2)] scale-[1.02] z-10' : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05]'}`}>
-                                                            <div className="relative flex-none">
-                                                                <TeamLogo src={player.photo} size={player.id === suggestedMVPId ? 44 : 36} />
-                                                                {player.isCaptain && <Crown size={12} className="absolute -top-1 -right-1 text-warning fill-warning/20" />}
-                                                                {player.id === suggestedMVPId && (
-                                                                    <div className="absolute -bottom-2 -left-2 bg-warning text-black text-[0.45rem] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-lg">Sugestão</div>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="flex items-center gap-2">
+                                                        <div key={player.id} className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-xl border transition-all duration-300 ${player.id === suggestedMVPId ? 'bg-warning/10 border-warning shadow-[0_0_20px_rgba(245,158,11,0.2)] scale-[1.02] z-10' : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05]'}`}>
+                                                            {/* User Info Section */}
+                                                            <div className="flex items-center gap-3 w-full sm:w-auto">
+                                                                <div className="relative flex-none">
+                                                                    <TeamLogo src={player.photo} size={player.id === suggestedMVPId ? 44 : 36} />
+                                                                    {player.isCaptain && <Crown size={12} className="absolute -top-1 -right-1 text-warning fill-warning/20" />}
+                                                                    {player.id === suggestedMVPId && (
+                                                                        <div className="absolute -bottom-2 -left-2 bg-warning text-black text-[0.45rem] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-lg">Sugestão</div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
                                                                     <h4 className={`font-black uppercase leading-tight font-outfit truncate ${player.id === suggestedMVPId ? 'text-warning text-[0.7rem]' : 'text-white text-[0.7rem]'}`}>
                                                                         #{player.number} {player.name}
                                                                     </h4>
-                                                                </div>
-                                                                <div className="flex items-center gap-1 mt-1 h-3.5">
-                                                                    {Array.from({ length: yellowCards }).map((_, i) => (
-                                                                        <div key={i} className={`w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm ${isRedCarded ? 'opacity-40' : ''}`} />
-                                                                    ))}
-                                                                    {isRedCarded && (
-                                                                        <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm ml-0.5" />
-                                                                    )}
+                                                                    <div className="flex items-center gap-1 mt-1 h-3.5">
+                                                                        {Array.from({ length: yellowCards }).map((_, i) => (
+                                                                            <div key={i} className={`w-2 h-3.5 bg-warning rounded-[2px] border border-black/20 shadow-sm ${isRedCarded ? 'opacity-40' : ''}`} />
+                                                                        ))}
+                                                                        {isRedCarded && (
+                                                                            <div className="w-2 h-3.5 bg-danger rounded-[2px] border border-black/20 shadow-sm ml-0.5" />
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex items-center gap-1">
+
+                                                            {/* Actions Section */}
+                                                            <div className="flex items-center justify-end gap-1 w-full sm:w-auto pt-2 sm:pt-0 border-t border-white/5 sm:border-0 overflow-x-auto no-scrollbar">
                                                                 {!isPublicView && isAdmin && (
-                                                                    <div className="flex items-center gap-1">
+                                                                    <div className="flex items-center gap-1 flex-none">
                                                                         {league?.sportType === 'basketball' ? (
                                                                             <>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 1)} 
-                                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-accent/10 text-accent font-black text-[0.6rem] hover:bg-accent hover:text-white transition-all">+1</button>
+                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/10 text-accent font-black text-[0.6rem] hover:bg-accent hover:text-white transition-all">+1</button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 2)} 
-                                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-accent/20 text-accent font-black text-[0.65rem] hover:bg-accent hover:text-white transition-all">+2</button>
+                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/20 text-accent font-black text-[0.65rem] hover:bg-accent hover:text-white transition-all">+2</button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 3)} 
-                                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-accent/30 text-accent font-black text-[0.7rem] hover:bg-accent hover:text-white transition-all">+3</button>
-                                                                                
-                                                                                <div className="w-px h-4 bg-white/10 mx-1" />
-
+                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/30 text-accent font-black text-[0.7rem] hover:bg-accent hover:text-white transition-all">+3</button>
+                                                                                <div className="w-px h-4 bg-white/10 mx-1 flex-none" />
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handleAssist(team.id, player.id)} 
-                                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-warning/10 text-warning font-black text-[0.55rem] hover:bg-warning hover:text-white transition-all" title="Assistência">ASS</button>
+                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/10 text-warning font-black text-[0.55rem] hover:bg-warning hover:text-white transition-all">ASS</button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handleStat(team.id, player.id, 'rebound')} 
-                                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-orange-500/10 text-orange-400 font-black text-[0.55rem] hover:bg-orange-500 hover:text-white transition-all" title="Rebote">REB</button>
+                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-orange-500/10 text-orange-400 font-black text-[0.55rem] hover:bg-orange-500 hover:text-white transition-all">REB</button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo')} onClick={() => handleStat(team.id, player.id, 'foul')} 
-                                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-danger/10 text-danger font-black text-[0.55rem] hover:bg-danger hover:text-white transition-all" title="Falta">FAL</button>
+                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger font-black text-[0.55rem] hover:bg-danger hover:text-white transition-all">FAL</button>
                                                                             </>
                                                                         ) : (
                                                                             <>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleGol(team.id, player.id)} 
-                                                                                    className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Gol"><Target size={14} /></button>
+                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Gol"><Target size={14} /></button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleAssist(team.id, player.id)} 
-                                                                                    className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Assistência"><Award size={14} /></button>
+                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-warning/15 text-warning hover:bg-warning hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Assistência"><Award size={14} /></button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleGolContra(team.id, player.id)} 
-                                                                                    className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Gol Contra"><XCircle size={14} /></button>
-                                                                                
+                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Gol Contra"><XCircle size={14} /></button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleCartao(team.id, player.id, 'yellow_card')} 
-                                                                                    className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning hover:text-white transition-all active:scale-90 text-xs disabled:cursor-not-allowed disabled:opacity-30`} title="Amarelo">🟨</button>
+                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-warning/20 hover:bg-warning transition-all text-xs disabled:opacity-30" title="Amarelo">🟨</button>
                                                                                 <button disabled={match.status !== 'live' || period.includes('Intervalo') || isRedCarded} onClick={() => handleCartao(team.id, player.id, 'red_card')} 
-                                                                                    className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger hover:text-white transition-all active:scale-90 text-xs disabled:cursor-not-allowed disabled:opacity-30`} title="Vermelho">🟥</button>
+                                                                                    className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-white/5 border border-danger/20 hover:bg-danger transition-all text-xs disabled:opacity-30" title="Vermelho">🟥</button>
                                                                             </>
                                                                         )}
-                                                                        
                                                                         <button disabled={match.status !== 'live' && !period.includes('Intervalo') || isRedCarded} onClick={() => setSubmittingPlayer({ teamId: team.id, playerOutId: player.id })} 
-                                                                            className={`w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary hover:text-white transition-all active:scale-90 disabled:cursor-not-allowed disabled:opacity-30`} title="Substituir"><ArrowLeftRight size={14} /></button>
+                                                                            className="w-8 h-8 flex-none flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary hover:text-white transition-all active:scale-90 disabled:opacity-30" title="Substituir"><ArrowLeftRight size={14} /></button>
                                                                     </div>
                                                                 )}
-                                                                
+
                                                                 {match.status === 'finished' && !isPublicView && isAdmin && (
-                                                                    <div className="flex items-center gap-1.5 ml-2 relative">
-                                                                        <button 
-                                                                            onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
-                                                                            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all shadow-lg active:scale-95 border-2 ${player.id === suggestedMVPId ? 'bg-warning border-warning/30 text-black shadow-warning/30' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-warning/20 hover:text-warning hover:border-warning/30'}`}
-                                                                            title="Gerar Card de Melhor da Partida"
-                                                                        >
+                                                                    <div className="flex items-center gap-1.5 flex-none relative">
+                                                                        <button onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
+                                                                            className={`w-9 h-9 flex-none flex items-center justify-center rounded-xl transition-all shadow-lg active:scale-95 border-2 ${player.id === suggestedMVPId ? 'bg-warning border-warning/30 text-black' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-warning/20 hover:text-warning'}`}
+                                                                            title="Gerar Card de Melhor da Partida">
                                                                             <Crown size={16} fill={player.id === suggestedMVPId ? "currentColor" : "none"} strokeWidth={3} />
                                                                         </button>
-                                                                        <button 
-                                                                            onClick={(e) => handleGenerateHighlight(player.id, 'Gol', e)}
-                                                                            className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/5 border-2 border-white/10 text-slate-500 hover:bg-accent/20 hover:text-accent hover:border-accent/30 transition-all shadow-lg active:scale-95"
-                                                                            title="Gerar Card de Destaque"
-                                                                        >
+                                                                        <button onClick={(e) => handleGenerateHighlight(player.id, 'Gol', e)}
+                                                                            className="w-9 h-9 flex-none flex items-center justify-center rounded-xl bg-white/5 border-2 border-white/10 text-slate-500 hover:bg-accent/20 hover:text-accent transition-all active:scale-95"
+                                                                            title="Gerar Card de Destaque">
                                                                             <Video size={16} strokeWidth={3} />
                                                                         </button>
-                                                                        {player.id === suggestedMVPId && (
-                                                                            <span className="absolute -bottom-3 right-0 text-[0.45rem] font-black text-warning uppercase whitespace-nowrap bg-[#1a140a] px-2 py-0.5 rounded-full border border-warning/10 shadow-sm pointer-events-none animate-pulse">
-                                                                                ✨ Sugestão
-                                                                            </span>
-                                                                        )}
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1148,63 +1163,31 @@ const MatchControl = () => {
                                                             </button>
                                                         )}
 
-                                                        {match.status === 'finished' && !isPublicView && isAdmin && (
-                                                            <div className="flex items-center gap-1.5 flex-none relative">
-                                                                <button 
-                                                                    onClick={(e) => handleGenerateHighlight(player.id, 'MVP', e)}
-                                                                    className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all active:scale-95 border ${player.id === suggestedMVPId ? 'bg-warning border-warning/30 text-black shadow-lg shadow-warning/20' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-warning/20 hover:text-warning'}`}
-                                                                    title="Gerar Card de Melhor da Partida"
-                                                                >
-                                                                    <Crown size={14} fill={player.id === suggestedMVPId ? "currentColor" : "none"} />
-                                                                </button>
-                                                                <button 
-                                                                    onClick={(e) => handleGenerateHighlight(player.id, 'Gol', e)}
-                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-slate-500 hover:bg-accent/20 hover:text-accent transition-all active:scale-95"
-                                                                    title="Gerar Card de Destaque"
-                                                                >
-                                                                    <Video size={14} />
-                                                                </button>
-                                                                {player.id === suggestedMVPId && (
-                                                                    <span className="absolute -bottom-3 right-0 text-[0.45rem] font-black text-warning uppercase whitespace-nowrap bg-[#1a140a] px-2 py-0.5 rounded-full border border-warning/10 shadow-sm">
-                                                                        ✨ Sugestão
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                                                        {match.status === 'finished' && !isPublicView && isAdmin && (
+                                                                            <div className="flex items-center gap-1.5 flex-none relative">
+                                                                                <button 
+                                                                                    onClick={(e) => handleGenerateHighlight(player.id, 'Gol', e)}
+                                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-slate-500 hover:bg-accent/20 hover:text-accent transition-all active:scale-95"
+                                                                                    title="Gerar Card de Destaque"
+                                                                                >
+                                                                                    <Video size={14} />
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </>
                                                 );
-                                            })}
+                                            })()}
                                         </div>
-                                    </>
-                                );
-                            })()}
-                        </div>
-                    </section>
-                ))}
-
-                {/* Confirmation Card for Penalties Phase - now properly placed in the grid */}
-                {period === 'Sel. Batedores' && isAdmin && !isPublicView && (
-                    <div className="lg:col-span-2">
-                        <div className="glass-panel p-6 flex flex-col md:flex-row items-center justify-between gap-6 border-t-2 border-accent/20">
-                            <div className="flex-1 text-center md:text-left">
-                                <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1 flex items-center justify-center md:justify-start gap-2">
-                                    <Check className="text-accent" size={20} /> Ordem dos Batedores
-                                </h3>
-                                <p className="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider">
-                                    Verifique as listas acima antes de iniciar a disputa oficial.
-                                </p>
+                                    </section>
+                                ))}
                             </div>
-                            <button onClick={() => { if(confirmShooters()) handlePeriodChange('Pênaltis'); }}
-                                className="w-full md:w-auto px-12 py-5 rounded-2xl bg-accent text-white font-black text-xs uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(16,185,129,0.2)] hover:shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3">
-                                <Play fill="currentColor" size={18} /> Iniciar Disputa de Pênaltis
-                            </button>
-                        </div>
-                    </div>
-                )}
-                </div>
 
-                {/* Right Area: Settings + Event Log (now column 3 on XL) */}
-                <div className="space-y-4 md:space-y-6">
+                        {/* Right Area: Settings + Event Log (now column 3 on XL) */}
+                        <div className="space-y-4 md:space-y-6">
                     {/* YouTube Video Player */}
                     {(match?.youtubeLiveId || (isAdmin && !isPublicView && isEditingYtUrl)) && (
                         <div className="glass-panel p-4 overflow-hidden border border-white/10 shadow-2xl">
@@ -1272,7 +1255,7 @@ const MatchControl = () => {
                             <div className="grid grid-cols-2 gap-4 mb-5">
                                 <div className="col-span-2 space-y-1.5">
                                     <label className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest ml-1">Etapa Atual</label>
-                                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                     <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                                          {(league?.sportType === 'basketball' 
                                            ? ['1º Quarto', '2º Quarto', '3º Quarto', '4º Quarto', 'Intervalo', 'Prorrogação']
                                            : ['1º Tempo', 'Intervalo', '2º Tempo', 'Intervalo (OT)', '1º Prorrog.', 'Intervalo (OT2)', '2º Prorrog.', 'Sel. Batedores', 'Pênaltis']
@@ -1442,32 +1425,32 @@ const MatchControl = () => {
                             <div className="p-4 rounded-xl bg-danger/10 border border-danger/20">
                                 <span className="text-[0.6rem] font-black text-danger uppercase tracking-widest block mb-1">Efetuar Saída de:</span>
                                 <div className="flex items-center gap-3">
-                                    <TeamLogo src={[...homeTeam.players, ...awayTeam.players].find(p => p.id === submittingPlayer.playerOutId)?.photo} size={32} />
-                                    <span className="font-bold text-white uppercase">{[...homeTeam.players, ...awayTeam.players].find(p => p.id === submittingPlayer.playerOutId)?.name}</span>
+                                    <TeamLogo src={[...(homeTeam?.players || []), ...(awayTeam?.players || [])].find(p => p.id === submittingPlayer?.playerOutId)?.photo} size={32} />
+                                    <span className="font-bold text-white uppercase">{[...(homeTeam?.players || []), ...(awayTeam?.players || [])].find(p => p.id === submittingPlayer?.playerOutId)?.name}</span>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
                                 <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-2">Selecione quem entra:</span>
                                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
-                                    {(submittingPlayer.teamId === homeTeam.id ? homeTeam : awayTeam).players
+                                    {(submittingPlayer?.teamId === homeTeam?.id ? homeTeam : awayTeam)?.players
                                         .filter(p => {
-                                            if (p.id === submittingPlayer.playerOutId) return false;
+                                            if (p.id === submittingPlayer?.playerOutId) return false;
                                             
                                             const { isRedCarded } = getPlayerStatus(p.id);
                                             if (isRedCarded) return false;
                                             
-                                            if (isPlayerOnPitch(match, p.id)) return false;
+                                            if (match && isPlayerOnPitch(match, p.id)) return false;
 
                                             if (league?.allowSubstitutionReturn === false) {
-                                                const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === p.id).length;
+                                                const subOuts = match?.events.filter(e => e.type === 'substitution' && e.playerOutId === p.id).length || 0;
                                                 if (subOuts > 0) return false;
                                             }
 
                                             return true;
                                         })
                                         .map(availablePlayer => (
-                                            <button key={availablePlayer.id} onClick={() => handleSubstitution(submittingPlayer.teamId, availablePlayer.id, submittingPlayer.playerOutId)}
+                                            <button key={availablePlayer.id} onClick={() => submittingPlayer && handleSubstitution(submittingPlayer.teamId, availablePlayer.id, submittingPlayer.playerOutId!)}
                                                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] hover:bg-accent/20 hover:border-accent/40 transition-all text-left">
                                                 <TeamLogo src={availablePlayer.photo} size={32} />
                                                 <div className="flex-1">
@@ -1479,15 +1462,15 @@ const MatchControl = () => {
                                             </button>
                                         ))
                                     }
-                                    {(submittingPlayer.teamId === homeTeam.id ? homeTeam : awayTeam).players.filter(p => {
+                                    {(submittingPlayer?.teamId === homeTeam?.id ? homeTeam : awayTeam)?.players.filter(p => {
                                         const { isRedCarded } = getPlayerStatus(p.id);
                                         if (isRedCarded) return false;
-                                        if (isPlayerOnPitch(match, p.id)) return false;
+                                        if (match && isPlayerOnPitch(match, p.id)) return false;
                                         if (league?.allowSubstitutionReturn === false) {
-                                            const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === p.id).length;
+                                            const subOuts = match?.events.filter(e => e.type === 'substitution' && e.playerOutId === p.id).length || 0;
                                             if (subOuts > 0) return false;
                                         }
-                                        return p.id !== submittingPlayer.playerOutId;
+                                        return p.id !== submittingPlayer?.playerOutId;
                                     }).length === 0 && (
                                         <p className="text-center py-6 text-slate-600 text-[0.65rem] uppercase font-black tracking-widest italic">Nenhum jogador disponível para entrar</p>
                                     )}
@@ -1515,9 +1498,9 @@ const MatchControl = () => {
                         <div className="space-y-6">
                             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
                                 <div className="flex items-center justify-center gap-6 font-outfit font-black text-4xl mb-4">
-                                    <span className="text-primary">{match.homeScore}</span>
+                                    <span className="text-primary">{match?.homeScore}</span>
                                     <span className="text-slate-800 text-xl">✕</span>
-                                    <span className="text-accent">{match.awayScore}</span>
+                                    <span className="text-accent">{match?.awayScore}</span>
                                 </div>
                                 <p className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest italic">Confirma que este é o placar final?</p>
                             </div>
@@ -1558,8 +1541,8 @@ const MatchControl = () => {
             )}
 
             {highlightData && (() => {
-                const player = [...(homeTeam?.players || []), ...(awayTeam?.players || [])].find(p => p.id === highlightData.playerId);
-                const team = (homeTeam?.id === highlightData.teamId ? homeTeam : awayTeam);
+                const player = [...(homeTeam?.players || []), ...(awayTeam?.players || [])].find(p => p.id === highlightData?.playerId);
+                const team = (homeTeam?.id === highlightData?.teamId ? homeTeam : awayTeam);
                 if (!player || !team) return null;
 
                 // Calculate stats for MVP or highlight
@@ -1594,3 +1577,4 @@ const MatchControl = () => {
 };
 
 export default MatchControl;
+
