@@ -289,33 +289,6 @@ const MatchControl = () => {
         }
     };
 
-    // ── SMART TIMER CALCULATION ──
-    useEffect(() => {
-        let interval: number;
-        
-        const updateTimerDisplay = () => {
-            if (!match) return;
-
-            if (match.status === 'live') {
-                const lastUpdateStr = match.updatedAt || new Date().toISOString();
-                const lastUpdate = new Date(lastUpdateStr).getTime();
-                const now = Date.now();
-                const diffInSeconds = Math.max(0, Math.floor((now - lastUpdate) / 1000));
-                const calculatedSeconds = (match.timer || 0) + diffInSeconds;
-
-                setLocalSeconds(calculatedSeconds);
-                setTimerRunning(true);
-            } else {
-                setLocalSeconds(match.timer || 0);
-                setTimerRunning(false);
-            }
-        };
-
-        updateTimerDisplay();
-        interval = window.setInterval(updateTimerDisplay, 1000);
-        return () => clearInterval(interval);
-    }, [match?.id, match?.status, match?.timer, match?.updatedAt]);
-
     const handleOpenYtSetup = async () => {
         if (!currentYtLiveStream && match?.youtubeLiveId && isYtAuthenticated) {
             // Try to recover stream key/rtmp if missing
