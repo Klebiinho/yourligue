@@ -120,29 +120,37 @@ const Teams = () => {
     };
 
     // ── Retroactive Color Identification ─────────────────────
-    const processedColorIds = useRef<Set<string>>(new Set());
+    const processedLogos = useRef<Map<string, string>>(new Map());
 
     useEffect(() => {
         if (!isAdmin || isPublicView || !teams.length) return;
 
-        // Filter to teams that have no color AND haven't been processed yet this session
-        const toProcess = teams.filter(
-            t => !t.primaryColor && t.logo && !processedColorIds.current.has(t.id)
-        );
+        // Filter to teams that need color detection:
+        // 1. Missing primary color
+        // 2. Logo has changed since we last processed it (manual logo update)
+        const toProcess = teams.filter(t => {
+            const lastLogo = processedLogos.current.get(t.id);
+            const logoChanged = t.logo && lastLogo !== t.logo;
+            return t.logo && (!t.primaryColor || logoChanged);
+        });
+
         if (toProcess.length === 0) return;
 
-        // Mark them immediately as "queued" so re-renders don't re-queue them
-        toProcess.forEach((t) => processedColorIds.current.add(t.id));
+        // Immediately update our cache to prevent duplicate triggers during sync
+        toProcess.forEach(t => processedLogos.current.set(t.id, t.logo));
 
-        // Stagger processing to avoid blocking the main thread
+        // Stagger processing to keep UI smooth
         toProcess.forEach((team, idx) => {
             setTimeout(() => {
                 extractColorFromImage(team.logo, (colors) => {
-                    updateTeam(team.id, { primary_color: colors.p, secondary_color: colors.s });
+                    // Only update if the colors are actually different or missing
+                    if (team.primaryColor !== colors.p || team.secondaryColor !== colors.s) {
+                        updateTeam(team.id, { primary_color: colors.p, secondary_color: colors.s });
+                    }
                 });
-            }, idx * 350); // Slightly more staggered for safety
+            }, idx * 400); 
         });
-    }, [isAdmin, isPublicView, teams.length]);
+    }, [isAdmin, isPublicView, teams, updateTeam]);
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) => {
         const file = e.target.files?.[0];
