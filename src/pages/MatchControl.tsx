@@ -964,7 +964,7 @@ const MatchControl = () => {
                                                             onClick={async () => {
                                                                 if (window.confirm("Isso apagará TODAS as cobranças feitas até agora e voltará para a fase de seleção. Deseja reiniciar?")) {
                                                                     const toDelete = match.events.filter(e => e.type.startsWith('penalty_shootout_'));
-                                                                    for (const e of toDelete) await removeEvent(mId, e.id);
+                                                                    if (mId) { for (const e of toDelete) await removeEvent(mId, e.id); }
                                                                     setConfirmedPenaltyShooters({ home: [], away: [] });
                                                                     localStorage.removeItem(`yl_shooters_${mId}`);
                                                                     handlePeriodChange('Sel. Batedores');
