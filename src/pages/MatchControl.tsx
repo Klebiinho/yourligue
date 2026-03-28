@@ -14,7 +14,7 @@ const MatchControl = () => {
         updateMatch, isPublicView, isAdmin, isPlayerOnPitch,
         currentYtLiveStream, isYtAuthenticated, recoverStreamDetails,
         ytLogin, setYtLivePrivacy, startMatch, pauseMatch, 
-        loading: leagueLoading, dataLoading
+        loading: leagueLoading, dataLoading, leagueBasePath
     } = useLeague();
 
     const match = matches.find((m: Match) => m.id === matchId);
