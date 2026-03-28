@@ -655,7 +655,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             console.log('LeagueContext: Ownership discovered, forcing Gestor Mode');
             setIsPublicView(false);
         }
-    }, [user?.id, league?.id, isPublicView]);
+    }, [user?.id, league?.id]); // Only run on login or league change, not on manual toggle
 
     const loadLeagues = async () => {
         try {
