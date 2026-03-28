@@ -528,37 +528,28 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         if (league && rawTeams.length > 0) { // Only cache if there's actual data to avoid poisoning
             try {
                 const cacheKey = `league_cache_${league.id}`;
+                
+                // OPTIMIZATION: Stripping photos from cache to save 90% space
+                const teamsForCache = rawTeams.map(t => ({
+                    ...t,
+                    players: t.players.map(p => {
+                        const { photo, ...pNoPhoto } = p;
+                        return pNoPhoto;
+                    })
+                }));
+
                 const cacheData = JSON.stringify({
                     league,
-                    teams: rawTeams,
-                    matches: rawMatches.slice(0, 50), // Limit matches in cache to save space
-                    ads,
-                    brackets,
+                    teams: teamsForCache,
+                    matches: rawMatches.slice(0, 30), // Limit matches in cache to save space
                     timestamp: Date.now()
                 });
                 
                 sessionStorage.setItem(cacheKey, cacheData);
             } catch (e: any) {
                 if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-                    console.warn('LeagueContext: Storage quota exceeded. Clearing old caches.');
-                    // Strategy: Clear all league caches and try again for the current one
-                    Object.keys(sessionStorage).forEach(key => {
-                        if (key.startsWith('league_cache_')) {
-                            sessionStorage.removeItem(key);
-                        }
-                    });
-                    
-                    // Final attempt after cleanup (only for the current league)
-                    try {
-                        sessionStorage.setItem(`league_cache_${league.id}`, JSON.stringify({
-                            league,
-                            teams: rawTeams,
-                            matches: rawMatches.slice(0, 20), // Even more aggressive limit on retry
-                            timestamp: Date.now()
-                        }));
-                    } catch (retryError) {
-                        console.error('LeagueContext: Persistent quota failure', retryError);
-                    }
+                    console.warn('LeagueContext: Storage quota exceeded. Clearing all caches.');
+                    sessionStorage.clear(); // Nuclear option for session storage
                 }
             }
             
