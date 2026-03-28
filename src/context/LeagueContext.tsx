@@ -1545,68 +1545,83 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const updatePlayer = async (teamId: string, playerId: string, data: Partial<Player>) => {
         const team = rawTeams.find(t => t.id === teamId);
         const player = team?.players.find(p => p.id === playerId);
-        if (!team || !player || !league) return { error: 'Dados insuficientes' };
-
-        // Validação de limites se estiver alterando o status de reserva
-        if (data.isReserve !== undefined && data.isReserve !== player.isReserve) {
-            if (!data.isReserve) { // Tentando se tornar Titular
-                const startersCount = team.players.filter(p => !p.isReserve).length;
-                if (startersCount >= (league.playersPerTeam || 5)) {
-                    return { error: `Não é possível tornar este jogador Titular. Limite de ${league.playersPerTeam} atingido.` };
-                }
-            } else { // Tentando se tornar Reserva
-                const reservesCount = team.players.filter(p => p.isReserve).length;
-                if (reservesCount >= (league.reserveLimitPerTeam || 5)) {
-                    return { error: `Não é possível tornar este jogador Reserva. Limite de ${league.reserveLimitPerTeam} atingido.` };
-                }
-            }
+        if (!team || !player || !league) {
+            console.error('[LeagueContext] Erro: Dados insuficientes', { teamId, playerId });
+            return { error: 'Dados insuficientes.' };
         }
 
-        // Regra do Capitão Titular: Capitão SEMPRE deve ser Titular
-        if (data.isCaptain) {
-            data.isReserve = false; 
+        // Construção do Payload diferencial (apenas o que mudou) para evitar 520 (payload too large)
+        const updatePayload: any = {};
+        if (data.name !== undefined && data.name !== player.name) {
+            updatePayload.name = data.name;
+            updatePayload.slug = generateSlug(data.name);
+        }
+        if (data.number !== undefined && data.number !== player.number) updatePayload.number = data.number;
+        if (data.position !== undefined && data.position !== player.position) updatePayload.position = data.position;
+        
+        // Foto: Só envia se for diferente (base64 pode ser pesado)
+        if (data.photo !== undefined && data.photo !== player.photo) {
+            updatePayload.photo = data.photo;
+            if (data.photo.length > 1000000) { // > 1MB warning
+                 console.warn('[LeagueContext] Alerta: Foto pesada detectada (>1MB). Isso pode causar erro 520.');
+            }
+        }
+        
+        if (data.isCaptain !== undefined && data.isCaptain !== player.isCaptain) {
+            updatePayload.is_captain = data.isCaptain;
+            if (data.isCaptain) updatePayload.is_reserve = false;
+        }
+        if (data.isReserve !== undefined && data.isReserve !== player.isReserve && !updatePayload.is_captain) {
+             updatePayload.is_reserve = data.isReserve;
+        }
+
+        // Se nada mudou, não fazemos o hit no banco
+        if (Object.keys(updatePayload).length === 0) {
+            console.log('[LeagueContext] Nada mudou, pulando updatePlayer.');
+            return { error: null };
+        }
+
+        console.log('[LeagueContext] Enviando atualização parcial:', Object.keys(updatePayload));
+
+        const { error } = await supabase.from('players').update(updatePayload).eq('id', playerId);
+
+        if (error) {
+            console.error('[LeagueContext] Erro fatal no Supabase updatePlayer:', error);
+            // Se o erro for de payload grande, avisa o usuário
+            if (error.code === '413' || error.message.includes('large')) return { error: 'A foto é muito grande. Tente uma imagem menor.' };
+            return { error: `Erro no servidor: ${error.message}` };
+        }
+
+        // Se marcamos um novo capitão, desmarcamos os outros no banco (background)
+        if (updatePayload.is_captain) {
             for (const p of team.players) {
-                if (p.isCaptain && p.id !== playerId) await supabase.from('players').update({ is_captain: false }).eq('id', p.id);
-            }
-        } else if (data.isReserve === true && player.isCaptain) {
-            // Se o atual capitão está sendo movido para reserva, ele perde o posto
-            // e precisamos passar para outro titular
-            const otherStarter = team.players.find(p => p.id !== playerId && !p.isReserve);
-            if (otherStarter) {
-                await supabase.from('players').update({ is_captain: true }).eq('id', otherStarter.id);
-                // O estado local será atualizado no setRawTeams abaixo
+                if (p.isCaptain && p.id !== playerId) {
+                    supabase.from('players').update({ is_captain: false }).eq('id', p.id).then();
+                }
             }
         }
 
-        const { error } = await supabase.from('players').update({
-            name: data.name, 
-            number: data.number, 
-            position: data.position,
-            photo: data.photo, 
-            is_captain: data.isCaptain, 
-            is_reserve: data.isReserve
-        }).eq('id', playerId);
-
-        if (error) return { error: error.message };
-
+        // Atualização do Estado Local (Sync camelCase)
         setRawTeams(prev => prev.map(t => t.id === teamId
             ? { 
                 ...t, 
                 players: t.players.map(p => {
-                    if (p.id === playerId) return { ...p, ...data };
-                    // Se marcamos um novo capitão, desmarcamos os outros
-                    if (data.isCaptain && p.id !== playerId) return { ...p, isCaptain: false };
-                    // Se o capitão virou reserva, passamos a braçadeira
-                    if (data.isReserve === true && player.isCaptain && !p.isReserve && p.id !== playerId) {
-                         // Só passa para o primeiro starter que encontrar se ninguém mais for capitão agora
-                         const willHaveCaptain = t.players.some(pl => pl.id === playerId ? data.isCaptain : pl.isCaptain);
-                         if (!willHaveCaptain) return { ...p, isCaptain: true };
+                    if (p.id === playerId) {
+                        return { 
+                            ...p, 
+                            ...data, 
+                            slug: updatePayload.slug || p.slug,
+                            isCaptain: updatePayload.is_captain ?? p.isCaptain,
+                            isReserve: updatePayload.is_reserve ?? p.isReserve
+                        };
                     }
+                    if (updatePayload.is_captain === true && p.id !== playerId) return { ...p, isCaptain: false };
                     return p;
                 }) 
               }
             : t
         ));
+
         return { error: null };
     };
 

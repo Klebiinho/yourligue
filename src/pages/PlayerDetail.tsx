@@ -202,6 +202,19 @@ const PlayerDetail = () => {
                             e.preventDefault();
                             const { error } = await updatePlayer(team.id, player.id, form);
                             if (error) { alert(error); return; }
+                            
+                            // Se o nome mudou, o slug mudou. Precisamos navegar para a nova URL
+                            const newSlug = form.name.toLowerCase()
+                                .normalize('NFD')
+                                .replace(/[\u0300-\u036f]/g, '')
+                                .replace(/[^a-z0-9]/g, '-')
+                                .replace(/-+/g, '-')
+                                .replace(/^-|-$/g, '');
+                                
+                            if (newSlug !== playerSlug) {
+                                navigate(`/${leagueSlug}/${newSlug}/player`, { replace: true });
+                            }
+                            
                             setIsEditing(false);
                         }} className="space-y-6">
                             <div className="flex gap-6 items-start">
