@@ -818,48 +818,35 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const loadLeagueData = useCallback(async (leagueId: string, background = false) => {
         if (!leagueId) return;
         
-        // Prevent simultaneous duplicate loads for the same league
+        // Prevent simultaneous duplicate loads
         if (loadingRef.current === leagueId) return;
         loadingRef.current = leagueId;
 
-        console.log('LeagueContext: Syncing league data...', leagueId, background ? '(background)' : '(active)');
+        console.log('LeagueContext: High-speed sync triggered...', leagueId);
         
         loadUserInteractionsRef.current(leagueId);
         loadSupportCountsRef.current(leagueId);
 
-        // Instant UI: Try to recover from session cache first
+        // Try cache for instant mount
         const recovered = tryRecoverFromCache(leagueId);
-
-        // SILENT REFRESH: If we have cached data OR it's a background update, don't show full-screen loader
         const hasData = (rawTeams.length > 0 && rawMatches.length > 0) || recovered;
         
-        let dataTimeout: any = null;
-        if (!background && !hasData) {
-            setDataLoading(true);
-            dataTimeout = setTimeout(() => {
-                setDataLoading(prev => {
-                    if (prev) {
-                        console.warn('LeagueContext: dataLoading safety timeout reached for league:', leagueId);
-                        return false;
-                    }
-                    return prev;
-                });
-            }, 8000); 
-        }
+        if (!background && !hasData) setDataLoading(true);
 
         try {
+            // PHASE 1: CORE DATA (Essential per-frame metadata)
             const [teamsRes, matchesRes, bracketsRes, adsRes] = await Promise.all([
-                // Optimize: Explicitly exclude 'photo' column from players to reduce payload size
+                // Metadata ONLY for teams (No players here, very fast)
                 supabase.from('teams')
-                    .select('*, players(id, name, number, position, team_id, is_captain, is_reserve, display_order)')
+                    .select('*')
                     .eq('league_id', leagueId)
                     .order('name', { ascending: true }),
-                // Optimize: Limit matches to improve load speed
+                // Core matches (Last 100 to avoid giant JSON)
                 supabase.from('matches')
                     .select('*, match_events(*)')
                     .eq('league_id', leagueId)
-                    .order('scheduled_at', { ascending: true })
-                    .limit(200),
+                    .order('updated_at', { ascending: false })
+                    .limit(100),
                 supabase.from('brackets').select('*').eq('league_id', leagueId),
                 supabase.from('ads').select('*').eq('league_id', leagueId).order('display_order', { ascending: true })
             ]);
@@ -872,28 +859,45 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             if (matchesRes.data) {
                 setRawMatches(matchesRes.data.map(mapDBMatch));
             }
-            if (bracketsRes.data) {
-                setBrackets(bracketsRes.data.map(mapDBBracket));
-            }
+            if (bracketsRes.data) setBrackets(bracketsRes.data.map(mapDBBracket));
             if (adsRes.data) {
                 setAds(adsRes.data.map((a: any) => ({
-                    id: a.id, league_id: a.league_id, title: a.title,
-                    desktop_media_url: a.desktop_media_url, mobile_media_url: a.mobile_media_url,
-                    square_media_url: a.square_media_url, media_type: a.media_type,
-                    positions: a.positions, object_position: a.object_position,
-                    link_url: a.link_url, duration: a.duration, active: a.active,
-                    display_order: a.display_order || 0, created_at: a.created_at
+                    ...a, display_order: a.display_order || 0
                 })));
             }
-            
-            console.log('LeagueContext: Data fetch successful');
+
+            // PHASE 2: LAZY LOADING HEAVY DATA (Background)
+            // Dispatched parallel but doesn't block "loading = false"
+            (async () => {
+                const { data: playersData } = await supabase.from('players')
+                    .select('id, name, number, position, team_id, is_captain, is_reserve, display_order')
+                    .in('team_id', teamsRes.data?.map(t => t.id) || []);
+                
+                if (playersData) {
+                    setRawTeams(prev => prev.map(t => ({
+                        ...t,
+                        players: playersData.filter(p => p.team_id === t.id).map(mapDBPlayer)
+                    })));
+                }
+
+                // If league has MORE than 100 matches, fetch the rest in background
+                if (matchesRes.data?.length === 100) {
+                   const { data: moreMatches } = await supabase.from('matches')
+                       .select('*, match_events(*)')
+                       .eq('league_id', leagueId)
+                       .order('updated_at', { ascending: false })
+                       .range(100, 300);
+                   if (moreMatches) {
+                       setRawMatches(prev => [...prev, ...moreMatches.map(mapDBMatch)]);
+                   }
+                }
+            })();
+
         } catch (err) {
-            console.error('LeagueContext: loadLeagueData error (catch):', err);
+            console.error('LeagueContext: Performance load failed:', err);
         } finally {
-            if (dataTimeout) clearTimeout(dataTimeout);
             setDataLoading(false);
             loadingRef.current = null;
-            console.log('LeagueContext: loadLeagueData finished');
         }
     }, [rawTeams.length, rawMatches.length, tryRecoverFromCache]);
 
