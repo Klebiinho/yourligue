@@ -9,9 +9,8 @@ interface AdBannerProps {
 }
 
 const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
-    const { ads } = useLeague();
+    const { ads, globalAdTick } = useLeague();
     const positionAds = ads.filter(ad => ad.active && ad.positions?.includes(position));
-    const [currentIndex, setCurrentIndex] = useState(0);
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -21,18 +20,10 @@ const AdBanner = ({ position, className = '', onClose }: AdBannerProps) => {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    useEffect(() => {
-        if (positionAds.length <= 1) return;
-
-        const currentAd = positionAds[currentIndex];
-        const timer = setTimeout(() => {
-            setCurrentIndex((prev) => (prev + 1) % positionAds.length);
-        }, (currentAd.duration || 5) * 1000);
-
-        return () => clearTimeout(timer);
-    }, [currentIndex, positionAds]);
-
     if (positionAds.length === 0) return null;
+
+    // Derived index from global tick ensures all banners across all pages stay in sync
+    const currentIndex = globalAdTick % positionAds.length;
 
     const ad = positionAds[currentIndex];
     const activeMediaUrl = (position === 'home_highlight' && ad.square_media_url) 

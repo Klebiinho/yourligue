@@ -194,6 +194,7 @@ interface LeagueContextType {
     notifications: LeagueNotification[];
     clearNotification: (id: string) => void;
     leagueBasePath: string;
+    globalAdTick: number;
 
     // Ads
     ads: Ad[];
@@ -454,6 +455,15 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const [supportCounts, setSupportCounts] = useState<Record<string, number>>({});
     const [notifications, setNotifications] = useState<LeagueNotification[]>([]);
     const [ads, setAds] = useState<Ad[]>([]);
+    const [globalAdTick, setGlobalAdTick] = useState(0);
+
+    // Global Ad cycle tick (Syncs ads across all tabs)
+    useEffect(() => {
+        const adTimer = setInterval(() => {
+            setGlobalAdTick(prev => prev + 1);
+        }, 5000); // 5 seconds average duration for global sync
+        return () => clearInterval(adTimer);
+    }, []);
 
     // Refs for realtime handlers to avoid infinite loops
     const teamsRef = useRef<Team[]>([]);
@@ -1986,7 +1996,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
             showAuthModal, setShowAuthModal, loadTeamPhotos, loadPlayerPhotos,
             supportCounts, notifications, clearNotification, leagueBasePath,
-            ads, addAd, updateAd, deleteAd, reorderAds,
+            ads, addAd, updateAd, deleteAd, reorderAds, globalAdTick,
             ytToken, ytLogin, ytLogout, isYtAuthenticated, currentYtLiveStream, recoverStreamDetails,
             deleteYtLive, setYtLivePrivacy
         }}>
