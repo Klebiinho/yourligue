@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Swords, Trophy, Settings, GitBranch, ArrowLeftRight, Grid3x3, X, Signal, Home, Shield, FileText } from 'lucide-react';
 import { useLeague } from '../context/LeagueContext';
-import { useAuth } from '../context/AuthContext';
 import TeamLogo from './TeamLogo';
 
 const navItems = [
@@ -19,8 +18,7 @@ const navItems = [
 
 
 const Sidebar = () => {
-    const { league, isPublicView, setIsPublicView, isAdmin, setShowAuthModal } = useLeague();
-    const { user } = useAuth();
+    const { league, isPublicView, setIsPublicView, isAdmin } = useLeague();
     const navigate = useNavigate();
     const [moreOpen, setMoreOpen] = useState(false);
 
@@ -61,11 +59,7 @@ const Sidebar = () => {
                             <div className="mx-3 mb-1 bg-[#0d0d14]/95 backdrop-blur-2xl rounded-2xl border border-white/[0.08] overflow-hidden shadow-[0_-20px_60px_rgba(0,0,0,0.6)]">
                                 {/* Liga switcher */}
                                 <button onClick={() => { 
-                                    if (!user) {
-                                        setShowAuthModal(true);
-                                    } else {
-                                        navigate('/leagues'); 
-                                    }
+                                    navigate('/leagues'); 
                                     setMoreOpen(false); 
                                 }}
                                     className="w-full flex items-center gap-4 px-5 py-4 hover:bg-white/10 transition-all border-b border-white/[0.05] group">
@@ -248,11 +242,7 @@ const Sidebar = () => {
                     <div className="mt-4 pt-4 border-t border-white/[0.05]">
                         <button
                             onClick={() => {
-                                if (!user) {
-                                    setShowAuthModal(true);
-                                } else {
-                                    navigate('/leagues');
-                                }
+                                navigate('/leagues');
                             }}
                             className="flex items-center gap-3.5 px-4 py-3 rounded-xl text-slate-500 hover:text-white hover:bg-primary/10 w-full transition-all group font-bold text-[0.8rem] tracking-wide"
                         >

@@ -11,7 +11,7 @@ const Dashboard = () => {
     const { 
         league, teams: rawTeams, matches: rawMatches, loading, dataLoading, isPublicView, isAdmin, leagueBasePath, 
         followedLeagues, followLeague, unfollowLeague, setShowAuthModal, userInteractions, 
-        interactWithTeam, loadPlayerPhotos 
+        interactWithTeam, loadPlayerPhotos, getMatchSlug, getTeamSlug 
     } = useLeague();
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -262,11 +262,11 @@ const Dashboard = () => {
                                 const isLive = match.status === 'live';
                                 return (
                                     <div key={match.id}
-                                        onClick={() => navigate(`${leagueBasePath}/match/${match.id}`)}
+                                        onClick={() => navigate(`${leagueBasePath}/${getMatchSlug(match)}/match`)}
                                         className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 sm:py-5 cursor-pointer transition-all duration-200 ${isLive ? 'bg-danger/[0.04]' : 'hover:bg-white/[0.03]'}`}>
 
                                         {/* Home: logo + nome */}
-                                        <div onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${ht?.id}`); }} className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer h-full hover:bg-white/5 p-1 rounded-xl transition-all">
+                                        <div onClick={(e) => { e.stopPropagation(); if(ht) navigate(`${leagueBasePath}/${getTeamSlug(ht)}/team`); }} className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer h-full hover:bg-white/5 p-1 rounded-xl transition-all">
                                             <TeamLogo src={ht?.logo} size={30} />
                                             <span className="font-bold text-[0.7rem] sm:text-sm truncate leading-tight">{ht?.name}</span>
                                         </div>
@@ -298,7 +298,7 @@ const Dashboard = () => {
                                         </div>
 
                                         {/* Away: nome + logo */}
-                                        <div onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${at?.id}`); }} className="flex items-center gap-2 flex-1 min-w-0 justify-end cursor-pointer h-full hover:bg-white/5 p-1 rounded-xl transition-all">
+                                        <div onClick={(e) => { e.stopPropagation(); if(at) navigate(`${leagueBasePath}/${getTeamSlug(at)}/team`); }} className="flex items-center justify-end gap-2 flex-1 min-w-0 cursor-pointer h-full hover:bg-white/5 p-1 rounded-xl transition-all text-right">
                                             <span className="font-bold text-[0.7rem] sm:text-sm truncate text-right leading-tight">{at?.name}</span>
                                             <TeamLogo src={at?.logo} size={30} />
                                         </div>
@@ -338,7 +338,7 @@ const Dashboard = () => {
                                     const pts = calcPoints(team);
                                     return (
                                         <div key={team.id} 
-                                            onClick={() => navigate(`${leagueBasePath}/teams/${team.id}`)}
+                                            onClick={() => navigate(`${leagueBasePath}/${getTeamSlug(team)}/team`)}
                                             className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3.5 hover:bg-white/[0.08] transition-all cursor-pointer group"
                                         >
                                             {/* Position badge */}

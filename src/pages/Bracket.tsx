@@ -5,7 +5,7 @@ import { Shuffle, Shield, Trophy, LayoutGrid, Network, Info, ChevronRight, Check
 import TeamLogo from '../components/TeamLogo';
 
 const Bracket = () => {
-    const { teams, brackets, generateBracket, updateBracket, generateGroups, isPublicView, isAdmin, leagueBasePath } = useLeague();
+    const { teams, brackets, generateBracket, updateBracket, generateGroups, isPublicView, isAdmin, leagueBasePath, getTeamSlug } = useLeague();
     const navigate = useNavigate();
     const [mode, setMode] = useState<'bracket' | 'groups'>('bracket');
     const [generating, setGenerating] = useState(false);
@@ -55,7 +55,7 @@ const Bracket = () => {
                     className={`w-64 bg-white/3 border ${b.status === 'finished' ? 'border-primary/30 shadow-lg shadow-primary/10' : 'border-white/5 shadow-xl'} rounded-2xl overflow-hidden ${(isPublicView || !isAdmin) ? 'cursor-default' : 'cursor-pointer'} backdrop-blur-md`}>
 
                     <div 
-                        onClick={(e) => { if (ht) { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${ht.id}`); } }}
+                        onClick={(e) => { if (ht) { e.stopPropagation(); navigate(`${leagueBasePath}/${getTeamSlug(ht)}/team`); } }}
                         className={`flex items-center gap-3 p-3 transition-colors cursor-pointer ${b.status === 'finished' && b.homeScore > b.awayScore ? 'bg-primary/20 text-white' : 'hover:bg-white/10'}`}
                     >
                         <TeamLogo src={ht?.logo} size={28} />
@@ -70,7 +70,7 @@ const Bracket = () => {
                     <div className="h-px bg-white/5" />
 
                     <div 
-                        onClick={(e) => { if (at) { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${at.id}`); } }}
+                        onClick={(e) => { if (at) { e.stopPropagation(); navigate(`${leagueBasePath}/${getTeamSlug(at)}/team`); } }}
                         className={`flex items-center gap-3 p-3 transition-colors cursor-pointer ${b.status === 'finished' && b.awayScore > b.homeScore ? 'bg-primary/20 text-white' : 'hover:bg-white/10'}`}
                     >
                         <TeamLogo src={at?.logo} size={28} />

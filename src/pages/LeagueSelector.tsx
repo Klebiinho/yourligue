@@ -355,9 +355,12 @@ const LeagueSelector = () => {
                                         hasOvertime: true,
                                         overtimeHalfLength: 15,
                                         sportType: newSport
-                                    });
+                                    }) as { data: any; error: any };
+                                    
                                     if (!res.error && res.data) {
-                                        setNewName(''); setNewSport('soccer'); setShowCreate(false); navigate(`/${res.data.slug || res.data.id}/home`);
+                                        setNewName(''); setNewSport('soccer'); setShowCreate(false); 
+                                        const finalSlug = res.data.slug || res.data.id;
+                                        navigate(`/${finalSlug}/home`);
                                     }
                                 } catch (err) {
                                     console.error(err);

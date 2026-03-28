@@ -8,7 +8,7 @@ import AdBanner from '../components/AdBanner';
 
 const Matches = () => {
     const { user } = useAuth();
-    const { teams, matches, userInteractions, createMatch, startMatch, deleteMatch, updateMatch, isPublicView, isAdmin, leagueBasePath, setShowAuthModal } = useLeague();
+    const { teams, matches, userInteractions, createMatch, startMatch, deleteMatch, updateMatch, isPublicView, isAdmin, leagueBasePath, setShowAuthModal, getMatchSlug, getTeamSlug } = useLeague();
     const navigate = useNavigate();
     const [homeTeamId, setHomeTeamId] = useState(teams[0]?.id || '');
     const [awayTeamId, setAwayTeamId] = useState(teams[1]?.id || '');
@@ -64,9 +64,9 @@ const Matches = () => {
         if (window.confirm('Excluir esta partida?')) await deleteMatch(id);
     };
 
-    const handleEnter = async (id: string, status: string) => {
-        if (!isPublicView && isAdmin && status === 'scheduled') await startMatch(id, 0);
-        navigate(`${leagueBasePath}/match/${id}`);
+    const handleEnter = async (m: any) => {
+        if (!isPublicView && isAdmin && m.status === 'scheduled') await startMatch(m.id, 0);
+        navigate(`${leagueBasePath}/${getMatchSlug(m)}/match`);
     };
 
     const myTeamIds = userInteractions.filter(i => i.interactionType === 'supporting').map((i: any) => i.teamId);
@@ -258,7 +258,7 @@ const Matches = () => {
                                 <div className="flex items-center gap-3 sm:gap-4">
                                     {/* Home */}
                                     <div 
-                                        onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${ht?.id}`); }}
+                                        onClick={(e) => { e.stopPropagation(); if(ht) navigate(`${leagueBasePath}/${getTeamSlug(ht)}/team`); }}
                                         className="flex flex-col items-center gap-1 flex-1 min-w-0 cursor-pointer hover:bg-white/5 p-2 rounded-2xl transition-all"
                                     >
                                         <TeamLogo src={ht?.logo} size={38} />
@@ -298,7 +298,7 @@ const Matches = () => {
 
                                     {/* Away */}
                                     <div 
-                                        onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/teams/${at?.id}`); }}
+                                        onClick={(e) => { e.stopPropagation(); if(at) navigate(`${leagueBasePath}/${getTeamSlug(at)}/team`); }}
                                         className="flex flex-col items-center gap-2 flex-1 min-w-0 cursor-pointer hover:bg-white/5 p-2 rounded-2xl transition-all"
                                     >
                                         <div className="transform transition-transform group-hover:scale-110 duration-500">
@@ -359,7 +359,7 @@ const Matches = () => {
                                                 <Edit2 size={16} className="transition-transform group-hover/btn:rotate-12" />
                                             </button>
                                         )}
-                                        <button onClick={() => handleEnter(match.id, match.status)}
+                                        <button onClick={() => handleEnter(match)}
                                             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-[0.65rem] uppercase tracking-[0.15em] transition-all active:scale-95 shadow-xl ${isLive ? 'bg-accent text-white shadow-accent/20 hover:shadow-accent/40' :
                                                 isFinished ? 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20' :
                                                     'bg-primary text-white shadow-primary/20 hover:shadow-primary/40'

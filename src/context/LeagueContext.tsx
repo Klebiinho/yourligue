@@ -14,6 +14,7 @@ export type Player = {
     isCaptain?: boolean;
     isReserve?: boolean;
     displayOrder?: number;
+    slug?: string;
     stats: { goals: number; assists: number; ownGoals: number; yellowCards: number; redCards: number; points?: number; points1?: number; points2?: number; points3?: number; rebounds?: number; blocks?: number; steals?: number; fouls?: number; };
 };
 
@@ -24,6 +25,7 @@ export type Team = {
     primaryColor?: string;
     secondaryColor?: string;
     group_name?: string;
+    slug?: string;
     players: Player[];
     stats: { matches: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number; points: number; form: ('W' | 'D' | 'L')[] };
 };
@@ -53,6 +55,7 @@ export type Match = {
     scheduledAt?: string;
     location?: string;
     updatedAt?: string;
+    slug?: string;
 };
 
 export type BracketMatch = {
@@ -154,6 +157,9 @@ interface LeagueContextType {
     toggleCaptain: (teamId: string, playerId: string) => Promise<void>;
     reorderPlayers: (teamId: string, playerIds: string[]) => Promise<void>;
     isPlayerOnPitch: (match: Match, playerId: string) => boolean;
+    getMatchSlug: (m: Match) => string;
+    getTeamSlug: (t: Team) => string;
+    getPlayerSlug: (p: Player) => string;
 
     // Match actions
     createMatch: (data: { homeTeamId: string; awayTeamId: string; scheduledAt?: string; location?: string; youtubeLiveId?: string }) => Promise<{ error: string | null; matchId?: string }>;
@@ -239,6 +245,7 @@ const mapDBMatch = (m: any): Match => ({
     scheduledAt: m.scheduled_at,
     location: m.location,
     updatedAt: m.updated_at || m.created_at || new Date().toISOString(),
+    slug: m.slug,
     events: (m.match_events || []).map(mapDBEvent)
 });
 
@@ -248,6 +255,7 @@ const mapDBPlayer = (p: any): Player => ({
     number: p.number || 0,
     position: p.position || '',
     photo: p.photo || '',
+    slug: p.slug,
     isCaptain: p.is_captain || false,
     isReserve: p.is_reserve || false,
     displayOrder: p.display_order || 0,
@@ -263,6 +271,7 @@ const mapDBTeam = (t: any): Team => {
         primaryColor: t.primary_color || null,
         secondaryColor: t.secondary_color || null,
         group_name: t.group_name || '',
+        slug: t.slug,
         players,
         stats: { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0, form: [] as ('W' | 'D' | 'L')[] }
     };
@@ -1192,6 +1201,23 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             .replace(/-+/g, '-')
             .replace(/^-|-$/g, '');
     };
+
+    const getMatchSlug = useCallback((m: Match) => {
+        if (m.slug) return m.slug;
+        const ht = teamsRef.current.find(t => t.id === m.homeTeamId);
+        const at = teamsRef.current.find(t => t.id === m.awayTeamId);
+        if (!ht || !at) return m.id;
+        const date = m.scheduledAt ? new Date(m.scheduledAt).toLocaleDateString('pt-BR').replace(/\//g, '-') : '';
+        return `${generateSlug(ht.name)}-x-${generateSlug(at.name)}${date ? '-' + date : ''}`;
+    }, []);
+
+    const getTeamSlug = useCallback((t: Team) => {
+        return t.slug || generateSlug(t.name) || t.id;
+    }, []);
+
+    const getPlayerSlug = useCallback((p: Player) => {
+        return p.slug || generateSlug(p.name) || p.id;
+    }, []);
 
     // ── League CRUD ────────────────────────────────────────────
     const createLeague = async (data: Omit<League, 'id' | 'slug' | 'userId'>) => {
@@ -2130,7 +2156,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             supportCounts, notifications, clearNotification, leagueBasePath,
             ads, addAd, updateAd, deleteAd, reorderAds, globalAdTick,
             ytToken, ytLogin, ytLogout, isYtAuthenticated, currentYtLiveStream, recoverStreamDetails,
-            deleteYtLive, setYtLivePrivacy
+            deleteYtLive, setYtLivePrivacy, getMatchSlug, getTeamSlug, getPlayerSlug
         }}>
             {children}
         </LeagueContext.Provider>

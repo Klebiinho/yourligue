@@ -7,17 +7,24 @@ import AdBanner from '../components/AdBanner';
 import { VideoGenerator } from '../components/VideoGenerator';
 
 const MatchControl = () => {
-    const { matchId } = useParams<{ matchId: string }>();
+    const { matchId: matchIdParam, matchSlug } = useParams<{ matchId?: string; matchSlug?: string }>();
     const navigate = useNavigate();
     const { 
         league, matches, teams, endMatch, addEvent, removeEvent, 
         updateMatch, isPublicView, isAdmin, isPlayerOnPitch,
         currentYtLiveStream, isYtAuthenticated, recoverStreamDetails,
         ytLogin, setYtLivePrivacy, startMatch, pauseMatch, 
-        loading: leagueLoading, dataLoading, leagueBasePath
+        loading: leagueLoading, dataLoading, leagueBasePath,
+        getMatchSlug
     } = useLeague();
 
-    const match = matches.find((m: Match) => m.id === matchId);
+    const match = useMemo(() => {
+        return matches.find((m: Match) => 
+            (matchIdParam && m.id === matchIdParam) || 
+            (matchSlug && getMatchSlug(m) === matchSlug)
+        );
+    }, [matches, matchIdParam, matchSlug, getMatchSlug]);
+    const mId = match?.id;
     const homeTeam = teams.find((t: Team) => t.id === match?.homeTeamId);
     const awayTeam = teams.find((t: Team) => t.id === match?.awayTeamId);
 
@@ -29,13 +36,13 @@ const MatchControl = () => {
     const [submittingPlayer, setSubmittingPlayer] = useState<{ teamId: string, playerOutId: string } | null>(null);
     const [showOverlay, setShowOverlay] = useState(true);
     const [penaltyPickers, setPenaltyPickers] = useState<{ [teamId: string]: string[] }>(() => {
-        if (!matchId) return {};
-        const saved = localStorage.getItem(`yl_pickers_${matchId}`);
+        if (!mId) return {};
+        const saved = localStorage.getItem(`yl_pickers_${mId}`);
         return saved ? JSON.parse(saved) : {};
     });
     const [confirmedPenaltyShooters, setConfirmedPenaltyShooters] = useState<{ home: string[], away: string[] }>(() => {
-        if (!matchId) return { home: [], away: [] };
-        const saved = localStorage.getItem(`yl_shooters_${matchId}`);
+        if (!mId) return { home: [], away: [] };
+        const saved = localStorage.getItem(`yl_shooters_${mId}`);
         return saved ? JSON.parse(saved) : { home: [], away: [] };
     });
     const [showYtSetup, setShowYtSetup] = useState(false);
@@ -103,16 +110,16 @@ const MatchControl = () => {
 
     // Persist shooters and pickers across refreshes
     useEffect(() => {
-        if (!matchId) return;
-        localStorage.setItem(`yl_pickers_${matchId}`, JSON.stringify(penaltyPickers));
-    }, [penaltyPickers, matchId]);
+        if (!mId) return;
+        localStorage.setItem(`yl_pickers_${mId}`, JSON.stringify(penaltyPickers));
+    }, [penaltyPickers, mId]);
 
     useEffect(() => {
-        if (!matchId) return;
+        if (!mId) return;
         if (confirmedPenaltyShooters.home.length || confirmedPenaltyShooters.away.length) {
-            localStorage.setItem(`yl_shooters_${matchId}`, JSON.stringify(confirmedPenaltyShooters));
+            localStorage.setItem(`yl_shooters_${mId}`, JSON.stringify(confirmedPenaltyShooters));
         }
-    }, [confirmedPenaltyShooters, matchId]);
+    }, [confirmedPenaltyShooters, mId]);
 
     useEffect(() => {
         if (match) {
@@ -201,30 +208,29 @@ const MatchControl = () => {
     const handleUndoLastCard = (playerId: string) => {
         const playerEvents = match?.events.filter((e: MatchEvent) => e.playerId === playerId) || [];
         const lastCardEvent = [...playerEvents].reverse().find((e: MatchEvent) => e.type === 'yellow_card' || e.type === 'red_card');
-        if (lastCardEvent && matchId) removeEvent(matchId, lastCardEvent.id);
+        if (lastCardEvent && mId) removeEvent(mId, lastCardEvent.id);
     };
 
     const handleSaveTimeSettings = () => {
-        if (matchId) updateMatch(matchId, { halfLength, extraTime, period });
+        if (mId) updateMatch(mId, { halfLength, extraTime, period });
     };
 
     const handleSaveYtUrl = () => {
-        if (matchId) {
-            // Helper to extract ID from potential URL
+        if (mId) {
             const extractId = (url: string) => {
                 const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
                 const match = url.match(regExp);
                 return (match && match[2].length === 11) ? match[2] : url;
             };
             const ytId = extractId(editingYtUrl);
-            updateMatch(matchId, { youtubeLiveId: ytId });
+            updateMatch(mId, { youtubeLiveId: ytId });
             setIsEditingYtUrl(false);
         }
     };
 
     const handleUnlinkYt = () => {
-        if (matchId && window.confirm('Deseja remover o vídeo desta partida? (O vídeo permanecerá no YouTube)')) {
-            updateMatch(matchId, { youtubeLiveId: undefined });
+        if (mId && window.confirm('Deseja remover o vídeo desta partida? (O vídeo permanecerá no YouTube)')) {
+            updateMatch(mId, { youtubeLiveId: undefined });
         }
     };
 
@@ -274,28 +280,26 @@ const MatchControl = () => {
     };
 
     const handleToggleTimer = async () => {
-        if (!matchId || !match) return;
+        if (!mId || !match) return;
         
         if (timerRunning) {
-            await pauseMatch(matchId, localSeconds);
+            await pauseMatch(mId, localSeconds);
         } else {
             let shouldStartLive = false;
             
-            // Re-verify if we should ask for live
             if (localSeconds === 0 && !match.youtubeLiveId) {
                 if (isYtAuthenticated) {
                     shouldStartLive = window.confirm("Deseja iniciar uma Transmissão Ao Vivo no YouTube para esta partida?\n\nIsso criará automaticamente uma live no seu canal e pegará as chaves para o seu app de stream.");
                 } else {
                     if (window.confirm("Você não está conectado ao YouTube. Deseja conectar agora para transmitir esta partida ao vivo?")) {
                         await ytLogin();
-                        // After login, we don't start immediately to let them confirm again or simply start without live
                         return;
                     }
                 }
             }
             
             try {
-                await startMatch(matchId, localSeconds, shouldStartLive);
+                await startMatch(mId, localSeconds, shouldStartLive);
             } catch (err: any) {
                 alert("Erro ao iniciar partida: " + (err.message || "Tente novamente"));
             }
@@ -326,8 +330,93 @@ const MatchControl = () => {
     };
     const currentMinute = Math.floor(localSeconds / 60) + 1;
 
+    const confirmFinalFinish = async () => {
+        if (!mId) return;
+        
+        setTimerRunning(false);
+        
+        let videoId = finishedMatchVideoUrl;
+        try {
+            if (videoId.includes('youtube.com') || videoId.includes('youtu.be')) {
+                const url = new URL(videoId);
+                videoId = url.searchParams.get('v') || url.pathname.split('/').pop() || videoId;
+            }
+        } catch { }
+
+        await endMatch(mId, localSeconds);
+        if (videoId) {
+            await updateMatch(mId, { youtubeLiveId: videoId });
+        }
+        
+        setShowFinishModal(false);
+        navigate(`${leagueBasePath}/matches`);
+    };
+
+    const confirmShooters = () => {
+        const homeList = penaltyPickers[homeTeam.id] || [];
+        const awayList = penaltyPickers[awayTeam.id] || [];
+        
+        if (homeList.length === 0 || awayList.length === 0) {
+            alert('Selecione batedores para AMBOS os times antes de confirmar!');
+            return false;
+        }
+        setConfirmedPenaltyShooters({ home: homeList, away: awayList });
+        return true;
+    };
+
+    const handlePeriodChange = async (newPeriod: string) => {
+        if (!mId || !match || !league) return;
+        
+        const isBasket = league.sportType === 'basketball';
+        let newTimer = localSeconds;
+        let newStatus = match.status;
+        let newHalfLength = match.halfLength || league.defaultHalfLength;
+
+        if (isBasket) {
+            newHalfLength = newPeriod === 'Prorrogação' ? 5 : league.defaultHalfLength;
+        } else {
+            if (newPeriod === '1º Tempo' || newPeriod === '2º Tempo') {
+                newHalfLength = league.defaultHalfLength;
+            } else if (newPeriod.includes('Prorrog.')) {
+                newHalfLength = league.overtimeHalfLength || 15;
+            }
+        }
+
+        const regMin = league.defaultHalfLength;
+        const otMin = league.overtimeHalfLength || (isBasket ? 5 : 15);
+
+        if (newPeriod.includes('Intervalo')) {
+            newStatus = 'scheduled'; 
+        } else if (isBasket) {
+            if (newPeriod === '1º Quarto' && localSeconds > 30) { if(confirm('Zerar?')) newTimer = 0; }
+            else if (newPeriod === '2º Quarto' && localSeconds < regMin * 60) newTimer = regMin * 60;
+            else if (newPeriod === '3º Quarto' && localSeconds < regMin * 120) newTimer = regMin * 120;
+            else if (newPeriod === '4º Quarto' && localSeconds < regMin * 180) newTimer = regMin * 180;
+            else if (newPeriod === 'Prorrogação' && localSeconds < regMin * 240) newTimer = regMin * 240;
+        } else {
+            if (newPeriod === '1º Tempo' && localSeconds > 60) {
+                if (window.confirm('Deseja zerar o cronômetro para o início do 1º tempo?')) {
+                    newTimer = 0;
+                }
+            } else if (newPeriod === '2º Tempo' && localSeconds < regMin * 60) {
+                newTimer = regMin * 60;
+            } else if (newPeriod === '1º Prorrog.' && localSeconds < regMin * 120) {
+                newTimer = regMin * 120;
+            } else if (newPeriod === '2º Prorrog.' && localSeconds < (regMin * 120 + otMin * 60)) {
+                newTimer = regMin * 120 + otMin * 60;
+            } else if (newPeriod === 'Sel. Batedores' || newPeriod === 'Pênaltis') {
+                newStatus = 'scheduled'; 
+            }
+        }
+
+        setPeriod(newPeriod);
+        setLocalSeconds(newTimer);
+        setHalfLength(newHalfLength);
+        await updateMatch(mId, { period: newPeriod, status: newStatus, timer: newTimer, halfLength: newHalfLength });
+    };
+
     const handleEndMatch = () => {
-        if (!matchId || !match) return;
+        if (!mId || !match) return;
 
         const isBasket = league?.sportType === 'basketball';
 
@@ -335,8 +424,6 @@ const MatchControl = () => {
             const nextP = isBasket ? '2º Quarto' : 'Intervalo';
             if (window.confirm(`Encerrar ${period} e seguir para ${nextP}?`)) {
                 setTimerRunning(false);
-                handlePeriodChange(isBasket ? 'Intervalo' : 'Intervalo'); // Both use 'Intervalo' or specialized intervals
-                // Actually basketball has intervals between all quarters
                 handlePeriodChange('Intervalo');
             }
             return;
@@ -370,8 +457,6 @@ const MatchControl = () => {
                     if (next === '1º Prorrog.') startTime = ((league?.defaultHalfLength || 45) * 2) * 60;
                     if (next === '2º Prorrog.') startTime = ((league?.defaultHalfLength || 45) * 2 + (league?.overtimeHalfLength || 15)) * 60;
                 } else {
-                    // Basketball logic: timer continues or additive?
-                    // FIBA: 10 min each. Timer in this app seems to be cumulative.
                     const qLen = league?.defaultHalfLength || 10;
                     if (next === '2º Quarto') startTime = qLen * 60;
                     if (next === '3º Quarto') startTime = (qLen * 2) * 60;
@@ -381,7 +466,7 @@ const MatchControl = () => {
 
                 handlePeriodChange(next);
                 setTimerRunning(true);
-                startMatch(matchId, startTime);
+                startMatch(mId, startTime);
             }
             return;
         }
@@ -420,116 +505,48 @@ const MatchControl = () => {
         setShowFinishModal(true);
     };
 
-    const confirmFinalFinish = async () => {
-        if (!matchId) return;
-        
-        setTimerRunning(false);
-        
-        let videoId = finishedMatchVideoUrl;
-        try {
-            if (videoId.includes('youtube.com') || videoId.includes('youtu.be')) {
-                const url = new URL(videoId);
-                videoId = url.searchParams.get('v') || url.pathname.split('/').pop() || videoId;
-            }
-        } catch { }
-
-        await endMatch(matchId, localSeconds);
-        if (videoId) {
-            await updateMatch(matchId, { youtubeLiveId: videoId });
-        }
-        
-        setShowFinishModal(false);
-        navigate(`${leagueBasePath}/matches`);
-    };
-
     const handleGol = (teamId: string, playerId: string) => { 
-        if (!matchId || !match || (period.includes('Intervalo') && period !== 'Pênaltis')) return;
-        
-        // Em pênaltis, permitimos salvar mesmo com status 'scheduled' (pause) pois o relógio principal para mas a disputa continua
+        if (!mId || !match || (period.includes('Intervalo') && period !== 'Pênaltis')) return;
         const canSave = match.status === 'live' || period === 'Pênaltis';
         if (!canSave) return;
-
         if (period === 'Pênaltis') {
-            addEvent(matchId, { type: 'penalty_shootout_goal', teamId, playerId, minute: 121 });
+            addEvent(mId, { type: 'penalty_shootout_goal', teamId, playerId, minute: 121 });
         } else {
-            addEvent(matchId, { type: 'goal', teamId, playerId, minute: currentMinute });
+            addEvent(mId, { type: 'goal', teamId, playerId, minute: currentMinute });
         }
     };
     const handleMiss = (teamId: string, playerId: string) => {
-        if (matchId && (match?.status === 'live' || period === 'Pênaltis') && period === 'Pênaltis') {
-            addEvent(matchId, { type: 'penalty_shootout_miss', teamId, playerId, minute: 121 });
+        if (mId && (match?.status === 'live' || period === 'Pênaltis') && period === 'Pênaltis') {
+            addEvent(mId, { type: 'penalty_shootout_miss', teamId, playerId, minute: 121 });
         }
     };
-    const handleAssist = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && !period.includes('Intervalo') && period !== 'Pênaltis') addEvent(matchId, { type: 'assist', teamId, playerId, minute: currentMinute }); };
-    const handleGolContra = (teamId: string, playerId: string) => { if (matchId && match?.status === 'live' && !period.includes('Intervalo') && period !== 'Pênaltis') addEvent(matchId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); };
-    const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { if (matchId && match?.status === 'live' && !period.includes('Intervalo')) addEvent(matchId, { type, teamId, playerId, minute: currentMinute }); };
+    const handleAssist = (teamId: string, playerId: string) => { 
+        if (mId && match?.status === 'live' && !period.includes('Intervalo') && period !== 'Pênaltis') 
+            addEvent(mId, { type: 'assist', teamId, playerId, minute: currentMinute }); 
+    };
+    const handleGolContra = (teamId: string, playerId: string) => { 
+        if (mId && match?.status === 'live' && !period.includes('Intervalo') && period !== 'Pênaltis') 
+            addEvent(mId, { type: 'own_goal', teamId, playerId, minute: currentMinute }); 
+    };
+    const handleCartao = (teamId: string, playerId: string, type: 'yellow_card' | 'red_card') => { 
+        if (mId && match?.status === 'live' && !period.includes('Intervalo')) 
+            addEvent(mId, { type, teamId, playerId, minute: currentMinute }); 
+    };
     
     // Basketball specific events
     const handlePoints = (teamId: string, playerId: string, points: 1 | 2 | 3) => {
-        if (!matchId || match?.status !== 'live' || period.includes('Intervalo')) return;
+        if (!mId || match?.status !== 'live' || period.includes('Intervalo')) return;
         const type = points === 1 ? 'points_1' : points === 2 ? 'points_2' : 'points_3';
-        addEvent(matchId, { type, teamId, playerId, minute: currentMinute });
+        addEvent(mId, { type, teamId, playerId, minute: currentMinute });
     };
 
     const handleStat = (teamId: string, playerId: string, type: 'rebound' | 'block' | 'steal' | 'foul') => {
-        if (!matchId || match?.status !== 'live' || period.includes('Intervalo')) return;
-        addEvent(matchId, { type, teamId, playerId, minute: currentMinute });
-    };
-    const handlePeriodChange = async (newPeriod: string) => {
-        if (!matchId || !match || !league) return;
-        
-        const isBasket = league.sportType === 'basketball';
-        let newTimer = localSeconds;
-        let newStatus = match.status;
-        let newHalfLength = match.halfLength || league.defaultHalfLength;
-
-        // Auto-set half length based on period type
-        if (isBasket) {
-            newHalfLength = newPeriod === 'Prorrogação' ? 5 : league.defaultHalfLength;
-        } else {
-            if (newPeriod === '1º Tempo' || newPeriod === '2º Tempo') {
-                newHalfLength = league.defaultHalfLength;
-            } else if (newPeriod.includes('Prorrog.')) {
-                newHalfLength = league.overtimeHalfLength || 15;
-            }
-        }
-
-        const regMin = league.defaultHalfLength;
-        const otMin = league.overtimeHalfLength || (isBasket ? 5 : 15);
-
-        // Real-time functional logic
-        if (newPeriod.includes('Intervalo')) {
-            newStatus = 'scheduled'; // Auto-pause
-        } else if (isBasket) {
-            if (newPeriod === '1º Quarto' && localSeconds > 30) { if(confirm('Zerar?')) newTimer = 0; }
-            else if (newPeriod === '2º Quarto' && localSeconds < regMin * 60) newTimer = regMin * 60;
-            else if (newPeriod === '3º Quarto' && localSeconds < regMin * 120) newTimer = regMin * 120;
-            else if (newPeriod === '4º Quarto' && localSeconds < regMin * 180) newTimer = regMin * 180;
-            else if (newPeriod === 'Prorrogação' && localSeconds < regMin * 240) newTimer = regMin * 240;
-        } else {
-            if (newPeriod === '1º Tempo' && localSeconds > 60) {
-                if (window.confirm('Deseja zerar o cronômetro para o início do 1º tempo?')) {
-                    newTimer = 0;
-                }
-            } else if (newPeriod === '2º Tempo' && localSeconds < regMin * 60) {
-                newTimer = regMin * 60;
-            } else if (newPeriod === '1º Prorrog.' && localSeconds < regMin * 120) {
-                newTimer = regMin * 120;
-            } else if (newPeriod === '2º Prorrog.' && localSeconds < (regMin * 120 + otMin * 60)) {
-                newTimer = regMin * 120 + otMin * 60;
-            } else if (newPeriod === 'Sel. Batedores' || newPeriod === 'Pênaltis') {
-                newStatus = 'scheduled'; // Stop main clock
-            }
-        }
-
-        setPeriod(newPeriod);
-        setLocalSeconds(newTimer);
-        setHalfLength(newHalfLength);
-        await updateMatch(matchId, { period: newPeriod, status: newStatus, timer: newTimer, halfLength: newHalfLength });
+        if (!mId || match?.status !== 'live' || period.includes('Intervalo')) return;
+        addEvent(mId, { type, teamId, playerId, minute: currentMinute });
     };
 
     const handleSubstitution = (teamId: string, playerInId: string, playerOutId: string) => {
-        if (matchId && (match?.status === 'live' || period.includes('Intervalo'))) {
+        if (mId && (match?.status === 'live' || period.includes('Intervalo'))) {
             const limit = league?.substitutionsLimit || 5;
             const teamSubstitutions = (match?.events || []).filter(e => e.type === 'substitution' && e.teamId === teamId).length;
             
@@ -537,7 +554,7 @@ const MatchControl = () => {
                 alert(`Limite de ${limit} substituições atingido para este time!`);
                 return;
             }
-            addEvent(matchId, { type: 'substitution', teamId, playerId: playerInId, playerOutId, minute: currentMinute });
+            addEvent(mId!, { type: 'substitution', teamId, playerId: playerInId, playerOutId, minute: currentMinute });
             setSubmittingPlayer(null);
         }
     };
@@ -552,17 +569,6 @@ const MatchControl = () => {
         });
     };
 
-    const confirmShooters = () => {
-        const homeList = penaltyPickers[homeTeam.id] || [];
-        const awayList = penaltyPickers[awayTeam.id] || [];
-        
-        if (homeList.length === 0 || awayList.length === 0) {
-            alert('Selecione batedores para AMBOS os times antes de confirmar!');
-            return false;
-        }
-        setConfirmedPenaltyShooters({ home: homeList, away: awayList });
-        return true;
-    };
 
 
 
@@ -679,11 +685,11 @@ const MatchControl = () => {
                                 <div className="flex gap-2">
                                     <input 
                                         readOnly 
-                                        value={`${window.location.origin}/match/${matchId}/overlay`} 
+                                        value={`${window.location.origin}/match/${mId}/overlay`} 
                                         className="bg-black/40 border border-primary/10 flex-1 px-3 py-2 rounded-lg text-[0.65rem] font-mono text-white" 
                                     />
                                     <button 
-                                        onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/match/${matchId}/overlay`); alert('Link do Placar Copiado!'); }}
+                                        onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/match/${mId}/overlay`); alert('Link do Placar Copiado!'); }}
                                         className="bg-primary text-white p-2 rounded-lg hover:bg-primary-hover transition-all shadow-lg shadow-primary/20"
                                     >
                                         <Check size={16} />
@@ -958,9 +964,9 @@ const MatchControl = () => {
                                                             onClick={async () => {
                                                                 if (window.confirm("Isso apagará TODAS as cobranças feitas até agora e voltará para a fase de seleção. Deseja reiniciar?")) {
                                                                     const toDelete = match.events.filter(e => e.type.startsWith('penalty_shootout_'));
-                                                                    for (const e of toDelete) await removeEvent(matchId!, e.id);
+                                                                    for (const e of toDelete) await removeEvent(mId, e.id);
                                                                     setConfirmedPenaltyShooters({ home: [], away: [] });
-                                                                    localStorage.removeItem(`yl_shooters_${matchId}`);
+                                                                    localStorage.removeItem(`yl_shooters_${mId}`);
                                                                     handlePeriodChange('Sel. Batedores');
                                                                 }
                                                             }}
@@ -1392,7 +1398,7 @@ const MatchControl = () => {
                                                                 <Video size={12} strokeWidth={3} />
                                                             </button>
                                                         )}
-                                                        <button onClick={() => removeEvent(matchId!, event.id)}
+                                                        <button onClick={() => removeEvent(mId!, event.id)}
                                                             className="w-8 h-8 flex items-center justify-center rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all sm:opacity-0 sm:group-hover:opacity-100 flex-none border border-danger/20">
                                                             <XCircle size={14} />
                                                         </button>

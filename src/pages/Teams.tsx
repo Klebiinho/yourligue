@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLeague, type Player } from '../context/LeagueContext';
 import { Shield, Crown, Trash2, Edit2, Check, X, AlertCircle, Users, Upload, Plus, Star, PlusCircle, GripVertical, ArrowDownUp, Heart, Wind, Compass } from 'lucide-react';
@@ -9,19 +9,28 @@ const Teams = () => {
     const { 
         league, teams, addTeam, updateTeam, deleteTeam, addPlayer, removePlayer, updatePlayer, 
         toggleCaptain, reorderPlayers, isPublicView, isAdmin, interactWithTeam, 
-        userInteractions, supportCounts, loadTeamPhotos 
+        userInteractions, supportCounts, loadTeamPhotos, getTeamSlug 
     } = useLeague();
-    const { teamId } = useParams<{ teamId: string }>();
-    const [activeTeamId, setActiveTeamId] = useState<string | null>(teamId || teams[0]?.id || null);
+    const { teamId: teamIdParam, teamSlug } = useParams<{ teamId?: string; teamSlug?: string }>();
+    
+    // Resolve which team is active based on ID or slug
+    const resolvedTeamId = useMemo(() => {
+        if (teamIdParam) return teamIdParam;
+        if (teamSlug) {
+            const team = teams.find(t => getTeamSlug(t) === teamSlug);
+            return team?.id || null;
+        }
+        return teams[0]?.id || null;
+    }, [teamIdParam, teamSlug, teams, getTeamSlug]);
+
+    const [activeTeamId, setActiveTeamId] = useState<string | null>(resolvedTeamId);
     const [isEditingTeam, setIsEditingTeam] = useState<string | null>(null);
 
     useEffect(() => {
-        if (teamId) {
-            setActiveTeamId(teamId);
-        } else if (!activeTeamId && teams.length > 0) {
-            setActiveTeamId(teams[0].id);
+        if (resolvedTeamId) {
+            setActiveTeamId(resolvedTeamId);
         }
-    }, [teamId, teams, activeTeamId]);
+    }, [resolvedTeamId]);
 
     useEffect(() => {
         if (activeTeamId) {
