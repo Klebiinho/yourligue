@@ -655,14 +655,12 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('isPublicView', isPublicView.toString());
     }, [isPublicView]);
 
-    // GUARANTEE: Owners start in Gestor Mode on first load of a league
+    // GUARANTEE: Owners start in Gestor Mode whenever entering their league
     useEffect(() => {
         if (user && league && league.userId === user.id) {
-            const hasSetPreference = localStorage.getItem('isPublicView') !== null;
-            if (!hasSetPreference) {
-                console.log('LeagueContext: Ownership discovered, setting default Gestor Mode');
-                setIsPublicView(false);
-            }
+            console.log('LeagueContext: Ownership discovered, ensuring Gestor Mode');
+            setIsPublicView(false);
+            localStorage.setItem('isPublicView', 'false');
         }
     }, [user?.id, league?.id]); // Only run on login or league change
 
@@ -847,18 +845,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             if (row) {
                 const mapped = mapDBLeague(row);
                 
-                // Only update state if something changed or it's a new league
+                // Force Gestor Mode for owners whenever they load their league
+                if (user && mapped.userId === user.id) {
+                    setIsPublicView(false);
+                    localStorage.setItem('isPublicView', 'false');
+                } else if (!isSameLeague || !league || league.id !== mapped.id) {
+                    // Only default to public view if it's a NEW league (not current one)
+                    setIsPublicView(true);
+                }
+
                 if (!isSameLeague || JSON.stringify(mapped) !== JSON.stringify(league)) {
                     setLeague(mapped);
                     localStorage.setItem('selectedLeagueId', mapped.id);
-                    
-                    // If the user is the owner, default to Admin Mode (not public view)
-                    if (user && mapped.userId === user.id) {
-                        setIsPublicView(false); // Force Gestor Mode for owners
-                        localStorage.setItem('isPublicView', 'false');
-                    } else {
-                        setIsPublicView(true);
-                    }
                 }
                 
                 // If it's the SAME league, loadLeagueData will be called by useEffect [league?.id]
@@ -1399,22 +1397,24 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         const found = leagues.find(l => l.id === id);
         if (found) {
             const isDifferent = !league || league.id !== id;
+            // ENSURE: Owners ALWAYS enter Gestor Mode on click, regardless of state
+            if (user && found.userId === user.id) {
+                setIsPublicView(false);
+                localStorage.setItem('isPublicView', 'false');
+            }
+
             if (isDifferent) {
-                // Safety: Set loading immediately so components that rely on the new league
-                // don't try to render with empty teams/matches data before the loader starts.
+                // Safety: Set loading immediately
                 setLoading(true);
                 setDataLoading(true);
 
-                // Clear stale data immediately so the UI doesn't flash old league data.
                 setRawTeams([]);
                 setRawMatches([]);
                 setBrackets([]);
-                setIsPublicView(false); // Ensure Gestor Mode for direct selections
-                localStorage.setItem('isPublicView', 'false');
                 setLeague(found);
             } else {
                 console.log('LeagueContext: Same league selected, performing background sync');
-                loadLeagueData(id, true); // Trigger silent sync
+                loadLeagueData(id, true);
             }
             localStorage.setItem('selectedLeagueId', id);
         }
