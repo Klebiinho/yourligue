@@ -133,7 +133,13 @@ const DynamicContent = () => {
             paragraphs.push(`A figura do representante de equipe evoluiu muito, e compreender o tema **${title}** é essencial. O capitão não gesticula só em quadra: é o principal elo burocrático de toda a transação da equipe.`);
             paragraphs.push("Ele é o responsável por certificar exames, confirmar presenças via link e validar a escalação enviada pelo organizador da liga, distribuindo a carga de responsabilidade uniformemente através do app.");
         }
-        // Topic 5: Search & Typos (SEO)
+        // Topic 5: Informal / Regional Slang (Baba, Fut, Pelada, etc.)
+        else if (t.includes('baba') || t.includes('fut') || t.includes('racha') || t.includes('pelada') || t.includes('copinha') || t.includes('bater bola')) {
+            paragraphs.push(`Organizar o seu **${title}** não precisa ser uma dor de cabeça burocrática. Seja um baba na Bahia ou uma pelada no Rio, o YourLeague foi feito para quem quer focar apenas no jogo.`);
+            paragraphs.push("A ideia aqui é simples: você cria o grupo, convoca a galera e nós cuidamos de quem levou cartão, quem tá devendo a mensalidade e, claro, quem é o artilheiro do mês.");
+            paragraphs.push("Nossa plataforma entende que o esporte amador vive da resenha, mas uma resenha com estatística e organização de elite é o que transforma um racha comum em uma verdadeira tradição.");
+        }
+        // Topic 6: Search & Typos (SEO)
         else if (path.includes('/busca/')) {
             paragraphs.push(`Você buscou por "${title}". Este é um dos termos mais frequentes entre organizadores que buscam profissionalizar suas competições.`);
             paragraphs.push("Muitas vezes, a busca por soluções esportivas começa com termos simples ou até variações do nome da nossa marca, mas o destino final é sempre o mesmo: uma gestão de elite que garanta transparência e engajamento.");
