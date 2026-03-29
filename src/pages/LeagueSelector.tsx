@@ -51,7 +51,8 @@ const LeagueSelector = () => {
 
     const handleTabClick = (tabId: 'owned' | 'following' | 'nearby' | 'explore') => {
         setActiveTab(tabId);
-        if (tabId === 'nearby' && !hasSearchedNearby) handleRequestLocation();
+        // Só tenta localizar automaticamente se não houver erro prévio de permissão negada
+        if (tabId === 'nearby' && !hasSearchedNearby && locationErrorCode !== 1) handleRequestLocation();
     };
 
     useEffect(() => {
@@ -304,13 +305,22 @@ const LeagueSelector = () => {
                                     </div>
 
                                     <div className="flex flex-col gap-2 pt-4">
-                                        <button 
-                                            onClick={handleRequestLocation} 
-                                            disabled={isLocating}
-                                            className="w-full py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 transition-all font-outfit"
-                                        >
-                                            {isLocating ? 'Buscando GPS...' : 'Tentar GPS Novamente'}
-                                        </button>
+                                        {locationErrorCode === 1 ? (
+                                            <button 
+                                                onClick={() => setActiveTab('explore')}
+                                                className="w-full py-4 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] hover:bg-white/10 transition-all font-outfit"
+                                            >
+                                                Ver Todas as Ligas (Explorar)
+                                            </button>
+                                        ) : (
+                                            <button 
+                                                onClick={handleRequestLocation} 
+                                                disabled={isLocating}
+                                                className="w-full py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 transition-all font-outfit"
+                                            >
+                                                {isLocating ? 'Buscando GPS...' : 'Tentar GPS Novamente'}
+                                            </button>
+                                        )}
                                         <p className="text-[0.6rem] text-slate-600 font-black uppercase tracking-widest">Acesso seguro via navegador</p>
                                     </div>
                                 </div>
