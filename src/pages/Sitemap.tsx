@@ -9,7 +9,7 @@ const sitemapData = rawSitemapData as any;
 
 const Sitemap = () => {
     const navigate = useNavigate();
-    const { leagues, league, getMatchSlug, getPlayerSlug } = useLeague();
+    const { leagues, league } = useLeague();
     const [recentPlayers, setRecentPlayers] = useState<any[]>([]);
     const [recentMatches, setRecentMatches] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -62,8 +62,8 @@ const Sitemap = () => {
     };
 
     const sections = [
-        { title: 'Ligas Ativas', icon: Trophy, items: leagues.map(l => ({ title: l.name, path: `/${l.slug}` })) },
-        { title: 'Localizações (Mapas)', icon: MapPin, items: leagues.map(l => ({ title: `Mapa: ${l.name}`, path: `/${l.slug}/localizacao` })) },
+        { title: 'Ligas Ativas', icon: Trophy, items: leagues.map((l: any) => ({ title: l.name, path: `/${l.slug}` })) },
+        { title: 'Localizações (Mapas)', icon: MapPin, items: leagues.map((l: any) => ({ title: `Mapa: ${l.name}`, path: `/${l.slug}/localizacao` })) },
         { title: 'Jogadores Recentes', icon: User, items: recentPlayers },
         { title: 'Últimas Partidas', icon: Zap, items: recentMatches },
         { title: 'Páginas do Site', icon: Globe, items: (sitemapData.Paginas || []).map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
