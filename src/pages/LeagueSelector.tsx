@@ -286,20 +286,36 @@ const LeagueSelector = () => {
                     )}
 
                     {activeTab === 'nearby' && (
-                        nearbyLeagues.length === 0 ? (
+                        isLocating ? (
+                            <div className="flex flex-col items-center justify-center py-20 gap-6 glass-panel border-primary/20 bg-primary/5">
+                                <div className="relative">
+                                    <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                                    <MapPin className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary animate-pulse" size={24} />
+                                </div>
+                                <div className="text-center space-y-2">
+                                    <p className="text-white font-outfit font-black text-xs uppercase tracking-[0.3em] animate-pulse">Sincronizando Satélites</p>
+                                    <p className="text-slate-500 font-medium text-[0.6rem] uppercase tracking-widest">Calculando ligas próximas a você...</p>
+                                </div>
+                            </div>
+                        ) : nearbyLeagues.length === 0 ? (
                             <div className="glass-panel py-20 px-10 text-center space-y-6">
-                                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5 relative">
                                     <MapPin size={40} className="text-slate-700" strokeWidth={1} />
+                                    {locationErrorCode === 1 && (
+                                        <div className="absolute -top-1 -right-1 bg-danger text-white p-1.5 rounded-full border-2 border-bg-dark">
+                                            <X size={12} strokeWidth={4} />
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="space-y-4 max-w-sm mx-auto">
                                     <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">
-                                        {locationErrorCode === 1 ? 'Acesso Negado' : 'Ligas Próximas'}
+                                        {locationErrorCode === 1 ? 'Acesso ao GPS Negado' : 'Ligas Próximas'}
                                     </h3>
                                     <p className="text-slate-500 font-medium text-sm">
                                         {locationErrorCode === 1 
-                                            ? 'Você negou acesso ao GPS. Mas não se preocupe! Pode pesquisar sua cidade ou bairro abaixo.' 
+                                            ? 'Você desativou a localização no seu navegador. Para encontrar campeonatos perto de você, use a busca manual abaixo.' 
                                             : hasSearchedNearby 
-                                                ? 'Nenhuma liga encontrada num raio de 50km. Tente buscar por nome ou bairro.' 
+                                                ? 'Nenhuma liga encontrada num raio de 50km da sua posição atual.' 
                                                 : 'Sua localização ajuda a encontrar ligas locais em segundos.'
                                         }
                                     </p>
@@ -308,11 +324,11 @@ const LeagueSelector = () => {
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                                         <input 
                                             type="text" 
-                                            placeholder="Ex: Rio de Janeiro, Copacabana..." 
+                                            placeholder="Busque por sua Cidade ou Bairro..." 
                                             value={searchQuery}
                                             onChange={e => setSearchQuery(e.target.value)}
                                             onFocus={() => setActiveTab('explore')}
-                                            className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white placeholder:text-slate-600 focus:border-primary outline-none transition-all text-sm font-bold group-hover:border-white/20"
+                                            className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white placeholder:text-slate-600 focus:border-primary outline-none transition-all text-sm font-bold group-hover:border-white/20 shadow-inner"
                                         />
                                     </div>
 
@@ -322,18 +338,18 @@ const LeagueSelector = () => {
                                                 onClick={() => setActiveTab('explore')}
                                                 className="w-full py-4 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] hover:bg-white/10 transition-all font-outfit"
                                             >
-                                                Ver Todas as Ligas (Explorar)
+                                                Explorar Todas as Ligas
                                             </button>
                                         ) : (
                                             <button 
                                                 onClick={handleRequestLocation} 
                                                 disabled={isLocating}
-                                                className="w-full py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 transition-all font-outfit"
+                                                className="w-full py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all font-outfit flex items-center justify-center gap-2"
                                             >
-                                                {isLocating ? 'Buscando GPS...' : 'Tentar GPS Novamente'}
+                                                <MapPin size={16} />
+                                                <span>Buscar Ligas Perto de Mim</span>
                                             </button>
                                         )}
-                                        <p className="text-[0.6rem] text-slate-600 font-black uppercase tracking-widest">Acesso seguro via navegador</p>
                                     </div>
                                 </div>
                             </div>

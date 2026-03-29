@@ -1340,14 +1340,23 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             if (existing) return { error: 'Uma liga com este nome já existe.' };
 
             const { data: row, error } = await supabase.from('leagues').insert({
-                user_id: activeUser.id, name: data.name, logo: data.logo, max_teams: data.maxTeams,
-                points_for_win: data.pointsForWin, points_for_draw: data.pointsForDraw,
-                points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
-                players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
+                user_id: activeUser.id, 
+                name: data.name, 
+                logo: data.logo, 
+                max_teams: data.maxTeams,
+                points_for_win: data.pointsForWin, 
+                points_for_draw: data.pointsForDraw,
+                points_for_loss: data.pointsForLoss, 
+                default_half_length: data.defaultHalfLength,
+                players_per_team: data.playersPerTeam, 
+                reserve_limit_per_team: data.reserveLimitPerTeam,
                 substitutions_limit: data.substitutionsLimit,
                 allow_substitution_return: data.allowSubstitutionReturn ?? true,
                 has_overtime: data.hasOvertime ?? true,
                 sport_type: data.sportType,
+                address: (data as any).address,
+                lat: (data as any).lat,
+                lng: (data as any).lng,
                 slug
             }).select().single();
 
