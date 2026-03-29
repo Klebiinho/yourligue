@@ -247,6 +247,8 @@ const LeagueSelector = () => {
                             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors" size={20} />
                             <input
                                 type="text"
+                                id="league-search-explorer"
+                                name="league-search-explorer"
                                 placeholder="Buscar por nome da liga..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
@@ -355,6 +357,8 @@ const LeagueSelector = () => {
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                                         <input 
                                             type="text" 
+                                            id="nearby-location-search"
+                                            name="nearby-location-search"
                                             placeholder="Busque por sua Cidade ou Bairro..." 
                                             value={searchQuery}
                                             onChange={e => setSearchQuery(e.target.value)}
@@ -484,7 +488,7 @@ const LeagueSelector = () => {
                                 <div className="flex flex-col gap-4">
                                     <div className="flex flex-col gap-2">
                                         <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Crie sua nova liga</label>
-                                        <input type="text" placeholder="Ex: Premier League 2026" value={newName}
+                                        <input type="text" id="new-league-name" name="new-league-name" placeholder="Ex: Premier League 2026" value={newName}
                                             onChange={e => setNewName(e.target.value)} autoFocus required
                                             className="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 text-white font-bold text-lg outline-none focus:border-accent transition-all placeholder:text-slate-700"
                                         />
@@ -574,6 +578,8 @@ const LeagueItem = ({
             {isEditing ? (
                 <div className="flex-1 flex flex-col sm:flex-row gap-2 w-full" onClick={e => e.stopPropagation()}>
                     <input
+                        id={`edit-league-${league.id}`}
+                        name={`edit-league-${league.id}`}
                         value={editName} onChange={e => onEditNameChange(e.target.value)}
                         autoFocus className="flex-1 bg-black/40 border border-primary/50 rounded-xl px-4 py-3 text-white font-bold outline-none ring-2 ring-primary/20"
                     />

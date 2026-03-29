@@ -405,7 +405,7 @@ const Settings = () => {
                                 <div className="flex-1 space-y-4 w-full">
                                     <div className="space-y-2">
                                         <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Nome Oficial da Liga</label>
-                                        <input type="text" value={name} onChange={e => setName(e.target.value)} required
+                                        <input type="text" id="league-name" name="league-name" value={name} onChange={e => setName(e.target.value)} required
                                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white font-black text-xl outline-none focus:border-primary transition-all placeholder:text-slate-700 h-16"
                                         />
                                     </div>
@@ -421,7 +421,7 @@ const Settings = () => {
                                     <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Capacidade de Equipes</label>
                                     <div className="relative">
                                         <ShieldCheck size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" />
-                                        <input type="number" value={maxTeams} onChange={e => setMaxTeams(e.target.value)} min={2} max={64} required
+                                        <input type="number" id="league-max-teams" name="league-max-teams" value={maxTeams} onChange={e => setMaxTeams(e.target.value)} min={2} max={64} required
                                             className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-primary transition-colors h-14"
                                         />
                                     </div>
@@ -430,7 +430,7 @@ const Settings = () => {
                                     <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Duração dos Tempos (min)</label>
                                     <div className="relative">
                                         <Clock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-accent" />
-                                        <input type="number" value={halfLength} onChange={e => setHalfLength(e.target.value)} required min={1} max={90}
+                                        <input type="number" id="league-half-length" name="league-half-length" value={halfLength} onChange={e => setHalfLength(e.target.value)} required min={1} max={90}
                                             className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-accent transition-colors h-14"
                                         />
                                     </div>
@@ -440,7 +440,7 @@ const Settings = () => {
                                         <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Duração Prorrogação (min)</label>
                                         <div className="relative">
                                             <Clock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-warning" />
-                                            <input type="number" value={overtimeHalfLength} onChange={e => setOvertimeHalfLength(e.target.value)} required min={1} max={45}
+                                            <input type="number" id="league-overtime-length" name="league-overtime-length" value={overtimeHalfLength} onChange={e => setOvertimeHalfLength(e.target.value)} required min={1} max={45}
                                                 className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-warning transition-colors h-14"
                                             />
                                         </div>
@@ -454,7 +454,7 @@ const Settings = () => {
                                     <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Jogadores Titulares (por time)</label>
                                     <div className="relative">
                                         <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" />
-                                        <input type="number" value={playersPerTeam} onChange={e => setPlayersPerTeam(e.target.value)} min={1} max={11} required
+                                        <input type="number" id="league-players-per-team" name="league-players-per-team" value={playersPerTeam} onChange={e => setPlayersPerTeam(e.target.value)} min={1} max={11} required
                                             className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-primary transition-colors h-14"
                                         />
                                     </div>
@@ -463,7 +463,7 @@ const Settings = () => {
                                     <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Limite de Reservas (por time)</label>
                                     <div className="relative">
                                         <Users size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-accent" />
-                                        <input type="number" value={reserveLimit} onChange={e => setReserveLimit(e.target.value)} required min={0} max={20}
+                                        <input type="number" id="league-reserve-limit" name="league-reserve-limit" value={reserveLimit} onChange={e => setReserveLimit(e.target.value)} required min={0} max={20}
                                             className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-accent transition-colors h-14"
                                         />
                                     </div>
@@ -476,7 +476,7 @@ const Settings = () => {
                                     <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest ml-1">Substituições Permitidas (por jogo/time)</label>
                                     <div className="relative">
                                         <ArrowLeftRight size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" />
-                                        <input type="number" value={substitutionsLimit} onChange={e => setSubstitutionsLimit(e.target.value)} required min={0} max={50}
+                                        <input type="number" id="league-subs-limit" name="league-subs-limit" value={substitutionsLimit} onChange={e => setSubstitutionsLimit(e.target.value)} required min={0} max={50}
                                             className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-bold outline-none focus:border-primary transition-colors h-14"
                                         />
                                     </div>
@@ -525,19 +525,19 @@ const Settings = () => {
                                  <div className="grid grid-cols-3 gap-6">
                                      <div className="space-y-2">
                                          <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Vitória</label>
-                                         <input type="number" value={pointsForWin} onChange={e => setPointsForWin(e.target.value)} required min={0}
+                                         <input type="number" id="league-points-win" name="league-points-win" value={pointsForWin} onChange={e => setPointsForWin(e.target.value)} required min={0}
                                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-primary/20 transition-all font-outfit"
                                          />
                                      </div>
                                      <div className="space-y-2">
                                          <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Empate</label>
-                                         <input type="number" value={pointsForDraw} onChange={e => setPointsForDraw(e.target.value)} required min={0}
+                                         <input type="number" id="league-points-draw" name="league-points-draw" value={pointsForDraw} onChange={e => setPointsForDraw(e.target.value)} required min={0}
                                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-white/10 transition-all font-outfit"
                                          />
                                      </div>
                                      <div className="space-y-2">
                                          <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Derrota</label>
-                                         <input type="number" value={pointsForLoss} onChange={e => setPointsForLoss(e.target.value)} required min={0}
+                                         <input type="number" id="league-points-loss" name="league-points-loss" value={pointsForLoss} onChange={e => setPointsForLoss(e.target.value)} required min={0}
                                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-black text-center text-lg outline-none focus:bg-danger/20 transition-all font-outfit"
                                          />
                                      </div>
@@ -552,7 +552,7 @@ const Settings = () => {
                                  <div className="space-y-6">
                                      <div className="space-y-2">
                                          <label className="text-[0.55rem] font-black text-slate-600 uppercase tracking-widest ml-1">Nome do Local / Estádio (Visível aos Usuários)</label>
-                                         <input type="text" value={address} onChange={e => setAddress(e.target.value)}
+                                         <input type="text" id="league-address" name="league-address" value={address} onChange={e => setAddress(e.target.value)}
                                              placeholder="Ex: Arena Corinthians, Estádio do Morumbi..."
                                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white font-bold outline-none focus:border-accent transition-all h-14"
                                          />
@@ -563,7 +563,7 @@ const Settings = () => {
                                              <Target size={12} className="text-primary" /> Pesquisar Localização (Coordenadas)
                                          </label>
                                          <div className="flex flex-col sm:flex-row gap-2">
-                                            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                                            <input type="text" id="league-location-search" name="league-location-search" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                                                 placeholder="Rua, Cidade, Estado ou Nome do Estádio..."
                                                 className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none focus:border-primary transition-all"
                                                 onKeyDown={e => e.key === 'Enter' && handleSearchAddress()}
