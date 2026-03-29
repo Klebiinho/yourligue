@@ -1,12 +1,11 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { account } from '../lib/appwrite';
+import { supabase } from '../lib/supabase';
 import { registerPushNotifications } from '../services/pushNotifications';
-import { ID, OAuthProvider } from 'appwrite';
 
 interface AuthContextType {
-    user: any | null; // Unified user object
-    session: any | null; // For compatibility
+    user: any | null;
+    session: any | null;
     loading: boolean;
     signIn: (email: string, password: string) => Promise<{ error: string | null }>;
     signUp: (email: string, password: string, name: string) => Promise<{ error: string | null }>;
@@ -18,34 +17,37 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<any | null>(null);
+    const [session, setSession] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const refreshUser = async () => {
-        try {
-            const currentUser = await account.get();
-            setUser(currentUser);
-            if (currentUser?.$id) {
-                registerPushNotifications(currentUser.$id);
-            }
-        } catch (err) {
-            setUser(null);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        refreshUser();
+        // Get initial session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+            setUser(session?.user ?? null);
+            if (session?.user?.id) {
+                registerPushNotifications(session.user.id);
+            }
+            setLoading(false);
+        });
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+            setUser(session?.user ?? null);
+            if (session?.user?.id) {
+                registerPushNotifications(session.user.id);
+            }
+            setLoading(false);
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     const signIn = async (email: string, password: string) => {
         try {
-            // First, delete current session if exists to avoid "session already exists" error
-            try { await account.deleteSession('current'); } catch(e) {}
-            
-            await account.createEmailPasswordSession(email, password);
-            await refreshUser();
-            return { error: null };
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            return { error: error ? error.message : null };
         } catch (err: any) {
             return { error: err.message || 'Erro ao realizar login' };
         }
@@ -53,25 +55,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const signUp = async (email: string, password: string, name: string) => {
         try {
-            await account.create(ID.unique(), email, password, name);
-            // After creation, login automatically
-            await account.createEmailPasswordSession(email, password);
-            await refreshUser();
-            return { error: null };
+            const { error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: { full_name: name }
+                }
+            });
+            return { error: error ? error.message : null };
         } catch (err: any) {
             return { error: err.message || 'Erro ao criar conta' };
         }
     };
 
     const signInWithGoogle = async () => {
-        const redirectTo = `${window.location.origin}/leagues`;
-        console.log('AuthContext: Initiating Appwrite Google Sign-In with redirect to:', redirectTo);
         try {
-            account.createOAuth2Session(
-                OAuthProvider.Google,
-                redirectTo,
-                `${window.location.origin}/login`
-            );
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: `${window.location.origin}/leagues`
+                }
+            });
+            if (error) throw error;
         } catch (err) {
             console.error('AuthContext: Google Sign-In Error:', err);
         }
@@ -79,16 +84,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const signOut = async () => {
         try {
-            await account.deleteSession('current');
-            setUser(null);
+            await supabase.auth.signOut();
         } catch (err) {
             console.error('AuthContext: Error in signOut:', err);
-            setUser(null); // Force logout state regardless
         }
     };
 
     return (
-        <AuthContext.Provider value={{ user, session: user, loading, signIn, signUp, signInWithGoogle, signOut }}>
+        <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signInWithGoogle, signOut }}>
             {children}
         </AuthContext.Provider>
     );

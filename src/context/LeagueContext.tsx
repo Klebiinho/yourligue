@@ -1,11 +1,11 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
+﻿import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { databases, databaseId, collections } from '../lib/appwrite';
 import { Query, ID } from 'appwrite';
 import { useAuth } from './AuthContext';
 import { YouTubeService } from '../services/youtube';
 
-// ─── Types ───────────────────────────────────────────────────
+// ÔöÇÔöÇÔöÇ Types ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 export type Player = {
     id: string;
     name: string;
@@ -134,7 +134,7 @@ export type Ad = {
     created_at?: string;
 };
 
-// ─── Context Type ────────────────────────────────────────────
+// ÔöÇÔöÇÔöÇ Context Type ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 interface LeagueContextType {
     league: League | null;
     leagues: League[];
@@ -206,7 +206,6 @@ interface LeagueContextType {
     supportCounts: Record<string, number>;
     notifications: LeagueNotification[];
     clearNotification: (id: string) => void;
-    addNotification: (notif: LeagueNotification) => void;
     leagueBasePath: string;
     globalAdTick: number;
 
@@ -228,9 +227,9 @@ interface LeagueContextType {
     setYtLivePrivacy: (broadcastId: string, privacy: 'public' | 'private' | 'unlisted') => Promise<void>;
 }
 
-// ─── Mappings (DB to Frontend) ──────────────────────────────
+// ÔöÇÔöÇÔöÇ Mappings (DB to Frontend) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 const mapDBEvent = (e: any): MatchEvent => ({
-    id: e.$id,
+    id: e.id,
     type: e.type,
     teamId: e.teamId,
     playerId: e.playerId,
@@ -239,7 +238,7 @@ const mapDBEvent = (e: any): MatchEvent => ({
 });
 
 const mapDBMatch = (m: any): Match => ({
-    id: m.$id,
+    id: m.id,
     homeTeamId: m.homeTeamId,
     awayTeamId: m.awayTeamId,
     homeScore: m.homeScore || 0,
@@ -258,7 +257,7 @@ const mapDBMatch = (m: any): Match => ({
 });
 
 const mapDBPlayer = (p: any): Player => ({
-    id: p.$id,
+    id: p.id,
     name: p.name,
     number: p.number || 0,
     position: p.position || '',
@@ -277,7 +276,7 @@ const mapDBPlayer = (p: any): Player => ({
 const mapDBTeam = (t: any): Team => {
     const players = (t.players || []).map(mapDBPlayer).sort((a: Player, b: Player) => (a.displayOrder || 0) - (b.displayOrder || 0));
     return {
-        id: t.$id,
+        id: t.id,
         name: t.name,
         logo: t.logo || '',
         primaryColor: t.primary_color || null,
@@ -290,44 +289,31 @@ const mapDBTeam = (t: any): Team => {
 };
 
 const mapDBBracket = (b: any): BracketMatch => ({
-    id: b.$id, 
-    round: b.round, 
-    matchOrder: b.match_order,
-    homeTeamId: b.home_team_id, 
-    awayTeamId: b.away_team_id,
-    homeScore: b.home_score || 0, 
-    awayScore: b.away_score || 0, 
-    status: b.status || 'scheduled'
+    id: b.id, round: b.round, matchOrder: b.match_order,
+    homeTeamId: b.home_team_id, awayTeamId: b.away_team_id,
+    homeScore: b.home_score || 0, awayScore: b.away_score || 0, 
+    status: b.status
 });
 
 const mapDBLeague = (l: any): League => ({
-    id: l.$id, 
-    name: l.name || 'Sem nome', 
-    logo: l.logo || '', 
-    maxTeams: l.max_teams || 20,
-    pointsForWin: l.points_for_win || 3, 
-    pointsForDraw: l.points_for_draw || 1,
-    pointsForLoss: l.points_for_loss || 0, 
-    defaultHalfLength: l.default_half_length || 45,
+    id: l.id, name: l.name || 'Sem nome', logo: l.logo || '', maxTeams: l.max_teams || 20,
+    pointsForWin: l.points_for_win || 3, pointsForDraw: l.points_for_draw || 1,
+    pointsForLoss: l.points_for_loss || 0, defaultHalfLength: l.default_half_length || 45,
     overtimeHalfLength: l.overtime_half_length || 15,
-    playersPerTeam: l.players_per_team || 5, 
-    reserveLimitPerTeam: l.reserve_limit_per_team || 5,
+    playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
     substitutionsLimit: l.substitutions_limit || 5,
     allowSubstitutionReturn: l.allow_substitution_return ?? true,
     hasOvertime: l.has_overtime ?? true,
     slug: l.slug || '',
     userId: l.user_id,
     sportType: l.sport_type || 'soccer',
-    lat: l.lat, 
-    lng: l.lng, 
-    address: l.address,
-    distancia_km: l.distancia_km, 
-    follower_count: l.follower_count
+    lat: l.lat, lng: l.lng, address: l.address,
+    distancia_km: l.distancia_km, follower_count: l.follower_count
 });
 
 const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
 
-// ─── Provider ────────────────────────────────────────────────
+// ÔöÇÔöÇÔöÇ Provider ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useAuth();
 
@@ -338,12 +324,12 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const [rawMatches, setRawMatches] = useState<Match[]>([]);
     const [brackets, setBrackets] = useState<BracketMatch[]>([]);
     
-    // ─── Memoized Enriched Data (No Refetch) ─────────────────────
+    // ÔöÇÔöÇÔöÇ Memoized Enriched Data (No Refetch) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     const teams = useMemo(() => {
         if (!rawTeams || !Array.isArray(rawTeams) || rawTeams.length === 0) return [];
 
         try {
-            // ── PERFORMANCE: Single O(N) pass over all events to build lookup maps ──
+            // ÔöÇÔöÇ PERFORMANCE: Single O(N) pass over all events to build lookup maps ÔöÇÔöÇ
         // Instead of multiple .filter() calls per player per stat type,
         // we scan events once and group by playerId.
         type PlayerAcc = {
@@ -476,7 +462,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     }, [rawTeams, rawMatches, league?.pointsForWin, league?.pointsForDraw, league?.pointsForLoss]);
 
     
-    // ── YouTube Integration ─────────────────────────────────────
+    // ÔöÇÔöÇ YouTube Integration ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     const ytService = YouTubeService.getInstance();
     const [ytToken, setYtToken] = useState<string | null>(localStorage.getItem('yt_access_token'));
     const [currentYtLiveStream, setCurrentYtLiveStream] = useState<{ streamKey: string, rtmpUrl: string } | null>(null);
@@ -542,7 +528,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const loadingRef = useRef<string | null>(null);
 
-    // ─── SESSION CACHE (Solving "Site sem memória") ──────────────
+    // ÔöÇÔöÇÔöÇ SESSION CACHE (Solving "Site sem mem├│ria") ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     useEffect(() => {
         if (league && rawTeams.length > 0) { // Only cache if there's actual data to avoid poisoning
             try {
@@ -619,7 +605,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const leagueBasePath = league ? `/${league.slug || league.id}` : '';
 
-    // ── Load all leagues for user ──────────────────────────────
+    // ÔöÇÔöÇ Load all leagues for user ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     useEffect(() => {
         console.log('LeagueContext: Global useEffect triggered', { userId: user?.id, isPublicView, loading });
         
@@ -690,26 +676,23 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             }
             if (leagues.length === 0) setLoading(true);
 
-            // Fetch owned leagues
-            const ownedRes = await databases.listDocuments(databaseId, collections.leagues, [
-                Query.equal('user_id', user.$id),
-                Query.orderAsc('created_at')
+            // Load owned & followed leagues in parallel
+            const [ownedRes, followsRes] = await Promise.all([
+                supabase.from('leagues').select('*, follower_count:followed_leagues(count)').eq('user_id', user.id).order('created_at', { ascending: true }),
+                supabase.from('followed_leagues').select('leagues(*, follower_count:followed_leagues(count))').eq('user_id', user.id)
             ]);
-            setLeagues(ownedRes.documents.map(mapDBLeague));
 
-            // Fetch followed leagues
-            const followsRes = await databases.listDocuments(databaseId, 'followed_leagues', [
-                Query.equal('user_id', user.$id)
-            ]);
-            
-            if (followsRes.documents.length > 0) {
-                const followIds = followsRes.documents.map(f => f.league_id);
-                const followedLeaguesRes = await databases.listDocuments(databaseId, collections.leagues, [
-                    Query.equal('$id', followIds)
-                ]);
-                setFollowedLeagues(followedLeaguesRes.documents.map(mapDBLeague));
-            } else {
-                setFollowedLeagues([]);
+            if (ownedRes.data) {
+                const mapped: League[] = ownedRes.data.map(mapDBLeague);
+                setLeagues(mapped);
+                // Auto-selection of first league removed to prioritize the League Selector on boot
+            }
+
+            if (followsRes.data) {
+                const mapped: League[] = followsRes.data
+                    .filter(f => f.leagues)
+                    .map(f => mapDBLeague(f.leagues));
+                setFollowedLeagues(mapped);
             }
         } catch (err) {
             console.error('LeagueContext: Erro em loadLeagues:', err);
@@ -720,100 +703,91 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const followLeague = async (leagueId: string) => {
         if (!user) return;
-        try {
-            await databases.createDocument(databaseId, 'followed_leagues', ID.unique(), {
-                user_id: user.$id,
-                league_id: leagueId
-            });
-            await loadLeagues();
-        } catch (err) { console.error(err); }
+        await supabase.from('followed_leagues').upsert({ user_id: user.id, league_id: leagueId });
+        await loadLeagues();
     };
 
     const unfollowLeague = async (leagueId: string) => {
         if (!user) return;
-        try {
-            const res = await databases.listDocuments(databaseId, 'followed_leagues', [
-                Query.equal('user_id', user.$id),
-                Query.equal('league_id', leagueId)
-            ]);
-            for (const doc of res.documents) {
-                await databases.deleteDocument(databaseId, 'followed_leagues', doc.$id);
-            }
-            await loadLeagues();
-        } catch (err) { console.error(err); }
+        await supabase.from('followed_leagues').delete().eq('user_id', user.id).eq('league_id', leagueId);
+        await loadLeagues();
     };
 
     const addAd = async (adData: any) => {
         if (!league) return { error: 'No league selected' };
-        try {
-            const maxOrder = ads.reduce((max, a) => Math.max(max, a.display_order || 0), 0);
-            const row = await databases.createDocument(databaseId, collections.ads, ID.unique(), {
-                ...adData,
-                league_id: league.id,
-                display_order: maxOrder + 1,
-                active: true
-            });
-            const newAd: Ad = {
-                id: row.$id,
-                league_id: row.league_id,
-                title: row.title,
-                desktop_media_url: row.desktop_media_url,
-                mobile_media_url: row.mobile_media_url,
-                square_media_url: row.square_media_url,
-                link_url: row.link_url,
-                media_type: row.media_type,
-                active: row.active,
-                display_order: row.display_order || 0,
-                created_at: row.$createdAt,
-                positions: row.positions || [],
-                duration: row.duration || 5,
-                object_position: row.object_position
-            };
-            setAds(prev => [...prev, newAd].sort((a, b) => (a.display_order || 0) - (b.display_order || 0)));
+        const maxOrder = ads.reduce((max, a) => Math.max(max, a.display_order || 0), 0);
+        const { data, error } = await supabase.from('ads').insert({
+            ...adData,
+            league_id: league.id,
+            display_order: maxOrder + 1,
+            active: true
+        }).select().single();
+        if (!error && data) {
+            setAds(prev => [...prev, { ...data, display_order: data.display_order || 0 }].sort((a, b) => (a.display_order || 0) - (b.display_order || 0)));
             return { error: null };
-        } catch (err: any) {
-            return { error: err.message || 'Error adding ad' };
         }
+        return { error: error?.message || 'Error adding ad' };
     };
 
     const updateAd = async (id: string, updates: any) => {
-        try {
-            await databases.updateDocument(databaseId, collections.ads, id, updates);
+        const { error } = await supabase.from('ads').update(updates).eq('id', id);
+        if (!error) {
             setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a).sort((a, b) => (a.display_order || 0) - (b.display_order || 0)));
             return { error: null };
-        } catch (err: any) {
-            return { error: err.message };
         }
+        return { error: error.message };
     };
 
     const deleteAd = async (id: string) => {
         if (!league) return { error: 'No league selected' };
-        try {
-            await databases.deleteDocument(databaseId, collections.ads, id);
+        const { error } = await supabase.from('ads').delete().eq('id', id);
+        if (!error) {
             setAds(prev => prev.filter(a => a.id !== id));
             return { error: null };
-        } catch (err: any) {
-            return { error: err.message };
         }
+        return { error: error.message };
     };
 
     const reorderAds = async (reorderedAds: Ad[]) => {
-        setAds(reorderedAds);
-        try {
-            for (let index = 0; index < reorderedAds.length; index++) {
-                await databases.updateDocument(databaseId, collections.ads, reorderedAds[index].id, { display_order: index });
-            }
-        } catch (err) { console.error(err); }
+        setAds(reorderedAds); // Optimistic update
+        const updates = reorderedAds.map((ad, index) => 
+            supabase.from('ads').update({ display_order: index }).eq('id', ad.id)
+        );
+        await Promise.all(updates);
     };
 
     const searchLeagues = useCallback(async (query: string): Promise<League[]> => {
         try {
-            const filters = [Query.limit(30)];
-            if (query) filters.push(Query.contains('name', query));
-            else filters.push(Query.orderAsc('name'));
+            // BACKEND FILTERING: Full object select with limit to ensure performance
+            let baseQuery = supabase
+                .from('leagues')
+                .select(`
+                    *,
+                    follower_count:followed_leagues(count)
+                `)
+                .limit(30);
 
-            const res = await databases.listDocuments(databaseId, collections.leagues, filters);
-            return res.documents.map(mapDBLeague);
+            if (query) {
+                baseQuery = baseQuery.ilike('name', `%${query}%`);
+            } else {
+                baseQuery = baseQuery.order('name', { ascending: true });
+            }
+
+            const { data, error } = await baseQuery;
+
+            if (error) {
+                console.error('Error searching leagues:', error);
+                return [];
+            }
+
+            // Ordena├º├úo local por seguidores (agora em um conjunto menor de dados - 30 itens)
+            const sortedResults = (data || []).map(mapDBLeague).sort((a, b) => {
+                const countA = a.follower_count?.[0]?.count || 0;
+                const countB = b.follower_count?.[0]?.count || 0;
+                return countB - countA;
+            });
+
+            return sortedResults;
         } catch (err) {
             console.error('LeagueContext: searchLeagues crash:', err);
             return [];
@@ -821,28 +795,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const fetchNearbyLeagues = async (lat: number, lng: number, radiusKm: number): Promise<League[]> => {
-        try {
-            // Appwrite doesn't have native PostGIS rpc like Supabase.
-            // For now, we fetch all and calculate distance client-side or just return all for small datasets.
-            const res = await databases.listDocuments(databaseId, collections.leagues, [Query.limit(100)]);
-            const leaguesData = res.documents.map(mapDBLeague);
-            
-            // Simple distance check if lat/lng are present
-            return leaguesData.filter(l => {
-                if (!l.lat || !l.lng) return false;
-                const dLat = (l.lat - lat) * Math.PI / 180;
-                const dLon = (l.lng - lng) * Math.PI / 180;
-                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                        Math.cos(lat * Math.PI/180) * Math.cos(l.lat * Math.PI/180) * 
-                        Math.sin(dLon/2) * Math.sin(dLon/2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                const dist = 6371 * c; // Earth radius
-                return dist <= radiusKm;
-            });
-        } catch (err) {
-            console.error(err);
+        const { data, error } = await supabase.rpc('get_nearby_leagues', {
+            user_lat: lat,
+            user_lng: lng,
+            dist_km: radiusKm
+        });
+
+        if (error) {
+            console.error('Error fetching nearby leagues:', error);
             return [];
         }
+
+        return (data || []).map(mapDBLeague);
     };
 
     const loadPublicLeague = useCallback(async (slugOrId: string) => {
@@ -863,7 +827,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             }
             
             // Fetch by slug
-            let documents: any[] = [];
+            let documents;
             try {
                 const res = await databases.listDocuments(databaseId, collections.leagues, [
                     Query.equal('slug', slugOrId)
@@ -889,7 +853,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     setLeague(mapped);
                     localStorage.setItem('selectedLeagueId', mapped.id);
                     
-                    if (user && mapped.userId === user.$id) {
+                    if (user && mapped.userId === user.id) {
                         const savedPref = localStorage.getItem('isPublicView');
                         if (savedPref === null) setIsPublicView(false);
                         else setIsPublicView(savedPref === 'true');
@@ -915,32 +879,42 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const loadUserInteractions = useCallback(async (leagueId: string) => {
         if (!user) { setUserInteractions([]); return; }
         try {
-            const res = await databases.listDocuments(databaseId, collections.user_team_interactions || 'user_team_interactions', [
-                Query.equal('user_id', user.$id),
-                Query.equal('league_id', leagueId)
-            ]);
-            setUserInteractions(res.documents.map(i => ({
-                id: i.$id, teamId: i.team_id, leagueId: i.league_id, interactionType: i.interaction_type
-            })));
-        } catch (e) { console.warn(e); }
+            const { data } = await supabase.from('user_team_interactions').select('*').eq('user_id', user.id).eq('league_id', leagueId);
+            if (data) {
+                setUserInteractions(data.map(i => ({
+                    id: i.id, teamId: i.team_id, leagueId: i.league_id, interactionType: i.interaction_type
+                })));
+            }
+        } catch (e) {
+            console.warn('LeagueContext: Error loading user interactions', e);
+        }
     }, [user]);
 
     const loadSupportCounts = useCallback(async (leagueId: string) => {
         try {
-            const res = await databases.listDocuments(databaseId, collections.user_team_interactions || 'user_team_interactions', [
-                Query.equal('league_id', leagueId),
-                Query.equal('interaction_type', 'supporting'),
-                Query.limit(1000)
-            ]);
-            const counts: Record<string, number> = {};
-            res.documents.forEach(doc => {
-                counts[doc.team_id] = (counts[doc.team_id] || 0) + 1;
-            });
-            setSupportCounts(counts);
-        } catch (e) { console.warn(e); }
+            const { data } = await supabase.rpc('get_league_support_counts', { l_id: leagueId });
+            // Fallback if RPC doesn't exist yet, we'll try a manual count
+            if (data) {
+                const counts: Record<string, number> = {};
+                data.forEach((item: any) => { counts[item.team_id] = item.count; });
+                setSupportCounts(counts);
+            } else {
+                const { data: interactionData } = await supabase.from('user_team_interactions')
+                    .select('team_id').eq('league_id', leagueId).eq('interaction_type', 'supporting');
+                if (interactionData) {
+                    const counts: Record<string, number> = {};
+                    interactionData.forEach((item: any) => {
+                        counts[item.team_id] = (counts[item.team_id] || 0) + 1;
+                    });
+                    setSupportCounts(counts);
+                }
+            }
+        } catch (e) {
+            console.warn('LeagueContext: Error loading support counts', e);
+        }
     }, []);
 
-    // ── Load league data (teams, matches, brackets) ────────────
+    // ÔöÇÔöÇ Load league data (teams, matches, brackets) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     // Use refs to avoid stale closure issues and prevent needless dependency array changes
     const loadUserInteractionsRef = useRef(loadUserInteractions);
     const loadSupportCountsRef = useRef(loadSupportCounts);
@@ -960,7 +934,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
 
         try {
-            const [teamsRes, matchesRes, adsRes, bracketsRes] = await Promise.all([
+            const [teamsRes, matchesRes, adsRes] = await Promise.all([
                 databases.listDocuments(databaseId, collections.teams, [
                     Query.equal('league_id', leagueId),
                     Query.limit(100)
@@ -972,10 +946,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 databases.listDocuments(databaseId, collections.ads, [
                     Query.equal('league_id', leagueId),
                     Query.limit(100)
-                ]),
-                databases.listDocuments(databaseId, collections.brackets, [
-                    Query.equal('league_id', leagueId),
-                    Query.limit(100)
                 ])
             ]);
 
@@ -985,7 +955,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
             setRawMatches(matchesRes.documents.map(mapDBMatch));
             setAds(adsRes.documents.map((a: any) => ({ ...a, display_order: a.display_order || 0 })));
-            setBrackets(bracketsRes.documents.map(mapDBBracket));
 
             // Lazy load players for each team
             const playerRes = await databases.listDocuments(databaseId, collections.players, [
@@ -1013,12 +982,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const loadTeamPhotos = useCallback(async (teamId: string) => {
         if (!teamId) return;
         try {
-            const res = await databases.listDocuments(databaseId, collections.players, [
-                Query.equal('team_id', teamId),
-                Query.notEqual('photo', '')
-            ]);
-            if (!res.documents.length) return;
-            const photoMap = new Map(res.documents.map(p => [p.$id, p.photo]));
+            const { data } = await supabase.from('players').select('id, photo').eq('team_id', teamId).not('photo', 'eq', '');
+            if (!data || data.length === 0) return;
+            const photoMap = new Map(data.map(p => [p.id, p.photo]));
             setRawTeams(prev => prev.map(t => {
                 if (t.id === teamId) {
                     return { ...t, players: t.players.map(p => ({ ...p, photo: photoMap.get(p.id) || p.photo })) };
@@ -1037,10 +1003,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         loadLeagueData(league.id);
         localStorage.setItem('selectedLeagueId', league.id);
 
-        // ─── CENTRALIZED REALTIME (GOLDEN RULE: ZERO REFETCH) ───────
-        /*
-        // ─── CENTRALIZED REALTIME (GOLDEN RULE: ZERO REFETCH) ───────
-        // TODO: Migrate to Appwrite Realtime
+        // ÔöÇÔöÇÔöÇ CENTRALIZED REALTIME (GOLDEN RULE: ZERO REFETCH) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
         const channel = supabase.channel(`league-central-${league.id}`);
 
         // 1. Tables with league_id filter (efficient)
@@ -1156,7 +1119,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 const team = teamsRef.current.find(t => t.id === row.team_id);
                 addNotification({
                     id: Math.random().toString(36).substr(2, 9),
-                    title: '⚽ GOOOL!',
+                    title: 'ÔÜ¢ GOOOL!',
                     message: `Gol do ${team?.name || 'time'}!`,
                     type: 'goal',
                     teamId: row.team_id,
@@ -1216,7 +1179,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         return () => {
             supabase.removeChannel(channel);
         };
-        */
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [league?.id]);
 
@@ -1268,18 +1230,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         return p.slug || generateSlug(p.name) || p.id;
     }, []);
 
-    // ── League CRUD ────────────────────────────────────────────
+    // ÔöÇÔöÇ League CRUD ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     const createLeague = async (data: Omit<League, 'id' | 'slug' | 'userId'>) => {
         try {
             if (!user) {
-                alert('Você precisa estar logado para criar uma liga.');
-                return { error: 'Usuário não autenticado' };
+                alert('Voc├¬ precisa estar logado para criar uma liga.');
+                return { error: 'Usu├írio n├úo autenticado' };
             }
 
             const slug = generateSlug(data.name);
             
             const row = await databases.createDocument(databaseId, collections.leagues, ID.unique(), {
-                user_id: user.$id,
+                user_id: user.id,
                 name: data.name,
                 logo: data.logo,
                 max_teams: data.maxTeams,
@@ -1369,8 +1331,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    // ── Team CRUD ──────────────────────────────────────────────
-    // ── Team CRUD ──────────────────────────────────────────────
+    // ÔöÇÔöÇ Team CRUD ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+    // ÔöÇÔöÇ Team CRUD ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     const addTeam = async (team: { name: string; logo: string; primary_color?: string; secondary_color?: string }) => {
         if (!league) return { error: 'Nenhuma liga selecionada' };
         try {
@@ -1415,7 +1377,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 }));
                 return { error: null };
             }
-            return { error: 'Time não encontrado.' };
+            return { error: 'Time n├úo encontrado.' };
         } catch (err: any) {
             return { error: err.message };
         }
@@ -1430,26 +1392,26 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    // ── Player CRUD ────────────────────────────────────────────
-    // ── Player CRUD ────────────────────────────────────────────
+    // ÔöÇÔöÇ Player CRUD ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+    // ÔöÇÔöÇ Player CRUD ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     const addPlayer = async (teamId: string, player: Omit<Player, 'id' | 'stats'>) => {
         const team = rawTeams.find(t => t.id === teamId);
-        if (!team || !league) return { error: 'Time ou liga não encontrados' };
+        if (!team || !league) return { error: 'Time ou liga n├úo encontrados' };
 
-        // Validação de número único no time
+        // Valida├º├úo de n├║mero ├║nico no time
         if (team.players.some(p => p.number === player.number)) {
-            return { error: `O número ${player.number} já está sendo usado neste time.` };
+            return { error: `O n├║mero ${player.number} j├í est├í sendo usado neste time.` };
         }
 
-        // Validação de limites (Titulares / Reservas)
+        // Valida├º├úo de limites (Titulares / Reservas)
         const currentStarters = team.players.filter(p => !p.isReserve).length;
         const currentReserves = team.players.filter(p => p.isReserve).length;
 
         if (!player.isReserve && currentStarters >= (league.playersPerTeam || 5)) {
-            return { error: `O limite de titulares (${league.playersPerTeam}) já foi atingido. Inscreva-o como Reserva.` };
+            return { error: `O limite de titulares (${league.playersPerTeam}) j├í foi atingido. Inscreva-o como Reserva.` };
         }
         if (player.isReserve && currentReserves >= (league.reserveLimitPerTeam || 5)) {
-            return { error: `O limite de reservas (${league.reserveLimitPerTeam}) já foi atingido.` };
+            return { error: `O limite de reservas (${league.reserveLimitPerTeam}) j├í foi atingido.` };
         }
 
         try {
@@ -1598,331 +1560,538 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
     };
     
-    const reorderPlayers = async (teamId: string, playerIds: string[], limit: number = 11, newCaptainId?: string) => {
+    const reorderPlayers = async (teamId: string, playerIds: string[]) => {
         if (!league) return;
-        const currentTeam = rawTeams.find(t => t.id === teamId);
-        if (!currentTeam) return;
-        const currentCaptain = currentTeam.players.find(p => p.isCaptain);
+        const limit = league.playersPerTeam || 5;
         
-        try {
-            for (let idx = 0; idx < playerIds.length; idx++) {
-                const pid = playerIds[idx];
-                const isReserve = idx >= limit;
-                const isCaptain = newCaptainId ? (pid === newCaptainId) : (pid === currentCaptain?.id);
-                await databases.updateDocument(databaseId, collections.players, pid, {
-                    displayOrder: idx,
-                    isReserve,
-                    isCaptain
-                });
-            }
+        let newCaptainId = '';
+        const currentTeam = rawTeams.find(t => t.id === teamId);
+        const currentCaptain = currentTeam?.players.find(p => p.isCaptain);
+        
+        // If captain moved to reserve or doesn't exist, first player becomes captain
+        const captainIdx = currentCaptain ? playerIds.indexOf(currentCaptain.id) : -1;
+        if (captainIdx >= limit || captainIdx === -1) {
+            newCaptainId = playerIds[0];
+        }
 
-            setRawTeams(prev => prev.map(t => {
-                if (t.id === teamId) {
-                    const sortedPlayers = [...t.players].sort((a, b) => {
-                        const idxA = playerIds.indexOf(a.id);
-                        const idxB = playerIds.indexOf(b.id);
-                        return idxA - idxB;
-                    }).map((p, idx) => ({
-                        ...p,
-                        displayOrder: idx,
-                        isReserve: idx >= limit,
-                        isCaptain: newCaptainId ? (p.id === newCaptainId) : (p.id === currentCaptain?.id)
-                    }));
-                    return { ...t, players: sortedPlayers };
-                }
-                return t;
-            }));
-        } catch (err) { console.error('Error in reorderPlayers:', err); }
+        // Prepare updates
+        const promises = playerIds.map((pid, idx) => {
+            const isReserve = idx >= limit;
+            const isCaptain = newCaptainId ? (pid === newCaptainId) : (pid === currentCaptain?.id);
+            return supabase.from('players').update({ 
+                display_order: idx,
+                is_reserve: isReserve,
+                is_captain: isCaptain
+            }).eq('id', pid);
+        });
+
+        await Promise.all(promises);
+
+        // Update local state
+        setRawTeams(prev => prev.map(t => {
+            if (t.id === teamId) {
+                const sortedPlayers = [...t.players].sort((a, b) => {
+                    const idxA = playerIds.indexOf(a.id);
+                    const idxB = playerIds.indexOf(b.id);
+                    return idxA - idxB;
+                }).map((p, idx) => ({
+                    ...p,
+                    displayOrder: idx,
+                    isReserve: idx >= limit,
+                    isCaptain: newCaptainId ? (p.id === newCaptainId) : (p.id === currentCaptain?.id)
+                }));
+                return { ...t, players: sortedPlayers };
+            }
+            return t;
+        }));
+
+        // Broadcast change
+        supabase.channel(`league-central-${league.id}`).send({
+            type: 'broadcast',
+            event: 'players-reordered',
+            payload: { teamId, playerIds, limit }
+        });
     };
 
-    // ── Match CRUD ─────────────────────────────────────────────
+    // ÔöÇÔöÇ Match CRUD ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     const createMatch = async (data: { homeTeamId: string; awayTeamId: string; scheduledAt?: string; location?: string; youtubeLiveId?: string }) => {
         if (!league) return { error: 'Nenhuma liga selecionada' };
-        if (data.homeTeamId === data.awayTeamId) return { error: 'Um time não pode jogar contra ele mesmo.' };
-        try {
-            const row = await databases.createDocument(databaseId, collections.matches, ID.unique(), {
-                league_id: league.id,
-                homeTeamId: data.homeTeamId,
-                awayTeamId: data.awayTeamId,
-                scheduledAt: data.scheduledAt || null,
-                location: data.location || '',
-                youtubeLiveId: data.youtubeLiveId || '',
-                halfLength: league.defaultHalfLength
-            });
-            if (row) {
-                const newMatch = mapDBMatch(row);
-                setRawMatches((prev: Match[]) => [...prev, newMatch]);
-                return { error: null, matchId: row.$id };
-            }
-            return { error: 'Erro desconhecido' };
-        } catch (err: any) {
-            return { error: err.message };
+        if (data.homeTeamId === data.awayTeamId) return { error: 'Um time n├úo pode jogar contra ele mesmo.' };
+        const { data: row, error } = await supabase.from('matches').insert({
+            league_id: league.id, home_team_id: data.homeTeamId, away_team_id: data.awayTeamId,
+            scheduled_at: data.scheduledAt || null, location: data.location || '',
+            youtube_live_id: data.youtubeLiveId || '', half_length: league.defaultHalfLength
+        }).select().single();
+        if (error) return { error: error.message };
+        if (row) {
+            setRawMatches((prev: Match[]) => [...prev, mapDBMatch(row)]);
+            return { error: null, matchId: row.id };
         }
+        return { error: 'Unknown error' };
     };
 
     const updateMatch = async (matchId: string, data: Partial<Match>) => {
-        try {
-            const currentMatch = rawMatches.find(m => m.id === matchId);
-            if (!currentMatch) return;
+        await supabase.from('matches').update({
+            home_score: data.homeScore, away_score: data.awayScore, status: data.status,
+            timer: data.timer, youtube_live_id: data.youtubeLiveId, half_length: data.halfLength,
+            extra_time: data.extraTime, period: data.period,
+            scheduled_at: data.scheduledAt, location: data.location
+        }).eq('id', matchId);
+        
+        const currentMatch = rawMatches.find(m => m.id === matchId);
+        let finalTimer = data.timer;
+        
+        // If match is live and we are not explicitly changing the timer, "freeze" the current live time as a new base
+        if (currentMatch && currentMatch.status === 'live' && finalTimer === undefined) {
+            const lastUpdate = new Date(currentMatch.updatedAt || new Date().toISOString()).getTime();
+            const diffInSeconds = Math.max(0, Math.floor((Date.now() - lastUpdate) / 1000));
+            finalTimer = (currentMatch.timer || 0) + diffInSeconds;
+        }
 
-            const updatePayload: any = {};
-            if (data.homeScore !== undefined) updatePayload.homeScore = data.homeScore;
-            if (data.awayScore !== undefined) updatePayload.awayScore = data.awayScore;
-            if (data.status !== undefined) updatePayload.status = data.status;
-            if (data.timer !== undefined) updatePayload.timer = data.timer;
-            if (data.youtubeLiveId !== undefined) updatePayload.youtubeLiveId = data.youtubeLiveId;
-            if (data.halfLength !== undefined) updatePayload.halfLength = data.halfLength;
-            if (data.extraTime !== undefined) updatePayload.extraTime = data.extraTime;
-            if (data.period !== undefined) updatePayload.period = data.period;
-            if (data.scheduledAt !== undefined) updatePayload.scheduledAt = data.scheduledAt;
-            if (data.location !== undefined) updatePayload.location = data.location;
+        const effectiveData = { ...data, timer: finalTimer ?? currentMatch?.timer ?? 0 };
 
-            await databases.updateDocument(databaseId, collections.matches, matchId, updatePayload);
-            
-            setRawMatches((prev: Match[]) => prev.map(m => m.id === matchId ? { 
-                ...m, 
-                ...data,
-                updatedAt: new Date().toISOString() 
-            } : m));
-        } catch (err) {
-            console.error('Error in updateMatch:', err);
+        // Optimistic update with current time to keep timer sync smooth
+        setRawMatches((prev: Match[]) => prev.map(m => m.id === matchId ? { 
+            ...m, 
+            ...effectiveData,
+            updatedAt: new Date().toISOString() 
+        } : m));
+
+        // BROADCAST for other users (low latency)
+        if (currentMatch) {
+            supabase.channel(`league-central-${league?.id}`).send({
+                type: 'broadcast',
+                event: 'match-update',
+                payload: {
+                    matchId,
+                    timer: effectiveData.timer ?? currentMatch.timer,
+                    homeScore: effectiveData.homeScore ?? currentMatch.homeScore,
+                    awayScore: effectiveData.awayScore ?? currentMatch.awayScore,
+                    period: effectiveData.period ?? currentMatch.period,
+                    status: effectiveData.status ?? currentMatch.status,
+                    updatedAt: new Date().toISOString()
+                }
+            });
         }
     };
 
     const deleteMatch = async (matchId: string) => {
-        try {
-            await databases.deleteDocument(databaseId, collections.matches, matchId);
-            setRawMatches((prev: Match[]) => prev.filter(m => m.id !== matchId));
-        } catch (err) {
-            console.error('Error in deleteMatch:', err);
-        }
-    };
-
-    const addEvent = async (matchId: string, event: Omit<MatchEvent, 'id'>) => {
-        const m = rawMatches.find(x => x.id === matchId);
-        if (!m || !league) return;
-
-        try {
-            const row = await databases.createDocument(databaseId, collections.match_events, ID.unique(), {
-                match_id: matchId,
-                league_id: league.id,
-                type: event.type,
-                teamId: event.teamId,
-                playerId: event.playerId,
-                playerOutId: event.playerOutId,
-                minute: event.minute
-            });
-
-            if (row) {
-                const mappedEvent = mapDBEvent(row);
-                
-                let newHomeScore = m.homeScore || 0;
-                let newAwayScore = m.awayScore || 0;
-                const isHome = event.teamId === m.homeTeamId;
-
-                const scoringTypes = ['goal', 'penalty_goal', 'own_goal', 'points_1', 'points_2', 'points_3'];
-                if (scoringTypes.includes(event.type)) {
-                    let pts = 1;
-                    if (event.type === 'points_2') pts = 2;
-                    else if (event.type === 'points_3') pts = 3;
-
-                    if (event.type === 'own_goal') {
-                        if (isHome) newAwayScore += pts; else newHomeScore += pts;
-                    } else {
-                        if (isHome) newHomeScore += pts; else newAwayScore += pts;
-                    }
-
-                    await updateMatch(matchId, { homeScore: newHomeScore, awayScore: newAwayScore });
-                }
-
-                setRawMatches(prev => prev.map(x => x.id === matchId ? {
-                    ...x,
-                    homeScore: newHomeScore,
-                    awayScore: newAwayScore,
-                    events: [...x.events, mappedEvent],
-                    updatedAt: new Date().toISOString()
-                } : x));
-            }
-        } catch (err) {
-            console.error('Error in addEvent:', err);
-        }
-    };
-
-    const removeEvent = async (matchId: string, eventId: string) => {
-        try {
-            await databases.deleteDocument(databaseId, collections.match_events, eventId);
-            setRawMatches(prev => prev.map(m => m.id === matchId ? { ...m, events: m.events.filter(e => e.id !== eventId) } : m));
-        } catch (err) {
-            console.error('Error in removeEvent:', err);
-        }
+        await supabase.from('matches').delete().eq('id', matchId);
+        setRawMatches((prev: Match[]) => prev.filter(m => m.id !== matchId));
     };
 
     const startMatch = async (matchId: string, currentTimer: number = 0, shouldStartLive = false) => {
         const match = rawMatches.find(m => m.id === matchId);
         let youtubeLiveId = match?.youtubeLiveId;
+
+        // Create YouTube Live ONLY if requested, authenticated, and match is not finished
         if (shouldStartLive && isYtAuthenticated && match && match.status !== 'finished' && !youtubeLiveId) {
             const ht = rawTeams.find(t => t.id === match.homeTeamId);
             const at = rawTeams.find(t => t.id === match.awayTeamId);
             const title = `${league?.name} - ${ht?.name} x ${at?.name}`;
+            
             try {
                 const result = await ytService.createLiveBroadcast(title, `Assista ao vivo: ${title}`);
                 if (result.broadcastId) {
                     youtubeLiveId = result.broadcastId;
-                    setCurrentYtLiveStream({ streamKey: result.streamKey, rtmpUrl: result.rtmpUrl });
+                    setCurrentYtLiveStream({
+                        streamKey: result.streamKey,
+                        rtmpUrl: result.rtmpUrl
+                    });
                 }
             } catch (err: any) {
                 console.error('Failed to create YouTube Live broadcast:', err);
+                alert("Aviso: N├úo foi poss├¡vel iniciar a Live no YouTube.\n\nMotivo: " + (err.message || "Erro desconhecido") + "\n\nO jogo ser├í iniciado sem transmiss├úo ao vivo.");
             }
         }
+
+        // Ao iniciar/retomar, salvamos o tempo atual e o Supabase cuidar├í do updated_at (agora)
         return updateMatch(matchId, { status: 'live', timer: currentTimer, youtubeLiveId });
     };
-
-    const pauseMatch = async (matchId: string, currentTimer: number) => updateMatch(matchId, { status: 'scheduled', timer: currentTimer });
-    const endMatch = async (matchId: string, currentTimer: number) => updateMatch(matchId, { status: 'finished', timer: currentTimer });
-    const updateTimer = async (matchId: string, time: number) => updateMatch(matchId, { timer: time });
 
     const deleteYtLive = async (matchId: string, broadcastId: string) => {
         try {
             await ytService.deleteBroadcast(broadcastId);
             await updateMatch(matchId, { youtubeLiveId: undefined });
-        } catch (err) { console.error(err); }
+        } catch (err: any) {
+            console.error('Failed to delete YT broadcast:', err);
+            throw err;
+        }
     };
 
     const setYtLivePrivacy = async (broadcastId: string, privacy: 'public' | 'private' | 'unlisted') => {
-        try { await ytService.setBroadcastPrivacy(broadcastId, privacy); } catch (err) { console.error(err); }
+        try {
+            await ytService.setBroadcastPrivacy(broadcastId, privacy);
+        } catch (err: any) {
+            console.error('Failed to set YT privacy:', err);
+            throw err;
+        }
     };
+    
+    const pauseMatch = async (matchId: string, currentTimer: number) => {
+        // Ao pausar, salvamos o tempo exato acumulado
+        return updateMatch(matchId, { status: 'scheduled', timer: currentTimer });
+    };
+
+    const endMatch = async (matchId: string, currentTimer: number) => {
+        return updateMatch(matchId, { status: 'finished', timer: currentTimer });
+    };
+    
+    const updateTimer = async (matchId: string, time: number) => updateMatch(matchId, { timer: time });
 
     const isPlayerOnPitch = (match: Match, playerId: string) => {
-        const team = rawTeams.find(t => t.players.some(p => p.id === playerId));
-        if (!team) return false;
-        const player = team.players.find(p => p.id === playerId);
+        const teamId = [...rawTeams].find(t => t.players.some(p => p.id === playerId))?.id;
+        if (!teamId) return false;
+        
+        const team = rawTeams.find(t => t.id === teamId);
+        const player = team?.players.find(p => p.id === playerId);
         if (!player) return false;
+
+        // Check cards
         const redCards = match.events.filter(e => e.type === 'red_card' && e.playerId === playerId).length;
         if (redCards > 0) return false;
+
         const subIns = match.events.filter(e => e.type === 'substitution' && e.playerId === playerId).length;
         const subOuts = match.events.filter(e => e.type === 'substitution' && e.playerOutId === playerId).length;
-        return player.isReserve ? subIns > subOuts : subOuts <= subIns;
+
+        if (player.isReserve) {
+            return subIns > subOuts;
+        } else {
+            return subOuts <= subIns;
+        }
     };
 
-    // ── Bracket ────────────────────────────────────────────────
-    const generateBracket = async () => {
-        if (!league) return;
-        try {
-            const existing = await databases.listDocuments(databaseId, collections.brackets, [Query.equal('league_id', league.id)]);
-            for (const doc of existing.documents) {
-                await databases.deleteDocument(databaseId, collections.brackets, doc.$id);
-            }
-
-            const sorted = [...teams].sort((a, b) => {
-                const pA = a.stats.wins * league.pointsForWin + a.stats.draws * league.pointsForDraw;
-                const pB = b.stats.wins * league.pointsForWin + b.stats.draws * league.pointsForDraw;
-                return pB - pA;
-            });
-
-            const rounds = [
-                { round: 'oitavas', count: 8 }, { round: 'quartas', count: 4 },
-                { round: 'semifinal', count: 2 }, { round: 'final', count: 1 }
-            ];
-
-            const newBrackets: BracketMatch[] = [];
-            for (const { round, count } of rounds) {
-                for (let i = 0; i < count; i++) {
-                    const homeIdx = round === 'oitavas' ? i * 2 : undefined;
-                    const awayIdx = round === 'oitavas' ? i * 2 + 1 : undefined;
-                    const row = await databases.createDocument(databaseId, collections.brackets, ID.unique(), {
-                        league_id: league.id, round, matchOrder: i,
-                        homeTeamId: homeIdx !== undefined && sorted[homeIdx] ? sorted[homeIdx].id : null,
-                        awayTeamId: awayIdx !== undefined && sorted[awayIdx] ? sorted[awayIdx].id : null,
-                    });
-                    newBrackets.push({
-                        id: row.$id, round: row.round, matchOrder: row.matchOrder,
-                        homeTeamId: row.homeTeamId, awayTeamId: row.awayTeamId,
-                        homeScore: row.homeScore || 0, awayScore: row.awayScore || 0, status: row.status || 'scheduled'
-                    });
-                }
-            }
-            setBrackets(newBrackets);
-        } catch (err) { console.error(err); }
-    };
-
-    const updateBracket = async (bracketId: string, data: Partial<BracketMatch>) => {
-        try {
-            const updatePayload: any = {};
-            if (data.homeScore !== undefined) updatePayload.homeScore = data.homeScore;
-            if (data.awayScore !== undefined) updatePayload.awayScore = data.awayScore;
-            if (data.status !== undefined) updatePayload.status = data.status;
-            if (data.homeTeamId !== undefined) updatePayload.homeTeamId = data.homeTeamId;
-            if (data.awayTeamId !== undefined) updatePayload.awayTeamId = data.awayTeamId;
-
-            await databases.updateDocument(databaseId, collections.brackets, bracketId, updatePayload);
-            setBrackets(prev => prev.map(b => b.id === bracketId ? { ...b, ...data } : b));
-        } catch (err) { console.error(err); }
-    };
-
-    const generateGroups = async (teamsPerGroup: number) => {
-        if (!league || teams.length === 0) return;
-        const shuffled = [...teams].sort(() => Math.random() - 0.5);
-        const groupLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-        try {
-            for (let index = 0; index < shuffled.length; index++) {
-                const team = shuffled[index];
-                const groupIndex = Math.floor(index / teamsPerGroup);
-                const groupName = groupLetters[groupIndex] || `Grupo ${groupIndex + 1}`;
-                await databases.updateDocument(databaseId, collections.teams, team.id, { group_name: groupName });
-            }
-            loadLeagueData(league.id);
-        } catch (err) { console.error(err); }
-    };
-
-    const interactWithTeam = async (teamId: string, type: TeamInteraction['interactionType']) => {
-        if (!user || !league) {
-            if (!user) { setPendingInteraction({ teamId, type }); setShowAuthModal(true); }
+    const addEvent = async (matchId: string, event: Omit<MatchEvent, 'id'>) => {
+        // 1. Get current match state safely
+        const m = rawMatches.find(x => String(x.id) === String(matchId));
+        if (!m) {
+            console.error('[LeagueContext] Partida n├úo encontrada para addEvent:', matchId);
             return;
         }
 
+        // 2. SNAPSHOT TIMER: Calculate current running time to use as new 0-base
+        const now = Date.now();
+        let snapshotTimer = m.timer || 0;
+        if (m.status === 'live') {
+            const lastUpdate = new Date(m.updatedAt || now).getTime();
+            const diffInSeconds = Math.max(0, Math.floor((now - lastUpdate) / 1000));
+            snapshotTimer += diffInSeconds;
+        }
+
+        // 3. Persist Event
+        const { data, error } = await supabase.from('match_events').insert({
+            match_id: matchId, type: event.type, team_id: event.teamId,
+            player_id: event.playerId, player_out_id: event.playerOutId, minute: event.minute
+        }).select().single();
+        
+        if (error || !data) {
+            console.error('[LeagueContext] Erro ao salvar evento:', error);
+            return;
+        }
+        
+        const mappedEvent = mapDBEvent(data);
+        
+        // 4. Calculate New Scores
+        let newHomeScore = m.homeScore || 0;
+        let newAwayScore = m.awayScore || 0;
+        const isHome = String(event.teamId) === String(m.homeTeamId);
+
+        if (event.type === 'goal' || event.type === 'penalty_goal') {
+            if (isHome) newHomeScore++; else newAwayScore++;
+        } else if (event.type === 'own_goal') {
+            if (isHome) newAwayScore++; else newHomeScore++;
+        } else if (event.type === 'points_1') {
+            if (isHome) newHomeScore += 1; else newAwayScore += 1;
+        } else if (event.type === 'points_2') {
+            if (isHome) newHomeScore += 2; else newAwayScore += 2;
+        } else if (event.type === 'points_3') {
+            if (isHome) newHomeScore += 3; else newAwayScore += 3;
+        }
+
+        const newMatchState = {
+            ...m,
+            homeScore: newHomeScore,
+            awayScore: newAwayScore,
+            timer: snapshotTimer,
+            updatedAt: new Date(now).toISOString(),
+            events: [...m.events, mappedEvent]
+        };
+
+        // 5. Update Local State (Optimistic)
+        setRawMatches(prev => prev.map(x => String(x.id) === String(matchId) ? newMatchState : x));
+
+        // 6. Sync with Database
+        const isScoreChange = ['goal', 'penalty_goal', 'own_goal', 'points_1', 'points_2', 'points_3'].includes(event.type);
+        
+        const updateData: any = { timer: snapshotTimer };
+        if (isScoreChange) {
+            updateData.home_score = newHomeScore;
+            updateData.away_score = newAwayScore;
+        }
+
+        await supabase.from('matches').update(updateData).eq('id', matchId);
+
+        // 7. BROADCAST for Overlays (Critical for low latency sync)
+        supabase.channel(`league-central-${league?.id}`).send({
+            type: 'broadcast',
+            event: 'match-update',
+            payload: {
+                matchId,
+                timer: snapshotTimer,
+                homeScore: newHomeScore,
+                awayScore: newAwayScore,
+                period: m.period,
+                status: m.status,
+                newEvent: mappedEvent,
+                updatedAt: new Date(now).toISOString()
+            }
+        });
+
+        // L├│gica de Transfer├¬ncia de Bra├ºadeira (Substitui├º├úo ou Vermelho do Capit├úo)
+        if (event.type === 'substitution' || event.type === 'red_card') {
+            const team = rawTeams.find(t => t.id === event.teamId);
+            const match = rawMatches.find(m => m.id === matchId);
+            if (!team || !match) return;
+            
+            const pId = event.type === 'substitution' ? event.playerOutId : event.playerId;
+            const player = team.players.find(p => p.id === pId);
+
+            if (player?.isCaptain) {
+                let newCaptainId = '';
+                if (event.type === 'substitution') {
+                    newCaptainId = event.playerId as string; // O que entra herda a bra├ºadeira
+                } else {
+                    // No vermelho, passa para outro que esteja em campo
+                    // Precisamos considerar o evento que acabamos de adicionar (o vermelho)
+                    const onPitch = team.players.filter(p => p.id !== player.id && isPlayerOnPitch({ ...m, events: [...m.events, mappedEvent] }, p.id));
+                    if (onPitch.length > 0) newCaptainId = onPitch[0].id;
+                }
+
+                if (newCaptainId) {
+                    await toggleCaptain(team.id, newCaptainId);
+                }
+            }
+        }
+    };
+
+    const removeEvent = async (matchId: string, eventId: string) => {
+        const match = rawMatches.find(m => m.id === matchId);
+        const event = match?.events.find(e => e.id === eventId);
+        await supabase.from('match_events').delete().eq('id', eventId);
+
+        let newHomeScore = 0;
+        let newAwayScore = 0;
+
+        setRawMatches(prev => prev.map(m => {
+            if (m.id !== matchId) return m;
+
+            newHomeScore = m.homeScore;
+            newAwayScore = m.awayScore;
+
+            const isScoreChange = event && ['goal', 'penalty_goal', 'own_goal', 'points_1', 'points_2', 'points_3'].includes(event.type);
+            if (event && isScoreChange) {
+                const isHome = String(event.teamId) === String(m.homeTeamId);
+                const isOwnGoal = event.type === 'own_goal';
+                
+                let pointsToRemove = 0;
+                if (['goal', 'penalty_goal', 'own_goal'].includes(event.type)) pointsToRemove = 1;
+                else if (event.type === 'points_1') pointsToRemove = 1;
+                else if (event.type === 'points_2') pointsToRemove = 2;
+                else if (event.type === 'points_3') pointsToRemove = 3;
+
+                if (isOwnGoal) {
+                    if (isHome) newAwayScore = Math.max(0, newAwayScore - pointsToRemove);
+                    else newHomeScore = Math.max(0, newHomeScore - pointsToRemove);
+                } else {
+                    if (isHome) newHomeScore = Math.max(0, newHomeScore - pointsToRemove);
+                    else newAwayScore = Math.max(0, newAwayScore - pointsToRemove);
+                }
+            }
+
+            return {
+                ...m,
+                events: m.events.filter(e => e.id !== eventId),
+                homeScore: newHomeScore,
+                awayScore: newAwayScore,
+                updatedAt: new Date().toISOString()
+            };
+        }));
+
+        const isScoreChange = event && ['goal', 'penalty_goal', 'own_goal', 'points_1', 'points_2', 'points_3'].includes(event.type);
+        if (isScoreChange) {
+            await supabase.from('matches').update({
+                home_score: newHomeScore,
+                away_score: newAwayScore,
+            }).eq('id', matchId);
+        }
+
+        // BROADCAST for instant feedback (important for non-score events too)
+        supabase.channel(`league-central-${league?.id}`).send({
+            type: 'broadcast',
+            event: 'match-update',
+            payload: {
+                matchId,
+                removedEventId: eventId,
+                homeScore: newHomeScore,
+                awayScore: newAwayScore,
+                updatedAt: new Date().toISOString()
+            }
+        });
+    };
+
+    // ÔöÇÔöÇ Bracket ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+    const generateBracket = async () => {
+        if (!league) return;
+        // Delete existing
+        await supabase.from('brackets').delete().eq('league_id', league.id);
+
+        // Sort teams by points for seeding
+        const sorted = [...teams].sort((a, b) => {
+            const pA = a.stats.wins * league.pointsForWin + a.stats.draws * league.pointsForDraw;
+            const pB = b.stats.wins * league.pointsForWin + b.stats.draws * league.pointsForDraw;
+            return pB - pA;
+        });
+
+        const rounds: Array<{ round: string; count: number }> = [
+            { round: 'oitavas', count: 8 }, { round: 'quartas', count: 4 },
+            { round: 'semifinal', count: 2 }, { round: 'final', count: 1 }
+        ];
+
+        const rows: any[] = [];
+        rounds.forEach(({ round, count }) => {
+            for (let i = 0; i < count; i++) {
+                const homeIdx = round === 'oitavas' ? i * 2 : undefined;
+                const awayIdx = round === 'oitavas' ? i * 2 + 1 : undefined;
+                rows.push({
+                    league_id: league.id, round, match_order: i,
+                    home_team_id: homeIdx !== undefined && sorted[homeIdx] ? sorted[homeIdx].id : null,
+                    away_team_id: awayIdx !== undefined && sorted[awayIdx] ? sorted[awayIdx].id : null,
+                });
+            }
+        });
+
+        const { data } = await supabase.from('brackets').insert(rows).select();
+        if (data) {
+            setBrackets(data.map((b: any) => ({
+                id: b.id, round: b.round, matchOrder: b.match_order,
+                homeTeamId: b.home_team_id, awayTeamId: b.away_team_id,
+                homeScore: b.home_score, awayScore: b.away_score, status: b.status
+            })));
+        }
+    };
+    const updateBracket = async (bracketId: string, data: Partial<BracketMatch>) => {
+        await supabase.from('brackets').update({
+            home_score: data.homeScore, away_score: data.awayScore, status: data.status,
+            home_team_id: data.homeTeamId, away_team_id: data.awayTeamId
+        }).eq('id', bracketId);
+        setBrackets(prev => prev.map(b => b.id === bracketId ? { ...b, ...data } : b));
+    };
+
+
+
+    const generateGroups = async (teamsPerGroup: number) => {
+        if (!league || teams.length === 0) return;
+
+        const shuffled = [...teams].sort(() => Math.random() - 0.5);
+        const groupLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+        const updates = shuffled.map((team, index) => {
+            const groupIndex = Math.floor(index / teamsPerGroup);
+            const groupName = groupLetters[groupIndex] || `Grupo ${groupIndex + 1}`;
+            return supabase.from('teams').update({ group_name: groupName }).eq('id', team.id);
+        });
+
+        await Promise.all(updates);
+        loadLeagueData(league.id);
+    };
+
+    const interactWithTeam = async (teamId: string, type: TeamInteraction['interactionType']) => {
+        if (!user) {
+            setPendingInteraction({ teamId, type });
+            setShowAuthModal(true);
+            return;
+        }
+
+        if (!league) return;
+
+        // --- Optimistic Update ---
         const oldInteractions = [...userInteractions];
         let newInteractions = [...userInteractions];
+
+        // Helper to find existing of same type in this league
+        const existingOfType = oldInteractions.filter(i => i.leagueId === league.id && i.interactionType === type);
         const existingExact = oldInteractions.find(i => i.teamId === teamId && i.interactionType === type);
 
         if (existingExact) {
+            // Toggle OFF: Remove this specific interaction
             newInteractions = newInteractions.filter(i => i.id !== existingExact.id);
         } else {
+            // Toggle ON or Switch: 
             if (type === 'supporting') {
+                // Rule: Only 1 supporting per league. Remove others first.
                 newInteractions = newInteractions.filter(i => !(i.leagueId === league.id && i.interactionType === 'supporting'));
+                // Rule: Cannot support and rival the same team
                 newInteractions = newInteractions.filter(i => !(i.teamId === teamId && i.interactionType === 'rival'));
             } else if (type === 'rival') {
+                // Rule: Cannot support and rival the same team
                 newInteractions = newInteractions.filter(i => !(i.teamId === teamId && i.interactionType === 'supporting'));
             }
-            newInteractions.push({ id: 'temp-' + Date.now(), teamId, leagueId: league.id, interactionType: type });
+            
+            // Add the new one optimistically
+            newInteractions.push({
+                id: 'temp-' + Date.now(),
+                teamId,
+                leagueId: league.id,
+                interactionType: type
+            });
         }
 
         setUserInteractions(newInteractions);
 
         try {
+            // 1. If it's a toggle off (exact match found above)
             if (existingExact) {
-                await databases.deleteDocument(databaseId, collections.user_team_interactions || 'user_team_interactions', existingExact.id);
+                await supabase.from('user_team_interactions').delete().eq('id', existingExact.id);
             } else {
+                // 2. Rules Implementation (Cleanup in DB)
                 if (type === 'supporting') {
-                    const toDelete = oldInteractions.filter(i => i.leagueId === league.id && i.interactionType === 'supporting');
-                    for (const i of toDelete) await databases.deleteDocument(databaseId, collections.user_team_interactions || 'user_team_interactions', i.id);
-                    const rival = oldInteractions.find(i => i.teamId === teamId && i.interactionType === 'rival');
-                    if (rival) await databases.deleteDocument(databaseId, collections.user_team_interactions || 'user_team_interactions', rival.id);
+                    // Delete any existing supporting in this league
+                    if (existingOfType.length > 0) {
+                        await supabase.from('user_team_interactions')
+                            .delete()
+                            .eq('user_id', user.id)
+                            .eq('league_id', league.id)
+                            .eq('interaction_type', 'supporting');
+                    }
+
+                    // Delete rival for same team if exists
+                    await supabase.from('user_team_interactions')
+                        .delete()
+                        .eq('user_id', user.id)
+                        .eq('team_id', teamId)
+                        .eq('interaction_type', 'rival');
                 } else if (type === 'rival') {
-                    const sup = oldInteractions.find(i => i.teamId === teamId && i.interactionType === 'supporting');
-                    if (sup) await databases.deleteDocument(databaseId, collections.user_team_interactions || 'user_team_interactions', sup.id);
+                    // Delete support for same team if exists
+                    await supabase.from('user_team_interactions')
+                        .delete()
+                        .eq('user_id', user.id)
+                        .eq('team_id', teamId)
+                        .eq('interaction_type', 'supporting');
                 }
 
-                await databases.createDocument(databaseId, collections.user_team_interactions || 'user_team_interactions', ID.unique(), {
-                    user_id: user.$id,
+                // 3. Insert new interaction
+                await supabase.from('user_team_interactions').insert({
+                    user_id: user.id,
                     league_id: league.id,
                     team_id: teamId,
                     interaction_type: type
                 });
             }
         } catch (error) {
-            console.error(error);
-            setUserInteractions(oldInteractions);
+            console.error('Error interacting with team:', error);
+            setUserInteractions(oldInteractions); // Rollback on error
         } finally {
+            // Final refresh to ensure sync with DB (IDs etc)
             loadUserInteractions(league.id);
             loadSupportCounts(league.id);
         }
@@ -1931,26 +2100,24 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const loadPlayerPhotos = useCallback(async (playerIds: string[]) => {
         if (!playerIds || playerIds.length === 0) return;
         try {
-            const data = await databases.listDocuments(databaseId, collections.players, [Query.equal('$id', playerIds)]);
-            if (!data.documents.length) return;
-            const photoMap = new Map(data.documents.map(p => [p.$id, p.photo]));
+            const { data } = await supabase.from('players').select('id, photo').in('id', playerIds).not('photo', 'eq', '');
+            if (!data || data.length === 0) return;
+            const photoMap = new Map(data.map(p => [p.id, p.photo]));
             setRawTeams(prev => prev.map(t => ({
                 ...t,
                 players: t.players.map(p => ({ ...p, photo: photoMap.get(p.id) || p.photo }))
             })));
-        } catch (err) { console.error(err); }
+        } catch (err) { console.error('Error loading specific player photos:', err); }
     }, []);
 
     const removeInteraction = async (interactionId: string) => {
-        try {
-            await databases.deleteDocument(databaseId, collections.user_team_interactions || 'user_team_interactions', interactionId);
-            if (league) loadUserInteractions(league.id);
-        } catch (err) { console.error(err); }
+        await supabase.from('user_team_interactions').delete().eq('id', interactionId);
+        if (league) loadUserInteractions(league.id);
     };
 
 
 
-    // ── Initial Logic & Recovery ─────────────────────────────
+    // ÔöÇÔöÇ Initial Logic & Recovery ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     useEffect(() => {
         const recover = async () => {
             const isLeaguesPage = window.location.pathname === '/leagues' || window.location.pathname === '/';
@@ -1984,7 +2151,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             generateBracket, updateBracket, loadLeagues, isPublicView, setIsPublicView, isAdmin, loadPublicLeague,
             userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
             showAuthModal, setShowAuthModal, loadTeamPhotos, loadPlayerPhotos,
-            supportCounts, notifications, clearNotification, addNotification, leagueBasePath,
+            supportCounts, notifications, clearNotification, leagueBasePath,
             ads, addAd, updateAd, deleteAd, reorderAds, globalAdTick,
             ytToken, ytLogin, ytLogout, isYtAuthenticated, currentYtLiveStream, recoverStreamDetails,
             deleteYtLive, setYtLivePrivacy, getMatchSlug, getTeamSlug, getPlayerSlug
