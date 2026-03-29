@@ -655,14 +655,19 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('isPublicView', isPublicView.toString());
     }, [isPublicView]);
 
-    // GUARANTEE: Owners start in Gestor Mode whenever entering their league (or as soon as auth resolves)
+    // AUTO-GESTOR: When first entering a league you own, force Gestor Mode.
+    // But allow persistence if you manually toggle within the same session.
     useEffect(() => {
         if (!authLoading && user && league && league.userId === user.id) {
-            console.log('LeagueContext: Ownership confirmed, enforcing Gestor Mode');
-            setIsPublicView(false);
-            localStorage.setItem('isPublicView', 'false');
+            const hasAutoSwitched = sessionStorage.getItem(`auto_switched_${league.id}`);
+            if (!hasAutoSwitched) {
+                console.log('LeagueContext: First entry to owned league, forcing Gestor Mode');
+                setIsPublicView(false);
+                localStorage.setItem('isPublicView', 'false');
+                sessionStorage.setItem(`auto_switched_${league.id}`, 'true');
+            }
         }
-    }, [authLoading, user?.id, league?.id]); // Now watches authLoading too
+    }, [authLoading, user?.id, league?.id]); 
 
     const loadLeagues = async () => {
         try {
@@ -845,14 +850,12 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             if (row) {
                 const mapped = mapDBLeague(row);
                 
-                // Force Gestor Mode for owners whenever they load their league
-                if (user && mapped.userId === user.id) {
-                    setIsPublicView(false);
-                    localStorage.setItem('isPublicView', 'false');
-                } else if (!isSameLeague || !league || league.id !== mapped.id) {
-                    // Only default to public view if it's NOT the owner AND it's a new load
-                    // If auth is still loading, we defer this to the useEffect above to avoid flashing spectator mode for owners
-                    if (!authLoading) {
+                if (!isSameLeague || JSON.stringify(mapped) !== JSON.stringify(league)) {
+                    setLeague(mapped);
+                    localStorage.setItem('selectedLeagueId', mapped.id);
+                    
+                    // Default behavior for new league load (non-owner)
+                    if (!(user && mapped.userId === user.id) && !isSameLeague) {
                         setIsPublicView(true);
                     }
                 }
@@ -1400,10 +1403,12 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         const found = leagues.find(l => l.id === id);
         if (found) {
             const isDifferent = !league || league.id !== id;
-            // ENSURE: Owners ALWAYS enter Gestor Mode on click, regardless of state
+            
+            // ENSURE: Owners ALWAYS enter Gestor Mode on click from hub
             if (user && found.userId === user.id) {
                 setIsPublicView(false);
                 localStorage.setItem('isPublicView', 'false');
+                sessionStorage.setItem(`auto_switched_${found.id}`, 'true');
             }
 
             if (isDifferent) {
