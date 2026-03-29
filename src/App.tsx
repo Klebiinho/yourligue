@@ -162,65 +162,30 @@ const MainContent = () => {
                         <Route path="/match/:matchId/overlay" element={<MatchOverlay />} />
                         <Route path="/match/:matchId" element={<MatchControl />} />
 
-                        {/* LEAGUE SPECIFIC ROUTES */}
-                        <Route path="/:slug/sitemap" element={<Sitemap />} />
-                        <Route path="/:slug/blog" element={<DynamicContent />} />
-                        <Route path="/:slug/blog/:contentSlug" element={<DynamicContent />} />
-                        
-                        <Route path="/:slug/servicos" element={<DynamicContent />} />
-                        <Route path="/:slug/servicos/:contentSlug" element={<DynamicContent />} />
-                        
-                        <Route path="/:slug/glossario" element={<DynamicContent />} />
-                        <Route path="/:slug/glossario/:contentSlug" element={<DynamicContent />} />
-                        
-                        <Route path="/:slug/categoria" element={<DynamicContent />} />
-                        <Route path="/:slug/categoria/:contentSlug" element={<DynamicContent />} />
-                        
-                        <Route path="/:slug/autor" element={<DynamicContent />} />
-                        <Route path="/:slug/autor/:contentSlug" element={<DynamicContent />} />
-                        
-                        <Route path="/:slug/busca" element={<DynamicContent />} />
-                        <Route path="/:slug/busca/:contentSlug" element={<DynamicContent />} />
-                        
-                        <Route path="/:slug/duvidas" element={<DynamicContent />} />
-                        <Route path="/:slug/duvidas-de-a-a-z" element={<DynamicContent />} />
-                        <Route path="/:slug/duvidas/:letter" element={<DynamicContent />} />
-                        
-                        <Route path="/:slug/sobre-nos" element={<DynamicContent />} />
-                        <Route path="/:slug/contato" element={<DynamicContent />} />
-                        <Route path="/:slug/informacoes" element={<DynamicContent />} />
-                        <Route path="/:slug/inicio" element={<Navigate to="/" replace />} />
-                        <Route path="/:slug/politica-de-atualizacao-de-resultados" element={<DynamicContent />} />
-                        <Route path="/:slug/direitos-de-transmissao-e-imagem" element={<DynamicContent />} />
-                        <Route path="/:slug/regulamento-geral-de-competicoes" element={<DynamicContent />} />
-                        <Route path="/:slug/diretrizes-do-capitao-titular" element={<DynamicContent />} />
-
+                        {/* Prioritized Nested Specific Routes */}
+                        <Route path="/:slug/:matchSlug/match" element={<MatchControl />} />
+                        <Route path="/:slug/:playerSlug/player" element={<PlayerDetail />} />
+                        <Route path="/:slug/:teamSlug/team" element={<Teams />} />
+                        <Route path="/:slug/match/:matchId" element={<MatchControl />} />
+                        <Route path="/:slug/player/:playerSlug" element={<PlayerDetail />} />
+                        <Route path="/:slug/team/:teamId" element={<Teams />} />
                         <Route path="/:slug/localizacao" element={<LeagueLocation />} />
-                        <Route path="/:slug/match/:matchId/overlay" element={<MatchOverlay />} />
 
+                        {/* Standard League Pages */}
                         <Route path="/:slug" element={<Dashboard />} />
                         <Route path="/:slug/home" element={<Dashboard />} />
+                        <Route path="/:slug/matches" element={<Matches />} />
                         <Route path="/:slug/teams" element={<Teams />} />
                         <Route path="/:slug/teams/:teamId" element={<Teams />} />
-                        <Route path="/:teamSlug/team" element={<Teams />} />
-                        <Route path="/:slug/matches" element={<Matches />} />
-                        <Route path="/:slug/matches/:matchId" element={<MatchControl />} />
-                        <Route path="/:slug/match/:matchId" element={<MatchControl />} />
-                        <Route path="/:slug/:matchSlug/match" element={<MatchControl />} />
-                        <Route path="/:matchSlug/match" element={<MatchControl />} />
-                        
-                        <Route path="/:slug/player/:playerSlug" element={<PlayerDetail />} />
-                        <Route path="/:slug/:playerSlug/player" element={<PlayerDetail />} />
-                        <Route path="/:playerSlug/player" element={<PlayerDetail />} />
-                        
-                        <Route path="/:slug/team/:teamId" element={<Teams />} />
-                        <Route path="/:slug/:teamSlug/team" element={<Teams />} />
-                        <Route path="/:teamSlug/team" element={<Teams />} />
-                        
                         <Route path="/:slug/standings" element={<Standings />} />
                         <Route path="/:slug/bracket" element={<Bracket />} />
                         <Route path="/:slug/live" element={<LiveMatches />} />
                         <Route path="/:slug/settings" element={<Settings />} />
+                        <Route path="/:slug/sitemap" element={<Sitemap />} />
+
+                        <Route path="/:matchSlug/match" element={<MatchControl />} />
+                        <Route path="/:playerSlug/player" element={<PlayerDetail />} />
+                        <Route path="/:teamSlug/team" element={<Teams />} />
 
                         <Route path="/" element={<LeagueSelector />} />
                         <Route path="*" element={<Navigate to={slug ? `/${slug}/home` : "/"} replace />} />

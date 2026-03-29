@@ -310,6 +310,15 @@ const mapDBLeague = (l: any): League => ({
     distancia_km: l.distancia_km, follower_count: l.follower_count
 });
 
+export const generateSlug = (name: string) => {
+    return name.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+};
+
 const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
 
 // ─── Provider ────────────────────────────────────────────────
@@ -1285,14 +1294,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [user, league]); // Re-run when user or league becomes available
 
-    const generateSlug = (name: string) => {
-        return name.toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^a-z0-9]/g, '-')
-            .replace(/-+/g, '-')
-            .replace(/^-|-$/g, '');
-    };
 
     const getMatchSlug = useCallback((m: Match) => {
         if (m.slug) return m.slug;

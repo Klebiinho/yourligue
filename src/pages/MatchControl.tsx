@@ -21,7 +21,7 @@ const MatchControl = () => {
     const match = useMemo(() => {
         return matches.find((m: Match) => 
             (matchIdParam && m.id === matchIdParam) || 
-            (matchSlug && getMatchSlug(m) === matchSlug)
+            (matchSlug && (getMatchSlug(m) === matchSlug || m.id === matchSlug))
         );
     }, [matches, matchIdParam, matchSlug, getMatchSlug]);
     const mId = match?.id;

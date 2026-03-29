@@ -19,10 +19,31 @@ const Sitemap = () => {
             setIsLoading(true);
             try {
                 const { data: p } = await supabase.from('players').select('id, name, slug').limit(20).order('created_at', { ascending: false });
-                const { data: m } = await supabase.from('matches').select('id, home_team_id, away_team_id, scheduled_at').limit(20).order('created_at', { ascending: false });
+                const { data: m } = await supabase.from('matches').select('id, home_team_id, away_team_id, scheduled_at').limit(30).order('created_at', { ascending: false });
+                const { data: t } = await supabase.from('teams').select('id, name, slug');
                 
-                if (p) setRecentPlayers(p.map(x => ({ title: `Jogador: ${x.name}`, path: scopedPath(`/${getPlayerSlug(x as any)}/player`) })));
-                if (m) setRecentMatches(m.map(x => ({ title: `Partida: ${getMatchSlug(x as any)}`, path: scopedPath(`/${getMatchSlug(x as any)}/match`) })));
+                const teamMap = new Map((t || []).map(x => [x.id, x]));
+
+                if (p) {
+                    setRecentPlayers(p.map(x => ({ 
+                        title: `Jogador: ${x.name}`, 
+                        path: scopedPath(`/${x.slug || x.id}/player`) 
+                    })));
+                }
+
+                if (m) {
+                    setRecentMatches(m.map(x => {
+                        const ht = teamMap.get(x.home_team_id);
+                        const at = teamMap.get(x.away_team_id);
+                        const date = x.scheduled_at ? new Date(x.scheduled_at).toLocaleDateString('pt-BR').replace(/\//g, '-') : '';
+                        const slug = ht && at ? `${ht.name.toLowerCase().replace(/\s+/g, '-')}-x-${at.name.toLowerCase().replace(/\s+/g, '-')}${date ? '-' + date : ''}` : x.id;
+                        
+                        return { 
+                            title: ht && at ? `Partida: ${ht.name} x ${at.name}` : `Partida #${x.id.slice(0,8)}`, 
+                            path: scopedPath(`/${slug}/match`) 
+                        };
+                    }));
+                }
             } catch (error) {
                 console.error("Erro ao buscar dados do sitemap:", error);
             } finally {
