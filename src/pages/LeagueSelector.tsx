@@ -116,9 +116,24 @@ const LeagueSelector = () => {
                 setIsLocating(false);
             },
             (error) => {
-                console.error("Erro ao obter localização:", error);
-                alert("Não foi possível obter sua localização. Verifique as permissões do navegador.");
+                console.error("Erro detalhado de localização:", error.code, error.message);
+                
+                let errorMsg = "Não foi possível obter sua localização atual.";
+                if (error.code === 1) {
+                    errorMsg = "Permissão de localização negada. Por favor, autorize o acesso nas configurações do seu navegador.";
+                } else if (error.code === 2) {
+                    errorMsg = "Localização temporariamente indisponível. Tente novamente em instantes.";
+                } else if (error.code === 3) {
+                    errorMsg = "O tempo para obter sua localização expirou. Verifique se o GPS está ativo.";
+                }
+
+                alert(errorMsg);
                 setIsLocating(false);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0
             }
         );
     };
