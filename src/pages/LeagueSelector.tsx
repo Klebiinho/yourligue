@@ -131,10 +131,11 @@ const LeagueSelector = () => {
     const handleRequestLocation = async (force = false) => {
         if (locatingRef.current) return;
         
-        // FORÇAR loading e limpar erros ANTES de qualquer verificação
+        // RESET TOTAL DE ESTADOS PARA EVITAR FLICKERING
         setIsLocating(true);
         locatingRef.current = true;
         setLocationErrorCode(null);
+        setHasSearchedNearby(false); // <--- ISSO EVITA QUE O CARD DE ERRO ANTIGO APAREÇA
 
         if (force) {
             setNearbyLeagues([]);
