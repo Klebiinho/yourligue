@@ -305,13 +305,13 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const [brackets, setBrackets] = useState<BracketMatch[]>([]);
     const [loading, setLoading] = useState(false);
     const [dataLoading, setDataLoading] = useState(false);
-    const [isPublicView] = useState(false);
+    const [isPublicView, setIsPublicView] = useState(false);
 
     // States with minimal usage to satisfy interface
     const [userInteractions] = useState<TeamInteraction[]>([]);
     const [supportCounts] = useState<Record<string, number>>({});
-    const [pendingInteraction] = useState<{ teamId: string, type: TeamInteraction['interactionType'] } | null>(null);
-    const [showAuthModal] = useState(false);
+    const [pendingInteraction, setPendingInteraction] = useState<{ teamId: string, type: TeamInteraction['interactionType'] } | null>(null);
+    const [showAuthModal, setShowAuthModal] = useState(false);
     const [notifications] = useState<LeagueNotification[]>([]);
     const [ads] = useState<Ad[]>([]);
     const [globalAdTick] = useState(0);
@@ -534,11 +534,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         isPlayerOnPitch, getMatchSlug, getTeamSlug, getPlayerSlug,
         createMatch, updateMatch, deleteMatch, startMatch, pauseMatch, endMatch,
         updateTimer, addEvent, removeEvent, generateBracket, updateBracket,
-        loadLeagues, isPublicView, setIsPublicView: () => {}, isAdmin,
+        loadLeagues, isPublicView, setIsPublicView, isAdmin,
         loadPublicLeague, loadTeamPhotos, loadPlayerPhotos, followLeague, unfollowLeague,
         searchLeagues, fetchNearbyLeagues,
-        userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction: () => {},
-        showAuthModal, setShowAuthModal: () => {}, supportCounts, notifications, clearNotification,
+        userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
+        showAuthModal, setShowAuthModal, supportCounts, notifications, clearNotification,
         leagueBasePath, globalAdTick, ads, addAd, updateAd, deleteAd, reorderAds,
         ytToken: null, ytLogin, ytLogout, isYtAuthenticated: false, currentYtLiveStream: null,
         recoverStreamDetails, deleteYtLive, setYtLivePrivacy
