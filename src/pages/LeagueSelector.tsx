@@ -108,25 +108,26 @@ const LeagueSelector = () => {
         }
 
         const options = {
-            enableHighAccuracy: false, // Default to false for better speed/reliability initially
-            timeout: 8000,
-            maximumAge: 60000
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
         };
 
-        const success = async (position: GeolocationPosition) => {
-            const { latitude, longitude } = position.coords;
-            const results = await fetchNearbyLeagues(latitude, longitude, 50); // Raio de 50km
-            setNearbyLeagues(results || []);
-            setHasSearchedNearby(true);
-            setIsLocating(false);
-        };
-
-        const error = (err: GeolocationPositionError) => {
-            console.error("Erro ao obter localização:", err);
-            setIsLocating(false);
-        };
-
-        navigator.geolocation.getCurrentPosition(success, error, options);
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                const results = await fetchNearbyLeagues(latitude, longitude, 50); // Raio de 50km
+                setNearbyLeagues(results || []);
+                setHasSearchedNearby(true);
+                setIsLocating(false);
+            },
+            (err) => {
+                console.error("Erro ao obter localização (Detalhado):", err.message, err.code);
+                alert("Não foi possível obter sua localização automaticamente. Verifique se as permissões estão ativas no seu navegador.");
+                setIsLocating(false);
+            },
+            options
+        );
     };
 
     return (
@@ -269,45 +270,41 @@ const LeagueSelector = () => {
 
                     {activeTab === 'nearby' && (
                         nearbyLeagues.length === 0 ? (
-                            <div className="glass-panel py-20 px-10 text-center space-y-6">
-                                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
-                                    <MapPin size={40} className="text-slate-700" strokeWidth={1} />
-                                </div>
-                                <div className="space-y-4 max-w-sm mx-auto">
-                                    <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Ligas Próximas</h3>
-                                    <p className="text-slate-500 font-medium text-sm">
-                                        Não foi possível obter sua localização automaticamente. Mas não se preocupe! Você pode pesquisar pelo nome da cidade ou bairro abaixo.
-                                    </p>
-                                    
-                                    <div className="relative mt-6 group">
-                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                        <input 
-                                            type="text" 
-                                            placeholder="Ex: Rio de Janeiro, Copacabana..." 
-                                            value={searchQuery}
-                                            onChange={e => setSearchQuery(e.target.value)}
-                                            onFocus={() => setActiveTab('explore')}
-                                            className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white placeholder:text-slate-600 focus:border-primary outline-none transition-all text-sm font-bold group-hover:border-white/20"
-                                        />
+                            hasSearchedNearby ? (
+                                <div className="glass-panel py-20 px-10 text-center space-y-6">
+                                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                                        <MapPin size={40} className="text-slate-700" strokeWidth={1} />
                                     </div>
-
-                                    <div className="flex flex-col gap-2 pt-4">
+                                    <div className="space-y-2">
+                                        <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Nenhuma liga encontrada</h3>
+                                        <p className="text-slate-500 font-medium text-sm">Não encontramos nenhuma liga num raio de 50km da sua localização selecionada.</p>
                                         <button 
                                             onClick={handleRequestLocation} 
                                             disabled={isLocating}
-                                            className="w-full py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 transition-all font-outfit"
+                                            className="mt-4 px-8 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
                                         >
-                                            {isLocating ? 'Buscando Localização...' : 'Tentar Localizar Automaticamente'}
-                                        </button>
-                                        <button 
-                                            onClick={() => setActiveTab('explore')}
-                                            className="w-full py-4 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] hover:bg-white/10 transition-all font-outfit"
-                                        >
-                                            Ver Todas as Ligas
+                                            {isLocating ? 'Buscando novamente...' : 'Tentar Novamente'}
                                         </button>
                                     </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="glass-panel py-20 px-10 text-center space-y-6">
+                                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                                        <MapPin size={40} className="text-slate-700" strokeWidth={1} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Ligas Próximas a Você</h3>
+                                        <p className="text-slate-500 font-medium text-sm">Use sua localização para encontrar campeonatos regionais e interagir com a comunidade local.</p>
+                                        <button 
+                                            onClick={handleRequestLocation} 
+                                            disabled={isLocating}
+                                            className="mt-4 px-8 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                                        >
+                                            {isLocating ? 'Obtendo Localização...' : 'Solicitar Localização'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )
                         ) : (
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between px-2 mb-2">
