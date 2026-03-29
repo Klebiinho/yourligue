@@ -55,9 +55,9 @@ const LeagueSelector = () => {
 
     const handleTabClick = (tabId: 'owned' | 'following' | 'nearby' | 'explore') => {
         setActiveTab(tabId);
-        // Só tenta GPS se nunca buscou E não tem erro de permissão salvo E não está buscando agora
-        if (tabId === 'nearby' && !hasSearchedNearby && locationErrorCode !== 1 && !locatingRef.current) {
-            handleRequestLocation();
+        // Mecânica igual ao GPS das Settings: clicou, busca (se não estiver buscando agora)
+        if (tabId === 'nearby' && !locatingRef.current) {
+            handleRequestLocation(true);
         }
     };
 
@@ -228,16 +228,27 @@ const LeagueSelector = () => {
 
                 {/* Tabs */}
                 <div className={`grid ${user ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2'} gap-1.5 bg-white/3 p-1.5 rounded-2xl mb-6 border border-white/5`}>
-                    {sortedTabs.map(({ id, label, Icon }) => (
-                        <button
-                            key={id}
-                            onClick={() => handleTabClick(id)}
-                            className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === id ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
-                        >
-                            <Icon size={14} className="sm:hidden" /> <span className="hidden sm:inline"><Icon size={14} /></span>
-                            <span className="text-center">{label}</span>
-                        </button>
-                    ))}
+                    {sortedTabs.map(({ id, label, Icon }) => {
+                        const isLoadingNearby = id === 'nearby' && isLocating;
+                        return (
+                            <button
+                                key={id}
+                                onClick={() => handleTabClick(id)}
+                                disabled={isLocating}
+                                className={`py-3 px-2 rounded-xl font-black text-[0.55rem] sm:text-[0.65rem] uppercase tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 ${activeTab === id ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'} ${isLocating && id !== 'nearby' ? 'opacity-50' : ''}`}
+                            >
+                                {isLoadingNearby ? (
+                                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    <>
+                                        <Icon size={14} className="sm:hidden" /> 
+                                        <span className="hidden sm:inline"><Icon size={14} /></span>
+                                    </>
+                                )}
+                                <span className="text-center">{isLoadingNearby ? 'Sincronizando...' : label}</span>
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Explorer Search */}
