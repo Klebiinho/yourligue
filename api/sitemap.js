@@ -13,11 +13,11 @@ export default async function handler(req, res) {
         '/politica-de-privacidade', '/termos-de-uso', '/sobre-nos', '/contato'
     ];
 
-    // 2. Fetch Dynamic Leagues
-    const { data: leagues } = await supabase.from('leagues').select('slug, updated_at');
-    
-    // 3. Fetch Dynamic Teams (if public)
-    const { data: teams } = await supabase.from('teams').select('id, name, updated_at');
+    // 2. Fetch Dynamic Data
+    const { data: leagues } = await supabase.from('leagues').select('slug, updated_at').limit(500);
+    const { data: players } = await supabase.from('players').select('slug, updated_at').limit(500);
+    const { data: matches } = await supabase.from('matches').select('id, updated_at').limit(500);
+    const { data: teams } = await supabase.from('teams').select('id, updated_at').limit(500);
 
     // 4. Generate XML
     const base_url = 'https://yourligue.vercel.app';
@@ -30,8 +30,20 @@ export default async function handler(req, res) {
     });
 
     // Add Leagues
-    leagues?.forEach(league => {
-        xml += `  <url>\n    <loc>${base_url}/${league.slug}</loc>\n    <lastmod>${new Date(league.updated_at).toISOString().split('T')[0]}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
+    leagues?.forEach(item => {
+        xml += `  <url>\n    <loc>${base_url}/${item.slug}</loc>\n    <lastmod>${new Date(item.updated_at).toISOString().split('T')[0]}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
+    });
+
+    // Add Players
+    players?.forEach(item => {
+        if (item.slug) {
+            xml += `  <url>\n    <loc>${base_url}/${item.slug}/player</loc>\n    <lastmod>${new Date(item.updated_at).toISOString().split('T')[0]}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
+        }
+    });
+
+    // Add Matches
+    matches?.forEach(item => {
+        xml += `  <url>\n    <loc>${base_url}/match/${item.id}</loc>\n    <lastmod>${new Date(item.updated_at || Date.now()).toISOString().split('T')[0]}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
     });
 
     xml += '</urlset>';
