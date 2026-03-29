@@ -189,8 +189,18 @@ const App = () => {
             <AuthProvider>
                 <LeagueProvider>
                     <Routes>
-                        {/* Define :slug at top level so child routes match correctly */}
+                        {/* Static/Global Routes - Must be above :slug to avoid capture */}
+                        <Route path="/leagues/*" element={<MainContent />} />
+                        <Route path="/auth/*" element={<MainContent />} />
+                        <Route path="/sitemap/*" element={<MainContent />} />
+                        <Route path="/blog/*" element={<MainContent />} />
+                        <Route path="/duvidas/*" element={<MainContent />} />
+                        <Route path="/servicos/*" element={<MainContent />} />
+                        
+                        {/* Define :slug only for paths that are likely leagues or content */}
                         <Route path="/:slug/*" element={<MainContent />} />
+                        
+                        {/* Fallback for root */}
                         <Route path="/*" element={<MainContent />} />
                     </Routes>
                 </LeagueProvider>
