@@ -1,7 +1,6 @@
-﻿import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { databases, databaseId, collections } from '../lib/appwrite';
-import { Query, ID } from 'appwrite';
+import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { YouTubeService } from '../services/youtube';
 
@@ -251,9 +250,9 @@ const mapDBMatch = (m: any): Match => ({
     period: m.period,
     scheduledAt: m.scheduledAt,
     location: m.location,
-    updatedAt: m.updated_at || m.$createdAt || new Date().toISOString(),
+    updatedAt: m.updated_at || new Date().toISOString(),
     slug: m.slug,
-    events: (m.match_events || []).map(mapDBEvent)
+    events: (m.match_events || []).map((e: any) => mapDBEvent(e))
 });
 
 const mapDBPlayer = (p: any): Player => ({
@@ -592,9 +591,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         if (savedId && !league) {
             console.log('LeagueContext: Warm booting league from cache...', savedId);
             tryRecoverFromCache(savedId);
-        }
-    }, [tryRecoverFromCache, league]);
-
     useEffect(() => { teamsRef.current = teams; }, [teams]);
     useEffect(() => { matchesRef.current = matches; }, [matches]);
     useEffect(() => { interactionsRef.current = userInteractions; }, [userInteractions]);
@@ -826,25 +822,14 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 setSupportCounts({});
             }
             
-            // Fetch by slug
-            let documents;
-            try {
-                const res = await databases.listDocuments(databaseId, collections.leagues, [
-                    Query.equal('slug', slugOrId)
-                ]);
-                documents = res.documents;
-            } catch (e) {
-                documents = [];
-            }
+            // Fetch by slug or id
+            const { data: row, error: fetchError } = await supabase
+                .from('leagues')
+                .select('*')
+                .or(`slug.eq."${slugOrId}",id.eq."${slugOrId}"`)
+                .maybeSingle();
 
-            let row = documents?.[0];
-
-            // If not found by slug, maybe it was an ID
-            if (!row) {
-                try {
-                    row = await databases.getDocument(databaseId, collections.leagues, slugOrId);
-                } catch (e) {}
-            }
+            if (fetchError) throw fetchError;
 
             if (row) {
                 const mapped = mapDBLeague(row);
@@ -934,40 +919,30 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
 
         try {
-            const [teamsRes, matchesRes, adsRes] = await Promise.all([
-                databases.listDocuments(databaseId, collections.teams, [
-                    Query.equal('league_id', leagueId),
-                    Query.limit(100)
-                ]),
-                databases.listDocuments(databaseId, collections.matches, [
-                    Query.equal('league_id', leagueId),
-                    Query.limit(100)
-                ]),
-                databases.listDocuments(databaseId, collections.ads, [
-                    Query.equal('league_id', leagueId),
-                    Query.limit(100)
-                ])
+            const [teamsRes, matchesRes, adsRes, playersRes] = await Promise.all([
+                supabase.from('teams').select('*').eq('league_id', leagueId).limit(100),
+                supabase.from('matches').select('*, match_events(*)').eq('league_id', leagueId).limit(100),
+                supabase.from('ads').select('*').eq('league_id', leagueId).limit(100),
+                supabase.from('players').select('*').eq('league_id', leagueId).limit(1000)
             ]);
 
-            const mappedTeams = teamsRes.documents.map(mapDBTeam);
+            if (teamsRes.error) throw teamsRes.error;
+            if (matchesRes.error) throw matchesRes.error;
+            if (adsRes.error) throw adsRes.error;
+            if (playersRes.error) throw playersRes.error;
+
+            const playersData = playersRes.data || [];
+            const mappedTeams = (teamsRes.data || []).map(t => ({
+                ...mapDBTeam(t),
+                players: playersData.filter((p: any) => p.team_id === t.id).map(mapDBPlayer)
+            }));
+
             setRawTeams(mappedTeams);
             teamsRef.current = mappedTeams;
 
-            setRawMatches(matchesRes.documents.map(mapDBMatch));
-            setAds(adsRes.documents.map((a: any) => ({ ...a, display_order: a.display_order || 0 })));
-
-            // Lazy load players for each team
-            const playerRes = await databases.listDocuments(databaseId, collections.players, [
-                Query.equal('league_id', leagueId),
-                Query.limit(1000)
-            ]);
-
-            const playersData = playerRes.documents;
-            setRawTeams(prev => prev.map(t => ({
-                ...t,
-                players: playersData.filter((p: any) => p.team_id === t.id).map(mapDBPlayer)
-            })));
-
+            setRawMatches((matchesRes.data || []).map(mapDBMatch));
+            setAds((adsRes.data || []).map((a: any) => ({ ...a, display_order: a.display_order || 0 })));
+            
         } catch (err) {
             console.error('LeagueContext: Data load failed:', err);
         } finally {
@@ -1011,7 +986,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             event: '*', 
             schema: 'public', 
             filter: `league_id=eq.${league.id}` 
-        }, payload => {
+        }, (payload: any) => {
             const { table, eventType, new: newRow, old: oldRow } = payload;
             const row = (newRow || oldRow) as any;
 
@@ -1097,7 +1072,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             event: '*', 
             schema: 'public', 
             table: 'match_events' 
-        }, payload => {
+        }, (payload: any) => {
             const { eventType, new: newRow, old: oldRow } = payload;
             const row = (newRow || oldRow) as any;
             const matchId = row?.match_id;
@@ -1129,7 +1104,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         });
 
         // 3. Broadcast for low-latency timer sync and instant event feedback
-        channel.on('broadcast', { event: 'match-update' }, ({ payload }) => {
+        channel.on('broadcast', { event: 'match-update' }, ({ payload }: { payload: any }) => {
             console.log('[Realtime Broadcast] Match Update', payload);
             setRawMatches(prev => prev.map(m => {
                 if (m.id !== payload.matchId) return m;
@@ -1156,7 +1131,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             }));
         });
 
-        channel.on('broadcast', { event: 'players-reordered' }, ({ payload }) => {
+        channel.on('broadcast', { event: 'players-reordered' }, ({ payload }: { payload: any }) => {
             setRawTeams(prev => prev.map(t => {
                 if (t.id === payload.teamId) {
                     const sortedPlayers = [...t.players].sort((a, b) => {
