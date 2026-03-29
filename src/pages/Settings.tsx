@@ -1003,23 +1003,7 @@ const Settings = () => {
                                 </div>
                             </div>
 
-                            {isAdmin && (
-                                <div className="p-6 rounded-2xl bg-black/40 border border-white/5 flex flex-col gap-2 transition-all group">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest">ID do Sistema</span>
-                                    </div>
-                                    <p className="font-mono text-[0.65rem] text-slate-500 break-all select-all hover:text-white transition-colors">{user?.id}</p>
-                                </div>
-                            )}
                         </div>
-
-                        {isAdmin && (
-                            <div className="mt-10 p-6 rounded-2xl bg-primary/5 border border-primary/20 text-center">
-                                <p className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em] transition-all group-hover:tracking-widest">
-                                    Versão 2.4.0-PRO • Tailwind UI
-                                </p>
-                            </div>
-                        )}
                     </div>
 
                     {/* YouTube Integration */}
