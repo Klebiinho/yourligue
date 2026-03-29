@@ -107,21 +107,37 @@ const LeagueSelector = () => {
             return;
         }
 
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                const results = await fetchNearbyLeagues(latitude, longitude, 50); // Raio de 50km
-                setNearbyLeagues(results);
-                setHasSearchedNearby(true);
-                setIsLocating(false);
-            },
-            (error) => {
-                console.error("Erro ao obter localização:", error);
-                alert("Não foi possível obter sua localização. Verifique as permissões do navegador.");
-                setIsLocating(false);
-            },
-            { enableHighAccuracy: true }
-        );
+        const options = {
+            enableHighAccuracy: false, // Default to false for better speed/reliability initially
+            timeout: 8000,
+            maximumAge: 60000
+        };
+
+        const success = async (position: GeolocationPosition) => {
+            const { latitude, longitude } = position.coords;
+            const results = await fetchNearbyLeagues(latitude, longitude, 50); // Raio de 50km
+            setNearbyLeagues(results || []);
+            setHasSearchedNearby(true);
+            setIsLocating(false);
+        };
+
+        const error = (err: GeolocationPositionError) => {
+            console.error("Erro ao obter localização:", err);
+            let message = "Não foi possível obter sua localização.";
+            
+            if (err.code === err.PERMISSION_DENIED) {
+                message = "Acesso à localização negado. Clique no cadeado (🔒) na barra de endereços do seu navegador para permitir o acesso.";
+            } else if (err.code === err.TIMEOUT) {
+                message = "O tempo de busca esgotou. Tente novamente.";
+            } else if (err.code === err.POSITION_UNAVAILABLE) {
+                message = "Sua localização está indisponível no momento.";
+            }
+
+            alert(message);
+            setIsLocating(false);
+        };
+
+        navigator.geolocation.getCurrentPosition(success, error, options);
     };
 
     return (
