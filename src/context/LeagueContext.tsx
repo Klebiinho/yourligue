@@ -305,13 +305,13 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const [brackets, setBrackets] = useState<BracketMatch[]>([]);
     const [loading, setLoading] = useState(false);
     const [dataLoading, setDataLoading] = useState(false);
-    const [isPublicView, setIsPublicView] = useState(false);
+    const [isPublicView] = useState(false);
 
     // States with minimal usage to satisfy interface
     const [userInteractions] = useState<TeamInteraction[]>([]);
     const [supportCounts] = useState<Record<string, number>>({});
     const [pendingInteraction] = useState<{ teamId: string, type: TeamInteraction['interactionType'] } | null>(null);
-    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showAuthModal] = useState(false);
     const [notifications] = useState<LeagueNotification[]>([]);
     const [ads] = useState<Ad[]>([]);
     const [globalAdTick] = useState(0);
@@ -393,10 +393,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const loadLeagueData = useCallback(async (leagueId: string) => {
         setDataLoading(true);
         try {
-            const [tRes, mRes, aRes, pRes, bRes] = await Promise.all([
+            const [tRes, mRes, pRes, bRes] = await Promise.all([
                 supabase.from('teams').select('*').eq('league_id', leagueId),
                 supabase.from('matches').select('*, match_events(*)').eq('league_id', leagueId),
-                supabase.from('ads').select('*').eq('league_id', leagueId),
                 supabase.from('players').select('*').eq('league_id', leagueId),
                 supabase.from('brackets').select('*').eq('league_id', leagueId)
             ]);
