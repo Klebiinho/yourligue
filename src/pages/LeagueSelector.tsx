@@ -84,15 +84,20 @@ const LeagueSelector = () => {
         if (navigator.permissions && navigator.permissions.query) {
             navigator.permissions.query({ name: 'geolocation' as any }).then(p => {
                 p.onchange = () => {
-                    if (p.state !== 'denied') {
+                    if (p.state === 'granted') {
                         localStorage.removeItem('geo_denied');
                         setLocationErrorCode(null);
-                        // Se o usuário acabou de permitir e está na tab de nearby, tenta buscar
-                        if (p.state === 'granted' && activeTab === 'nearby' && !locatingRef.current) {
+                        // Tenta buscar automaticamente se ganhou permissão agora
+                        if (activeTab === 'nearby' && !locatingRef.current) {
                             handleRequestLocation(true);
                         }
+                    } else if (p.state === 'denied') {
+                        // Só seta o erro se não estiver buscando ativamente
+                        if (!locatingRef.current) {
+                            localStorage.setItem('geo_denied', '1');
+                            setLocationErrorCode(1);
+                        }
                     }
-                    // Removida a atribuição automática de erro aqui para evitar flickering
                 };
             }).catch(() => {});
         }
@@ -126,15 +131,14 @@ const LeagueSelector = () => {
     const handleRequestLocation = async (force = false) => {
         if (locatingRef.current) return;
         
-        // Se for forçado, limpamos erros anteriores e resultados velhos NA HORA 
-        // para garantir que o Spinner apareça e não a tela de Erro
-        if (force) {
-            setLocationErrorCode(null);
-            setNearbyLeagues([]);
-        }
-
+        // FORÇAR loading e limpar erros ANTES de qualquer verificação
         setIsLocating(true);
         locatingRef.current = true;
+        setLocationErrorCode(null);
+
+        if (force) {
+            setNearbyLeagues([]);
+        }
 
         if (!navigator.geolocation) {
             alert("Seu navegador não suporta geolocalização.");
@@ -148,6 +152,7 @@ const LeagueSelector = () => {
         if (!force && localStorage.getItem('geo_denied') === '1') {
             setIsLocating(false);
             locatingRef.current = false;
+            setLocationErrorCode(1); // Seta agora pois confirmamos que não vamos buscar
             return;
         }
 
@@ -348,7 +353,7 @@ const LeagueSelector = () => {
                                 {/* Scanning line animation */}
                                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent animate-scan" />
                             </div>
-                        ) : locationErrorCode === 1 ? (
+                        ) : (locationErrorCode === 1 && hasSearchedNearby) ? (
                             /* Explicit GPS Denied Card */
                             <div className="glass-panel py-16 px-10 text-center space-y-8 border-danger/10 bg-danger/[0.02]">
                                 <div className="w-20 h-20 bg-danger/10 rounded-full flex items-center justify-center mx-auto border-2 border-danger/20 relative">
