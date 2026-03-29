@@ -82,6 +82,27 @@ const LeagueSelector = () => {
         }
     }, [user]);
 
+    // Watch permissions to clear stored "denied" state automatically
+    useEffect(() => {
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'geolocation' as any }).then(p => {
+                p.onchange = () => {
+                    if (p.state !== 'denied') {
+                        localStorage.removeItem('geo_denied');
+                        setLocationErrorCode(null);
+                        // Se o usuário acabou de permitir e está na tab de nearby, tenta buscar
+                        if (p.state === 'granted' && activeTab === 'nearby') {
+                            handleRequestLocation(true);
+                        }
+                    } else {
+                        localStorage.setItem('geo_denied', '1');
+                        setLocationErrorCode(1);
+                    }
+                };
+            }).catch(() => {});
+        }
+    }, [activeTab]);
+
     const handleDelete = async (id: string) => {
         if (window.confirm('Tem certeza? Todos os dados desta liga serão excluídos permanentemente.')) {
             await deleteLeague(id);
@@ -107,7 +128,7 @@ const LeagueSelector = () => {
         if (success) navigate(`/${l.slug || l.id}/home`);
     };
 
-    const handleRequestLocation = async () => {
+    const handleRequestLocation = async (force = false) => {
         if (locatingRef.current) return;
         
         setIsLocating(true);
@@ -120,10 +141,9 @@ const LeagueSelector = () => {
             return;
         }
 
-        // Se já sabemos que foi negado, pula direto pro fallback
-        if (localStorage.getItem('geo_denied') === '1') {
-            setLocationErrorCode(1);
-            setHasSearchedNearby(true);
+        // Se é uma tentativa automática e já sabemos que foi negado, pula pro fallback
+        // Se for um clique manual (force === true), tenta novamente
+        if (!force && localStorage.getItem('geo_denied') === '1') {
             setIsLocating(false);
             locatingRef.current = false;
             return;
@@ -353,7 +373,7 @@ const LeagueSelector = () => {
                                             </button>
                                         ) : (
                                             <button 
-                                                onClick={handleRequestLocation} 
+                                                onClick={() => handleRequestLocation(true)} 
                                                 disabled={isLocating}
                                                 className="w-full py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all font-outfit flex items-center justify-center gap-2"
                                             >
@@ -368,7 +388,7 @@ const LeagueSelector = () => {
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between px-2 mb-2">
                                     <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Encontradas num raio de 50km</span>
-                                    <button onClick={handleRequestLocation} className="text-[0.6rem] font-black text-primary uppercase tracking-widest hover:underline">Atualizar</button>
+                                    <button onClick={() => handleRequestLocation(true)} className="text-[0.6rem] font-black text-primary uppercase tracking-widest hover:underline">Atualizar</button>
                                 </div>
                                 {nearbyLeagues.map(l => (
                                     <LeagueItem
