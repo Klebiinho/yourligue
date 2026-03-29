@@ -27,6 +27,15 @@ const Matches = () => {
         e.preventDefault();
         setError('');
         if (homeTeamId === awayTeamId) { setError('Um time não pode jogar contra ele mesmo.'); return; }
+        
+        let finalScheduledAt = scheduledAt;
+        if (!finalScheduledAt) {
+            const now = new Date();
+            // datetime-local format: YYYY-MM-DDTHH:mm (adjusted for local timezone)
+            finalScheduledAt = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+            setScheduledAt(finalScheduledAt); // Visual feedback
+        }
+
         let videoId = youtubeLiveId;
         try {
             if (videoId.includes('youtube.com') || videoId.includes('youtu.be')) {
@@ -36,10 +45,10 @@ const Matches = () => {
         } catch { }
 
         if (editingMatchId) {
-            await updateMatch(editingMatchId, { homeTeamId, awayTeamId, scheduledAt, location, youtubeLiveId: videoId });
+            await updateMatch(editingMatchId, { homeTeamId, awayTeamId, scheduledAt: finalScheduledAt, location, youtubeLiveId: videoId });
             setEditingMatchId(null);
         } else {
-            const { error: err, matchId } = await createMatch({ homeTeamId, awayTeamId, scheduledAt, location, youtubeLiveId: videoId });
+            const { error: err, matchId } = await createMatch({ homeTeamId, awayTeamId, scheduledAt: finalScheduledAt, location, youtubeLiveId: videoId });
             if (err) { setError(err); return; }
             if (matchId) navigate(`${leagueBasePath}/match/${matchId}`);
         }
