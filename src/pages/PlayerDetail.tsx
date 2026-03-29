@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useLeague, type Team, type Match } from '../context/LeagueContext';
+import { useLeague } from '../context/LeagueContext';
 import { User, Target, Zap, Clock, ArrowLeft, Star, TrendingUp, Medal, History, Crown, ShieldAlert, CheckCircle, Activity, Edit3, Trash2, Camera, X } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
