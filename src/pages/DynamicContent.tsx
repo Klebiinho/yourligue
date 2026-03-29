@@ -35,9 +35,33 @@ const DynamicContent = () => {
             return;
         }
 
-        if (normalizedPath === '/duvidas') {
+        if (normalizedPath === '/duvidas' || normalizedPath === '/duvidas-de-a-a-z') {
             setContent({ title: 'Dúvidas de A a Z', section: 'Alfabeto', date: 'FAQ Oficial' });
             setListItems(sitemapData.Alfabeto);
+            return;
+        }
+
+        if (normalizedPath === '/servicos') {
+            setContent({ title: 'Nossos Serviços', section: 'Servicos', date: 'Portfólio' });
+            setListItems(sitemapData.Servicos);
+            return;
+        }
+
+        if (normalizedPath === '/glossario') {
+            setContent({ title: 'Glossário Técnico', section: 'Glossario', date: 'Base de Conhecimento' });
+            setListItems(sitemapData.Glossario);
+            return;
+        }
+
+        if (normalizedPath === '/categoria') {
+            setContent({ title: 'Categorias de Conteúdo', section: 'Categorias', date: 'Navegação' });
+            setListItems(sitemapData.Categorias);
+            return;
+        }
+
+        if (normalizedPath === '/autor') {
+            setContent({ title: 'Nossos Autores', section: 'Autores', date: 'Equipe' });
+            setListItems(sitemapData.Autores);
             return;
         }
 
@@ -60,15 +84,58 @@ const DynamicContent = () => {
         }
     }, [slug, type, letter]);
 
-    const generateSmartAnswer = (title: string) => {
+    const generateSmartAnswer = (title: string, path: string): string[] => {
         const t = title.toLowerCase();
-        if (t.includes('quem pode')) return "Qualquer pessoa, seja você um organizador experiente ou um apaixonado por esportes que quer profissionalizar sua pelada. Nossa plataforma atende desde torneios de bairro até federações oficiais.";
-        if (t.includes('como se chama')) return "O aplicativo para gerenciar campeonatos e acompanhar resultados em tempo real chama-se YourLeague. Ele está disponível via web e mobile para organizadores e jogadores.";
-        if (t.includes('importância')) return "A organização é o pilar que mantém sua liga viva. Sem um controle digital, você perde patrocinadores, visibilidade e, o mais importante, a confiança dos seus atletas.";
-        if (t.includes('diferença entre')) return "Torneios rápidos focam na emoção da eliminação direta (mata-mata), enquanto pontos corridos premiam a consistência e o planejamento a longo prazo.";
-        if (t.includes('transmissão')) return "Para transmitir jogos no YouTube, você precisa de um software de streaming (como o OBS), uma conexão estável e o YourLeague para exibir os placares e overlays profissionais.";
-        if (t.includes('erros comuns')) return "Os erros mais frequentes incluem súmulas rasuradas, falta de controle de artilharia e demora para atualizar a tabela. Todos esses problemas são resolvidos automaticamente pela nossa plataforma.";
-        return "Este tópico é essencial para a evolução do esporte amador. Através do YourLeague, garantimos que cada ação no campo ou na quadra seja registrada com precisão cirúrgica.";
+        
+        // --- INSTITUTIONAL PAGES OVERRIDES ---
+        if (path.includes('/politica-de-privacidade')) return [
+            "A privacidade dos dados da sua liga é a base de nossa arquitetura. Na YourLeague, todas as informações de atletas, pagamentos e históricos de campeonatos são processados sob protocolos avançados de criptografia.",
+            "Nossas diretrizes de conformidade asseguram que nenhuma informação de contato seja comercializada. Se você atua como organizador ou jogador, tem controle total sobre quais informações ficam públicas nos rankings e nas chaves.",
+            "Para auditorias de privacidade relativas ao cruzamento de dados de federações e times independentes, oferecemos visibilidade integral nas configurações do seu perfil de usuário."
+        ];
+        if (path.includes('/termos-de-uso')) return [
+            "Os Termos de Uso definem a relação entre os organizadores de campeonatos e a infraestrutura tecnológica do YourLeague. Ao registrar uma liga na plataforma, o administrador aceita operar o sistema com transparência esportiva.",
+            "É expressamente proibida a manipulação fraudulenta de estatísticas, artilharias e suspensões. O sistema mantém registros imutáveis e detalhados (logs) de quem aprova e remove transferências de atletas entre equipes.",
+            "O uso indiscriminado das chaves de API para transmissões e overlays exige integridade: não modifique emblemas e não faça uploads de documentações irregulares nas inscrições."
+        ];
+        if (path.includes('/regulamento-geral')) return [
+            "O Regulamento Geral de Competições atua como a espinha dorsal de qualquer liga esportiva estruturada na plataforma YourLeague.",
+            "Nesta seção, fornecemos o framework onde qualquer administrador deve estabelecer regras de ascensão, rebaixamento, critério de desempates e janela de transferências antes do campeonato iniciar.",
+            "Configurações registradas no painel da liga não podem ser alteradas sem notificação massiva aos representantes de equipe, assegurando assim que WO's e penalidades não abalem a integridade do campeonato."
+        ];
+
+        // --- DYNAMIC CONTENT GENERATOR (BLOG/FAQ/SERVICOS) ---
+        const paragraphs = [];
+
+        // Topic 1: Technology & Summaries
+        if (t.includes('súmula') || t.includes('cartão') || t.includes('cartões') || t.includes('falta') || t.includes('árbitro') || t.includes('tabela')) {
+            paragraphs.push(`Eliminar a dependência de papéis na quadra ou campo é o primeiro passo para profissionalizar qualquer organização. Com o **${title}**, os organizadores utilizam o aplicativo para registrar gols, cestas e faltas diretamente no sistema, reduzindo drasticamente falhas de anotação na beira do campo.`);
+            paragraphs.push("Esse processo eletrônico impede rasuras, elimina perda de registros durante condições climáticas adversas e joga toda a responsabilidade de conferência para a nuvem da YourLeague em tempo real.");
+        } 
+        // Topic 2: Broadcasting & Streaming
+        else if (t.includes('transmissão') || t.includes('youtube') || t.includes('overlay') || t.includes('live')) {
+            paragraphs.push(`A revolução do esporte de final de semana, o **${title}**, democratizou o acesso à audiência. A plataforma interliga diretamente os dados da sua partida ao vivo com ferramentas robustas como OBS Studio e vMix.`);
+            paragraphs.push("A experiência de quem assiste salta de uma simples live caseira para um espetáculo que inclui cronômetro sincronizado, escudos renderizados e painel de estatísticas, essencial para fisgar grandes patrocinadores no seu ecossistema.");
+        }
+        // Topic 3: Management & Athletes
+        else if (t.includes('gestão') || t.includes('organizar') || t.includes('atleta') || t.includes('profissional') || t.includes('equipe')) {
+            paragraphs.push(`No fundo, a verdadeira questão envolvendo **${title}** é a gestão humana e o controle financeiro. Campeonatos sem controle eficiente de transferências costumam desmoronar nas fases decisivas.`);
+            paragraphs.push("Com o painel unificado da YourLeague, a escalação é blindada eletronicamente. Jogadores suspensos não possuem permissão na súmula digital para jogar, poupando a equipe de arbitragem de debates infindáveis que quebram a credibilidade do torneio.");
+        }
+        // Topic 4: Role of the Captain
+        else if (t.includes('capitão') || t.includes('titular') || t.includes('amador')) {
+            paragraphs.push(`A figura do representante de equipe evoluiu muito, e compreender o tema **${title}** é essencial. O capitão não gesticula só em quadra: é o principal elo burocrático de toda a transação da equipe.`);
+            paragraphs.push("Ele é o responsável por certificar exames, confirmar presenças via link e validar a escalação enviada pelo organizador da liga, distribuindo a carga de responsabilidade uniformemente através do app.");
+        }
+        // Fallback robusto genérico adaptativo
+        else {
+            paragraphs.push(`Discutir intensamente sobre **${title}** é tratar exatamente o que difere torneios comuns de grandes eventos da várzea. A infraestrutura digital chegou ao esporte local não apenas como luxo, mas como necessidade.`);
+            paragraphs.push("Desde calendários imutáveis até o acompanhamento rodada a rodada do cestinha ou artilheiro, nossa plataforma cuida do operacional para que as equipes possam concentrar esforços puramente na rivalidade esportiva sadia.");
+        }
+
+        paragraphs.push("Se a sua liga quiser alcançar a estabilidade e reconhecimento definitivo, automatizar as etapas supracitadas utilizando o painel unificado e mobile-first da YourLeague é vital.");
+        
+        return paragraphs;
     };
 
     if (!content) {
@@ -185,12 +252,13 @@ const DynamicContent = () => {
                         {/* Generated Answer Section */}
                         <div className="space-y-6">
                             <h2 className="text-2xl border-l-4 border-primary pl-6">Guia Definitivo: {content.title}</h2>
-                            <p className="font-medium text-slate-200 text-xl leading-relaxed italic">
-                                {generateSmartAnswer(content.title)}
-                            </p>
-                            <p>
-                                Na YourLeague, entendemos que o sucesso de uma competição vai muito além do apito final. Envolve uma gestão minuciosa de dados, transparência com os atletas e uma presença digital impactante que atraia patrocinadores e engajamento.
-                            </p>
+                            <div className="font-medium text-slate-200 text-lg leading-relaxed space-y-4">
+                                {generateSmartAnswer(content.title, content.path).map((paragraph, index) => (
+                                    <p key={index} className={index === 0 ? "italic text-xl text-slate-300" : ""}>
+                                        {paragraph}
+                                    </p>
+                                ))}
+                            </div>
                         </div>
 
                         {/* Dynamic Image Placeholder */}

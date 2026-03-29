@@ -63,7 +63,7 @@ const MainContent = () => {
 
     const fixedGlobalPaths = [
         'leagues', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sitemap',
-        'blog', 'servicos', 'glossario', 'categoria', 'autor', 'duvidas', 'informacoes',
+        'blog', 'servicos', 'glossario', 'categoria', 'autor', 'duvidas', 'duvidas-de-a-a-z', 'informacoes',
         'sobre-nos', 'contato', 'inicio', 'politica-de-atualizacao-de-resultados',
         'direitos-de-transmissao-e-imagem', 'regulamento-geral-de-competicoes',
         'diretrizes-do-capitao-titular', 'player', 'match'
@@ -130,16 +130,27 @@ const MainContent = () => {
                         {/* Content Pages (Global) */}
                         <Route path="/blog" element={<DynamicContent />} />
                         <Route path="/blog/:contentSlug" element={<DynamicContent />} />
+                        
+                        <Route path="/servicos" element={<DynamicContent />} />
                         <Route path="/servicos/:contentSlug" element={<DynamicContent />} />
+                        
+                        <Route path="/glossario" element={<DynamicContent />} />
                         <Route path="/glossario/:contentSlug" element={<DynamicContent />} />
+                        
+                        <Route path="/categoria" element={<DynamicContent />} />
                         <Route path="/categoria/:contentSlug" element={<DynamicContent />} />
+                        
+                        <Route path="/autor" element={<DynamicContent />} />
                         <Route path="/autor/:contentSlug" element={<DynamicContent />} />
+                        
                         <Route path="/duvidas" element={<DynamicContent />} />
+                        <Route path="/duvidas-de-a-a-z" element={<DynamicContent />} />
                         <Route path="/duvidas/:letter" element={<DynamicContent />} />
                         
                         <Route path="/sobre-nos" element={<DynamicContent />} />
                         <Route path="/contato" element={<DynamicContent />} />
                         <Route path="/informacoes" element={<DynamicContent />} />
+                        <Route path="/inicio" element={<Navigate to="/" replace />} />
                         <Route path="/politica-de-atualizacao-de-resultados" element={<DynamicContent />} />
                         <Route path="/direitos-de-transmissao-e-imagem" element={<DynamicContent />} />
                         <Route path="/regulamento-geral-de-competicoes" element={<DynamicContent />} />
@@ -152,16 +163,27 @@ const MainContent = () => {
                         <Route path="/:slug/sitemap" element={<Sitemap />} />
                         <Route path="/:slug/blog" element={<DynamicContent />} />
                         <Route path="/:slug/blog/:contentSlug" element={<DynamicContent />} />
+                        
+                        <Route path="/:slug/servicos" element={<DynamicContent />} />
                         <Route path="/:slug/servicos/:contentSlug" element={<DynamicContent />} />
+                        
+                        <Route path="/:slug/glossario" element={<DynamicContent />} />
                         <Route path="/:slug/glossario/:contentSlug" element={<DynamicContent />} />
+                        
+                        <Route path="/:slug/categoria" element={<DynamicContent />} />
                         <Route path="/:slug/categoria/:contentSlug" element={<DynamicContent />} />
+                        
+                        <Route path="/:slug/autor" element={<DynamicContent />} />
                         <Route path="/:slug/autor/:contentSlug" element={<DynamicContent />} />
+                        
                         <Route path="/:slug/duvidas" element={<DynamicContent />} />
+                        <Route path="/:slug/duvidas-de-a-a-z" element={<DynamicContent />} />
                         <Route path="/:slug/duvidas/:letter" element={<DynamicContent />} />
                         
                         <Route path="/:slug/sobre-nos" element={<DynamicContent />} />
                         <Route path="/:slug/contato" element={<DynamicContent />} />
                         <Route path="/:slug/informacoes" element={<DynamicContent />} />
+                        <Route path="/:slug/inicio" element={<Navigate to="/" replace />} />
                         <Route path="/:slug/politica-de-atualizacao-de-resultados" element={<DynamicContent />} />
                         <Route path="/:slug/direitos-de-transmissao-e-imagem" element={<DynamicContent />} />
                         <Route path="/:slug/regulamento-geral-de-competicoes" element={<DynamicContent />} />
