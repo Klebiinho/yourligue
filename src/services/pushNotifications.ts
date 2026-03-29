@@ -80,7 +80,6 @@ async function registerWebPush(userId: string) {
     const hasValidConfig = firebaseConfig.apiKey !== 'SUA_API_KEY_AQUI';
 
     if (!hasValidKey || !hasValidConfig) {
-        console.info('Push Notifications: Firebase ou VAPID não configurados. Pulando registro web push.');
         return;
     }
 
@@ -106,7 +105,7 @@ async function registerWebPush(userId: string) {
                 console.log('Token Web Push gerado:', currentToken);
                 await savePushToken(userId, currentToken, 'web');
             } else {
-                console.warn('Nenhum token disponível. Peça permissões via interface do usuário do navegador.');
+                return;
             }
 
             // Ouve mensagens se o site já estiver aberto (Foreground)

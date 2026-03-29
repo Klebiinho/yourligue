@@ -279,20 +279,52 @@ const mapDBBracket = (b: any): BracketMatch => ({
 });
 
 const mapDBLeague = (l: any): League => ({
-    id: l.id, name: l.name || 'Sem nome', logo: l.logo || '', maxTeams: l.max_teams || 20,
-    pointsForWin: l.points_for_win || 3, pointsForDraw: l.points_for_draw || 1,
-    pointsForLoss: l.points_for_loss || 0, defaultHalfLength: l.default_half_length || 20,
-    overtimeHalfLength: l.overtime_half_length || 5,
-    playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
-    substitutionsLimit: l.substitutions_limit || 0, 
-    allowSubstitutionReturn: l.allow_substitution_return ?? true,
-    hasOvertime: l.has_overtime ?? true,
-    slug: l.slug || l.id, userId: l.user_id,
+    id: l.id,
+    name: l.name,
+    logo: l.logo,
+    maxTeams: l.max_teams,
+    pointsForWin: l.points_for_win,
+    pointsForDraw: l.points_for_draw,
+    pointsForLoss: l.points_for_loss,
+    defaultHalfLength: l.default_half_length,
+    playersPerTeam: l.players_per_team,
+    reserveLimitPerTeam: l.reserve_limit_per_team,
+    substitutionsLimit: l.substitutions_limit,
+    allowSubstitutionReturn: l.allow_substitution_return,
+    hasOvertime: l.has_overtime,
+    overtimeHalfLength: l.overtime_half_length,
     sportType: l.sport_type || 'soccer',
-    address: l.address, lat: l.lat, lng: l.lng,
+    slug: l.slug,
+    userId: l.user_id,
+    address: l.address,
+    lat: l.lat,
+    lng: l.lng,
     distancia_km: l.distancia_km,
     follower_count: l.follower_count
 });
+
+const mapLeagueToDB = (l: Partial<League>) => {
+    const db: any = {};
+    if (l.name !== undefined) db.name = l.name;
+    if (l.logo !== undefined) db.logo = l.logo;
+    if (l.maxTeams !== undefined) db.max_teams = l.maxTeams;
+    if (l.pointsForWin !== undefined) db.points_for_win = l.pointsForWin;
+    if (l.pointsForDraw !== undefined) db.points_for_draw = l.pointsForDraw;
+    if (l.pointsForLoss !== undefined) db.points_for_loss = l.pointsForLoss;
+    if (l.defaultHalfLength !== undefined) db.default_half_length = l.defaultHalfLength;
+    if (l.playersPerTeam !== undefined) db.players_per_team = l.playersPerTeam;
+    if (l.reserveLimitPerTeam !== undefined) db.reserve_limit_per_team = l.reserveLimitPerTeam;
+    if (l.substitutionsLimit !== undefined) db.substitutions_limit = l.substitutionsLimit;
+    if (l.allowSubstitutionReturn !== undefined) db.allow_substitution_return = l.allowSubstitutionReturn;
+    if (l.hasOvertime !== undefined) db.has_overtime = l.hasOvertime;
+    if (l.overtimeHalfLength !== undefined) db.overtime_half_length = l.overtimeHalfLength;
+    if (l.sportType !== undefined) db.sport_type = l.sportType;
+    if (l.slug !== undefined) db.slug = l.slug;
+    if (l.address !== undefined) db.address = l.address;
+    if (l.lat !== undefined) db.lat = l.lat;
+    if (l.lng !== undefined) db.lng = l.lng;
+    return db;
+};
 
 // ─── Provider Container ─────────────────────────────────────────────────────
 export const LeagueProvider = ({ children }: { children: ReactNode }) => {
@@ -425,7 +457,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     // ─── Actions ──────────────────────────────────────────
     const createLeague = async (data: any) => {
         if (!user) return { error: 'Auth required' };
-        const { data: row, error } = await supabase.from('leagues').insert({ ...data, user_id: user.id, slug: generateSlug(data.name) }).select().single();
+        const dbData = { ...mapLeagueToDB(data), user_id: user.id, slug: generateSlug(data.name) };
+        const { data: row, error } = await supabase.from('leagues').insert(dbData).select().single();
         if (error) return { error: error.message };
         const mapped = mapDBLeague(row);
         setLeagues(prev => [...prev, mapped]);
@@ -435,7 +468,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const updateLeague = async (data: any) => {
         if (!league) return;
-        const { error } = await supabase.from('leagues').update(data).eq('id', league.id);
+        const dbData = mapLeagueToDB(data);
+        const { error } = await supabase.from('leagues').update(dbData).eq('id', league.id);
         if (!error) setLeague({ ...league, ...data });
     };
 

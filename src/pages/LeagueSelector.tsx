@@ -65,6 +65,15 @@ const LeagueSelector = () => {
         }
     }, [searchQuery, activeTab]);
 
+    // Handle "intent" to create league after login
+    useEffect(() => {
+        if (user && sessionStorage.getItem('intent_create_league') === 'true') {
+            sessionStorage.removeItem('intent_create_league');
+            setActiveTab('owned');
+            setShowCreate(true);
+        }
+    }, [user]);
+
     const handleDelete = async (id: string) => {
         if (window.confirm('Tem certeza? Todos os dados desta liga serão excluídos permanentemente.')) {
             await deleteLeague(id);
@@ -438,7 +447,10 @@ const LeagueSelector = () => {
                         <h3 className="text-lg font-outfit font-black text-white uppercase tracking-widest">Quer criar sua própria liga?</h3>
                         <p className="text-slate-400 text-sm max-w-md mx-auto">Faça login para criar, gerenciar e acompanhar suas ligas favoritas.</p>
                         <button 
-                            onClick={() => setShowAuthModal(true)}
+                            onClick={() => {
+                                sessionStorage.setItem('intent_create_league', 'true');
+                                setShowAuthModal(true);
+                            }}
                             className="px-10 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all"
                         >
                             Fazer Login / Cadastrar
