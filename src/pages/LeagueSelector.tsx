@@ -97,11 +97,7 @@ const LeagueSelector = () => {
                             handleRequestLocation(true);
                         }
                     } else if (p.state === 'denied') {
-                        // Só seta o erro se não estiver buscando ativamente
-                        if (!locatingRef.current) {
-                            localStorage.setItem('geo_denied', '1');
-                            setLocationErrorCode(1);
-                        }
+                        localStorage.setItem('geo_denied', '1');
                     }
                 };
             }).catch(() => {});
