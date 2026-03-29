@@ -585,14 +585,15 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         return false;
     }, []);
 
-    // Warm boot from session cache if available
+    // Warm boot from session cache if available (cache-only, no API call)
     useEffect(() => {
         const savedId = localStorage.getItem('selectedLeagueId');
         if (savedId && !league) {
             console.log('LeagueContext: Warm booting league from cache...', savedId);
             tryRecoverFromCache(savedId);
         }
-    }, [tryRecoverFromCache, league]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => { teamsRef.current = teams; }, [teams]);
     useEffect(() => { matchesRef.current = matches; }, [matches]);
@@ -623,15 +624,13 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             console.log('LeagueContext: No user session found (waiting or logged out)');
             setLeagues([]);
             
-            // Try to recover last visited league even without login
-            const savedLeagueId = localStorage.getItem('selectedLeagueId');
-            if (savedLeagueId && !league) {
-                console.log('LeagueContext: Found saved league ID, fetching public data...', savedLeagueId);
-                loadPublicLeague(savedLeagueId);
-            }
+            // NOTE: Recovery of public leagues is handled by the dedicated recovery
+            // useEffect at the bottom. We do NOT call loadPublicLeague here to avoid
+            // a race condition with multiple concurrent calls resetting data.
 
             // Don't clear the league state immediately to avoid UI jumps during 
             // initial auth mounting, except if we are SURE we aren't in a public view
+            const savedLeagueId = localStorage.getItem('selectedLeagueId');
             if (!isPublicView && !savedLeagueId) {
                 setLeague(null);
             }
@@ -1043,7 +1042,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 loadingRef.current = null;
             }
         }
-    }, [rawTeams.length, rawMatches.length, tryRecoverFromCache]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tryRecoverFromCache]);
 
     const loadTeamPhotos = useCallback(async (teamId: string) => {
         if (!teamId) return;
@@ -1513,6 +1513,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
         const { data, error } = await supabase.from('players').insert({
             team_id: teamId, 
+            league_id: league.id,
             name: player.name, 
             number: player.number,
             position: player.position, 
