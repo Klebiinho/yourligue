@@ -236,24 +236,31 @@ const mapDBEvent = (e: any): MatchEvent => ({
     minute: e.minute
 });
 
-const mapDBMatch = (m: any): Match => ({
-    id: m.id,
-    homeTeamId: m.home_team_id,
-    awayTeamId: m.away_team_id,
-    homeScore: Number(m.home_score || 0),
-    awayScore: Number(m.away_score || 0),
-    status: m.status,
-    timer: Number(m.timer || 0),
-    youtubeLiveId: m.youtube_live_id,
-    halfLength: Number(m.half_length || 45),
-    extraTime: Number(m.extra_time || 0),
-    period: m.period || '1º Tempo',
-    scheduledAt: m.scheduled_at,
-    location: m.location,
-    updatedAt: m.updated_at || m.created_at || new Date().toISOString(),
-    slug: m.slug,
-    events: (m.match_events || []).map(mapDBEvent)
-});
+const mapDBMatch = (m: any): Match => {
+    let p = m.period || '1º Tempo';
+    if (p === 'first_half') p = '1º Tempo';
+    else if (p === 'second_half') p = '2º Tempo';
+    else if (p === 'half_time') p = 'Intervalo';
+
+    return {
+        id: m.id,
+        homeTeamId: m.home_team_id,
+        awayTeamId: m.away_team_id,
+        homeScore: Number(m.home_score || 0),
+        awayScore: Number(m.away_score || 0),
+        status: m.status,
+        timer: Number(m.timer || 0),
+        youtubeLiveId: m.youtube_live_id,
+        halfLength: Number(m.half_length || 45),
+        extraTime: Number(m.extra_time || 0),
+        period: p,
+        scheduledAt: m.scheduled_at,
+        location: m.location,
+        updatedAt: m.updated_at || m.created_at || new Date().toISOString(),
+        slug: m.slug,
+        events: (m.match_events || []).map(mapDBEvent)
+    };
+};
 
 const mapDBPlayer = (p: any): Player => ({
     id: p.id,
