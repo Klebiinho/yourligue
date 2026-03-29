@@ -109,6 +109,22 @@ const LeagueSelector = () => {
             return;
         }
 
+        // Verificar permissão ANTES de chamar getCurrentPosition
+        // Isso evita o erro no console quando o usuário já bloqueou o acesso
+        try {
+            if (navigator.permissions) {
+                const permStatus = await navigator.permissions.query({ name: 'geolocation' });
+                if (permStatus.state === 'denied') {
+                    setLocationErrorCode(1);
+                    setHasSearchedNearby(true);
+                    setIsLocating(false);
+                    return;
+                }
+            }
+        } catch (_) {
+            // Permissions API não disponível — segue normalmente
+        }
+
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
@@ -119,10 +135,9 @@ const LeagueSelector = () => {
                 setLocationErrorCode(null);
             },
             (error) => {
-                console.error("Erro detalhado de localização:", error.code, error.message);
+                console.error("Erro de localização:", error.code, error.message);
                 setLocationErrorCode(error.code);
                 setIsLocating(false);
-                // If permission is denied, consider the "attempt" as done so we can show the fallback UI
                 if (error.code === 1) {
                     setHasSearchedNearby(true);
                 }
