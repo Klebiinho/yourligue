@@ -1,9 +1,10 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
+import { YouTubeService } from '../services/youtube';
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────
 export type Player = {
     id: string;
     name: string;
@@ -39,7 +40,7 @@ export type MatchEvent = {
     type: 'goal' | 'assist' | 'yellow_card' | 'red_card' | 'substitution' | 'foul' | 'penalty_goal' | 'penalty_miss' | 'own_goal' | 'penalty_shootout_goal' | 'penalty_shootout_miss' | 'points_1' | 'points_2' | 'points_3' | 'rebound' | 'block' | 'steal';
     teamId: string;
     playerId: string;
-    playerOutId?: string; 
+    playerOutId?: string; // For substitutions
     minute: number;
 };
 
@@ -132,7 +133,7 @@ export type Ad = {
     created_at?: string;
 };
 
-// ─── Context Type ───────────────────────────────────────────────────────────
+// ─── Context Type ────────────────────────────────────────────
 interface LeagueContextType {
     league: League | null;
     leagues: League[];
@@ -142,16 +143,22 @@ interface LeagueContextType {
     brackets: BracketMatch[];
     loading: boolean;
     dataLoading: boolean;
-    createLeague: (data: any) => Promise<{ error: string | null; data?: League }>;
+
+    // League actions
+    createLeague: (data: Omit<League, 'id' | 'slug' | 'userId'>) => Promise<{ error: string | null; data?: League }>;
     updateLeague: (data: Partial<League>) => Promise<void>;
     deleteLeague: (id: string) => Promise<void>;
     selectLeague: (id: string) => void;
     generateGroups: (teamsPerGroup: number) => Promise<void>;
-    addTeam: (team: any) => Promise<{ error: string | null }>;
-    updateTeam: (teamId: string, data: any) => Promise<{ error: string | null }>;
+
+    // Team actions
+    addTeam: (team: { name: string; logo: string; primary_color?: string; secondary_color?: string }) => Promise<{ error: string | null }>;
+    updateTeam: (teamId: string, data: Partial<{ name: string; logo: string; primary_color: string; secondary_color: string }>) => Promise<{ error: string | null }>;
     deleteTeam: (teamId: string) => Promise<void>;
-    addPlayer: (teamId: string, player: any) => Promise<{ error: string | null }>;
-    updatePlayer: (teamId: string, playerId: string, data: any) => Promise<{ error: string | null }>;
+
+    // Player actions
+    addPlayer: (teamId: string, player: Omit<Player, 'id' | 'stats'>) => Promise<{ error: string | null }>;
+    updatePlayer: (teamId: string, playerId: string, data: Partial<Player>) => Promise<{ error: string | null }>;
     removePlayer: (teamId: string, playerId: string) => Promise<void>;
     toggleCaptain: (teamId: string, playerId: string) => Promise<void>;
     reorderPlayers: (teamId: string, playerIds: string[]) => Promise<void>;
@@ -159,17 +166,22 @@ interface LeagueContextType {
     getMatchSlug: (m: Match) => string;
     getTeamSlug: (t: Team) => string;
     getPlayerSlug: (p: Player) => string;
-    createMatch: (data: any) => Promise<{ error: string | null; matchId?: string }>;
+
+    // Match actions
+    createMatch: (data: { homeTeamId: string; awayTeamId: string; scheduledAt?: string; location?: string; youtubeLiveId?: string }) => Promise<{ error: string | null; matchId?: string }>;
     updateMatch: (matchId: string, data: Partial<Match>) => Promise<void>;
     deleteMatch: (matchId: string) => Promise<void>;
     startMatch: (matchId: string, currentTimer: number, shouldStartLive?: boolean) => Promise<void>;
     pauseMatch: (matchId: string, currentTimer: number) => Promise<void>;
     endMatch: (matchId: string, currentTimer: number) => Promise<void>;
     updateTimer: (matchId: string, time: number) => Promise<void>;
-    addEvent: (matchId: string, event: any) => Promise<void>;
+    addEvent: (matchId: string, event: Omit<MatchEvent, 'id'>) => Promise<void>;
     removeEvent: (matchId: string, eventId: string) => Promise<void>;
+
+    // Bracket actions
     generateBracket: () => Promise<void>;
     updateBracket: (bracketId: string, data: Partial<BracketMatch>) => Promise<void>;
+
     loadLeagues: () => Promise<void>;
     isPublicView: boolean;
     setIsPublicView: (val: boolean) => void;
@@ -181,6 +193,8 @@ interface LeagueContextType {
     unfollowLeague: (leagueId: string) => Promise<void>;
     searchLeagues: (query: string) => Promise<League[]>;
     fetchNearbyLeagues: (lat: number, lng: number, radiusKm: number) => Promise<League[]>;
+
+    // User Interactions
     userInteractions: TeamInteraction[];
     interactWithTeam: (teamId: string, type: TeamInteraction['interactionType']) => Promise<void>;
     removeInteraction: (interactionId: string) => Promise<void>;
@@ -193,11 +207,15 @@ interface LeagueContextType {
     clearNotification: (id: string) => void;
     leagueBasePath: string;
     globalAdTick: number;
+
+    // Ads
     ads: Ad[];
-    addAd: (ad: any) => Promise<{ error: string | null }>;
+    addAd: (ad: Omit<Ad, 'id' | 'league_id' | 'active'>) => Promise<{ error: string | null }>;
     updateAd: (id: string, ad: Partial<Ad>) => Promise<{ error: string | null }>;
     deleteAd: (id: string) => Promise<{ error: string | null }>;
     reorderAds: (reorderedAds: Ad[]) => Promise<void>;
+
+    // YouTube
     ytToken: string | null;
     ytLogin: () => Promise<void>;
     ytLogout: () => void;
@@ -208,35 +226,33 @@ interface LeagueContextType {
     setYtLivePrivacy: (broadcastId: string, privacy: 'public' | 'private' | 'unlisted') => Promise<void>;
 }
 
-const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
-
-// ─── Mappings (DB to Frontend) ──────────────────────────────────────────────
+// ─── Mappings (DB to Frontend) ──────────────────────────────
 const mapDBEvent = (e: any): MatchEvent => ({
     id: e.id,
     type: e.type,
-    teamId: e.team_id || e.teamId,
-    playerId: e.player_id || e.playerId,
-    playerOutId: e.player_out_id || e.playerOutId,
+    teamId: e.team_id,
+    playerId: e.player_id,
+    playerOutId: e.player_out_id,
     minute: e.minute
 });
 
 const mapDBMatch = (m: any): Match => ({
     id: m.id,
-    homeTeamId: m.home_team_id || m.homeTeamId,
-    awayTeamId: m.away_team_id || m.awayTeamId,
-    homeScore: m.home_score ?? m.homeScore ?? 0,
-    awayScore: m.away_score ?? m.awayScore ?? 0,
+    homeTeamId: m.home_team_id,
+    awayTeamId: m.away_team_id,
+    homeScore: m.home_score || 0,
+    awayScore: m.away_score || 0,
     status: m.status,
-    timer: m.timer ?? 0,
-    youtubeLiveId: m.youtube_live_id || m.youtubeLiveId,
-    halfLength: m.half_length || m.halfLength,
-    extraTime: m.extra_time || m.extraTime,
+    timer: m.timer || 0,
+    youtubeLiveId: m.youtube_live_id,
+    halfLength: m.half_length,
+    extraTime: m.extra_time,
     period: m.period,
-    scheduledAt: m.scheduled_at || m.scheduledAt,
+    scheduledAt: m.scheduled_at,
     location: m.location,
-    updatedAt: m.updated_at || new Date().toISOString(),
+    updatedAt: m.updated_at || m.created_at || new Date().toISOString(),
     slug: m.slug,
-    events: (m.match_events || []).map((e: any) => mapDBEvent(e))
+    events: (m.match_events || []).map(mapDBEvent)
 });
 
 const mapDBPlayer = (p: any): Player => ({
@@ -279,212 +295,1133 @@ const mapDBBracket = (b: any): BracketMatch => ({
 });
 
 const mapDBLeague = (l: any): League => ({
-    id: l.id,
-    name: l.name,
-    logo: l.logo,
-    maxTeams: l.max_teams,
-    pointsForWin: l.points_for_win,
-    pointsForDraw: l.points_for_draw,
-    pointsForLoss: l.points_for_loss,
-    defaultHalfLength: l.default_half_length,
-    playersPerTeam: l.players_per_team,
-    reserveLimitPerTeam: l.reserve_limit_per_team,
-    substitutionsLimit: l.substitutions_limit,
-    allowSubstitutionReturn: l.allow_substitution_return,
-    hasOvertime: l.has_overtime,
-    overtimeHalfLength: l.overtime_half_length,
-    sportType: l.sport_type || 'soccer',
-    slug: l.slug,
+    id: l.id, name: l.name || 'Sem nome', logo: l.logo || '', maxTeams: l.max_teams || 20,
+    pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
+    pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
+    overtimeHalfLength: l.overtime_half_length || 15,
+    playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
+    substitutionsLimit: l.substitutions_limit || 5,
+    allowSubstitutionReturn: l.allow_substitution_return ?? true,
+    hasOvertime: l.has_overtime ?? true,
+    slug: l.slug || '',
     userId: l.user_id,
-    address: l.address,
-    lat: l.lat,
-    lng: l.lng,
-    distancia_km: l.distancia_km,
-    follower_count: l.follower_count
+    sportType: l.sport_type || 'soccer',
+    lat: l.lat, lng: l.lng, address: l.address,
+    distancia_km: l.distancia_km, follower_count: l.follower_count
 });
 
-const mapLeagueToDB = (l: Partial<League>) => {
-    const db: any = {};
-    if (l.name !== undefined) db.name = l.name;
-    if (l.logo !== undefined) db.logo = l.logo;
-    if (l.maxTeams !== undefined) db.max_teams = l.maxTeams;
-    if (l.pointsForWin !== undefined) db.points_for_win = l.pointsForWin;
-    if (l.pointsForDraw !== undefined) db.points_for_draw = l.pointsForDraw;
-    if (l.pointsForLoss !== undefined) db.points_for_loss = l.pointsForLoss;
-    if (l.defaultHalfLength !== undefined) db.default_half_length = l.defaultHalfLength;
-    if (l.playersPerTeam !== undefined) db.players_per_team = l.playersPerTeam;
-    if (l.reserveLimitPerTeam !== undefined) db.reserve_limit_per_team = l.reserveLimitPerTeam;
-    if (l.substitutionsLimit !== undefined) db.substitutions_limit = l.substitutionsLimit;
-    if (l.allowSubstitutionReturn !== undefined) db.allow_substitution_return = l.allowSubstitutionReturn;
-    if (l.hasOvertime !== undefined) db.has_overtime = l.hasOvertime;
-    if (l.overtimeHalfLength !== undefined) db.overtime_half_length = l.overtimeHalfLength;
-    if (l.sportType !== undefined) db.sport_type = l.sportType;
-    if (l.slug !== undefined) db.slug = l.slug;
-    if (l.address !== undefined) db.address = l.address;
-    if (l.lat !== undefined) db.lat = l.lat;
-    if (l.lng !== undefined) db.lng = l.lng;
-    return db;
-};
+const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
 
-// ─── Provider Container ─────────────────────────────────────────────────────
+// ─── Provider ────────────────────────────────────────────────
 export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useAuth();
+
     const [leagues, setLeagues] = useState<League[]>([]);
     const [followedLeagues, setFollowedLeagues] = useState<League[]>([]);
     const [league, setLeague] = useState<League | null>(null);
     const [rawTeams, setRawTeams] = useState<Team[]>([]);
     const [rawMatches, setRawMatches] = useState<Match[]>([]);
     const [brackets, setBrackets] = useState<BracketMatch[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [dataLoading, setDataLoading] = useState(false);
-    const [isPublicView, setIsPublicView] = useState(false);
+    
+    // ─── Memoized Enriched Data (No Refetch) ─────────────────────
+    const teams = useMemo(() => {
+        if (!rawTeams || !Array.isArray(rawTeams) || rawTeams.length === 0) return [];
 
-    // States with minimal usage to satisfy interface
-    const [userInteractions] = useState<TeamInteraction[]>([]);
-    const [supportCounts] = useState<Record<string, number>>({});
+        try {
+            // ── PERFORMANCE: Single O(N) pass over all events to build lookup maps ──
+        // Instead of multiple .filter() calls per player per stat type,
+        // we scan events once and group by playerId.
+        type PlayerAcc = {
+            goals: number; assists: number; ownGoals: number; yellowCards: number;
+            redCards: number; points1: number; points2: number; points3: number;
+            rebounds: number; blocks: number; steals: number; fouls: number;
+            mvp: number; matchesPlayed: number; cleanSheets: number; goalsConceded: number;
+        };
+        const playerStatsMap = new Map<string, PlayerAcc>();
+
+        rawMatches.forEach(m => {
+            const events = m.events || [];
+            
+            // Handle MVP
+            if (m.status === 'finished' && m.mvpPlayerId) {
+                if (!playerStatsMap.has(m.mvpPlayerId)) {
+                    playerStatsMap.set(m.mvpPlayerId, { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0, mvp: 0, matchesPlayed: 0, cleanSheets: 0, goalsConceded: 0 });
+                }
+                playerStatsMap.get(m.mvpPlayerId)!.mvp++;
+            }
+
+            events.forEach(e => {
+                if (!e || !e.playerId) return;
+                if (!playerStatsMap.has(e.playerId)) {
+                    playerStatsMap.set(e.playerId, { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0, mvp: 0, matchesPlayed: 0, cleanSheets: 0, goalsConceded: 0 });
+                }
+                const s = playerStatsMap.get(e.playerId)!;
+                switch (e.type) {
+                    case 'goal': case 'penalty_goal': s.goals++; break;
+                    case 'assist': s.assists++; break;
+                    case 'own_goal': s.ownGoals++; break;
+                    case 'yellow_card': s.yellowCards++; s.fouls++; break;
+                    case 'red_card': s.redCards++; s.fouls++; break;
+                    case 'points_1': s.points1++; break;
+                    case 'points_2': s.points2++; break;
+                    case 'points_3': s.points3++; break;
+                    case 'rebound': s.rebounds++; break;
+                    case 'block': s.blocks++; break;
+                    case 'steal': s.steals++; break;
+                    case 'foul': s.fouls++; break;
+                }
+            });
+        });
+
+        const pwWin = league?.pointsForWin ?? 3;
+        const pwDraw = league?.pointsForDraw ?? 1;
+        const pwLoss = league?.pointsForLoss ?? 0;
+        
+        return rawTeams.map(t => {
+            if (!t) return null as any;
+            const teamMatches = rawMatches.filter(
+                m => (m.status === 'finished' || m.status === 'live') && (m.homeTeamId === t.id || m.awayTeamId === t.id)
+            );
+            
+            let wins = 0, draws = 0, losses = 0, goalsFor = 0, goalsAgainst = 0;
+            const form: ('W' | 'D' | 'L')[] = [];
+
+            // Sort matches for accurate form calculation
+            const sortedTeamMatches = [...teamMatches].sort((a, b) => 
+                new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
+            );
+            
+
+            teamMatches.forEach(m => {
+                if (!m) return;
+                const isHome = m.homeTeamId === t.id;
+                const gf = (isHome ? m.homeScore : m.awayScore) || 0;
+                const ga = (isHome ? m.awayScore : m.homeScore) || 0;
+                goalsFor += gf; goalsAgainst += ga;
+                
+                if (m.status === 'finished') {
+                    if (gf > ga) wins++;
+                    else if (gf < ga) losses++;
+                    else draws++;
+                }
+            });
+
+            // Calculate form from last 5 games
+            sortedTeamMatches.slice(0, 5).forEach(m => {
+                if (m.status !== 'finished') return;
+                const isHome = m.homeTeamId === t.id;
+                const gf = (isHome ? m.homeScore : m.awayScore) || 0;
+                const ga = (isHome ? m.awayScore : m.homeScore) || 0;
+                if (gf > ga) form.push('W');
+                else if (gf === ga) form.push('D');
+                else form.push('L');
+            });
+
+            const points = wins * pwWin + draws * pwDraw + losses * pwLoss;
+
+            return {
+                ...t,
+                players: (t.players || []).map(p => {
+                    const s = playerStatsMap.get(p.id) || { goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0, mvp: 0, matchesPlayed: 0, cleanSheets: 0, goalsConceded: 0 };
+                    return {
+                        ...p,
+                        stats: {
+                            goals: s.goals,
+                            assists: s.assists,
+                            ownGoals: s.ownGoals,
+                            yellowCards: s.yellowCards,
+                            redCards: s.redCards,
+                            points: (s.points1 || 0) * 1 + (s.points2 || 0) * 2 + (s.points3 || 0) * 3,
+                            points1: s.points1 || 0, points2: s.points2 || 0, points3: s.points3 || 0,
+                            rebounds: s.rebounds || 0, blocks: s.blocks || 0, steals: s.steals || 0, fouls: s.fouls || 0,
+                            mvp: s.mvp || 0,
+                            matchesPlayed: teamMatches.filter(m => m.status === 'finished').length,
+                            cleanSheets: teamMatches.filter(m => {
+                                if (m.status !== 'finished') return false;
+                                const isHome = m.homeTeamId === t.id;
+                                const opponentScore = isHome ? m.awayScore : m.homeScore;
+                                return opponentScore === 0;
+                            }).length,
+                            goalsConceded: teamMatches.reduce((acc, m) => {
+                                if (m.status !== 'finished') return acc;
+                                const isHome = m.homeTeamId === t.id;
+                                const score = isHome ? (m.awayScore ?? 0) : (m.homeScore ?? 0);
+                                return acc + score;
+                            }, 0)
+                        }
+                    };
+                }),
+                stats: { matches: teamMatches.filter(m => m.status === 'finished').length, wins, draws, losses, goalsFor, goalsAgainst, points, form: form.reverse() }
+            };
+        });
+        } catch (err) {
+            console.error('LeagueContext: Error memoizing teams:', err);
+            return [];
+        }
+    }, [rawTeams, rawMatches, league?.pointsForWin, league?.pointsForDraw, league?.pointsForLoss]);
+
+    
+    // ── YouTube Integration ─────────────────────────────────────
+    const ytService = YouTubeService.getInstance();
+    const [ytToken, setYtToken] = useState<string | null>(localStorage.getItem('yt_access_token'));
+    const [currentYtLiveStream, setCurrentYtLiveStream] = useState<{ streamKey: string, rtmpUrl: string } | null>(null);
+
+    useEffect(() => {
+        const clientId = import.meta.env.VITE_YOUTUBE_CLIENT_ID;
+        if (clientId) {
+            ytService.init(clientId).then(() => {
+                ytService.subscribeAuth(token => setYtToken(token));
+            }).catch(err => console.error('YouTube Init Error:', err));
+        }
+    }, []);
+
+    const ytLogin = async () => {
+        try {
+            await ytService.logIn();
+        } catch (err) {
+            console.error('YouTube Login Error:', err);
+        }
+    };
+
+    const ytLogout = () => ytService.logOut();
+    const isYtAuthenticated = !!ytToken;
+    const recoverStreamDetails = async (broadcastId: string) => {
+        if (!isYtAuthenticated) return;
+        try {
+            const details = await ytService.getBroadcastDetails(broadcastId);
+            if (details) {
+                setCurrentYtLiveStream(details);
+            }
+        } catch (err) {
+            console.error('Failed to recover stream details:', err);
+        }
+    };
+
+    const matches = useMemo(() => rawMatches, [rawMatches]);
+    const [loading, setLoading] = useState(true);
+    const [dataLoading, setDataLoading] = useState(false);
+    const [isPublicView, setIsPublicView] = useState(() => {
+        const saved = localStorage.getItem('isPublicView');
+        return saved !== null ? saved === 'true' : false;
+    });
+    const [userInteractions, setUserInteractions] = useState<TeamInteraction[]>([]);
     const [pendingInteraction, setPendingInteraction] = useState<{ teamId: string, type: TeamInteraction['interactionType'] } | null>(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
-    const [notifications] = useState<LeagueNotification[]>([]);
-    const [ads] = useState<Ad[]>([]);
-    const [globalAdTick] = useState(0);
+    const [supportCounts, setSupportCounts] = useState<Record<string, number>>({});
+    const [notifications, setNotifications] = useState<LeagueNotification[]>([]);
+    const [ads, setAds] = useState<Ad[]>([]);
+    const [globalAdTick, setGlobalAdTick] = useState(0);
 
-    // ─── Computeds ──────────────────────────────────────────
-    const teams = useMemo(() => {
-        return rawTeams.map(team => {
-            const teamMatches = rawMatches.filter(m => 
-                m.status === 'finished' && (m.homeTeamId === team.id || m.awayTeamId === team.id)
-            );
-            const stats = teamMatches.reduce((acc: any, m: any) => {
-                const isHome = m.homeTeamId === team.id;
-                const goalsFor = isHome ? m.homeScore : m.awayScore;
-                const goalsAgainst = isHome ? m.awayScore : m.homeScore;
-                acc.matches++;
-                acc.goalsFor += goalsFor;
-                acc.goalsAgainst += goalsAgainst;
-                if (goalsFor > goalsAgainst) { acc.wins++; acc.points += (league?.pointsForWin || 3); acc.form.push('W'); }
-                else if (goalsFor === goalsAgainst) { acc.draws++; acc.points += (league?.pointsForDraw || 1); acc.form.push('D'); }
-                else { acc.losses++; acc.points += (league?.pointsForLoss || 0); acc.form.push('L'); }
-                return acc;
-            }, { matches: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0, form: [] as string[] });
-            return { ...team, stats: { ...stats, form: stats.form.slice(-5) } };
-        }).sort((a: any, b: any) => {
-            if (b.stats.points !== a.stats.points) return b.stats.points - a.stats.points;
-            if ((b.stats.goalsFor - b.stats.goalsAgainst) !== (a.stats.goalsFor - a.stats.goalsAgainst)) 
-                return (b.stats.goalsFor - b.stats.goalsAgainst) - (a.stats.goalsFor - a.stats.goalsAgainst);
-            return b.stats.goalsFor - a.stats.goalsFor;
+    // Global Ad cycle tick (Syncs ads across all tabs)
+    useEffect(() => {
+        const adTimer = setInterval(() => {
+            setGlobalAdTick(prev => prev + 1);
+        }, 5000); // 5 seconds average duration for global sync
+        return () => clearInterval(adTimer);
+    }, []);
+
+    // Refs for realtime handlers to avoid infinite loops
+    const teamsRef = useRef<Team[]>([]);
+    const matchesRef = useRef<Match[]>([]);
+    const interactionsRef = useRef<TeamInteraction[]>([]);
+
+    const loadingRef = useRef<string | null>(null);
+
+    // ─── SESSION CACHE (Solving "Site sem memória") ──────────────
+    useEffect(() => {
+        if (league && rawTeams.length > 0) { // Only cache if there's actual data to avoid poisoning
+            try {
+                const cacheKey = `league_cache_${league.id}`;
+                
+                // OPTIMIZATION: Stripping photos from cache to save 90% space
+                const teamsForCache = rawTeams.map(t => ({
+                    ...t,
+                    players: t.players.map(p => {
+                        const { photo, ...pNoPhoto } = p;
+                        return pNoPhoto;
+                    })
+                }));
+
+                const cacheData = JSON.stringify({
+                    league,
+                    teams: teamsForCache,
+                    matches: rawMatches.slice(0, 30), // Limit matches in cache to save space
+                    timestamp: Date.now()
+                });
+                
+                sessionStorage.setItem(cacheKey, cacheData);
+            } catch (e: any) {
+                if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+                    console.warn('LeagueContext: Storage quota exceeded. Clearing all caches.');
+                    sessionStorage.clear(); // Nuclear option for session storage
+                }
+            }
+            
+            try {
+                localStorage.setItem('selectedLeagueId', league.id);
+            } catch (e) {
+                console.warn('LeagueContext: LocalStorage error', e);
+            }
+        }
+    }, [league, rawTeams, rawMatches, ads, brackets]);
+
+    const tryRecoverFromCache = useCallback((leagueId: string) => {
+        const cached = sessionStorage.getItem(`league_cache_${leagueId}`);
+        if (cached) {
+            try {
+                const data = JSON.parse(cached);
+                // Only use cache if it's less than 30 minutes old for fresh start
+                if (Date.now() - data.timestamp < 30 * 60 * 1000) {
+                    setLeague(data.league);
+                    setRawTeams(data.teams);
+                    setRawMatches(data.matches);
+                    setAds(data.ads || []);
+                    setBrackets(data.brackets || []);
+                    teamsRef.current = data.teams;
+                    return true;
+                }
+            } catch (e) { console.error('Cache recovery failed', e); }
+        }
+        return false;
+    }, []);
+
+    // Warm boot from session cache if available
+    useEffect(() => {
+        const savedId = localStorage.getItem('selectedLeagueId');
+        if (savedId && !league) {
+            console.log('LeagueContext: Warm booting league from cache...', savedId);
+            tryRecoverFromCache(savedId);
+        }
+    }, [tryRecoverFromCache, league]);
+
+    useEffect(() => { teamsRef.current = teams; }, [teams]);
+    useEffect(() => { matchesRef.current = matches; }, [matches]);
+    useEffect(() => { interactionsRef.current = userInteractions; }, [userInteractions]);
+
+    // Track if we are doing a silent background refresh
+
+    const isAdmin = !!user && !!league && league.userId === user.id;
+
+    const leagueBasePath = league ? `/${league.slug || league.id}` : '';
+
+    // ── Load all leagues for user ──────────────────────────────
+    useEffect(() => {
+        console.log('LeagueContext: Global useEffect triggered', { userId: user?.id, isPublicView, loading });
+        
+        // Safety timeout for global loading
+        const globalTimeout = setTimeout(() => {
+            if (loading || dataLoading) {
+                console.warn('LeagueContext: Global loading safety timeout reached. Forcing false states.');
+                setLoading(false);
+                setDataLoading(false);
+                loadingRef.current = null;
+            }
+        }, 12000); // Increased safety timeout for slower connections/heavy data
+
+
+        if (!user) {
+            console.log('LeagueContext: No user session found (waiting or logged out)');
+            setLeagues([]);
+            
+            // Try to recover last visited league even without login
+            const savedLeagueId = localStorage.getItem('selectedLeagueId');
+            if (savedLeagueId && !league) {
+                console.log('LeagueContext: Found saved league ID, fetching public data...', savedLeagueId);
+                loadPublicLeague(savedLeagueId);
+            }
+
+            // Don't clear the league state immediately to avoid UI jumps during 
+            // initial auth mounting, except if we are SURE we aren't in a public view
+            if (!isPublicView && !savedLeagueId) {
+                setLeague(null);
+            }
+            // If we don't have a user, we can't be loading non-public leagues
+            if (!isPublicView) {
+                setLoading(false);
+            }
+            clearTimeout(globalTimeout);
+            return;
+        }
+        
+        loadLeagues().finally(() => {
+            console.log('LeagueContext: loadLeagues finished');
+            clearTimeout(globalTimeout);
         });
-    }, [rawTeams, rawMatches, league]);
+        
+        return () => clearTimeout(globalTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id, isPublicView]);
 
-    const matches = useMemo(() => {
-        return rawMatches.sort((a: any, b: any) => {
-            if (a.status === 'live' && b.status !== 'live') return -1;
-            if (a.status !== 'live' && b.status === 'live') return 1;
-            return new Date(b.scheduledAt || 0).getTime() - new Date(a.scheduledAt || 0).getTime();
-        });
-    }, [rawMatches]);
+    useEffect(() => {
+        localStorage.setItem('isPublicView', isPublicView.toString());
+    }, [isPublicView]);
 
-    const isAdmin = useMemo(() => !!user && !!league && league.userId === user.id, [user, league]);
-    const leagueBasePath = useMemo(() => league ? `/${league.slug || league.id}` : '', [league]);
+    // GUARANTEE: Owners start in Gestor Mode on first load of a league
+    useEffect(() => {
+        if (user && league && league.userId === user.id) {
+            const hasSetPreference = localStorage.getItem('isPublicView') !== null;
+            if (!hasSetPreference) {
+                console.log('LeagueContext: Ownership discovered, setting default Gestor Mode');
+                setIsPublicView(false);
+            }
+        }
+    }, [user?.id, league?.id]); // Only run on login or league change
 
-    // ─── Helpers ──────────────────────────────────────────
-    const generateSlug = (name: string) => name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-
-    const loadLeagues = useCallback(async () => {
-        if (!user) { setLeagues([]); return; }
-        setLoading(true);
+    const loadLeagues = async () => {
         try {
-            const { data: owned } = await supabase.from('leagues').select('*').eq('user_id', user.id);
-            setLeagues((owned || []).map(mapDBLeague));
-            const { data: followed } = await supabase.from('followed_leagues').select('leagues(*)').eq('user_id', user.id);
-            setFollowedLeagues((followed || []).map((f: any) => mapDBLeague(f.leagues)));
-        } catch (e) {
-            console.error('Error loading leagues:', e);
+            if (!user) {
+                setLoading(false);
+                return;
+            }
+            if (leagues.length === 0) setLoading(true);
+
+            // Load owned & followed leagues in parallel
+            const [ownedRes, followsRes] = await Promise.all([
+                supabase.from('leagues').select('*, follower_count:followed_leagues(count)').eq('user_id', user.id).order('created_at', { ascending: true }),
+                supabase.from('followed_leagues').select('leagues(*, follower_count:followed_leagues(count))').eq('user_id', user.id)
+            ]);
+
+            if (ownedRes.data) {
+                const mapped: League[] = ownedRes.data.map(mapDBLeague);
+                setLeagues(mapped);
+                // Auto-selection of first league removed to prioritize the League Selector on boot
+            }
+
+            if (followsRes.data) {
+                const mapped: League[] = followsRes.data
+                    .filter(f => f.leagues)
+                    .map(f => mapDBLeague(f.leagues));
+                setFollowedLeagues(mapped);
+            }
+        } catch (err) {
+            console.error('LeagueContext: Erro em loadLeagues:', err);
         } finally {
             setLoading(false);
         }
-    }, [user]);
+    };
 
-    useEffect(() => { loadLeagues(); }, [loadLeagues]);
+    const followLeague = async (leagueId: string) => {
+        if (!user) return;
+        await supabase.from('followed_leagues').upsert({ user_id: user.id, league_id: leagueId });
+        await loadLeagues();
+    };
+
+    const unfollowLeague = async (leagueId: string) => {
+        if (!user) return;
+        await supabase.from('followed_leagues').delete().eq('user_id', user.id).eq('league_id', leagueId);
+        await loadLeagues();
+    };
+
+    const addAd = async (adData: any) => {
+        if (!league) return { error: 'No league selected' };
+        const maxOrder = ads.reduce((max, a) => Math.max(max, a.display_order || 0), 0);
+        const { data, error } = await supabase.from('ads').insert({
+            ...adData,
+            league_id: league.id,
+            display_order: maxOrder + 1,
+            active: true
+        }).select().single();
+        if (!error && data) {
+            setAds(prev => [...prev, { ...data, display_order: data.display_order || 0 }].sort((a, b) => (a.display_order || 0) - (b.display_order || 0)));
+            return { error: null };
+        }
+        return { error: error?.message || 'Error adding ad' };
+    };
+
+    const updateAd = async (id: string, updates: any) => {
+        const { error } = await supabase.from('ads').update(updates).eq('id', id);
+        if (!error) {
+            setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a).sort((a, b) => (a.display_order || 0) - (b.display_order || 0)));
+            return { error: null };
+        }
+        return { error: error.message };
+    };
+
+    const deleteAd = async (id: string) => {
+        if (!league) return { error: 'No league selected' };
+        const { error } = await supabase.from('ads').delete().eq('id', id);
+        if (!error) {
+            setAds(prev => prev.filter(a => a.id !== id));
+            return { error: null };
+        }
+        return { error: error.message };
+    };
+
+    const reorderAds = async (reorderedAds: Ad[]) => {
+        setAds(reorderedAds); // Optimistic update
+        const updates = reorderedAds.map((ad, index) => 
+            supabase.from('ads').update({ display_order: index }).eq('id', ad.id)
+        );
+        await Promise.all(updates);
+    };
+
+    const searchLeagues = useCallback(async (query: string): Promise<League[]> => {
+        try {
+            // BACKEND FILTERING: Full object select with limit to ensure performance
+            let baseQuery = supabase
+                .from('leagues')
+                .select(`
+                    *,
+                    follower_count:followed_leagues(count)
+                `)
+                .limit(30);
+
+            if (query) {
+                baseQuery = baseQuery.ilike('name', `%${query}%`);
+            } else {
+                baseQuery = baseQuery.order('name', { ascending: true });
+            }
+
+            const { data, error } = await baseQuery;
+
+            if (error) {
+                console.error('Error searching leagues:', error);
+                return [];
+            }
+
+            // Ordenação local por seguidores (agora em um conjunto menor de dados - 30 itens)
+            const sortedResults = (data || []).map(mapDBLeague).sort((a, b) => {
+                const countA = a.follower_count?.[0]?.count || 0;
+                const countB = b.follower_count?.[0]?.count || 0;
+                return countB - countA;
+            });
+
+            return sortedResults;
+        } catch (err) {
+            console.error('LeagueContext: searchLeagues crash:', err);
+            return [];
+        }
+    }, []);
+
+    const fetchNearbyLeagues = async (lat: number, lng: number, radiusKm: number): Promise<League[]> => {
+        const { data, error } = await supabase.rpc('get_nearby_leagues', {
+            user_lat: lat,
+            user_lng: lng,
+            dist_km: radiusKm
+        });
+
+        if (error) {
+            console.error('Error fetching nearby leagues:', error);
+            return [];
+        }
+
+        return (data || []).map(mapDBLeague);
+    };
 
     const loadPublicLeague = useCallback(async (slugOrId: string) => {
         if (!slugOrId) return false;
-        setLoading(true);
+        
         try {
-            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
-            const { data: row, error } = await (isUUID 
-                ? supabase.from('leagues').select('*').or(`slug.eq."${slugOrId}",id.eq."${slugOrId}"`)
-                : supabase.from('leagues').select('*').eq('slug', slugOrId)
-            ).maybeSingle();
-            if (error || !row) return false;
-            const mapped = mapDBLeague(row);
-            setLeague(mapped);
-            return true;
-        } catch (e) {
+            const isSameLeague = league && (league.slug === slugOrId || league.id === slugOrId);
+
+            if (!isSameLeague) {
+                console.log('LeagueContext: Resetting data for new public league');
+                setLoading(true);
+                setDataLoading(true); // Ensure full reload state for new league
+                setRawTeams([]);
+                setRawMatches([]);
+                setBrackets([]);
+                setUserInteractions([]);
+                setSupportCounts({});
+            } else {
+                console.log('LeagueContext: Same league requested, keeping current data for seamless transition');
+                // Silent update in background if it's the same league
+            }
+            
+            // Fetch by slug
+            let { data: slugData } = await supabase.from('leagues').select(`
+                *,
+                follower_count:followed_leagues(count)
+            `).eq('slug', slugOrId).limit(1);
+
+            let row = slugData?.[0];
+
+            // If not found by slug, maybe it was an ID (UUID)
+            if (!row && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId)) {
+                const { data: idData } = await supabase.from('leagues').select(`
+                    *,
+                    follower_count:followed_leagues(count)
+                `).eq('id', slugOrId).limit(1);
+                row = idData?.[0];
+            }
+
+            if (row) {
+                const mapped = mapDBLeague(row);
+                
+                // Only update state if something changed or it's a new league
+                if (!isSameLeague || JSON.stringify(mapped) !== JSON.stringify(league)) {
+                    setLeague(mapped);
+                    localStorage.setItem('selectedLeagueId', mapped.id);
+                    
+                    // If the user is the owner, default to Admin Mode (not public view)
+                    if (user && mapped.userId === user.id) {
+                        const savedPref = localStorage.getItem('isPublicView');
+                        if (savedPref === null) setIsPublicView(false);
+                        else setIsPublicView(savedPref === 'true');
+                    } else {
+                        setIsPublicView(true);
+                    }
+                }
+                
+                // If it's the SAME league, loadLeagueData will be called by useEffect [league?.id]
+                // But we already have the data, so it will be a background refresh.
+                return true;
+            } else {
+                console.warn('LeagueContext: Public league not found');
+                setLeague(null);
+                return false;
+            }
+        } catch (err) {
+            console.error('LeagueContext: Error in loadPublicLeague:', err);
             return false;
         } finally {
             setLoading(false);
+            setDataLoading(false); // Safety: ensure data loading is also reset
+            console.log('LeagueContext: loadPublicLeague completed');
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const loadLeagueData = useCallback(async (leagueId: string) => {
-        setDataLoading(true);
+    const loadUserInteractions = useCallback(async (leagueId: string) => {
+        if (!user) { setUserInteractions([]); return; }
         try {
-            const [tRes, mRes, pRes, bRes] = await Promise.all([
-                supabase.from('teams').select('*').eq('league_id', leagueId),
-                supabase.from('matches').select('*, match_events(*)').eq('league_id', leagueId),
-                supabase.from('players').select('*, teams!inner(league_id)').eq('teams.league_id', leagueId),
-                supabase.from('brackets').select('*').eq('league_id', leagueId)
-            ]);
-            const players = pRes.data || [];
-            setRawTeams((tRes.data || []).map(t => ({ ...mapDBTeam(t), players: players.filter((p: any) => p.team_id === t.id).map(mapDBPlayer) })));
-            setRawMatches((mRes.data || []).map(mapDBMatch));
-            setBrackets((bRes.data || []).map(mapDBBracket));
+            const { data } = await supabase.from('user_team_interactions').select('*').eq('user_id', user.id).eq('league_id', leagueId);
+            if (data) {
+                setUserInteractions(data.map(i => ({
+                    id: i.id, teamId: i.team_id, leagueId: i.league_id, interactionType: i.interaction_type
+                })));
+            }
         } catch (e) {
-            console.error(e);
-        } finally {
-            setDataLoading(false);
+            console.warn('LeagueContext: Error loading user interactions', e);
+        }
+    }, [user]);
+
+    const loadSupportCounts = useCallback(async (leagueId: string) => {
+        try {
+            const { data } = await supabase.rpc('get_league_support_counts', { l_id: leagueId });
+            // Fallback if RPC doesn't exist yet, we'll try a manual count
+            if (data) {
+                const counts: Record<string, number> = {};
+                data.forEach((item: any) => { counts[item.team_id] = item.count; });
+                setSupportCounts(counts);
+            } else {
+                const { data: interactionData } = await supabase.from('user_team_interactions')
+                    .select('team_id').eq('league_id', leagueId).eq('interaction_type', 'supporting');
+                if (interactionData) {
+                    const counts: Record<string, number> = {};
+                    interactionData.forEach((item: any) => {
+                        counts[item.team_id] = (counts[item.team_id] || 0) + 1;
+                    });
+                    setSupportCounts(counts);
+                }
+            }
+        } catch (e) {
+            console.warn('LeagueContext: Error loading support counts', e);
         }
     }, []);
 
-    useEffect(() => { if (league?.id) loadLeagueData(league.id); }, [league?.id, loadLeagueData]);
+    // ── Load league data (teams, matches, brackets) ────────────
+    // Use refs to avoid stale closure issues and prevent needless dependency array changes
+    const loadUserInteractionsRef = useRef(loadUserInteractions);
+    const loadSupportCountsRef = useRef(loadSupportCounts);
+    useEffect(() => { loadUserInteractionsRef.current = loadUserInteractions; }, [loadUserInteractions]);
+    useEffect(() => { loadSupportCountsRef.current = loadSupportCounts; }, [loadSupportCounts]);
 
-    // Realtime logic stub
+    const loadLeagueData = useCallback(async (leagueId: string, background = false) => {
+        if (!leagueId) return;
+        
+        // Prevent simultaneous duplicate loads for the same league
+        if (loadingRef.current === leagueId && !background) return;
+        loadingRef.current = leagueId;
+
+        console.log('LeagueContext: Sync triggered for', leagueId, background ? '(background)' : '(full)');
+
+        
+        loadUserInteractionsRef.current(leagueId);
+        loadSupportCountsRef.current(leagueId);
+
+        // Try cache for instant mount
+        const recovered = tryRecoverFromCache(leagueId);
+        
+        // Safety: Even if recovered, if teams are empty, we don't have enough data to skip loading
+        const hasActualData = rawTeams.length > 0 || (recovered && teamsRef.current.length > 0);
+        
+        if (!background && !hasActualData) {
+            console.log('LeagueContext: Data missing or empty cache, showing loader');
+            setDataLoading(true);
+        }
+
+
+        try {
+            // PHASE 1: CORE DATA (Essential per-frame metadata)
+            const [teamsRes, matchesRes, bracketsRes, adsRes] = await Promise.all([
+                // Metadata ONLY for teams (No players here, very fast)
+                supabase.from('teams')
+                    .select('*')
+                    .eq('league_id', leagueId)
+                    .order('name', { ascending: true }),
+                // Core matches (Last 100 to avoid giant JSON)
+                supabase.from('matches')
+                    .select('*, match_events(*)')
+                    .eq('league_id', leagueId)
+                    .order('updated_at', { ascending: false })
+                    .limit(100),
+                supabase.from('brackets').select('*').eq('league_id', leagueId),
+                supabase.from('ads').select('*').eq('league_id', leagueId).order('display_order', { ascending: true })
+            ]);
+
+            if (teamsRes.error) console.error('LeagueContext: Teams fetch error:', teamsRes.error);
+            if (matchesRes.error) console.error('LeagueContext: Matches fetch error:', matchesRes.error);
+            if (bracketsRes.error) console.error('LeagueContext: Brackets fetch error:', bracketsRes.error);
+            if (adsRes.error) console.error('LeagueContext: Ads fetch error (500 expected):', adsRes.error);
+
+            if (teamsRes.data) {
+                const mappedTeams = teamsRes.data.map(mapDBTeam);
+                console.log('LeagueContext: Teams loaded:', mappedTeams.length);
+                setRawTeams(mappedTeams);
+                teamsRef.current = mappedTeams;
+            }
+            if (matchesRes.data) {
+                console.log('LeagueContext: Matches loaded:', matchesRes.data.length);
+                setRawMatches(matchesRes.data.map(mapDBMatch));
+            }
+            if (bracketsRes.data) setBrackets(bracketsRes.data.map(mapDBBracket));
+            if (adsRes.data) {
+                setAds(adsRes.data.map((a: any) => ({
+                    ...a, display_order: a.display_order || 0
+                })));
+            }
+
+
+            // PHASE 2: LAZY LOADING HEAVY DATA (Background)
+            const loadHeavyData = async () => {
+                try {
+                    const tIds = teamsRes.data?.map(t => t.id) || [];
+                    if (tIds.length === 0) return;
+
+                    const { data: playersData, error: pErr } = await supabase.from('players')
+                        .select('id, name, number, position, team_id, is_captain, is_reserve, display_order')
+                        .in('team_id', tIds);
+                    
+                    if (pErr) throw pErr;
+
+                    if (playersData) {
+                        setRawTeams(prev => prev.map(t => ({
+                            ...t,
+                            players: playersData.filter(p => p.team_id === t.id).map(mapDBPlayer)
+                        })));
+                    }
+
+                    // If league has MORE than 100 matches, fetch the rest in background
+                    if (matchesRes.data && matchesRes.data.length >= 100) {
+                       const { data: moreMatches } = await supabase.from('matches')
+                           .select('*, match_events(*)')
+                           .eq('league_id', leagueId)
+                           .order('updated_at', { ascending: false })
+                           .range(100, 300);
+                       if (moreMatches) {
+                           setRawMatches(prev => {
+                               const existingIds = new Set(prev.map(m => m.id));
+                               const filtered = moreMatches.filter(m => !existingIds.has(m.id)).map(mapDBMatch);
+                               return [...prev, ...filtered];
+                           });
+                       }
+                    }
+                } catch (e) {
+                    console.warn('LeagueContext: Lazy load suppressed/failed:', e);
+                }
+            };
+
+            loadHeavyData();
+
+        } catch (err) {
+            console.error('LeagueContext: Performance load failed:', err);
+        } finally {
+            if (loadingRef.current === leagueId) {
+                setLoading(false);
+                setDataLoading(false);
+                loadingRef.current = null;
+            }
+        }
+    }, [rawTeams.length, rawMatches.length, tryRecoverFromCache]);
+
+    const loadTeamPhotos = useCallback(async (teamId: string) => {
+        if (!teamId) return;
+        try {
+            const { data } = await supabase.from('players').select('id, photo').eq('team_id', teamId).not('photo', 'eq', '');
+            if (!data || data.length === 0) return;
+            const photoMap = new Map(data.map(p => [p.id, p.photo]));
+            setRawTeams(prev => prev.map(t => {
+                if (t.id === teamId) {
+                    return { ...t, players: t.players.map(p => ({ ...p, photo: photoMap.get(p.id) || p.photo })) };
+                }
+                return t;
+            }));
+        } catch (err) { console.error('Error loading team photos:', err); }
+    }, []);
+
     useEffect(() => {
-        if (!league?.id) return;
-        const channel = supabase.channel(`league-${league.id}`)
-            .on('postgres_changes', { event: '*', schema: 'public', filter: `league_id=eq.${league.id}` }, () => {
-                loadLeagueData(league.id);
-            }).subscribe();
-        return () => { supabase.removeChannel(channel); };
-    }, [league?.id, loadLeagueData]);
+        if (!league) {
+            setRawTeams([]); setRawMatches([]); setBrackets([]); setUserInteractions([]); setSupportCounts({});
+            return;
+        }
 
-    // ─── Actions ──────────────────────────────────────────
-    const createLeague = async (data: any) => {
-        if (!user) return { error: 'Auth required' };
-        const dbData = { ...mapLeagueToDB(data), user_id: user.id, slug: generateSlug(data.name) };
-        const { data: row, error } = await supabase.from('leagues').insert(dbData).select().single();
-        if (error) return { error: error.message };
-        const mapped = mapDBLeague(row);
-        setLeagues(prev => [...prev, mapped]);
-        setLeague(mapped);
-        return { error: null, data: mapped };
+        loadLeagueData(league.id);
+        localStorage.setItem('selectedLeagueId', league.id);
+
+        // ─── CENTRALIZED REALTIME (GOLDEN RULE: ZERO REFETCH) ───────
+        const channel = supabase.channel(`league-central-${league.id}`);
+
+        // 1. Tables with league_id filter (efficient)
+        channel.on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            filter: `league_id=eq.${league.id}` 
+        }, payload => {
+            const { table, eventType, new: newRow, old: oldRow } = payload;
+            const row = (newRow || oldRow) as any;
+
+            switch (table) {
+                case 'matches':
+                    if (eventType === 'DELETE') {
+                        setRawMatches(prev => prev.filter(m => m.id !== row.id));
+                    } else {
+                        setRawMatches(prev => {
+                            const existing = prev.find(m => m.id === row.id);
+                            const mapped = mapDBMatch(row);
+                            if (existing) {
+                                // Important: Preserve local events if they are already loaded
+                                return prev.map(m => m.id === row.id ? { ...m, ...mapped, events: m.events } : m);
+                            }
+                            return [...prev, mapped];
+                        });
+                    }
+                    break;
+
+                case 'teams':
+                    if (eventType === 'DELETE') {
+                        setRawTeams(prev => prev.filter(t => t.id !== row.id));
+                    } else {
+                        setRawTeams(prev => {
+                            const existing = prev.find(t => t.id === row.id);
+                            const mapped = mapDBTeam(row);
+                            if (existing) {
+                                // Preserve players
+                                return prev.map(t => t.id === row.id ? { ...t, ...mapped, players: t.players } : t);
+                            }
+                            return [...prev, mapped];
+                        });
+                    }
+                    break;
+
+                case 'players':
+                    // Although players has league_id now, we update it via teams state
+                    setRawTeams(prev => prev.map(t => t.id === row.team_id ? {
+                        ...t,
+                        players: eventType === 'DELETE'
+                            ? t.players.filter(p => p.id !== row.id)
+                            : t.players.some(p => p.id === row.id)
+                                ? t.players.map(p => p.id === row.id ? mapDBPlayer(row) : p)
+                                : [...t.players, mapDBPlayer(row)]
+                    } : t));
+                    break;
+
+                case 'brackets':
+                    if (eventType === 'DELETE') {
+                        setBrackets(prev => prev.filter(b => b.id !== row.id));
+                    } else {
+                        setBrackets(prev => prev.some(b => b.id === row.id)
+                            ? prev.map(b => b.id === row.id ? mapDBBracket(row) : b)
+                            : [...prev, mapDBBracket(row)]);
+                    }
+                    break;
+
+                case 'ads':
+                    if (eventType === 'DELETE') {
+                        setAds(prev => prev.filter(a => a.id !== row.id));
+                    } else {
+                        setAds(prev => {
+                            const exists = prev.some(a => a.id === row.id);
+                            if (exists) {
+                                return prev.map(a => a.id === row.id ? { ...a, ...row } : a);
+                            }
+                            return [...prev, row as Ad];
+                        });
+                    }
+                    break;
+
+                case 'user_team_interactions':
+                    // Refresh support counts and personal interactions
+                    loadSupportCounts(league.id);
+                    loadUserInteractions(league.id);
+                    break;
+            }
+        });
+
+        // 2. Table: match_events (filtered by match_id locally since it lacks league_id)
+        channel.on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'match_events' 
+        }, payload => {
+            const { eventType, new: newRow, old: oldRow } = payload;
+            const row = (newRow || oldRow) as any;
+            const matchId = row?.match_id;
+            if (!matchId) return;
+
+            setRawMatches(prev => prev.map(m => {
+                if (m.id !== matchId) return m;
+                
+                const events = eventType === 'DELETE'
+                    ? m.events.filter(e => e.id !== row.id)
+                    : m.events.some(e => e.id === row.id)
+                        ? m.events.map(e => e.id === row.id ? mapDBEvent(row) : e)
+                        : [...m.events, mapDBEvent(row)];
+                
+                return { ...m, events };
+            }));
+
+            if (eventType === 'INSERT' && (row.type === 'goal' || row.type === 'penalty_goal')) {
+                const team = teamsRef.current.find(t => t.id === row.team_id);
+                addNotification({
+                    id: Math.random().toString(36).substr(2, 9),
+                    title: '⚽ GOOOL!',
+                    message: `Gol do ${team?.name || 'time'}!`,
+                    type: 'goal',
+                    teamId: row.team_id,
+                    createdAt: Date.now()
+                });
+            }
+        });
+
+        // 3. Broadcast for low-latency timer sync and instant event feedback
+        channel.on('broadcast', { event: 'match-update' }, ({ payload }) => {
+            console.log('[Realtime Broadcast] Match Update', payload);
+            setRawMatches(prev => prev.map(m => {
+                if (m.id !== payload.matchId) return m;
+
+                let events = m.events;
+                if (payload.newEvent) {
+                    const alreadyExists = events.some(e => e.id === payload.newEvent.id);
+                    if (!alreadyExists) events = [...events, payload.newEvent];
+                }
+                if (payload.removedEventId) {
+                    events = events.filter(e => e.id !== payload.removedEventId);
+                }
+
+                return { 
+                    ...m, 
+                    timer: payload.timer !== undefined ? payload.timer : m.timer,
+                    homeScore: payload.homeScore !== undefined ? payload.homeScore : m.homeScore,
+                    awayScore: payload.awayScore !== undefined ? payload.awayScore : m.awayScore,
+                    period: payload.period !== undefined ? payload.period : m.period,
+                    status: payload.status !== undefined ? payload.status : m.status,
+                    events,
+                    updatedAt: new Date().toISOString() // Force timer restart calculation
+                };
+            }));
+        });
+
+        channel.on('broadcast', { event: 'players-reordered' }, ({ payload }) => {
+            setRawTeams(prev => prev.map(t => {
+                if (t.id === payload.teamId) {
+                    const sortedPlayers = [...t.players].sort((a, b) => {
+                        const idxA = payload.playerIds.indexOf(a.id);
+                        const idxB = payload.playerIds.indexOf(b.id);
+                        return idxA - idxB;
+                    }).map((p, idx) => ({
+                        ...p,
+                        displayOrder: idx,
+                        isReserve: idx >= payload.limit
+                    }));
+                    return { ...t, players: sortedPlayers };
+                }
+                return t;
+            }));
+        });
+
+        channel.subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [league?.id]);
+
+    const addNotification = (notif: LeagueNotification) => {
+        setNotifications(prev => [notif, ...prev].slice(0, 5));
+
+        // Auto remove after 6 seconds (to match animation)
+        setTimeout(() => {
+            clearNotification(notif.id);
+        }, 6000);
     };
 
-    const updateLeague = async (data: any) => {
+    const clearNotification = (id: string) => {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+    };
+
+    // Handle pending interaction after login
+    useEffect(() => {
+        if (user && pendingInteraction && league) {
+            interactWithTeam(pendingInteraction.teamId, pendingInteraction.type).then(() => {
+                setPendingInteraction(null);
+            });
+        }
+    }, [user, league]); // Re-run when user or league becomes available
+
+    const generateSlug = (name: string) => {
+        return name.toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+    };
+
+    const getMatchSlug = useCallback((m: Match) => {
+        if (m.slug) return m.slug;
+        const ht = teamsRef.current.find(t => t.id === m.homeTeamId);
+        const at = teamsRef.current.find(t => t.id === m.awayTeamId);
+        if (!ht || !at) return m.id;
+        const date = m.scheduledAt ? new Date(m.scheduledAt).toLocaleDateString('pt-BR').replace(/\//g, '-') : '';
+        return `${generateSlug(ht.name)}-x-${generateSlug(at.name)}${date ? '-' + date : ''}`;
+    }, []);
+
+    const getTeamSlug = useCallback((t: Team) => {
+        return t.slug || generateSlug(t.name) || t.id;
+    }, []);
+
+    const getPlayerSlug = useCallback((p: Player) => {
+        return p.slug || generateSlug(p.name) || p.id;
+    }, []);
+
+    // ── League CRUD ────────────────────────────────────────────
+    const createLeague = async (data: Omit<League, 'id' | 'slug' | 'userId'>) => {
+        try {
+            let activeUser = user;
+            
+            // Reforço: se o estado do hook estiver vazio, tenta pegar diretamente do Supabase
+            if (!activeUser) {
+                const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+                activeUser = supabaseUser;
+            }
+
+            if (!activeUser) {
+                alert('Você precisa estar logado para criar uma liga.');
+                return { error: 'Usuário não autenticado' };
+            }
+
+            const slug = generateSlug(data.name);
+            const { data: existing } = await supabase.from('leagues').select('id').eq('slug', slug).single();
+            if (existing) return { error: 'Uma liga com este nome já existe.' };
+
+            const { data: row, error } = await supabase.from('leagues').insert({
+                user_id: activeUser.id, name: data.name, logo: data.logo, max_teams: data.maxTeams,
+                points_for_win: data.pointsForWin, points_for_draw: data.pointsForDraw,
+                points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
+                players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
+                substitutions_limit: data.substitutionsLimit,
+                allow_substitution_return: data.allowSubstitutionReturn ?? true,
+                has_overtime: data.hasOvertime ?? true,
+                sport_type: data.sportType,
+                slug
+            }).select().single();
+
+            if (error) {
+                console.error('Error creating league:', error);
+                
+                // Trata erro específico de coluna inexistente (caso usuário não tenha rodado o SQL)
+                if (error.code === '42703') {
+                    alert('Erro de Banco de Dados: A coluna "sport_type" não foi encontrada. \n\nPOR FAVOR, EXECUTE O SCRIPT SQL (add_sport_to_leagues.sql) NO SEU DASHBOARD DO SUPABASE.');
+                } else {
+                    alert('Erro ao criar liga: ' + error.message);
+                }
+                
+                return { error: error.message };
+            }
+
+            if (row) {
+                const lg: League = mapDBLeague(row);
+                setLeagues(prev => [...prev, lg]);
+                setLeague(lg);
+                return { error: null, data: lg };
+            }
+            return { error: 'Erro desconhecido ao cadastrar liga.' };
+        } catch (err: any) {
+            console.error('Crash in createLeague:', err);
+            alert('Erro crítico ao criar liga: ' + (err.message || 'Erro desconhecido'));
+            return { error: err.message };
+        }
+    };
+
+    const updateLeague = async (data: Partial<League>) => {
         if (!league) return;
-        const dbData = mapLeagueToDB(data);
-        const { error } = await supabase.from('leagues').update(dbData).eq('id', league.id);
-        if (!error) setLeague({ ...league, ...data });
+        const updateData: any = {
+            name: data.name, logo: data.logo, max_teams: data.maxTeams,
+            points_for_win: data.pointsForWin, points_for_draw: data.pointsForDraw,
+            points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
+            overtime_half_length: data.overtimeHalfLength,
+            players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
+            substitutions_limit: data.substitutionsLimit,
+            allow_substitution_return: data.allowSubstitutionReturn,
+            has_overtime: data.hasOvertime,
+            sport_type: data.sportType,
+            address: data.address,
+            lat: data.lat,
+            lng: data.lng
+        };
+
+        if (data.name && data.name !== league.name) {
+            const newSlug = generateSlug(data.name);
+            const { data: existing } = await supabase.from('leagues').select('id').eq('slug', newSlug).neq('id', league.id).single();
+            if (existing) {
+                alert('Este nome de liga já está em uso.');
+                return;
+            }
+            updateData.slug = newSlug;
+        }
+
+        await supabase.from('leagues').update(updateData).eq('id', league.id);
+        const updated = { ...league, ...data };
+        if (updateData.slug) updated.slug = updateData.slug;
+        setLeague(updated);
+        setLeagues(prev => prev.map(l => l.id === league.id ? updated : l));
     };
 
     const deleteLeague = async (id: string) => {
-        const { error } = await supabase.from('leagues').delete().eq('id', id);
-        if (!error) {
-            setLeagues(prev => prev.filter(l => l.id !== id));
-            if (league?.id === id) setLeague(null);
+        await supabase.from('leagues').delete().eq('id', id);
+        const remaining = leagues.filter(l => l.id !== id);
+        setLeagues(remaining);
+        if (league?.id === id) setLeague(remaining[0] ?? null);
+    };
+
+    const selectLeague = (id: string) => {
+        const found = leagues.find(l => l.id === id);
+        if (found) {
+            const isDifferent = !league || league.id !== id;
+            if (isDifferent) {
+                // Safety: Set loading immediately so components that rely on the new league
+                // don't try to render with empty teams/matches data before the loader starts.
+                setLoading(true);
+                setDataLoading(true);
+
+                // Clear stale data immediately so the UI doesn't flash old league data.
+                setRawTeams([]);
+                setRawMatches([]);
+                setBrackets([]);
+                setIsPublicView(false);
+                setLeague(found);
+            } else {
+                console.log('LeagueContext: Same league selected, performing background sync');
+                loadLeagueData(id, true); // Trigger silent sync
+            }
+            localStorage.setItem('selectedLeagueId', id);
         }
     };
 
+    // ── Team CRUD ──────────────────────────────────────────────
+    // ── Team CRUD ──────────────────────────────────────────────
     const addTeam = async (team: { name: string; logo: string; primary_color?: string; secondary_color?: string }) => {
         if (!league) return { error: 'Nenhuma liga selecionada' };
         const { data, error } = await supabase.from('teams').insert({ 
@@ -1329,30 +2266,30 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         recover();
     }, [loadPublicLeague]);
 
-
-    const value: LeagueContextType = {
-        league, leagues, followedLeagues, teams, matches, brackets, loading, dataLoading,
-        createLeague, updateLeague, deleteLeague, selectLeague, generateGroups,
-        addTeam, updateTeam, deleteTeam,
-        addPlayer, updatePlayer, removePlayer, toggleCaptain, reorderPlayers,
-        isPlayerOnPitch, getMatchSlug, getTeamSlug, getPlayerSlug,
-        createMatch, updateMatch, deleteMatch, startMatch, pauseMatch, endMatch,
-        updateTimer, addEvent, removeEvent, generateBracket, updateBracket,
-        loadLeagues, isPublicView, setIsPublicView, isAdmin,
-        loadPublicLeague, loadTeamPhotos, loadPlayerPhotos, followLeague, unfollowLeague,
-        searchLeagues, fetchNearbyLeagues,
-        userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
-        showAuthModal, setShowAuthModal, supportCounts, notifications, clearNotification,
-        leagueBasePath, globalAdTick, ads, addAd, updateAd, deleteAd, reorderAds,
-        ytToken: null, ytLogin, ytLogout, isYtAuthenticated: false, currentYtLiveStream: null,
-        recoverStreamDetails, deleteYtLive, setYtLivePrivacy
-    };
-
-    return <LeagueContext.Provider value={value}>{children}</LeagueContext.Provider>;
+    return (
+        <LeagueContext.Provider value={{
+            league, leagues, followedLeagues, teams, matches, brackets, loading, dataLoading,
+            createLeague, updateLeague, deleteLeague, selectLeague, generateGroups,
+            followLeague, unfollowLeague, searchLeagues, fetchNearbyLeagues,
+            addTeam, updateTeam, deleteTeam,
+            addPlayer, updatePlayer, removePlayer, toggleCaptain, reorderPlayers, isPlayerOnPitch,
+            createMatch, updateMatch, deleteMatch, startMatch, pauseMatch, endMatch, updateTimer,
+            addEvent, removeEvent,
+            generateBracket, updateBracket, loadLeagues, isPublicView, setIsPublicView, isAdmin, loadPublicLeague,
+            userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
+            showAuthModal, setShowAuthModal, loadTeamPhotos, loadPlayerPhotos,
+            supportCounts, notifications, clearNotification, leagueBasePath,
+            ads, addAd, updateAd, deleteAd, reorderAds, globalAdTick,
+            ytToken, ytLogin, ytLogout, isYtAuthenticated, currentYtLiveStream, recoverStreamDetails,
+            deleteYtLive, setYtLivePrivacy, getMatchSlug, getTeamSlug, getPlayerSlug
+        }}>
+            {children}
+        </LeagueContext.Provider>
+    );
 };
 
 export const useLeague = () => {
     const ctx = useContext(LeagueContext);
-    if (!ctx) throw new Error('use League must be used inside LeagueProvider');
+    if (!ctx) throw new Error('useLeague must be used inside LeagueProvider');
     return ctx;
 };
