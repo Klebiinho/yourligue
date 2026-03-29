@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Swords, Trophy, Settings, GitBranch, ArrowLeftRight, Grid3x3, X, Signal, Home, Shield, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, Trophy, Settings, GitBranch, ArrowLeftRight, Grid3x3, X, Signal, Home } from 'lucide-react';
 import { useLeague } from '../context/LeagueContext';
 import TeamLogo from './TeamLogo';
 
@@ -268,25 +268,7 @@ const Sidebar = () => {
                     </div>
                 </nav>
 
-                {/* Footer */}
-                <div className="p-3 border-t border-white/[0.05] space-y-1">
-                    
-                    <button
-                        onClick={() => navigate('/politica-de-privacidade')}
-                        className="flex items-center gap-3 px-4 py-2 rounded-xl text-slate-600 hover:text-primary hover:bg-primary/5 w-full transition-all group font-bold text-[0.7rem] tracking-wide"
-                    >
-                        <Shield size={14} className="flex-none" />
-                        <span>Privacidade</span>
-                    </button>
-
-                    <button
-                        onClick={() => navigate('/termos-de-uso')}
-                        className="flex items-center gap-3 px-4 py-2 rounded-xl text-slate-600 hover:text-primary hover:bg-primary/5 w-full transition-all group font-bold text-[0.7rem] tracking-wide"
-                    >
-                        <FileText size={14} className="flex-none" />
-                        <span>Termos</span>
-                    </button>
-                </div>
+                {/* Footer removed: Privacy/Terms links move to global footer */}
             </aside>
             )}
         </>
