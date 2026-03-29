@@ -21,6 +21,7 @@ const LeagueSelector = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [searching, setSearching] = useState(false);
+    const [locationErrorCode, setLocationErrorCode] = useState<number | null>(null);
     const navigate = useNavigate();
 
     // ── Tab Reordering Logic ───────────────────────────────────
@@ -114,25 +115,16 @@ const LeagueSelector = () => {
                 setNearbyLeagues(results || []);
                 setHasSearchedNearby(true);
                 setIsLocating(false);
+                setLocationErrorCode(null);
             },
             (error) => {
                 console.error("Erro detalhado de localização:", error.code, error.message);
-                
-                let errorMsg = "Não foi possível obter sua localização atual.";
-                if (error.code === 1) {
-                    errorMsg = "Permissão de localização negada. Por favor, autorize o acesso nas configurações do seu navegador.";
-                } else if (error.code === 2) {
-                    errorMsg = "Localização temporariamente indisponível. Tente novamente em instantes.";
-                } else if (error.code === 3) {
-                    errorMsg = "O tempo para obter sua localização expirou. Verifique se o GPS está ativo.";
-                }
-
-                alert(errorMsg);
+                setLocationErrorCode(error.code);
                 setIsLocating(false);
             },
             {
                 enableHighAccuracy: true,
-                timeout: 15000,
+                timeout: 10000,
                 maximumAge: 0
             }
         );
@@ -301,15 +293,41 @@ const LeagueSelector = () => {
                                         <MapPin size={40} className="text-slate-700" strokeWidth={1} />
                                     </div>
                                     <div className="space-y-2">
-                                        <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Ligas Próximas a Você</h3>
-                                        <p className="text-slate-500 font-medium text-sm">Use sua localização para encontrar campeonatos regionais e interagir com a comunidade local.</p>
+                                        <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">
+                                            {locationErrorCode === 1 ? 'Localização Bloqueada' : 'Ligas Próximas a Você'}
+                                        </h3>
+                                        <p className="text-slate-500 font-medium text-sm">
+                                            {locationErrorCode === 1 
+                                                ? 'Você negou o acesso ao GPS. Mas não se preocupe! Você pode pesquisar sua cidade ou bairro abaixo.'
+                                                : 'Use sua localização para encontrar campeonatos regionais e interagir com a comunidade local.'
+                                            }
+                                        </p>
+                                        
+                                        {locationErrorCode === 1 && (
+                                            <div className="relative mt-8 group animate-slide-up">
+                                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Digite sua cidade ou bairro..." 
+                                                    value={searchQuery}
+                                                    onChange={e => setSearchQuery(e.target.value)}
+                                                    onFocus={() => setActiveTab('explore')}
+                                                    className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white placeholder:text-slate-600 focus:border-primary outline-none transition-all text-sm font-bold group-hover:border-white/20"
+                                                />
+                                            </div>
+                                        )}
+
                                         <button 
                                             onClick={handleRequestLocation} 
                                             disabled={isLocating}
-                                            className="mt-4 px-8 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                                            className="mt-6 px-8 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
                                         >
-                                            {isLocating ? 'Obtendo Localização...' : 'Solicitar Localização'}
+                                            {isLocating ? 'Obtendo Localização...' : 'Solicitar Localização Novamente'}
                                         </button>
+                                        
+                                        {locationErrorCode === 1 && (
+                                            <p className="text-[0.6rem] text-slate-600 font-black uppercase tracking-widest pt-4">Ou pesquise acima ↑</p>
+                                        )}
                                     </div>
                                 </div>
                             )
