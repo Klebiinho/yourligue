@@ -183,12 +183,13 @@ const Settings = () => {
     };
 
     const handleGetGPS = () => {
-        setIsCapturingGPS(true);
         if (!navigator.geolocation) {
-            alert("Geolocalização não suportada.");
-            setIsCapturingGPS(false);
+            alert("❌ Seu navegador não suporta geolocalização.");
             return;
         }
+
+        setIsCapturingGPS(true);
+        
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
                 const latitude = pos.coords.latitude;
@@ -207,27 +208,31 @@ const Settings = () => {
                         }
                     }
                 } catch (e) {
-                    console.error("Erro ao buscar nome da cidade:", e);
+                    console.warn("Reverse geocoding error:", e);
                 }
 
                 setIsCapturingGPS(false);
                 alert("✅ Localização capturada! Salve as configurações.");
             },
             (err: any) => {
-                console.error("GPS Error:", err);
+                console.error("GPS Error detail:", err);
                 setIsCapturingGPS(false);
                 
                 if (err.code === 1) { // PERMISSION_DENIED
-                    alert("⚠️ Acesso ao GPS negado. \n\nPara usar sua localização atual, você precisa permitir o acesso nas configurações do seu navegador (clique no cadeado ao lado da URL). \n\nAlternativa: Use o campo 'Pesquisar Localização' abaixo para digitar o endereço manualmente.");
+                    alert("⚠️ O acesso ao GPS foi bloqueado. \n\nIsso pode acontecer mesmo se você clicou em 'Permitir', pois o seu Windows/Mac ou o próprio navegador pode ter uma trava geral de privacidade. \n\nSOLUÇÃO: Use o campo 'Pesquisar Localização' logo abaixo. Você digita o endereço e o sistema encontra as coordenadas na hora!");
                 } else if (err.code === 2) { // POSITION_UNAVAILABLE
-                    alert("❌ Não foi possível determinar sua localização exata. Tente usar a busca manual por endereço.");
+                    alert("❌ Posição indisponível. Talvez seu sinal esteja fraco ou o dispositivo não tenha GPS. Use a busca manual abaixo.");
                 } else if (err.code === 3) { // TIMEOUT
-                    alert("⏱️ A solicitação de GPS expirou. Verifique sua conexão ou tente novamente.");
+                    alert("⏱️ A busca pelo GPS demorou muito. Tente novamente ou use a busca manual.");
                 } else {
-                    alert("❌ Erro ao capturar GPS: " + (err.message || "Erro desconhecido."));
+                    alert("❌ Erro ao capturar: " + (err.message || "Erro desconhecido."));
                 }
             },
-            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+            { 
+                enableHighAccuracy: false, // Melhora a compatibilidade em PCs/Notebooks
+                timeout: 15000,            // Dá mais tempo para o navegador responder
+                maximumAge: 0 
+            }
         );
     };
 
