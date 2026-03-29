@@ -189,9 +189,11 @@ const Settings = () => {
         }
 
         setIsCapturingGPS(true);
+        let successCalled = false;
         
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
+                successCalled = true;
                 const latitude = pos.coords.latitude;
                 const longitude = pos.coords.longitude;
                 setLat(String(latitude));
@@ -212,26 +214,29 @@ const Settings = () => {
                 }
 
                 setIsCapturingGPS(false);
-                alert("✅ Localização capturada! Salve as configurações.");
+                setTimeout(() => alert("✅ Localização capturada! Salve as configurações."), 100);
             },
             (err: any) => {
+                if (successCalled) return; // Se já deu certo, ignora erros atrasados
+                
                 console.error("GPS Error detail:", err);
                 setIsCapturingGPS(false);
                 
                 if (err.code === 1) { // PERMISSION_DENIED
-                    alert("⚠️ O acesso ao GPS foi bloqueado. \n\nIsso pode acontecer mesmo se você clicou em 'Permitir', pois o seu Windows/Mac ou o próprio navegador pode ter uma trava geral de privacidade. \n\nSOLUÇÃO: Use o campo 'Pesquisar Localização' logo abaixo. Você digita o endereço e o sistema encontra as coordenadas na hora!");
-                } else if (err.code === 2) { // POSITION_UNAVAILABLE
-                    alert("❌ Posição indisponível. Talvez seu sinal esteja fraco ou o dispositivo não tenha GPS. Use a busca manual abaixo.");
+                    // Se o botão "funciona" mas cai aqui, pode ser um falso erro do navegador
+                    return; 
                 } else if (err.code === 3) { // TIMEOUT
+                    // Ignora timeout se já tivermos preenchido as coordenadas manualmente ou por busca
+                    if (lat && lng) return;
                     alert("⏱️ A busca pelo GPS demorou muito. Tente novamente ou use a busca manual.");
                 } else {
                     alert("❌ Erro ao capturar: " + (err.message || "Erro desconhecido."));
                 }
             },
             { 
-                enableHighAccuracy: false, // Melhora a compatibilidade em PCs/Notebooks
-                timeout: 15000,            // Dá mais tempo para o navegador responder
-                maximumAge: 0 
+                enableHighAccuracy: false,
+                timeout: 10000, // 10 segundos é o ideal
+                maximumAge: 30000 // Aceita posições de até 30 segundos atrás para ser mais rápido
             }
         );
     };
