@@ -210,7 +210,7 @@ const Settings = () => {
                         }
                     }
                 } catch (e) {
-                    console.warn("Reverse geocoding error:", e);
+                    // Ignora silenciosamente erros de geocoding reverso
                 }
 
                 setIsCapturingGPS(false);
@@ -219,7 +219,6 @@ const Settings = () => {
             (err: any) => {
                 if (successCalled) return; // Se já deu certo, ignora erros atrasados
                 
-                console.error("GPS Error detail:", err);
                 setIsCapturingGPS(false);
                 
                 if (err.code === 1) { // PERMISSION_DENIED
