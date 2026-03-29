@@ -854,9 +854,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     
                     // If the user is the owner, default to Admin Mode (not public view)
                     if (user && mapped.userId === user.id) {
-                        const savedPref = localStorage.getItem('isPublicView');
-                        if (savedPref === null) setIsPublicView(false);
-                        else setIsPublicView(savedPref === 'true');
+                        setIsPublicView(false); // Force Gestor Mode for owners
+                        localStorage.setItem('isPublicView', 'false');
                     } else {
                         setIsPublicView(true);
                     }
@@ -1410,7 +1409,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 setRawTeams([]);
                 setRawMatches([]);
                 setBrackets([]);
-                setIsPublicView(false);
+                setIsPublicView(false); // Ensure Gestor Mode for direct selections
+                localStorage.setItem('isPublicView', 'false');
                 setLeague(found);
             } else {
                 console.log('LeagueContext: Same league selected, performing background sync');
