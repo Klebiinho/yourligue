@@ -314,7 +314,7 @@ const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
 
 // ─── Provider ────────────────────────────────────────────────
 export const LeagueProvider = ({ children }: { children: ReactNode }) => {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
 
     const [leagues, setLeagues] = useState<League[]>([]);
     const [followedLeagues, setFollowedLeagues] = useState<League[]>([]);
@@ -655,14 +655,14 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('isPublicView', isPublicView.toString());
     }, [isPublicView]);
 
-    // GUARANTEE: Owners start in Gestor Mode whenever entering their league
+    // GUARANTEE: Owners start in Gestor Mode whenever entering their league (or as soon as auth resolves)
     useEffect(() => {
-        if (user && league && league.userId === user.id) {
-            console.log('LeagueContext: Ownership discovered, ensuring Gestor Mode');
+        if (!authLoading && user && league && league.userId === user.id) {
+            console.log('LeagueContext: Ownership confirmed, enforcing Gestor Mode');
             setIsPublicView(false);
             localStorage.setItem('isPublicView', 'false');
         }
-    }, [user?.id, league?.id]); // Only run on login or league change
+    }, [authLoading, user?.id, league?.id]); // Now watches authLoading too
 
     const loadLeagues = async () => {
         try {
@@ -850,8 +850,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     setIsPublicView(false);
                     localStorage.setItem('isPublicView', 'false');
                 } else if (!isSameLeague || !league || league.id !== mapped.id) {
-                    // Only default to public view if it's a NEW league (not current one)
-                    setIsPublicView(true);
+                    // Only default to public view if it's NOT the owner AND it's a new load
+                    // If auth is still loading, we defer this to the useEffect above to avoid flashing spectator mode for owners
+                    if (!authLoading) {
+                        setIsPublicView(true);
+                    }
                 }
 
                 if (!isSameLeague || JSON.stringify(mapped) !== JSON.stringify(league)) {
