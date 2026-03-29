@@ -6,7 +6,7 @@ import { Trophy, Plus, Trash2, LogOut, Edit2, Check, X, RefreshCw, User, Setting
 import TeamLogo from '../components/TeamLogo';
 
 const LeagueSelector = () => {
-    const { leagues, followedLeagues, league, createLeague, deleteLeague, selectLeague, updateLeague, loadLeagues, searchLeagues, followLeague, unfollowLeague, loadPublicLeague, fetchNearbyLeagues, setShowAuthModal } = useLeague();
+    const { leagues, followedLeagues, league, createLeague, deleteLeague, selectLeague, updateLeague, loadLeagues, searchLeagues, followLeague, unfollowLeague, loadPublicLeague, fetchNearbyLeagues, setShowAuthModal, loading: contextLoading } = useLeague();
     const { user, signOut } = useAuth();
     const [activeTab, setActiveTab] = useState<'owned' | 'following' | 'nearby' | 'explore'>(user ? 'owned' : 'explore');
     const [nearbyLeagues, setNearbyLeagues] = useState<any[]>([]);
@@ -277,7 +277,22 @@ const LeagueSelector = () => {
                 {/* League List Render Context */}
                 <div className="space-y-4 mb-8 min-h-[300px]">
                     {activeTab === 'owned' && (
-                        leagues.length === 0 ? (
+                        contextLoading ? (
+                            /* Premium Loading Card for Sync */
+                            <div className="glass-panel py-20 px-10 text-center space-y-8 relative overflow-hidden group border-primary/20 bg-primary/5 pb-24">
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+                                <div className="relative">
+                                    <div className="w-24 h-24 border-2 border-primary/10 border-t-primary rounded-full animate-spin mx-auto scale-110" />
+                                    <div className="w-20 h-20 border-2 border-accent/10 border-b-accent rounded-full animate-spin-slow absolute top-2 left-1/2 -translate-x-1/2" />
+                                    <Shield className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary animate-pulse" size={32} />
+                                </div>
+                                <div className="space-y-3 relative z-10">
+                                    <h3 className="text-xl font-outfit font-black text-white uppercase tracking-[0.4em] animate-pulse">Sincronizando Banco</h3>
+                                    <p className="text-slate-500 font-bold text-[0.65rem] uppercase tracking-[0.2em] max-w-[250px] mx-auto leading-relaxed">Conectando ao banco de dados e sincronizando suas ligas oficiais...</p>
+                                </div>
+                                <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent animate-scan" />
+                            </div>
+                        ) : leagues.length === 0 ? (
                             <div className="glass-panel py-20 px-10 text-center space-y-6">
                                 <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
                                     <Trophy size={40} className="text-slate-700" strokeWidth={1} />
@@ -306,7 +321,22 @@ const LeagueSelector = () => {
                     )}
 
                     {activeTab === 'following' && (
-                        followedLeagues.length === 0 ? (
+                        contextLoading ? (
+                            /* Premium Loading Card for Sync */
+                            <div className="glass-panel py-20 px-10 text-center space-y-8 relative overflow-hidden group border-primary/20 bg-primary/5 pb-24">
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+                                <div className="relative">
+                                    <div className="w-24 h-24 border-2 border-primary/10 border-t-primary rounded-full animate-spin mx-auto scale-110" />
+                                    <div className="w-20 h-20 border-2 border-accent/10 border-b-accent rounded-full animate-spin-slow absolute top-2 left-1/2 -translate-x-1/2" />
+                                    <Bell className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary animate-pulse" size={32} />
+                                </div>
+                                <div className="space-y-3 relative z-10">
+                                    <h3 className="text-xl font-outfit font-black text-white uppercase tracking-[0.4em] animate-pulse">Sincronizando Favoritos</h3>
+                                    <p className="text-slate-500 font-bold text-[0.65rem] uppercase tracking-[0.2em] max-w-[250px] mx-auto leading-relaxed">Sincronizando campeonatos que você segue através da sua conta...</p>
+                                </div>
+                                <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent animate-scan" />
+                            </div>
+                        ) : followedLeagues.length === 0 ? (
                             <div className="glass-panel py-20 px-10 text-center space-y-6">
                                 <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
                                     <Bell size={40} className="text-slate-700" strokeWidth={1} />
