@@ -651,9 +651,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 setLeague(null);
             }
             // If we don't have a user, we can't be loading non-public leagues
-            if (!isPublicView) {
-                setLoading(false);
-            }
+            setLoading(false);
             clearTimeout(globalTimeout);
             return;
         }
