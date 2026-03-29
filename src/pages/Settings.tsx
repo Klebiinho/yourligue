@@ -215,10 +215,19 @@ const Settings = () => {
             },
             (err: any) => {
                 console.error("GPS Error:", err);
-                alert("❌ Erro ao capturar GPS: " + (err.message || "Verifique as permissões do navegador."));
                 setIsCapturingGPS(false);
+                
+                if (err.code === 1) { // PERMISSION_DENIED
+                    alert("⚠️ Acesso ao GPS negado. \n\nPara usar sua localização atual, você precisa permitir o acesso nas configurações do seu navegador (clique no cadeado ao lado da URL). \n\nAlternativa: Use o campo 'Pesquisar Localização' abaixo para digitar o endereço manualmente.");
+                } else if (err.code === 2) { // POSITION_UNAVAILABLE
+                    alert("❌ Não foi possível determinar sua localização exata. Tente usar a busca manual por endereço.");
+                } else if (err.code === 3) { // TIMEOUT
+                    alert("⏱️ A solicitação de GPS expirou. Verifique sua conexão ou tente novamente.");
+                } else {
+                    alert("❌ Erro ao capturar GPS: " + (err.message || "Erro desconhecido."));
+                }
             },
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
         );
     };
 
