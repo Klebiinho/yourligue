@@ -45,11 +45,11 @@ const Sitemap = () => {
         { title: 'Localizações (Mapas)', icon: MapPin, items: leagues.map(l => ({ title: `Mapa: ${l.name}`, path: `/${l.slug}/localizacao` })) },
         { title: 'Jogadores Recentes', icon: User, items: recentPlayers },
         { title: 'Últimas Partidas', icon: Zap, items: recentMatches },
-        { title: 'Páginas do Site', icon: Globe, items: sitemapData.Paginas.map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
-        { title: 'Nossos Serviços', icon: FileText, items: sitemapData.Servicos.map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
-        { title: 'Blog', icon: FileText, items: sitemapData.Posts.map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
-        { title: 'Glossário', icon: FileText, items: sitemapData.Glossario.map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
-        { title: 'Dúvidas e FAQ', icon: FileText, items: sitemapData.Alfabeto.map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
+        { title: 'Páginas do Site', icon: Globe, items: (sitemapData.Paginas || []).map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
+        { title: 'Nossos Serviços', icon: FileText, items: (sitemapData.Servicos || []).map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
+        { title: 'Blog', icon: FileText, items: (sitemapData.Posts || []).map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
+        { title: 'Glossário', icon: FileText, items: (sitemapData.Glossario || []).map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
+        { title: 'Dúvidas e FAQ', icon: FileText, items: (sitemapData.Alfabeto || []).map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
         { title: 'Pesquisas Populares', icon: Search, items: (sitemapData.PesquisasFrequentes || []).map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
     ];
 
@@ -97,7 +97,7 @@ const Sitemap = () => {
                 {/* Content Sections Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {sections.map((section, idx) => (
-                        <div key={idx} className={`flex flex-col gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl hover:border-white/20 transition-all ${section.items.length === 0 && !isLoading ? 'hidden' : ''}`}>
+                        <div key={idx} className="flex flex-col gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl hover:border-white/20 transition-all">
                             <div className="flex items-center gap-3 border-b border-white/5 pb-4">
                                 <section.icon size={18} className="text-primary" />
                                 <h2 className="text-lg font-black text-white uppercase tracking-tight">{section.title}</h2>
