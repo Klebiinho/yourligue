@@ -129,7 +129,8 @@ const LeagueSelector = () => {
     };
 
     const handleRequestLocation = async (force = false) => {
-        if (locatingRef.current) return;
+        // Se já está buscando E NÃO foi forçado (clique manual), pula
+        if (locatingRef.current && !force) return;
         
         // RESET TOTAL DE ESTADOS PARA EVITAR FLICKERING
         setIsLocating(true);
