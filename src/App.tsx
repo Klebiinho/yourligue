@@ -60,7 +60,7 @@ const MainContent = () => {
         const fixedPaths = ['leagues', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sitemap', 'match'];
         if (slug && !fixedPaths.includes(slug)) {
             setNotFound(false);
-            loadPublicLeague(slug).then(success => {
+            loadPublicLeague(slug).then((success: boolean) => {
                 if (!success) setNotFound(true);
             });
         }
@@ -149,9 +149,6 @@ const MainContent = () => {
 };
 
 const App = () => {
-    // Basic config check (Appwrite configuration is managed in lib/appwrite.ts)
-    const hasConfig = true; 
-
     return (
         <BrowserRouter>
             <AuthProvider>
