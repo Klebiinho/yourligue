@@ -1,24 +1,53 @@
-import { FileText, ArrowLeft, ExternalLink, Globe } from 'lucide-react';
+import { FileText, ArrowLeft, ExternalLink, Globe, MapPin, User, Trophy, Zap } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLeague } from '../context/LeagueContext';
+import { supabase } from '../lib/supabase';
 import rawSitemapData from '../sitemap_data.json';
+
 const sitemapData = rawSitemapData as any;
 
 const Sitemap = () => {
     const navigate = useNavigate();
+    const { leagues } = useLeague();
+    const [recentPlayers, setRecentPlayers] = useState<any[]>([]);
+    const [recentMatches, setRecentMatches] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchRecentData = async () => {
+            setIsLoading(true);
+            try {
+                const { data: p } = await supabase.from('players').select('name, slug').limit(20).order('created_at', { ascending: false });
+                const { data: m } = await supabase.from('matches').select('id').limit(20).order('created_at', { ascending: false });
+                
+                if (p) setRecentPlayers(p.map(x => ({ title: `Jogador: ${x.name}`, path: `/${x.slug}/player` })));
+                if (m) setRecentMatches(m.map(x => ({ title: `Partida #${x.id.slice(0, 8)}`, path: `/match/${x.id}` })));
+            } catch (error) {
+                console.error("Erro ao buscar dados do sitemap:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchRecentData();
+    }, []);
 
     const sections = [
-        { title: 'Páginas do Site', icon: Globe, items: sitemapData.Paginas },
-        { title: 'Nossos Serviços', icon: FileText, items: sitemapData.Servicos },
-        { title: 'Blog', icon: FileText, items: sitemapData.Posts },
-        { title: 'Glossário', icon: FileText, items: sitemapData.Glossario },
-        { title: 'Categorias', icon: FileText, items: sitemapData.Categorias },
-        { title: 'Autores', icon: FileText, items: sitemapData.Autores },
-        { title: 'Navegação A-Z', icon: FileText, items: sitemapData.Alfabeto },
+        { title: 'Ligas Ativas', icon: Trophy, items: leagues.map(l => ({ title: l.name, path: `/${l.slug}` })) },
+        { title: 'Localizações (Mapas)', icon: MapPin, items: leagues.map(l => ({ title: `Mapa: ${l.name}`, path: `/${l.slug}/localizacao` })) },
+        { title: 'Jogadores Recentes', icon: User, items: recentPlayers },
+        { title: 'Últimas Partidas', icon: Zap, items: recentMatches },
+        { title: 'Páginas do Site', icon: Globe, items: sitemapData.Paginas || [] },
+        { title: 'Nossos Serviços', icon: FileText, items: sitemapData.Servicos || [] },
+        { title: 'Blog', icon: FileText, items: sitemapData.Posts || [] },
+        { title: 'Glossário', icon: FileText, items: sitemapData.Glossario || [] },
+        { title: 'Dúvidas e FAQ', icon: FileText, items: sitemapData.Alfabeto || [] },
     ];
 
     return (
         <div className="min-h-screen bg-[#050505] text-slate-300 font-outfit py-12 px-6 sm:px-12 lg:px-24">
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <button 
                     onClick={() => navigate(-1)}
@@ -33,48 +62,54 @@ const Sitemap = () => {
                         <Globe size={24} />
                     </div>
                     <div>
-                        <h1 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">Mapa do Site</h1>
-                        <p className="text-slate-500 text-sm mt-1 uppercase tracking-widest font-bold">Início • Serviços • Blog • Glossário</p>
+                        <h1 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">Mapa Global do Site</h1>
+                        <p className="text-slate-500 text-sm mt-1 uppercase tracking-widest font-bold">Ligas • Jogadores • Partidas • Conteúdo</p>
                     </div>
                 </div>
 
                 {/* Hero / SEO Copy Fragment */}
                 <div className="bg-white/5 border border-white/10 p-6 sm:p-8 rounded-3xl mb-12 shadow-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -mr-32 -mt-32 transition-opacity group-hover:opacity-100 opacity-50" />
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -mr-32 -mt-32 opacity-50 transition-opacity group-hover:opacity-100" />
                     
                     <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div>
                             <h2 className="text-2xl font-black text-white tracking-tight mb-2">
-                                YourLeague: A Plataforma Definitiva
+                                YourLeague: Gestão Esportiva de Elite
                             </h2>
                             <p className="text-slate-400 font-medium max-w-2xl text-sm leading-relaxed">
-                                O aplicativo completo para gerenciar ligas de várzea, organizar campeonatos e transmitir jogos ao vivo com qualidade profissional. Do chaveamento da competição à integração com o YouTube, nós entregamos a melhor experiência para organizadores, times e torcedores.
+                                Explore todos os recursos da nossa plataforma. Desde o acompanhamento de atletas individuais até o gerenciamento complexo de grandes ligas com súmula digital e transmissão ao vivo.
                             </p>
                         </div>
-                        <button onClick={() => navigate('/leagues')} className="bg-primary hover:bg-primary/90 text-black px-8 py-4 rounded-xl font-black uppercase text-sm tracking-widest transition-all shadow-[0_0_20px_rgba(235,255,0,0.3)] hover:shadow-[0_0_30px_rgba(235,255,0,0.5)] active:scale-95 flex-shrink-0">
-                            CRIE O SEU CAMPEONATO AGORA
+                        <button onClick={() => navigate('/auth')} className="bg-primary hover:bg-primary/90 text-black px-8 py-4 rounded-xl font-black uppercase text-sm tracking-widest transition-all shadow-[0_0_20px_rgba(235,255,0,0.3)] hover:shadow-[0_0_30px_rgba(235,255,0,0.5)] active:scale-95 flex-shrink-0">
+                            COMEÇAR AGORA
                         </button>
                     </div>
                 </div>
 
                 {/* Content Sections Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {sections.map((section, idx) => (
-                        <div key={idx} className="flex flex-col gap-4">
-                            <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                                <section.icon size={20} className="text-primary" />
-                                <h2 className="text-xl font-black text-white uppercase tracking-tight">{section.title}</h2>
-                                <span className="ml-auto text-xs font-bold text-slate-500 bg-white/5 px-2 py-1 rounded">
-                                    {section.items.length}
-                                </span>
+                        <div key={idx} className={`flex flex-col gap-4 p-6 bg-white/5 border border-white/10 rounded-3xl hover:border-white/20 transition-all ${section.items.length === 0 && !isLoading ? 'hidden' : ''}`}>
+                            <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+                                <section.icon size={18} className="text-primary" />
+                                <h2 className="text-lg font-black text-white uppercase tracking-tight">{section.title}</h2>
+                                {section.items.length > 0 && (
+                                    <span className="ml-auto text-[0.6rem] font-black text-slate-500 bg-black/40 px-2 py-1 rounded-lg">
+                                        {section.items.length}
+                                    </span>
+                                )}
                             </div>
 
-                            <ul className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                {section.items.map((item: any, idy: number) => (
+                            <ul className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                {isLoading && section.items.length === 0 ? (
+                                    <div className="h-40 flex items-center justify-center">
+                                        <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                                    </div>
+                                ) : section.items.map((item: any, idy: number) => (
                                     <li key={idy}>
                                         <Link 
                                             to={item.path} 
-                                            className="group flex gap-3 text-sm font-medium text-slate-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-3 rounded-lg border border-transparent hover:border-white/10"
+                                            className="group flex gap-3 text-[0.75rem] font-bold text-slate-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-3 rounded-xl border border-transparent hover:border-white/10"
                                         >
                                             <span className="text-primary/0 group-hover:text-primary transition-colors flex-shrink-0 mt-0.5">
                                                 <ExternalLink size={14} />
