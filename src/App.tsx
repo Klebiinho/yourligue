@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LeagueProvider, useLeague } from './context/LeagueContext';
 import { useEffect, useState } from 'react';
@@ -53,27 +53,33 @@ const NotFoundScreen = ({ message, onRetry }: { message: string; onRetry?: () =>
 const MainContent = () => {
     const { user, loading: authLoading } = useAuth();
     const { league, loading: leagueLoading, loadPublicLeague } = useLeague();
-    const { slug } = useParams<{ slug: string }>();
-    const navigate = useNavigate();
     const location = useLocation();
+    const navigate = useNavigate();
     const [notFound, setNotFound] = useState(false);
 
+    // Extract potential slug from URL safely without relying on nested wildcard matches
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    const firstSegment = pathParts[0] || '';
+
+    const fixedGlobalPaths = [
+        'leagues', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sitemap',
+        'blog', 'servicos', 'glossario', 'categoria', 'autor', 'duvidas', 'informacoes',
+        'sobre-nos', 'contato', 'inicio', 'politica-de-atualizacao-de-resultados',
+        'direitos-de-transmissao-e-imagem', 'regulamento-geral-de-competicoes',
+        'diretrizes-do-capitao-titular', 'player', 'match'
+    ];
+
+    const isFixedGlobal = fixedGlobalPaths.includes(firstSegment);
+    const slug = (!isFixedGlobal && firstSegment) ? firstSegment : undefined;
+
     useEffect(() => {
-        const fixedPaths = [
-            'leagues', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sitemap', 'match',
-            'blog', 'servicos', 'glossario', 'categoria', 'autor', 'duvidas', 'informacoes',
-            'sobre-nos', 'contato', 'inicio', 'politica-de-atualizacao-de-resultados',
-            'direitos-de-transmissao-e-imagem', 'regulamento-geral-de-competicoes',
-            'diretrizes-do-capitao-titular', 'player'
-        ];
-        if (slug && !fixedPaths.includes(slug)) {
+        if (slug) {
             setNotFound(false);
             loadPublicLeague(slug).then((success: boolean) => {
                 if (!success) setNotFound(true);
             });
         }
     }, [slug, loadPublicLeague]);
-
 
     useEffect(() => {
         if (user && window.location.hash.includes('access_token=')) {
@@ -89,22 +95,14 @@ const MainContent = () => {
         return <NotFoundScreen message="Esta liga não existe ou o link está incorreto." onRetry={() => navigate('/', { replace: true })} />;
     }
 
-    if (slug && !league) {
+    if (slug && !league && !leagueLoading) {
         return <LoadingScreen />;
     }
 
-    const publicPaths = [
-        'leagues', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sitemap', 
-        'blog', 'servicos', 'glossario', 'categoria', 'autor', 'duvidas', 'informacoes',
-        'sobre-nos', 'contato', 'inicio', 'politica-de-atualizacao-de-resultados',
-        'direitos-de-transmissao-e-imagem', 'regulamento-geral-de-competicoes',
-        'diretrizes-do-capitao-titular'
-    ];
-    const isPublicPage = publicPaths.some(p => location.pathname.startsWith('/' + p));
     const hasLeague = !!league || !!slug;
 
     // Only force login if not a public page AND not viewing a league AND not logged in
-    if (!user && !hasLeague && !isPublicPage) {
+    if (!user && !hasLeague && !isFixedGlobal && location.pathname !== '/') {
         return <AuthPage />;
     }
 
@@ -129,17 +127,16 @@ const MainContent = () => {
                         <Route path="/auth" element={<AuthPage />} />
                         <Route path="/leagues" element={<LeagueSelector />} />
 
-                        {/* Content Pages */}
+                        {/* Content Pages (Global) */}
                         <Route path="/blog" element={<DynamicContent />} />
-                        <Route path="/blog/:slug" element={<DynamicContent />} />
-                        <Route path="/servicos/:slug" element={<DynamicContent />} />
-                        <Route path="/glossario/:slug" element={<DynamicContent />} />
-                        <Route path="/categoria/:slug" element={<DynamicContent />} />
-                        <Route path="/autor/:slug" element={<DynamicContent />} />
+                        <Route path="/blog/:contentSlug" element={<DynamicContent />} />
+                        <Route path="/servicos/:contentSlug" element={<DynamicContent />} />
+                        <Route path="/glossario/:contentSlug" element={<DynamicContent />} />
+                        <Route path="/categoria/:contentSlug" element={<DynamicContent />} />
+                        <Route path="/autor/:contentSlug" element={<DynamicContent />} />
                         <Route path="/duvidas" element={<DynamicContent />} />
                         <Route path="/duvidas/:letter" element={<DynamicContent />} />
                         
-                        {/* Static Content Routes */}
                         <Route path="/sobre-nos" element={<DynamicContent />} />
                         <Route path="/contato" element={<DynamicContent />} />
                         <Route path="/informacoes" element={<DynamicContent />} />
@@ -148,30 +145,46 @@ const MainContent = () => {
                         <Route path="/regulamento-geral-de-competicoes" element={<DynamicContent />} />
                         <Route path="/diretrizes-do-capitao-titular" element={<DynamicContent />} />
                         
-                        {/* Overlay route (legacy or global) */}
-                        <Route path="match/:matchId/overlay" element={<MatchOverlay />} />
+                        <Route path="/match/:matchId/overlay" element={<MatchOverlay />} />
+                        <Route path="/match/:matchId" element={<MatchControl />} />
 
-                        {/* Shared routes using relative paths works for both / and /:slug */}
-                        <Route index element={(slug) ? <Dashboard /> : <LeagueSelector />} />
-                        <Route path="home" element={<Dashboard />} />
-                        <Route path="teams" element={<Teams />} />
-                        <Route path="teams/:teamId" element={<Teams />} />
-                        <Route path=":teamSlug/team" element={<Teams />} />
-                        <Route path="matches" element={<Matches />} />
-                        <Route path="matches/:matchId" element={<MatchControl />} />
-                        <Route path=":matchSlug/match" element={<MatchControl />} />
-                        <Route path=":playerSlug/player" element={<PlayerDetail />} />
-                        <Route path="standings" element={<Standings />} />
-                        <Route path="bracket" element={<Bracket />} />
-                        <Route path="live" element={<LiveMatches />} />
-                        <Route path="match/:matchId" element={<MatchControl />} />
-                        <Route path="settings" element={<Settings />} />
-                        <Route path="localizacao" element={<LeagueLocation />} />
+                        {/* LEAGUE SPECIFIC ROUTES */}
+                        <Route path="/:slug/sitemap" element={<Sitemap />} />
+                        <Route path="/:slug/blog" element={<DynamicContent />} />
+                        <Route path="/:slug/blog/:contentSlug" element={<DynamicContent />} />
+                        <Route path="/:slug/servicos/:contentSlug" element={<DynamicContent />} />
+                        <Route path="/:slug/glossario/:contentSlug" element={<DynamicContent />} />
+                        <Route path="/:slug/categoria/:contentSlug" element={<DynamicContent />} />
+                        <Route path="/:slug/autor/:contentSlug" element={<DynamicContent />} />
+                        <Route path="/:slug/duvidas" element={<DynamicContent />} />
+                        <Route path="/:slug/duvidas/:letter" element={<DynamicContent />} />
+                        
+                        <Route path="/:slug/sobre-nos" element={<DynamicContent />} />
+                        <Route path="/:slug/contato" element={<DynamicContent />} />
+                        <Route path="/:slug/informacoes" element={<DynamicContent />} />
+                        <Route path="/:slug/politica-de-atualizacao-de-resultados" element={<DynamicContent />} />
+                        <Route path="/:slug/direitos-de-transmissao-e-imagem" element={<DynamicContent />} />
+                        <Route path="/:slug/regulamento-geral-de-competicoes" element={<DynamicContent />} />
+                        <Route path="/:slug/diretrizes-do-capitao-titular" element={<DynamicContent />} />
 
-                        {/* Special case for //:slug/match/:matchId/overlay */}
-                        <Route path="match/:matchId/overlay" element={<MatchOverlay />} />
+                        <Route path="/:slug/localizacao" element={<LeagueLocation />} />
+                        <Route path="/:slug/match/:matchId/overlay" element={<MatchOverlay />} />
 
-                        {/* Fallback */}
+                        <Route path="/:slug" element={<Dashboard />} />
+                        <Route path="/:slug/home" element={<Dashboard />} />
+                        <Route path="/:slug/teams" element={<Teams />} />
+                        <Route path="/:slug/teams/:teamId" element={<Teams />} />
+                        <Route path="/:teamSlug/team" element={<Teams />} />
+                        <Route path="/:slug/matches" element={<Matches />} />
+                        <Route path="/:slug/matches/:matchId" element={<MatchControl />} />
+                        <Route path="/:matchSlug/match" element={<MatchControl />} />
+                        <Route path="/:playerSlug/player" element={<PlayerDetail />} />
+                        <Route path="/:slug/standings" element={<Standings />} />
+                        <Route path="/:slug/bracket" element={<Bracket />} />
+                        <Route path="/:slug/live" element={<LiveMatches />} />
+                        <Route path="/:slug/settings" element={<Settings />} />
+
+                        <Route path="/" element={<LeagueSelector />} />
                         <Route path="*" element={<Navigate to={slug ? `/${slug}/home` : "/"} replace />} />
                     </Routes>
                 </div>
@@ -189,18 +202,7 @@ const App = () => {
             <AuthProvider>
                 <LeagueProvider>
                     <Routes>
-                        {/* Static/Global Routes - Must be above :slug to avoid capture */}
-                        <Route path="/leagues/*" element={<MainContent />} />
-                        <Route path="/auth/*" element={<MainContent />} />
-                        <Route path="/sitemap/*" element={<MainContent />} />
-                        <Route path="/blog/*" element={<MainContent />} />
-                        <Route path="/duvidas/*" element={<MainContent />} />
-                        <Route path="/servicos/*" element={<MainContent />} />
-                        
-                        {/* Define :slug only for paths that are likely leagues or content */}
-                        <Route path="/:slug/*" element={<MainContent />} />
-                        
-                        {/* Fallback for root */}
+                        {/* We use a single root catch-all to ensure precise path checking in MainContent */}
                         <Route path="/*" element={<MainContent />} />
                     </Routes>
                 </LeagueProvider>

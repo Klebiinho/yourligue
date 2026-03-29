@@ -19,16 +19,23 @@ const DynamicContent = () => {
         window.scrollTo(0, 0);
         
         const currentPath = window.location.pathname;
+        
+        // Normalize path: if we're in a league scope (e.g., /testeb/blog/post), 
+        // strip the slug to match sitemapData paths (e.g., /blog/post).
+        const normalizedPath = (slug && currentPath.startsWith(`/${slug}`)) 
+            ? currentPath.substring(slug.length + 1) 
+            : currentPath;
+
         let found = null;
 
         // Check for listing pages first
-        if (currentPath === '/blog') {
+        if (normalizedPath === '/blog') {
             setContent({ title: 'Blog YourLeague', section: 'Posts', date: 'Atualizado hoje' });
             setListItems(sitemapData.Posts);
             return;
         }
 
-        if (currentPath === '/duvidas') {
+        if (normalizedPath === '/duvidas') {
             setContent({ title: 'Dúvidas de A a Z', section: 'Alfabeto', date: 'FAQ Oficial' });
             setListItems(sitemapData.Alfabeto);
             return;
@@ -36,7 +43,7 @@ const DynamicContent = () => {
 
         // Generic search in sitemap
         for (const section in sitemapData) {
-            found = sitemapData[section].find((item: any) => item.path === currentPath);
+            found = sitemapData[section].find((item: any) => item.path === normalizedPath);
             if (found) {
                 found.section = section;
                 break;
@@ -162,7 +169,7 @@ const DynamicContent = () => {
                     <div className="space-y-12">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {listItems.map((item, idx) => (
-                                <Link key={idx} to={item.path} className="group p-8 bg-white/5 border border-white/10 rounded-3xl hover:border-primary/40 transition-all hover:bg-white/10">
+                                <Link key={idx} to={(slug && item.path.startsWith('/')) ? `/${slug}${item.path}` : item.path} className="group p-8 bg-white/5 border border-white/10 rounded-3xl hover:border-primary/40 transition-all hover:bg-white/10">
                                     <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform">
                                         {getIcon(content.section)}
                                     </div>
@@ -249,7 +256,7 @@ const DynamicContent = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {sitemapData.Posts.slice(0, 2).map((post: any, i: number) => (
-                            <Link key={i} to={post.path} className="p-6 bg-black/40 border border-white/5 rounded-3xl hover:border-primary/30 transition-all group">
+                            <Link key={i} to={(slug && post.path.startsWith('/')) ? `/${slug}${post.path}` : post.path} className="p-6 bg-black/40 border border-white/5 rounded-3xl hover:border-primary/30 transition-all group">
                                 <p className="text-[0.6rem] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                                     <BookOpen size={12} className="text-primary" /> Blog / Notícias
                                 </p>

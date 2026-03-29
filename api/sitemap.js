@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import sitemapData from '../src/sitemap_data.json';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
@@ -7,17 +8,25 @@ export default async function handler(req, res) {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // 1. Fetch Static Routes from our sitemap_data.json (simulated or imported)
-    // In a real serverless env, we'd bundle the JSON
     const staticRoutes = [
         '/', '/blog', '/duvidas', '/leagues', '/auth', '/sitemap',
         '/politica-de-privacidade', '/termos-de-uso', '/sobre-nos', '/contato'
     ];
 
-    // 2. Fetch Dynamic Data
+    // 2. Extract dynamic content pages (Blog, FAQ, Glossary)
+    const contentRoutes = [];
+    ['Posts', 'Alfabeto', 'Glossario', 'Servicos'].forEach(category => {
+        if (sitemapData[category]) {
+            sitemapData[category].forEach(item => {
+                contentRoutes.push(item.path);
+            });
+        }
+    });
+
+    // 3. Fetch Dynamic Data
     const { data: leagues } = await supabase.from('leagues').select('slug, updated_at').limit(500);
     const { data: players } = await supabase.from('players').select('slug, updated_at').limit(500);
     const { data: matches } = await supabase.from('matches').select('id, updated_at').limit(500);
-    const { data: teams } = await supabase.from('teams').select('id, updated_at').limit(500);
 
     // 4. Generate XML
     const base_url = 'https://yourligue.vercel.app';
@@ -29,12 +38,14 @@ export default async function handler(req, res) {
         xml += `  <url>\n    <loc>${base_url}${route}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
     });
 
+    // Add Content Pages (The "Questions" for SEO)
+    contentRoutes.forEach(route => {
+        xml += `  <url>\n    <loc>${base_url}${route}</loc>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
+    });
+
     // Add Leagues and Locations
     leagues?.forEach(item => {
-        // Main League Page
         xml += `  <url>\n    <loc>${base_url}/${item.slug}</loc>\n    <lastmod>${new Date(item.updated_at).toISOString().split('T')[0]}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
-        
-        // Dedicated Location Page (SEO Local)
         xml += `  <url>\n    <loc>${base_url}/${item.slug}/localizacao</loc>\n    <lastmod>${new Date(item.updated_at).toISOString().split('T')[0]}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.5</priority>\n  </url>\n`;
     });
 

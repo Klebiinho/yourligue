@@ -9,7 +9,7 @@ const sitemapData = rawSitemapData as any;
 
 const Sitemap = () => {
     const navigate = useNavigate();
-    const { leagues } = useLeague();
+    const { leagues, league } = useLeague();
     const [recentPlayers, setRecentPlayers] = useState<any[]>([]);
     const [recentMatches, setRecentMatches] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -33,16 +33,23 @@ const Sitemap = () => {
         fetchRecentData();
     }, []);
 
+    const scopedPath = (path: string) => {
+        if (!league) return path;
+        const slugPrefix = `/${league.slug || league.id}`;
+        if (path.startsWith(slugPrefix)) return path;
+        return `${slugPrefix}${path}`;
+    };
+
     const sections = [
         { title: 'Ligas Ativas', icon: Trophy, items: leagues.map(l => ({ title: l.name, path: `/${l.slug}` })) },
         { title: 'Localizações (Mapas)', icon: MapPin, items: leagues.map(l => ({ title: `Mapa: ${l.name}`, path: `/${l.slug}/localizacao` })) },
         { title: 'Jogadores Recentes', icon: User, items: recentPlayers },
         { title: 'Últimas Partidas', icon: Zap, items: recentMatches },
-        { title: 'Páginas do Site', icon: Globe, items: sitemapData.Paginas || [] },
-        { title: 'Nossos Serviços', icon: FileText, items: sitemapData.Servicos || [] },
-        { title: 'Blog', icon: FileText, items: sitemapData.Posts || [] },
-        { title: 'Glossário', icon: FileText, items: sitemapData.Glossario || [] },
-        { title: 'Dúvidas e FAQ', icon: FileText, items: sitemapData.Alfabeto || [] },
+        { title: 'Páginas do Site', icon: Globe, items: sitemapData.Paginas.map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
+        { title: 'Nossos Serviços', icon: FileText, items: sitemapData.Servicos.map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
+        { title: 'Blog', icon: FileText, items: sitemapData.Posts.map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
+        { title: 'Glossário', icon: FileText, items: sitemapData.Glossario.map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
+        { title: 'Dúvidas e FAQ', icon: FileText, items: sitemapData.Alfabeto.map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
     ];
 
     return (
