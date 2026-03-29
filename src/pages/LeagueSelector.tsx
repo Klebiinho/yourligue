@@ -107,12 +107,6 @@ const LeagueSelector = () => {
             return;
         }
 
-        const options = {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-        };
-
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
@@ -121,12 +115,11 @@ const LeagueSelector = () => {
                 setHasSearchedNearby(true);
                 setIsLocating(false);
             },
-            (err) => {
-                console.error("Erro ao obter localização (Detalhado):", err.message, err.code);
-                alert("Não foi possível obter sua localização automaticamente. Verifique se as permissões estão ativas no seu navegador.");
+            (error) => {
+                console.error("Erro ao obter localização:", error);
+                alert("Não foi possível obter sua localização. Verifique as permissões do navegador.");
                 setIsLocating(false);
-            },
-            options
+            }
         );
     };
 
