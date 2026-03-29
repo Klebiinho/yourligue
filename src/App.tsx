@@ -19,6 +19,7 @@ import TermsOfService from './pages/TermsOfService';
 import MatchOverlay from './pages/MatchOverlay';
 import Sitemap from './pages/Sitemap';
 import PlayerDetail from './pages/PlayerDetail';
+import DynamicContent from './pages/DynamicContent';
 
 // Components
 import Sidebar from './components/Sidebar';
@@ -57,7 +58,13 @@ const MainContent = () => {
     const [notFound, setNotFound] = useState(false);
 
     useEffect(() => {
-        const fixedPaths = ['leagues', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sitemap', 'match'];
+        const fixedPaths = [
+            'leagues', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sitemap', 'match',
+            'blog', 'servicos', 'glossario', 'categoria', 'autor', 'duvidas', 'informacoes',
+            'sobre-nos', 'contato', 'inicio', 'politica-de-atualizacao-de-resultados',
+            'direitos-de-transmissao-e-imagem', 'regulamento-geral-de-competicoes',
+            'diretrizes-do-capitao-titular'
+        ];
         if (slug && !fixedPaths.includes(slug)) {
             setNotFound(false);
             loadPublicLeague(slug).then((success: boolean) => {
@@ -113,6 +120,25 @@ const MainContent = () => {
                         <Route path="/sitemap" element={<Sitemap />} />
                         <Route path="/auth" element={<AuthPage />} />
                         <Route path="/leagues" element={<LeagueSelector />} />
+
+                        {/* Content Pages */}
+                        <Route path="/blog" element={<DynamicContent />} />
+                        <Route path="/blog/:slug" element={<DynamicContent />} />
+                        <Route path="/servicos/:slug" element={<DynamicContent />} />
+                        <Route path="/glossario/:slug" element={<DynamicContent />} />
+                        <Route path="/categoria/:slug" element={<DynamicContent />} />
+                        <Route path="/autor/:slug" element={<DynamicContent />} />
+                        <Route path="/duvidas" element={<DynamicContent />} />
+                        <Route path="/duvidas/:letter" element={<DynamicContent />} />
+                        
+                        {/* Static Content Routes */}
+                        <Route path="/sobre-nos" element={<DynamicContent />} />
+                        <Route path="/contato" element={<DynamicContent />} />
+                        <Route path="/informacoes" element={<DynamicContent />} />
+                        <Route path="/politica-de-atualizacao-de-resultados" element={<DynamicContent />} />
+                        <Route path="/direitos-de-transmissao-e-imagem" element={<DynamicContent />} />
+                        <Route path="/regulamento-geral-de-competicoes" element={<DynamicContent />} />
+                        <Route path="/diretrizes-do-capitao-titular" element={<DynamicContent />} />
                         
                         {/* Overlay route (legacy or global) */}
                         <Route path="match/:matchId/overlay" element={<MatchOverlay />} />
@@ -159,6 +185,19 @@ const App = () => {
                         <Route path="/politica-de-privacidade/*" element={<MainContent />} />
                         <Route path="/termos-de-uso/*" element={<MainContent />} />
                         <Route path="/sitemap/*" element={<MainContent />} />
+                        <Route path="/blog/*" element={<MainContent />} />
+                        <Route path="/servicos/*" element={<MainContent />} />
+                        <Route path="/glossario/*" element={<MainContent />} />
+                        <Route path="/categoria/*" element={<MainContent />} />
+                        <Route path="/autor/*" element={<MainContent />} />
+                        <Route path="/duvidas/*" element={<MainContent />} />
+                        <Route path="/sobre-nos/*" element={<MainContent />} />
+                        <Route path="/contato/*" element={<MainContent />} />
+                        <Route path="/informacoes/*" element={<MainContent />} />
+                        <Route path="/politica-de-atualizacao-de-resultados/*" element={<MainContent />} />
+                        <Route path="/direitos-de-transmissao-e-imagem/*" element={<MainContent />} />
+                        <Route path="/regulamento-geral-de-competicoes/*" element={<MainContent />} />
+                        <Route path="/diretrizes-do-capitao-titular/*" element={<MainContent />} />
                         <Route path="/:slug/*" element={<MainContent />} />
                         <Route path="/*" element={<MainContent />} />
                     </Routes>
