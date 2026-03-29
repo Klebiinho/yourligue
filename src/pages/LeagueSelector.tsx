@@ -55,6 +55,8 @@ const LeagueSelector = () => {
         // Se mudou para Nearby ou clicou de novo na aba ativa, reseta tudo e busca
         if (tabId === 'nearby' && !locatingRef.current) {
             // Reset firme e instantâneo no trigger do clique
+            setIsLocating(true);
+            locatingRef.current = true;
             setHasSearchedNearby(false);
             setNearbyLeagues([]);
             handleRequestLocation(true);
