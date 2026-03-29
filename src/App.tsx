@@ -189,6 +189,8 @@ const App = () => {
             <AuthProvider>
                 <LeagueProvider>
                     <Routes>
+                        {/* Define :slug at top level so child routes match correctly */}
+                        <Route path="/:slug/*" element={<MainContent />} />
                         <Route path="/*" element={<MainContent />} />
                     </Routes>
                 </LeagueProvider>
