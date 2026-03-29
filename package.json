@@ -17,10 +17,12 @@
     "@capacitor/local-notifications": "^8.0.2",
     "@capacitor/push-notifications": "^8.0.2",
     "@supabase/supabase-js": "^2.99.0",
+    "appwrite": "^24.0.0",
     "downloadjs": "^1.4.7",
     "firebase": "^12.11.0",
     "html-to-image": "^1.11.13",
     "lucide-react": "^0.577.0",
+    "node-appwrite": "^23.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.1"

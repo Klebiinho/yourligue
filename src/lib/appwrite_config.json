@@ -1,0 +1,10 @@
+{
+  "databaseId": "69c8776300116304c6e5",
+  "collections": {
+    "leagues": "69c8784e003677547f81",
+    "teams": "69c87854002e9022352d",
+    "players": "69c8785a0015fd7e873b",
+    "matches": "69c87864001dc9ea5ab2",
+    "ads": "69c8786d000db1f665ec"
+  }
+}
