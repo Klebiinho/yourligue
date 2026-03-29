@@ -51,9 +51,15 @@ const LeagueSelector = () => {
     }
 
     const handleTabClick = (tabId: 'owned' | 'following' | 'nearby' | 'explore') => {
+        const wasNearby = activeTab === 'nearby';
         setActiveTab(tabId);
-        // Mecânica igual ao GPS das Settings: clicou, busca (se não estiver buscando agora)
+        
+        // Se mudou para Nearby ou clicou de novo na aba ativa, reseta tudo e busca
         if (tabId === 'nearby' && !locatingRef.current) {
+            // Reset firme e instantâneo no trigger do clique
+            setLocationErrorCode(null);
+            setHasSearchedNearby(false);
+            setNearbyLeagues([]);
             handleRequestLocation(true);
         }
     };
