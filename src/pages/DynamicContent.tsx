@@ -13,15 +13,28 @@ const DynamicContent = () => {
     const { slug, type, letter } = useParams<{ slug?: string; type?: string; letter?: string }>();
     const navigate = useNavigate();
     const [content, setContent] = useState<any>(null);
+    const [listItems, setListItems] = useState<any[]>([]);
 
     useEffect(() => {
         window.scrollTo(0, 0);
         
-        // Determinar o tipo com base no prefixo ou no parâmetro type
-        let found = null;
         const currentPath = window.location.pathname;
+        let found = null;
 
-        // Procurar em todas as seções do sitemap
+        // Check for listing pages first
+        if (currentPath === '/blog') {
+            setContent({ title: 'Blog YourLeague', section: 'Posts', date: 'Atualizado hoje' });
+            setListItems(sitemapData.Posts);
+            return;
+        }
+
+        if (currentPath === '/duvidas') {
+            setContent({ title: 'Dúvidas de A a Z', section: 'Alfabeto', date: 'FAQ Oficial' });
+            setListItems(sitemapData.Alfabeto);
+            return;
+        }
+
+        // Generic search in sitemap
         for (const section in sitemapData) {
             found = sitemapData[section].find((item: any) => item.path === currentPath);
             if (found) {
@@ -32,17 +45,24 @@ const DynamicContent = () => {
 
         if (found) {
             setContent(found);
-        } else {
-            // Fallback para rotas dinâmicas como /duvidas/a
-            if (letter) {
-                setContent({
-                    title: `Dúvidas - Letra ${letter.toUpperCase()}`,
-                    section: 'Alfabeto',
-                    date: '2026-03-22'
-                });
-            }
+            setListItems([]);
+        } else if (letter) {
+            const letterItems = sitemapData.Alfabeto.filter((item: any) => item.title.includes(`Letra ${letter.toUpperCase()}`));
+            setContent({ title: `Dúvidas - Letra ${letter.toUpperCase()}`, section: 'Alfabeto', date: '2026-03-22' });
+            setListItems(letterItems);
         }
     }, [slug, type, letter]);
+
+    const generateSmartAnswer = (title: string) => {
+        const t = title.toLowerCase();
+        if (t.includes('quem pode')) return "Qualquer pessoa, seja você um organizador experiente ou um apaixonado por esportes que quer profissionalizar sua pelada. Nossa plataforma atende desde torneios de bairro até federações oficiais.";
+        if (t.includes('como se chama')) return "O aplicativo para gerenciar campeonatos e acompanhar resultados em tempo real chama-se YourLeague. Ele está disponível via web e mobile para organizadores e jogadores.";
+        if (t.includes('importância')) return "A organização é o pilar que mantém sua liga viva. Sem um controle digital, você perde patrocinadores, visibilidade e, o mais importante, a confiança dos seus atletas.";
+        if (t.includes('diferença entre')) return "Torneios rápidos focam na emoção da eliminação direta (mata-mata), enquanto pontos corridos premiam a consistência e o planejamento a longo prazo.";
+        if (t.includes('transmissão')) return "Para transmitir jogos no YouTube, você precisa de um software de streaming (como o OBS), uma conexão estável e o YourLeague para exibir os placares e overlays profissionais.";
+        if (t.includes('erros comuns')) return "Os erros mais frequentes incluem súmulas rasuradas, falta de controle de artilharia e demora para atualizar a tabela. Todos esses problemas são resolvidos automaticamente pela nossa plataforma.";
+        return "Este tópico é essencial para a evolução do esporte amador. Através do YourLeague, garantimos que cada ação no campo ou na quadra seja registrada com precisão cirúrgica.";
+    };
 
     if (!content) {
         return (
@@ -50,8 +70,8 @@ const DynamicContent = () => {
                 <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6">
                     <HelpCircle size={40} />
                 </div>
-                <h1 className="text-2xl font-black text-white uppercase mb-2">Página em Construção</h1>
-                <p className="text-slate-500 mb-8 max-w-md">Estamos preparando o melhor conteúdo para você. Volte em breve!</p>
+                <h1 className="text-2xl font-black text-white uppercase mb-2">Página não encontrada</h1>
+                <p className="text-slate-500 mb-8 max-w-md">Não conseguimos encontrar este tópico específico. Verifique o link ou explore nosso mapa do site.</p>
                 <button onClick={() => navigate('/sitemap')} className="bg-primary text-black px-8 py-4 rounded-xl font-black uppercase text-xs tracking-widest">
                     Ver Mapa do Site
                 </button>
@@ -138,74 +158,83 @@ const DynamicContent = () => {
 
             {/* Main Content Body */}
             <article className="max-w-4xl mx-auto px-6 py-16">
-                <div className="prose prose-invert prose-p:text-slate-400 prose-p:leading-relaxed prose-p:text-lg prose-headings:text-white prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tight max-w-none space-y-12">
-                    
-                    {/* Placeholder Content Section 1 */}
-                    <div className="space-y-6">
-                        <h2 className="text-2xl border-l-4 border-primary pl-6">O que você precisa saber sobre {content.title}</h2>
-                        <p>
-                            No cenário competitivo atual, entender profundamente {content.title.toLowerCase()} é fundamental para o sucesso de qualquer organização de campeonatos. A YourLeague está comprometida em fornecer as ferramentas mais avançadas para transformar sua visão em realidade.
-                        </p>
-                        <p>
-                            Nossa plataforma foi desenhada focando na experiência do usuário, garantindo que cada detalhe de {content.title.toLowerCase()} seja tratado com o profissionalismo que o futebol amador e semiprofissional merece.
-                        </p>
-                    </div>
-
-                    {/* Dynamic Image Placeholder */}
-                    <div className="relative group rounded-3xl overflow-hidden border border-white/5 shadow-2xl aspect-video bg-white/5">
-                         <div className="absolute inset-0 flex items-center justify-center flex-col gap-4">
-                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary animate-pulse">
-                                <Globe size={32} />
-                            </div>
-                            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">YourLeague Content Hub</p>
-                         </div>
-                         <div className="absolute bottom-6 left-6 right-6 p-6 bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                             <p className="text-xs font-bold text-white uppercase mb-1">Impacto Tecnológico</p>
-                             <p className="text-[0.65rem] text-slate-400 uppercase tracking-widest leading-none">A evolução do esporte passa pela digitalização extrema.</p>
+                {listItems.length > 0 ? (
+                    <div className="space-y-12">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {listItems.map((item, idx) => (
+                                <Link key={idx} to={item.path} className="group p-8 bg-white/5 border border-white/10 rounded-3xl hover:border-primary/40 transition-all hover:bg-white/10">
+                                    <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform">
+                                        {getIcon(content.section)}
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">{item.title}</h3>
+                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{item.date || 'Ver detalhes'}</p>
+                                </Link>
+                            ))}
                          </div>
                     </div>
+                ) : (
+                    <div className="prose prose-invert prose-p:text-slate-400 prose-p:leading-relaxed prose-p:text-lg prose-headings:text-white prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tight max-w-none space-y-12">
+                        
+                        {/* Generated Answer Section */}
+                        <div className="space-y-6">
+                            <h2 className="text-2xl border-l-4 border-primary pl-6">Guia Definitivo: {content.title}</h2>
+                            <p className="font-medium text-slate-200 text-xl leading-relaxed italic">
+                                {generateSmartAnswer(content.title)}
+                            </p>
+                            <p>
+                                Na YourLeague, entendemos que o sucesso de uma competição vai muito além do apito final. Envolve uma gestão minuciosa de dados, transparência com os atletas e uma presença digital impactante que atraia patrocinadores e engajamento.
+                            </p>
+                        </div>
 
-                    {/* Placeholder Content Section 2 */}
-                    <div className="space-y-6">
-                        <h3 className="text-xl">Como a YourLeague ajuda neste processo?</h3>
-                        <p>
-                            Através da nossa tecnologia de ponta, permitimos que você foque no que realmente importa: a emoção do esporte. O gerenciamento de {content.title.toLowerCase()} torna-se automatizado e transparente para jogadores, patrocinadores e torcedores.
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-                            <div className="p-6 bg-white/5 border border-white/10 rounded-3xl hover:border-primary/20 transition-all cursor-default">
-                                <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center text-primary mb-4">
-                                    <Shield size={16} />
+                        {/* Dynamic Image Placeholder */}
+                        <div className="relative group rounded-3xl overflow-hidden border border-white/5 shadow-2xl aspect-video bg-white/5">
+                            <div className="absolute inset-0 flex items-center justify-center flex-col gap-4">
+                                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary animate-pulse">
+                                    <Globe size={32} />
                                 </div>
-                                <h4 className="text-sm font-black text-white uppercase mb-2">Segurança de Dados</h4>
-                                <p className="text-xs text-slate-500 leading-relaxed font-medium capitalize italic">Controle total sobre as informações da sua liga e atletas.</p>
+                                <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Tecnologia YourLeague Hub</p>
                             </div>
-                            <div className="p-6 bg-white/5 border border-white/10 rounded-3xl hover:border-primary/20 transition-all cursor-default">
-                                <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center text-primary mb-4">
-                                    <Zap className="w-4 h-4" />
+                        </div>
+
+                        {/* Additional Context */}
+                        <div className="space-y-6">
+                            <h3 className="text-xl">Como otimizar a gestão da sua liga</h3>
+                            <p>
+                                Implementar processos digitais é o primeiro passo para escalar seu torneio. Através de ferramentas como súmula eletrônica e tabelas automatizadas, você reduz o erro humano em até 95% e libera tempo para focar no marketing e expansão da sua marca esportiva.
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                                <div className="p-6 bg-white/5 border border-white/10 rounded-3xl hover:border-primary/20 transition-all cursor-default">
+                                    <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center text-primary mb-4">
+                                        <Shield size={16} />
+                                    </div>
+                                    <h4 className="text-sm font-black text-white uppercase mb-2">Transparência Total</h4>
+                                    <p className="text-xs text-slate-500 leading-relaxed font-medium italic">Histórico completo de jogadores, artilharia e punições sempre acessível.</p>
                                 </div>
-                                <h4 className="text-sm font-black text-white uppercase mb-2">Velocidade Extrema</h4>
-                                <p className="text-xs text-slate-500 leading-relaxed font-medium capitalize italic">Atualizações em tempo real para tabelas, gols e cartões.</p>
+                                <div className="p-6 bg-white/5 border border-white/10 rounded-3xl hover:border-primary/20 transition-all cursor-default">
+                                    <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center text-primary mb-4">
+                                        <Zap className="w-4 h-4" />
+                                    </div>
+                                    <h4 className="text-sm font-black text-white uppercase mb-2">Engajamento Digital</h4>
+                                    <p className="text-xs text-slate-500 leading-relaxed font-medium italic">Overlays profissionais que transformam qualquer live em um evento de elite.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Call to Action Row */}
+                        <div className="pt-12 mt-12 border-t border-white/5 flex flex-col items-center text-center">
+                            <div className="w-16 h-1 w-12 bg-primary/30 rounded-full mb-8" />
+                            <h2 className="text-3xl font-black text-white uppercase mb-4 tracking-tighter">Pronto para elevar o nível?</h2>
+                            <p className="text-slate-400 mb-10 max-w-xl text-sm font-bold uppercase tracking-widest">
+                                Comece a usar o YourLeague hoje mesmo e veja a diferença na organização da sua competição.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                                <button onClick={() => navigate('/auth')} className="bg-primary text-black px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-[0_0_30px_rgba(235,255,0,0.2)] hover:shadow-[0_0_50px_rgba(235,255,0,0.4)] transition-all transform hover:-translate-y-1">
+                                    CRIAR MINHA LIGA AGORA
+                                </button>
                             </div>
                         </div>
                     </div>
-
-                    {/* Call to Action Row */}
-                    <div className="pt-12 mt-12 border-t border-white/5 flex flex-col items-center text-center">
-                        <div className="w-16 h-1 w-12 bg-primary/30 rounded-full mb-8" />
-                        <h2 className="text-3xl font-black text-white uppercase mb-4 tracking-tighter">Pronto para elevar o nível da sua liga?</h2>
-                        <p className="text-slate-400 mb-10 max-w-xl text-sm font-bold uppercase tracking-widest">
-                            Junte-se a centenas de organizadores que já transformaram seus campeonatos com a YourLeague.
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
-                            <button onClick={() => navigate('/auth')} className="bg-primary text-black px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-[0_0_30px_rgba(235,255,0,0.2)] hover:shadow-[0_0_50px_rgba(235,255,0,0.4)] transition-all transform hover:-translate-y-1">
-                                COMEÇAR GRATUITAMENTE
-                            </button>
-                            <button onClick={() => navigate('/leagues')} className="bg-white/5 text-white border border-white/10 px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-white/10 transition-all">
-                                EXPLORAR LIGAS
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                )}
             </article>
 
             {/* Content Suggestions Section */}

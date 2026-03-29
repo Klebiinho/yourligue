@@ -1,7 +1,11 @@
 {
     "rewrites": [
         {
-            "source": "/(sitemap.xml|robots.txt|assets/.*|public/.*)",
+            "source": "/sitemap.xml",
+            "destination": "/api/sitemap"
+        },
+        {
+            "source": "/(robots.txt|assets/.*|public/.*)",
             "destination": "/$1"
         },
         {
