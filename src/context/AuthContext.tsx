@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
-import type { User, Session } from '@supabase/supabase-js';
+import { account } from '../lib/appwrite';
 import { registerPushNotifications } from '../services/pushNotifications';
+import { ID, OAuthProvider } from 'appwrite';
 
 interface AuthContextType {
-    user: User | null;
-    session: Session | null;
+    user: any | null; // Unified user object
+    session: any | null; // For compatibility
     loading: boolean;
     signIn: (email: string, password: string) => Promise<{ error: string | null }>;
     signUp: (email: string, password: string, name: string) => Promise<{ error: string | null }>;
@@ -17,86 +17,78 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [session, setSession] = useState<Session | null>(null);
+    const [user, setUser] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        // Safe timeout to prevent stuck loading screen if Supabase is slow/down
-        const timeout = setTimeout(() => {
-            if (loading) {
-                console.warn('AuthContext: getSession timeout reached. Forcing loading false.');
-                setLoading(false);
+    const refreshUser = async () => {
+        try {
+            const currentUser = await account.get();
+            setUser(currentUser);
+            if (currentUser?.$id) {
+                registerPushNotifications(currentUser.$id);
             }
-        }, 5000);
-
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            clearTimeout(timeout);
-            setSession(session);
-            setUser(session?.user ?? null);
+        } catch (err) {
+            setUser(null);
+        } finally {
             setLoading(false);
-        }).catch(err => {
-            console.error('AuthContext: getSession error:', err);
-            clearTimeout(timeout);
-            setLoading(false);
-        });
+        }
+    };
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            // Only update if something actually changed to avoid unnecessary re-renders on window focus
-            setSession(current => current?.access_token === session?.access_token ? current : session);
-            setUser(current => {
-                const newUser = session?.user ?? null;
-                if (newUser && current?.id !== newUser.id) {
-                    registerPushNotifications(newUser.id);
-                }
-                return current?.id === newUser?.id ? current : newUser;
-            });
-        });
-
-        return () => subscription.unsubscribe();
+    useEffect(() => {
+        refreshUser();
     }, []);
 
     const signIn = async (email: string, password: string) => {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        return { error: error?.message ?? null };
+        try {
+            // First, delete current session if exists to avoid "session already exists" error
+            try { await account.deleteSession('current'); } catch(e) {}
+            
+            await account.createEmailPasswordSession(email, password);
+            await refreshUser();
+            return { error: null };
+        } catch (err: any) {
+            return { error: err.message || 'Erro ao realizar login' };
+        }
     };
 
     const signUp = async (email: string, password: string, name: string) => {
-        const { error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: { data: { name } }
-        });
-        return { error: error?.message ?? null };
+        try {
+            await account.create(ID.unique(), email, password, name);
+            // After creation, login automatically
+            await account.createEmailPasswordSession(email, password);
+            await refreshUser();
+            return { error: null };
+        } catch (err: any) {
+            return { error: err.message || 'Erro ao criar conta' };
+        }
     };
 
     const signInWithGoogle = async () => {
-        // Redireciona especificamente para /leagues (Central de Ligas)
         const redirectTo = `${window.location.origin}/leagues`;
-        console.log('AuthContext: Initiating Google Sign-In with redirect to:', redirectTo);
-        
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
+        console.log('AuthContext: Initiating Appwrite Google Sign-In with redirect to:', redirectTo);
+        try {
+            account.createOAuth2Session(
+                OAuthProvider.Google,
                 redirectTo,
-                queryParams: {
-                    access_type: 'offline',
-                    prompt: 'consent',
-                }
-            }
-        });
-
-        if (error) {
-            console.error('AuthContext: Google Sign-In Error:', error.message);
+                `${window.location.origin}/login`
+            );
+        } catch (err) {
+            console.error('AuthContext: Google Sign-In Error:', err);
         }
     };
 
     const signOut = async () => {
-        await supabase.auth.signOut();
+        try {
+            await account.deleteSession('current');
+            setUser(null);
+        } catch (err) {
+            console.error('AuthContext: Error in signOut:', err);
+            setUser(null); // Force logout state regardless
+        }
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signInWithGoogle, signOut }}>
+        <AuthContext.Provider value={{ user, session: user, loading, signIn, signUp, signInWithGoogle, signOut }}>
             {children}
         </AuthContext.Provider>
     );

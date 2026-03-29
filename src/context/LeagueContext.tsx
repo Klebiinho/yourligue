@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
+import { databases, databaseId, collections } from '../lib/appwrite';
+import { Query, ID } from 'appwrite';
 import { useAuth } from './AuthContext';
 import { YouTubeService } from '../services/youtube';
 
@@ -228,35 +229,35 @@ interface LeagueContextType {
 
 // ─── Mappings (DB to Frontend) ──────────────────────────────
 const mapDBEvent = (e: any): MatchEvent => ({
-    id: e.id,
+    id: e.$id,
     type: e.type,
-    teamId: e.team_id,
-    playerId: e.player_id,
-    playerOutId: e.player_out_id,
+    teamId: e.teamId,
+    playerId: e.playerId,
+    playerOutId: e.playerOutId,
     minute: e.minute
 });
 
 const mapDBMatch = (m: any): Match => ({
-    id: m.id,
-    homeTeamId: m.home_team_id,
-    awayTeamId: m.away_team_id,
-    homeScore: m.home_score || 0,
-    awayScore: m.away_score || 0,
+    id: m.$id,
+    homeTeamId: m.homeTeamId,
+    awayTeamId: m.awayTeamId,
+    homeScore: m.homeScore || 0,
+    awayScore: m.awayScore || 0,
     status: m.status,
     timer: m.timer || 0,
-    youtubeLiveId: m.youtube_live_id,
-    halfLength: m.half_length,
-    extraTime: m.extra_time,
+    youtubeLiveId: m.youtubeLiveId,
+    halfLength: m.halfLength,
+    extraTime: m.extraTime,
     period: m.period,
-    scheduledAt: m.scheduled_at,
+    scheduledAt: m.scheduledAt,
     location: m.location,
-    updatedAt: m.updated_at || m.created_at || new Date().toISOString(),
+    updatedAt: m.updated_at || m.$createdAt || new Date().toISOString(),
     slug: m.slug,
     events: (m.match_events || []).map(mapDBEvent)
 });
 
 const mapDBPlayer = (p: any): Player => ({
-    id: p.id,
+    id: p.$id,
     name: p.name,
     number: p.number || 0,
     position: p.position || '',
@@ -275,7 +276,7 @@ const mapDBPlayer = (p: any): Player => ({
 const mapDBTeam = (t: any): Team => {
     const players = (t.players || []).map(mapDBPlayer).sort((a: Player, b: Player) => (a.displayOrder || 0) - (b.displayOrder || 0));
     return {
-        id: t.id,
+        id: t.$id,
         name: t.name,
         logo: t.logo || '',
         primaryColor: t.primary_color || null,
@@ -288,16 +289,16 @@ const mapDBTeam = (t: any): Team => {
 };
 
 const mapDBBracket = (b: any): BracketMatch => ({
-    id: b.id, round: b.round, matchOrder: b.match_order,
+    id: b.$id, round: b.round, matchOrder: b.match_order,
     homeTeamId: b.home_team_id, awayTeamId: b.away_team_id,
     homeScore: b.home_score || 0, awayScore: b.away_score || 0, 
     status: b.status
 });
 
 const mapDBLeague = (l: any): League => ({
-    id: l.id, name: l.name || 'Sem nome', logo: l.logo || '', maxTeams: l.max_teams || 20,
-    pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
-    pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
+    id: l.$id, name: l.name || 'Sem nome', logo: l.logo || '', maxTeams: l.max_teams || 20,
+    pointsForWin: l.points_for_win || 3, pointsForDraw: l.points_for_draw || 1,
+    pointsForLoss: l.points_for_loss || 0, defaultHalfLength: l.default_half_length || 45,
     overtimeHalfLength: l.overtime_half_length || 15,
     playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
     substitutionsLimit: l.substitutions_limit || 5,
@@ -812,49 +813,47 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         if (!slugOrId) return false;
         
         try {
-            const isSameLeague = league && (league.slug === slugOrId || league.id === slugOrId);
+            const isSameLeague = league && (league.slug === slugOrId || league.$id === slugOrId);
 
             if (!isSameLeague) {
                 console.log('LeagueContext: Resetting data for new public league');
                 setLoading(true);
-                setDataLoading(true); // Ensure full reload state for new league
+                setDataLoading(true);
                 setRawTeams([]);
                 setRawMatches([]);
                 setBrackets([]);
                 setUserInteractions([]);
                 setSupportCounts({});
-            } else {
-                console.log('LeagueContext: Same league requested, keeping current data for seamless transition');
-                // Silent update in background if it's the same league
             }
             
             // Fetch by slug
-            let { data: slugData } = await supabase.from('leagues').select(`
-                *,
-                follower_count:followed_leagues(count)
-            `).eq('slug', slugOrId).limit(1);
+            let documents;
+            try {
+                const res = await databases.listDocuments(databaseId, collections.leagues, [
+                    Query.equal('slug', slugOrId)
+                ]);
+                documents = res.documents;
+            } catch (e) {
+                documents = [];
+            }
 
-            let row = slugData?.[0];
+            let row = documents?.[0];
 
-            // If not found by slug, maybe it was an ID (UUID)
-            if (!row && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId)) {
-                const { data: idData } = await supabase.from('leagues').select(`
-                    *,
-                    follower_count:followed_leagues(count)
-                `).eq('id', slugOrId).limit(1);
-                row = idData?.[0];
+            // If not found by slug, maybe it was an ID
+            if (!row) {
+                try {
+                    row = await databases.getDocument(databaseId, collections.leagues, slugOrId);
+                } catch (e) {}
             }
 
             if (row) {
                 const mapped = mapDBLeague(row);
                 
-                // Only update state if something changed or it's a new league
                 if (!isSameLeague || JSON.stringify(mapped) !== JSON.stringify(league)) {
                     setLeague(mapped);
                     localStorage.setItem('selectedLeagueId', mapped.id);
                     
-                    // If the user is the owner, default to Admin Mode (not public view)
-                    if (user && mapped.userId === user.id) {
+                    if (user && mapped.userId === user.$id) {
                         const savedPref = localStorage.getItem('isPublicView');
                         if (savedPref === null) setIsPublicView(false);
                         else setIsPublicView(savedPref === 'true');
@@ -862,9 +861,6 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                         setIsPublicView(true);
                     }
                 }
-                
-                // If it's the SAME league, loadLeagueData will be called by useEffect [league?.id]
-                // But we already have the data, so it will be a background refresh.
                 return true;
             } else {
                 console.warn('LeagueContext: Public league not found');
@@ -876,11 +872,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             return false;
         } finally {
             setLoading(false);
-            setDataLoading(false); // Safety: ensure data loading is also reset
-            console.log('LeagueContext: loadPublicLeague completed');
+            setDataLoading(false);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [league, user]);
 
     const loadUserInteractions = useCallback(async (leagueId: string) => {
         if (!user) { setUserInteractions([]); return; }
@@ -930,112 +924,52 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const loadLeagueData = useCallback(async (leagueId: string, background = false) => {
         if (!leagueId) return;
         
-        // Prevent simultaneous duplicate loads for the same league
         if (loadingRef.current === leagueId && !background) return;
         loadingRef.current = leagueId;
 
         console.log('LeagueContext: Sync triggered for', leagueId, background ? '(background)' : '(full)');
 
-        
-        loadUserInteractionsRef.current(leagueId);
-        loadSupportCountsRef.current(leagueId);
-
-        // Try cache for instant mount
-        const recovered = tryRecoverFromCache(leagueId);
-        
-        // Safety: Even if recovered, if teams are empty, we don't have enough data to skip loading
-        const hasActualData = rawTeams.length > 0 || (recovered && teamsRef.current.length > 0);
-        
-        if (!background && !hasActualData) {
-            console.log('LeagueContext: Data missing or empty cache, showing loader');
+        if (!background && rawTeams.length === 0) {
             setDataLoading(true);
         }
 
-
         try {
-            // PHASE 1: CORE DATA (Essential per-frame metadata)
-            const [teamsRes, matchesRes, bracketsRes, adsRes] = await Promise.all([
-                // Metadata ONLY for teams (No players here, very fast)
-                supabase.from('teams')
-                    .select('*')
-                    .eq('league_id', leagueId)
-                    .order('name', { ascending: true }),
-                // Core matches (Last 100 to avoid giant JSON)
-                supabase.from('matches')
-                    .select('*, match_events(*)')
-                    .eq('league_id', leagueId)
-                    .order('updated_at', { ascending: false })
-                    .limit(100),
-                supabase.from('brackets').select('*').eq('league_id', leagueId),
-                supabase.from('ads').select('*').eq('league_id', leagueId).order('display_order', { ascending: true })
+            const [teamsRes, matchesRes, adsRes] = await Promise.all([
+                databases.listDocuments(databaseId, collections.teams, [
+                    Query.equal('league_id', leagueId),
+                    Query.limit(100)
+                ]),
+                databases.listDocuments(databaseId, collections.matches, [
+                    Query.equal('league_id', leagueId),
+                    Query.limit(100)
+                ]),
+                databases.listDocuments(databaseId, collections.ads, [
+                    Query.equal('league_id', leagueId),
+                    Query.limit(100)
+                ])
             ]);
 
-            if (teamsRes.error) console.error('LeagueContext: Teams fetch error:', teamsRes.error);
-            if (matchesRes.error) console.error('LeagueContext: Matches fetch error:', matchesRes.error);
-            if (bracketsRes.error) console.error('LeagueContext: Brackets fetch error:', bracketsRes.error);
-            if (adsRes.error) console.error('LeagueContext: Ads fetch error (500 expected):', adsRes.error);
+            const mappedTeams = teamsRes.documents.map(mapDBTeam);
+            setRawTeams(mappedTeams);
+            teamsRef.current = mappedTeams;
 
-            if (teamsRes.data) {
-                const mappedTeams = teamsRes.data.map(mapDBTeam);
-                console.log('LeagueContext: Teams loaded:', mappedTeams.length);
-                setRawTeams(mappedTeams);
-                teamsRef.current = mappedTeams;
-            }
-            if (matchesRes.data) {
-                console.log('LeagueContext: Matches loaded:', matchesRes.data.length);
-                setRawMatches(matchesRes.data.map(mapDBMatch));
-            }
-            if (bracketsRes.data) setBrackets(bracketsRes.data.map(mapDBBracket));
-            if (adsRes.data) {
-                setAds(adsRes.data.map((a: any) => ({
-                    ...a, display_order: a.display_order || 0
-                })));
-            }
+            setRawMatches(matchesRes.documents.map(mapDBMatch));
+            setAds(adsRes.documents.map((a: any) => ({ ...a, display_order: a.display_order || 0 })));
 
+            // Lazy load players for each team
+            const playerRes = await databases.listDocuments(databaseId, collections.players, [
+                Query.equal('league_id', leagueId),
+                Query.limit(1000)
+            ]);
 
-            // PHASE 2: LAZY LOADING HEAVY DATA (Background)
-            const loadHeavyData = async () => {
-                try {
-                    const tIds = teamsRes.data?.map(t => t.id) || [];
-                    if (tIds.length === 0) return;
-
-                    const { data: playersData, error: pErr } = await supabase.from('players')
-                        .select('id, name, number, position, team_id, is_captain, is_reserve, display_order')
-                        .in('team_id', tIds);
-                    
-                    if (pErr) throw pErr;
-
-                    if (playersData) {
-                        setRawTeams(prev => prev.map(t => ({
-                            ...t,
-                            players: playersData.filter(p => p.team_id === t.id).map(mapDBPlayer)
-                        })));
-                    }
-
-                    // If league has MORE than 100 matches, fetch the rest in background
-                    if (matchesRes.data && matchesRes.data.length >= 100) {
-                       const { data: moreMatches } = await supabase.from('matches')
-                           .select('*, match_events(*)')
-                           .eq('league_id', leagueId)
-                           .order('updated_at', { ascending: false })
-                           .range(100, 300);
-                       if (moreMatches) {
-                           setRawMatches(prev => {
-                               const existingIds = new Set(prev.map(m => m.id));
-                               const filtered = moreMatches.filter(m => !existingIds.has(m.id)).map(mapDBMatch);
-                               return [...prev, ...filtered];
-                           });
-                       }
-                    }
-                } catch (e) {
-                    console.warn('LeagueContext: Lazy load suppressed/failed:', e);
-                }
-            };
-
-            loadHeavyData();
+            const playersData = playerRes.documents;
+            setRawTeams(prev => prev.map(t => ({
+                ...t,
+                players: playersData.filter((p: any) => p.team_id === t.id).map(mapDBPlayer)
+            })));
 
         } catch (err) {
-            console.error('LeagueContext: Performance load failed:', err);
+            console.error('LeagueContext: Data load failed:', err);
         } finally {
             if (loadingRef.current === leagueId) {
                 setLoading(false);
@@ -1043,7 +977,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 loadingRef.current = null;
             }
         }
-    }, [rawTeams.length, rawMatches.length, tryRecoverFromCache]);
+    }, [rawTeams.length]);
 
     const loadTeamPhotos = useCallback(async (teamId: string) => {
         if (!teamId) return;
@@ -1299,47 +1233,30 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     // ── League CRUD ────────────────────────────────────────────
     const createLeague = async (data: Omit<League, 'id' | 'slug' | 'userId'>) => {
         try {
-            let activeUser = user;
-            
-            // Reforço: se o estado do hook estiver vazio, tenta pegar diretamente do Supabase
-            if (!activeUser) {
-                const { data: { user: supabaseUser } } = await supabase.auth.getUser();
-                activeUser = supabaseUser;
-            }
-
-            if (!activeUser) {
+            if (!user) {
                 alert('Você precisa estar logado para criar uma liga.');
                 return { error: 'Usuário não autenticado' };
             }
 
             const slug = generateSlug(data.name);
-            const { data: existing } = await supabase.from('leagues').select('id').eq('slug', slug).single();
-            if (existing) return { error: 'Uma liga com este nome já existe.' };
-
-            const { data: row, error } = await supabase.from('leagues').insert({
-                user_id: activeUser.id, name: data.name, logo: data.logo, max_teams: data.maxTeams,
-                points_for_win: data.pointsForWin, points_for_draw: data.pointsForDraw,
-                points_for_loss: data.pointsForLoss, default_half_length: data.defaultHalfLength,
-                players_per_team: data.playersPerTeam, reserve_limit_per_team: data.reserveLimitPerTeam,
+            
+            const row = await databases.createDocument(databaseId, collections.leagues, ID.unique(), {
+                user_id: user.$id,
+                name: data.name,
+                logo: data.logo,
+                max_teams: data.maxTeams,
+                points_for_win: data.pointsForWin,
+                points_for_draw: data.pointsForDraw,
+                points_for_loss: data.pointsForLoss,
+                default_half_length: data.defaultHalfLength,
+                players_per_team: data.playersPerTeam,
+                reserve_limit_per_team: data.reserveLimitPerTeam,
                 substitutions_limit: data.substitutionsLimit,
                 allow_substitution_return: data.allowSubstitutionReturn ?? true,
                 has_overtime: data.hasOvertime ?? true,
                 sport_type: data.sportType,
                 slug
-            }).select().single();
-
-            if (error) {
-                console.error('Error creating league:', error);
-                
-                // Trata erro específico de coluna inexistente (caso usuário não tenha rodado o SQL)
-                if (error.code === '42703') {
-                    alert('Erro de Banco de Dados: A coluna "sport_type" não foi encontrada. \n\nPOR FAVOR, EXECUTE O SCRIPT SQL (add_sport_to_leagues.sql) NO SEU DASHBOARD DO SUPABASE.');
-                } else {
-                    alert('Erro ao criar liga: ' + error.message);
-                }
-                
-                return { error: error.message };
-            }
+            });
 
             if (row) {
                 const lg: League = mapDBLeague(row);
@@ -1350,7 +1267,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             return { error: 'Erro desconhecido ao cadastrar liga.' };
         } catch (err: any) {
             console.error('Crash in createLeague:', err);
-            alert('Erro crítico ao criar liga: ' + (err.message || 'Erro desconhecido'));
+            alert('Erro ao criar liga: ' + (err.message || 'Erro desconhecido'));
             return { error: err.message };
         }
     };
@@ -1373,16 +1290,10 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         };
 
         if (data.name && data.name !== league.name) {
-            const newSlug = generateSlug(data.name);
-            const { data: existing } = await supabase.from('leagues').select('id').eq('slug', newSlug).neq('id', league.id).single();
-            if (existing) {
-                alert('Este nome de liga já está em uso.');
-                return;
-            }
-            updateData.slug = newSlug;
+            updateData.slug = generateSlug(data.name);
         }
 
-        await supabase.from('leagues').update(updateData).eq('id', league.id);
+        await databases.updateDocument(databaseId, collections.leagues, league.id, updateData);
         const updated = { ...league, ...data };
         if (updateData.slug) updated.slug = updateData.slug;
         setLeague(updated);
@@ -1390,7 +1301,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const deleteLeague = async (id: string) => {
-        await supabase.from('leagues').delete().eq('id', id);
+        await databases.deleteDocument(databaseId, collections.leagues, id);
         const remaining = leagues.filter(l => l.id !== id);
         setLeagues(remaining);
         if (league?.id === id) setLeague(remaining[0] ?? null);
@@ -1424,69 +1335,61 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     // ── Team CRUD ──────────────────────────────────────────────
     const addTeam = async (team: { name: string; logo: string; primary_color?: string; secondary_color?: string }) => {
         if (!league) return { error: 'Nenhuma liga selecionada' };
-        const { data, error } = await supabase.from('teams').insert({ 
-            league_id: league.id, 
-            name: team.name, 
-            logo: team.logo,
-            primary_color: team.primary_color,
-            secondary_color: team.secondary_color 
-        }).select().single();
-        if (error) return { error: error.message };
-        if (data) {
-            setRawTeams(prev => [...prev, mapDBTeam(data)]);
+        try {
+            const row = await databases.createDocument(databaseId, collections.teams, ID.unique(), {
+                league_id: league.id,
+                name: team.name,
+                logo: team.logo,
+                primary_color: team.primary_color,
+                secondary_color: team.secondary_color,
+                slug: generateSlug(team.name)
+            });
+            if (row) {
+                setRawTeams(prev => [...prev, mapDBTeam(row)]);
+                return { error: null };
+            }
+            return { error: 'Erro ao criar time' };
+        } catch (err: any) {
+            return { error: err.message };
         }
-        return { error: null };
     };
 
     const updateTeam = async (teamId: string, data: Partial<{ name: string; logo: string; primary_color: string; secondary_color: string }>) => {
-        console.log('[LeagueContext] Iniciando updateTeam:', { teamId, updateKeys: Object.keys(data) });
-        
         try {
-            // Limpa campos vazios ou nulos que não devem ser enviados
             const updatePayload: any = {};
-            if (data.name) updatePayload.name = data.name;
+            if (data.name) {
+                updatePayload.name = data.name;
+                updatePayload.slug = generateSlug(data.name);
+            }
             if (data.logo) updatePayload.logo = data.logo;
             if (data.primary_color) updatePayload.primary_color = data.primary_color;
             if (data.secondary_color) updatePayload.secondary_color = data.secondary_color;
 
-            const { data: updatedData, error } = await supabase
-                .from('teams')
-                .update(updatePayload)
-                .eq('id', teamId)
-                .select()
-                .single();
+            const row = await databases.updateDocument(databaseId, collections.teams, teamId, updatePayload);
             
-            if (error) {
-                console.error('[LeagueContext] Erro fatal no Supabase updateTeam:', error);
-                return { error: `Erro no servidor: ${error.message} (Código: ${error.code})` };
+            if (row) {
+                setRawTeams(prev => prev.map(t => {
+                    if (t.id === teamId) {
+                        const mapped = mapDBTeam(row);
+                        return { ...mapped, players: t.players }; 
+                    }
+                    return t;
+                }));
+                return { error: null };
             }
-
-            if (!updatedData) {
-                console.error('[LeagueContext] Update concluído mas nenhum dado retornado para ID:', teamId);
-                return { error: 'O time não foi encontrado para atualização.' };
-            }
-
-            console.log('[LeagueContext] Update bem-sucedido:', updatedData.id);
-
-            // Sincroniza estado local com o retorno real do banco, preservando os jogadores
-            setRawTeams(prev => prev.map(t => {
-                if (t.id === teamId) {
-                    const mapped = mapDBTeam(updatedData);
-                    return { ...mapped, players: t.players }; // Preserva os jogadores do estado atual
-                }
-                return t;
-            }));
-            
-            return { error: null };
+            return { error: 'Time não encontrado.' };
         } catch (err: any) {
-            console.error('[LeagueContext] Exceção inesperada em updateTeam:', err);
-            return { error: 'Ocorreu um erro inesperado ao salvar. Verifique o tamanho da imagem.' };
+            return { error: err.message };
         }
     };
 
     const deleteTeam = async (teamId: string) => {
-        await supabase.from('teams').delete().eq('id', teamId);
-        setRawTeams(prev => prev.filter(t => t.id !== teamId));
+        try {
+            await databases.deleteDocument(databaseId, collections.teams, teamId);
+            setRawTeams(prev => prev.filter(t => t.id !== teamId));
+        } catch (err) {
+            console.error('Error deleting team:', err);
+        }
     };
 
     // ── Player CRUD ────────────────────────────────────────────
@@ -1511,148 +1414,113 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             return { error: `O limite de reservas (${league.reserveLimitPerTeam}) já foi atingido.` };
         }
 
-        const { data, error } = await supabase.from('players').insert({
-            team_id: teamId, 
-            league_id: league.id, 
-            name: player.name, 
-            number: player.number,
-            position: player.position, 
-            photo: player.photo || '',
-            is_captain: player.isCaptain || false, 
-            is_reserve: player.isReserve || false
-        }).select().single();
+        try {
+            const row = await databases.createDocument(databaseId, collections.players, ID.unique(), {
+                team_id: teamId, 
+                league_id: league.id, 
+                name: player.name, 
+                number: player.number,
+                position: player.position, 
+                photo: player.photo || '',
+                is_captain: player.isCaptain || false, 
+                is_reserve: player.isReserve || false,
+                display_order: player.displayOrder || 0,
+                slug: generateSlug(player.name)
+            });
 
-        if (error) return { error: error.message };
-        if (data) {
-            const newPlayer = mapDBPlayer(data);
-            setRawTeams(prev => prev.map(t => {
-                if (t.id === teamId) {
-                    const updatedPlayers = [...t.players, newPlayer];
-                    // Se for o primeiro titular e não houver capitão, torna-o capitão
-                    const hasCaptain = updatedPlayers.some(p => p.isCaptain);
-                    if (!hasCaptain && !newPlayer.isReserve) {
-                        newPlayer.isCaptain = true;
-                        supabase.from('players').update({ is_captain: true }).eq('id', newPlayer.id).then();
+            if (row) {
+                const newPlayer = mapDBPlayer(row);
+                setRawTeams(prev => prev.map(t => {
+                    if (t.id === teamId) {
+                        const updatedPlayers = [...t.players, newPlayer];
+                        const hasCaptain = updatedPlayers.some(p => p.isCaptain);
+                        if (!hasCaptain && !newPlayer.isReserve) {
+                            newPlayer.isCaptain = true;
+                            databases.updateDocument(databaseId, collections.players, newPlayer.id, { is_captain: true }).then();
+                        }
+                        return { ...t, players: updatedPlayers };
                     }
-                    return { ...t, players: updatedPlayers };
-                }
-                return t;
-            }));
+                    return t;
+                }));
+            }
+            return { error: null };
+        } catch (err: any) {
+            return { error: err.message };
         }
-        return { error: null };
     };
 
     const updatePlayer = async (teamId: string, playerId: string, data: Partial<Player>) => {
         const team = rawTeams.find(t => t.id === teamId);
         const player = team?.players.find(p => p.id === playerId);
-        if (!team || !player || !league) {
-            console.error('[LeagueContext] Erro: Dados insuficientes', { teamId, playerId });
-            return { error: 'Dados insuficientes.' };
-        }
+        if (!team || !player || !league) return { error: 'Dados insuficientes.' };
 
-        // Construção do Payload diferencial (apenas o que mudou) para evitar 520 (payload too large)
-        const updatePayload: any = {};
-        if (data.name !== undefined && data.name !== player.name) {
-            updatePayload.name = data.name;
-            updatePayload.slug = generateSlug(data.name);
-        }
-        if (data.number !== undefined && data.number !== player.number) updatePayload.number = data.number;
-        if (data.position !== undefined && data.position !== player.position) updatePayload.position = data.position;
-        
-        // Foto: Só envia se for diferente (base64 pode ser pesado)
-        if (data.photo !== undefined && data.photo !== player.photo) {
-            updatePayload.photo = data.photo;
-            if (data.photo.length > 1000000) { // > 1MB warning
-                 console.warn('[LeagueContext] Alerta: Foto pesada detectada (>1MB). Isso pode causar erro 520.');
+        try {
+            const updatePayload: any = {};
+            if (data.name !== undefined) {
+                updatePayload.name = data.name;
+                updatePayload.slug = generateSlug(data.name);
             }
-        }
-        
-        if (data.isCaptain !== undefined && data.isCaptain !== player.isCaptain) {
-            updatePayload.is_captain = data.isCaptain;
-            if (data.isCaptain) updatePayload.is_reserve = false;
-        }
-        if (data.isReserve !== undefined && data.isReserve !== player.isReserve && !updatePayload.is_captain) {
-             updatePayload.is_reserve = data.isReserve;
-        }
+            if (data.number !== undefined) updatePayload.number = data.number;
+            if (data.position !== undefined) updatePayload.position = data.position;
+            if (data.photo !== undefined) updatePayload.photo = data.photo;
+            if (data.isCaptain !== undefined) {
+                updatePayload.is_captain = data.isCaptain;
+                if (data.isCaptain) updatePayload.is_reserve = false;
+            }
+            if (data.isReserve !== undefined && !updatePayload.is_captain) updatePayload.is_reserve = data.isReserve;
 
-        // Se nada mudou, não fazemos o hit no banco
-        if (Object.keys(updatePayload).length === 0) {
-            console.log('[LeagueContext] Nada mudou, pulando updatePlayer.');
-            return { error: null };
-        }
+            await databases.updateDocument(databaseId, collections.players, playerId, updatePayload);
 
-        console.log('[LeagueContext] Enviando atualização parcial:', Object.keys(updatePayload));
-
-        const { error } = await supabase.from('players').update(updatePayload).eq('id', playerId);
-
-        if (error) {
-            console.error('[LeagueContext] Erro fatal no Supabase updatePlayer:', error);
-            // Se o erro for de payload grande, avisa o usuário
-            if (error.code === '413' || error.message.includes('large')) return { error: 'A foto é muito grande. Tente uma imagem menor.' };
-            return { error: `Erro no servidor: ${error.message}` };
-        }
-
-        // Se marcamos um novo capitão, desmarcamos os outros no banco (background)
-        if (updatePayload.is_captain) {
-            for (const p of team.players) {
-                if (p.isCaptain && p.id !== playerId) {
-                    supabase.from('players').update({ is_captain: false }).eq('id', p.id).then();
+            if (updatePayload.is_captain) {
+                for (const p of team.players) {
+                    if (p.isCaptain && p.id !== playerId) {
+                        databases.updateDocument(databaseId, collections.players, p.id, { is_captain: false }).then();
+                    }
                 }
             }
-        }
 
-        // Atualização do Estado Local (Sync camelCase)
-        setRawTeams(prev => prev.map(t => t.id === teamId
-            ? { 
+            setRawTeams(prev => prev.map(t => t.id === teamId ? { 
                 ...t, 
                 players: t.players.map(p => {
                     if (p.id === playerId) {
-                        const newIsCaptain = updatePayload.is_captain ?? p.isCaptain;
-                        // Regra de negócio: se virou capitão, não pode ser reserva.
-                        // Se não mudou capitão, usa o is_reserve do payload ou o antigo.
-                        const newIsReserve = newIsCaptain ? false : (updatePayload.is_reserve ?? p.isReserve);
-
-                        return { 
-                            ...p, 
-                            ...data, 
-                            slug: updatePayload.slug || p.slug,
-                            isCaptain: newIsCaptain,
-                            isReserve: newIsReserve
-                        };
+                        const newIsCap = updatePayload.is_captain ?? p.isCaptain;
+                        return { ...p, ...data, isCaptain: newIsCap, isReserve: newIsCap ? false : (updatePayload.is_reserve ?? p.isReserve) };
                     }
-                    // Desmarca outros capitães se um novo foi definido
-                    if (updatePayload.is_captain === true && p.id !== playerId) return { ...p, isCaptain: false };
+                    if (updatePayload.is_captain && p.id !== playerId) return { ...p, isCaptain: false };
                     return p;
                 }) 
-              }
-            : t
-        ));
-
-        return { error: null };
+            } : t));
+            return { error: null };
+        } catch (err: any) {
+            return { error: err.message };
+        }
     };
 
     const removePlayer = async (teamId: string, playerId: string) => {
-        const team = rawTeams.find(t => t.id === teamId);
-        const player = team?.players.find(p => p.id === playerId);
-        const wasCaptain = player?.isCaptain;
+        try {
+            const team = rawTeams.find(t => t.id === teamId);
+            const player = team?.players.find(p => p.id === playerId);
+            const wasCap = player?.isCaptain;
 
-        await supabase.from('players').delete().eq('id', playerId);
-        
-        setRawTeams(prev => prev.map(t => {
-            if (t.id === teamId) {
-                const updatedPlayers = t.players.filter(p => p.id !== playerId);
-                // Se o removido era o capitão, precisamos de um novo entre os titulares
-                if (wasCaptain && updatedPlayers.length > 0) {
-                    const starter = updatedPlayers.find(p => !p.isReserve) || updatedPlayers[0];
-                    if (starter) {
-                        starter.isCaptain = true;
-                        supabase.from('players').update({ is_captain: true }).eq('id', starter.id).then();
+            await databases.deleteDocument(databaseId, collections.players, playerId);
+            
+            setRawTeams(prev => prev.map(t => {
+                if (t.id === teamId) {
+                    const updated = t.players.filter(p => p.id !== playerId);
+                    if (wasCap && updated.length > 0) {
+                        const starter = updated.find(p => !p.isReserve) || updated[0];
+                        if (starter) {
+                            starter.isCaptain = true;
+                            databases.updateDocument(databaseId, collections.players, starter.id, { is_captain: true }).then();
+                        }
                     }
+                    return { ...t, players: updated };
                 }
-                return { ...t, players: updatedPlayers };
-            }
-            return t;
-        }));
+                return t;
+            }));
+        } catch (err) {
+            console.error('Error in removePlayer:', err);
+        }
     };
 
     const toggleCaptain = async (teamId: string, playerId: string) => {
@@ -1662,30 +1530,34 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         if (!pl) return;
 
         const newVal = !pl.isCaptain;
-        
-        // Se for para desativar o único capitão, não permitimos (sempre deve ter um)
         if (!newVal && team.players.filter(p => p.isCaptain).length <= 1) return;
 
-        // Se for ativar, garantimos que seja titular
-        let updatedReserve = pl.isReserve;
-        if (newVal) {
-            updatedReserve = false;
-            await supabase.from('players').update({ is_reserve: false }).eq('id', playerId);
-        }
+        try {
+            let updatedReserve = pl.isReserve;
+            if (newVal) {
+                updatedReserve = false;
+                await databases.updateDocument(databaseId, collections.players, playerId, { is_captain: true, is_reserve: false });
+            } else {
+                await databases.updateDocument(databaseId, collections.players, playerId, { is_captain: false });
+            }
 
-        for (const p of team.players) {
-            if (p.isCaptain && p.id !== playerId) await supabase.from('players').update({ is_captain: false }).eq('id', p.id);
+            for (const p of team.players) {
+                if (p.isCaptain && p.id !== playerId) {
+                    databases.updateDocument(databaseId, collections.players, p.id, { is_captain: false }).then();
+                }
+            }
+            
+            setRawTeams(prev => prev.map(t => t.id === teamId ? { 
+                ...t, 
+                players: t.players.map(p => ({ 
+                    ...p, 
+                    isCaptain: p.id === playerId ? newVal : false,
+                    isReserve: p.id === playerId ? updatedReserve : p.isReserve 
+                })) 
+            } : t));
+        } catch (err) {
+            console.error('Error in toggleCaptain:', err);
         }
-        await supabase.from('players').update({ is_captain: newVal }).eq('id', playerId);
-        
-        setRawTeams(prev => prev.map(t => t.id === teamId
-            ? { ...t, players: t.players.map(p => ({ 
-                ...p, 
-                isCaptain: p.id === playerId ? newVal : false,
-                isReserve: p.id === playerId ? updatedReserve : p.isReserve 
-            })) }
-            : t
-        ));
     };
     
     const reorderPlayers = async (teamId: string, playerIds: string[]) => {
