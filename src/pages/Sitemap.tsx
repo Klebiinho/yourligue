@@ -9,7 +9,7 @@ const sitemapData = rawSitemapData as any;
 
 const Sitemap = () => {
     const navigate = useNavigate();
-    const { leagues, league } = useLeague();
+    const { leagues, league, getMatchSlug, getPlayerSlug } = useLeague();
     const [recentPlayers, setRecentPlayers] = useState<any[]>([]);
     const [recentMatches, setRecentMatches] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -18,11 +18,11 @@ const Sitemap = () => {
         const fetchRecentData = async () => {
             setIsLoading(true);
             try {
-                const { data: p } = await supabase.from('players').select('name, slug').limit(20).order('created_at', { ascending: false });
-                const { data: m } = await supabase.from('matches').select('id').limit(20).order('created_at', { ascending: false });
+                const { data: p } = await supabase.from('players').select('id, name, slug').limit(20).order('created_at', { ascending: false });
+                const { data: m } = await supabase.from('matches').select('id, home_team_id, away_team_id, scheduled_at').limit(20).order('created_at', { ascending: false });
                 
-                if (p) setRecentPlayers(p.map(x => ({ title: `Jogador: ${x.name}`, path: `/${x.slug}/player` })));
-                if (m) setRecentMatches(m.map(x => ({ title: `Partida #${x.id.slice(0, 8)}`, path: `/match/${x.id}` })));
+                if (p) setRecentPlayers(p.map(x => ({ title: `Jogador: ${x.name}`, path: scopedPath(`/${getPlayerSlug(x as any)}/player`) })));
+                if (m) setRecentMatches(m.map(x => ({ title: `Partida: ${getMatchSlug(x as any)}`, path: scopedPath(`/${getMatchSlug(x as any)}/match`) })));
             } catch (error) {
                 console.error("Erro ao buscar dados do sitemap:", error);
             } finally {
