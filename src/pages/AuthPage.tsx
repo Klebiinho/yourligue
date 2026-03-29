@@ -33,6 +33,17 @@ const AuthPage = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
+
+    // Reset loading states when page becomes visible again (e.g. back button)
+    useEffect(() => {
+        const handlePageShow = () => {
+            setLoading(false);
+            setGoogleLoading(false);
+        };
+        window.addEventListener('pageshow', handlePageShow);
+        return () => window.removeEventListener('pageshow', handlePageShow);
+    }, []);
+
     const [success, setSuccess] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
