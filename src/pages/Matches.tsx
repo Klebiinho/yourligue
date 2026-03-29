@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLeague } from '../context/LeagueContext';
+import { useLeague, generateSlug } from '../context/LeagueContext';
 import { Swords, PlusCircle, Play, Trash2, Edit2, Calendar, MapPin, AlertCircle, Clock, CheckCircle2, Signal, Heart, Search, Video, ChevronUp, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -50,7 +50,14 @@ const Matches = () => {
         } else {
             const { error: err, matchId } = await createMatch({ homeTeamId, awayTeamId, scheduledAt: finalScheduledAt, location, youtubeLiveId: videoId });
             if (err) { setError(err); return; }
-            if (matchId) navigate(`${leagueBasePath}/match/${matchId}`);
+            
+            // SEO-friendly navigation
+            const ht = teams.find(t => t.id === homeTeamId);
+            const at = teams.find(t => t.id === awayTeamId);
+            const dateStr = finalScheduledAt ? new Date(finalScheduledAt).toLocaleDateString('pt-BR').replace(/\//g, '-') : '';
+            const matchSlug = ht && at ? `${generateSlug(ht.name)}-x-${generateSlug(at.name)}${dateStr ? '-' + dateStr : ''}` : matchId;
+            
+            if (matchId) navigate(`${leagueBasePath}/${matchSlug}/match`);
         }
         resetForm();
         setFormOpen(false);

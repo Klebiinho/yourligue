@@ -1,7 +1,7 @@
 import { FileText, ArrowLeft, ExternalLink, Globe, MapPin, User, Trophy, Zap, Search } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useLeague } from '../context/LeagueContext';
+import { useLeague, generateSlug } from '../context/LeagueContext';
 import { supabase } from '../lib/supabase';
 import rawSitemapData from '../sitemap_data.json';
 
@@ -36,7 +36,7 @@ const Sitemap = () => {
                         const ht = teamMap.get(x.home_team_id);
                         const at = teamMap.get(x.away_team_id);
                         const date = x.scheduled_at ? new Date(x.scheduled_at).toLocaleDateString('pt-BR').replace(/\//g, '-') : '';
-                        const slug = ht && at ? `${ht.name.toLowerCase().replace(/\s+/g, '-')}-x-${at.name.toLowerCase().replace(/\s+/g, '-')}${date ? '-' + date : ''}` : x.id;
+                        const slug = ht && at ? `${generateSlug(ht.name)}-x-${generateSlug(at.name)}${date ? '-' + date : ''}` : x.id;
                         
                         return { 
                             title: ht && at ? `Partida: ${ht.name} x ${at.name}` : `Partida #${x.id.slice(0,8)}`, 
