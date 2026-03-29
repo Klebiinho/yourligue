@@ -91,13 +91,11 @@ const LeagueSelector = () => {
                         localStorage.removeItem('geo_denied');
                         setLocationErrorCode(null);
                         // Se o usuário acabou de permitir e está na tab de nearby, tenta buscar
-                        if (p.state === 'granted' && activeTab === 'nearby') {
+                        if (p.state === 'granted' && activeTab === 'nearby' && !locatingRef.current) {
                             handleRequestLocation(true);
                         }
-                    } else {
-                        localStorage.setItem('geo_denied', '1');
-                        setLocationErrorCode(1);
                     }
+                    // Removida a atribuição automática de erro aqui para evitar flickering
                 };
             }).catch(() => {});
         }
@@ -131,6 +129,13 @@ const LeagueSelector = () => {
     const handleRequestLocation = async (force = false) => {
         if (locatingRef.current) return;
         
+        // Se for forçado, limpamos erros anteriores e resultados velhos NA HORA 
+        // para garantir que o Spinner apareça e não a tela de Erro
+        if (force) {
+            setLocationErrorCode(null);
+            setNearbyLeagues([]);
+        }
+
         setIsLocating(true);
         locatingRef.current = true;
 
