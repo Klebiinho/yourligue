@@ -5,6 +5,9 @@
     "teams": "69c87854002e9022352d",
     "players": "69c8785a0015fd7e873b",
     "matches": "69c87864001dc9ea5ab2",
+    "match_events": "match_events",
+    "brackets": "brackets",
+    "user_team_interactions": "user_team_interactions",
     "ads": "69c8786d000db1f665ec"
   }
 }
