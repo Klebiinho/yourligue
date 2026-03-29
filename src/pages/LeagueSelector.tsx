@@ -51,7 +51,6 @@ const LeagueSelector = () => {
     }
 
     const handleTabClick = (tabId: 'owned' | 'following' | 'nearby' | 'explore') => {
-        const wasNearby = activeTab === 'nearby';
         setActiveTab(tabId);
         
         // Se mudou para Nearby ou clicou de novo na aba ativa, reseta tudo e busca
