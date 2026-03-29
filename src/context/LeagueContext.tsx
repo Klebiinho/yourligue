@@ -655,19 +655,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('isPublicView', isPublicView.toString());
     }, [isPublicView]);
 
-    // AUTO-GESTOR: When first entering a league you own, force Gestor Mode.
-    // But allow persistence if you manually toggle within the same session.
+    // AUTO-GESTOR: Force Gestor Mode only once per league per session for owners
     useEffect(() => {
         if (!authLoading && user && league && league.userId === user.id) {
             const hasAutoSwitched = sessionStorage.getItem(`auto_switched_${league.id}`);
             if (!hasAutoSwitched) {
-                console.log('LeagueContext: First entry to owned league, forcing Gestor Mode');
+                console.log('LeagueContext: Ownership confirmed, auto-switching to Gestor Mode');
                 setIsPublicView(false);
                 localStorage.setItem('isPublicView', 'false');
                 sessionStorage.setItem(`auto_switched_${league.id}`, 'true');
             }
         }
-    }, [authLoading, user?.id, league?.id]); 
+    }, [authLoading, user?.id, league?.id, isPublicView]); // Include isPublicView to catch manual switches if needed, but the lock prevents loop
 
     const loadLeagues = async () => {
         try {
@@ -854,9 +853,22 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     setLeague(mapped);
                     localStorage.setItem('selectedLeagueId', mapped.id);
                     
-                    // Default behavior for new league load (non-owner)
-                    if (!(user && mapped.userId === user.id) && !isSameLeague) {
-                        setIsPublicView(true);
+                    // SMART VIEW MODE: Only override if auth is settled and we are sure it's NOT the owner
+                    if (!authLoading) {
+                        const isOwner = user && mapped.userId === user.id;
+                        const hasAutoSwitched = sessionStorage.getItem(`auto_switched_${mapped.id}`);
+                        
+                        if (isOwner) {
+                            // If owner, force Gestor Mode only if not already handled in this session
+                            if (!hasAutoSwitched) {
+                                setIsPublicView(false);
+                                localStorage.setItem('isPublicView', 'false');
+                                sessionStorage.setItem(`auto_switched_${mapped.id}`, 'true');
+                            }
+                        } else if (!isSameLeague) {
+                            // If NOT owner and first load of this league, default to Spectator
+                            setIsPublicView(true);
+                        }
                     }
                 }
 
