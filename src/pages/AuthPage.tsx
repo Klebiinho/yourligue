@@ -52,7 +52,12 @@ const AuthPage = () => {
 
     const handleGoogle = async () => {
         setGoogleLoading(true);
-        await signInWithGoogle();
+        try {
+            await signInWithGoogle();
+        } catch (err) {
+            console.error('AuthPage: Google redirect failed', err);
+            setGoogleLoading(false);
+        }
     };
 
     return (
