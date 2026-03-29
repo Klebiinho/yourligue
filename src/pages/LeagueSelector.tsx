@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +12,7 @@ const LeagueSelector = () => {
     const [nearbyLeagues, setNearbyLeagues] = useState<any[]>([]);
     const [hasSearchedNearby, setHasSearchedNearby] = useState(false);
     const [isLocating, setIsLocating] = useState(false);
+    const locatingRef = useRef(false);
     const [showCreate, setShowCreate] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
@@ -54,8 +55,10 @@ const LeagueSelector = () => {
 
     const handleTabClick = (tabId: 'owned' | 'following' | 'nearby' | 'explore') => {
         setActiveTab(tabId);
-        // Só tenta GPS se nunca buscou E não tem erro de permissão salvo
-        if (tabId === 'nearby' && !hasSearchedNearby && locationErrorCode !== 1) handleRequestLocation();
+        // Só tenta GPS se nunca buscou E não tem erro de permissão salvo E não está buscando agora
+        if (tabId === 'nearby' && !hasSearchedNearby && locationErrorCode !== 1 && !locatingRef.current) {
+            handleRequestLocation();
+        }
     };
 
     useEffect(() => {
@@ -105,10 +108,15 @@ const LeagueSelector = () => {
     };
 
     const handleRequestLocation = async () => {
+        if (locatingRef.current) return;
+        
         setIsLocating(true);
+        locatingRef.current = true;
+
         if (!navigator.geolocation) {
             alert("Seu navegador não suporta geolocalização.");
             setIsLocating(false);
+            locatingRef.current = false;
             return;
         }
 
@@ -117,6 +125,7 @@ const LeagueSelector = () => {
             setLocationErrorCode(1);
             setHasSearchedNearby(true);
             setIsLocating(false);
+            locatingRef.current = false;
             return;
         }
 
@@ -127,13 +136,15 @@ const LeagueSelector = () => {
                 setNearbyLeagues(results || []);
                 setHasSearchedNearby(true);
                 setIsLocating(false);
+                locatingRef.current = false;
                 setLocationErrorCode(null);
                 localStorage.removeItem('geo_denied');
             },
             (error) => {
-                console.warn("Geolocalização indisponível:", error.code);
+                // Removido logs excessivos - o erro é tratado visualmente no UI
                 setLocationErrorCode(error.code);
                 setIsLocating(false);
+                locatingRef.current = false;
                 if (error.code === 1) {
                     localStorage.setItem('geo_denied', '1');
                     setHasSearchedNearby(true);
