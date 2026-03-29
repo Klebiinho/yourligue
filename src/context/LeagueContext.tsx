@@ -410,7 +410,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         if (!slugOrId) return false;
         setLoading(true);
         try {
-            const { data: row, error } = await supabase.from('leagues').select('*').or(`slug.eq."${slugOrId}",id.eq."${slugOrId}"`).maybeSingle();
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+            const { data: row, error } = await (isUUID 
+                ? supabase.from('leagues').select('*').or(`slug.eq."${slugOrId}",id.eq."${slugOrId}"`)
+                : supabase.from('leagues').select('*').eq('slug', slugOrId)
+            ).maybeSingle();
             if (error || !row) return false;
             const mapped = mapDBLeague(row);
             setLeague(mapped);
@@ -428,7 +432,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             const [tRes, mRes, pRes, bRes] = await Promise.all([
                 supabase.from('teams').select('*').eq('league_id', leagueId),
                 supabase.from('matches').select('*, match_events(*)').eq('league_id', leagueId),
-                supabase.from('players').select('*').eq('league_id', leagueId),
+                supabase.from('players').select('*, teams!inner(league_id)').eq('teams.league_id', leagueId),
                 supabase.from('brackets').select('*').eq('league_id', leagueId)
             ]);
             const players = pRes.data || [];
@@ -501,7 +505,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const addPlayer = async (teamId: string, player: any) => {
         if (!league) return { error: 'League required' };
-        const { data, error } = await supabase.from('players').insert({ ...player, team_id: teamId, league_id: league.id, slug: generateSlug(player.name) }).select().single();
+        const { data, error } = await supabase.from('players').insert({ ...player, team_id: teamId, slug: generateSlug(player.name) }).select().single();
         if (data) setRawTeams(prev => prev.map(t => t.id === teamId ? { ...t, players: [...t.players, mapDBPlayer(data)] } : t));
         return { error: error?.message || null };
     };
