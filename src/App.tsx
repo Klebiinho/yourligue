@@ -63,7 +63,7 @@ const MainContent = () => {
 
     const fixedGlobalPaths = [
         'leagues', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sitemap',
-        'blog', 'servicos', 'glossario', 'categoria', 'autor', 'duvidas', 'duvidas-de-a-a-z', 'informacoes',
+        'blog', 'servicos', 'glossario', 'categoria', 'autor', 'duvidas', 'duvidas-de-a-a-z', 'informacoes', 'busca',
         'sobre-nos', 'contato', 'inicio', 'politica-de-atualizacao-de-resultados',
         'direitos-de-transmissao-e-imagem', 'regulamento-geral-de-competicoes',
         'diretrizes-do-capitao-titular', 'player', 'match'
@@ -143,6 +143,9 @@ const MainContent = () => {
                         <Route path="/autor" element={<DynamicContent />} />
                         <Route path="/autor/:contentSlug" element={<DynamicContent />} />
                         
+                        <Route path="/busca" element={<DynamicContent />} />
+                        <Route path="/busca/:contentSlug" element={<DynamicContent />} />
+                        
                         <Route path="/duvidas" element={<DynamicContent />} />
                         <Route path="/duvidas-de-a-a-z" element={<DynamicContent />} />
                         <Route path="/duvidas/:letter" element={<DynamicContent />} />
@@ -175,6 +178,9 @@ const MainContent = () => {
                         
                         <Route path="/:slug/autor" element={<DynamicContent />} />
                         <Route path="/:slug/autor/:contentSlug" element={<DynamicContent />} />
+                        
+                        <Route path="/:slug/busca" element={<DynamicContent />} />
+                        <Route path="/:slug/busca/:contentSlug" element={<DynamicContent />} />
                         
                         <Route path="/:slug/duvidas" element={<DynamicContent />} />
                         <Route path="/:slug/duvidas-de-a-a-z" element={<DynamicContent />} />

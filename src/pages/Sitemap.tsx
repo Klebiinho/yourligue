@@ -1,4 +1,4 @@
-import { FileText, ArrowLeft, ExternalLink, Globe, MapPin, User, Trophy, Zap } from 'lucide-react';
+import { FileText, ArrowLeft, ExternalLink, Globe, MapPin, User, Trophy, Zap, Search } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
@@ -50,6 +50,7 @@ const Sitemap = () => {
         { title: 'Blog', icon: FileText, items: sitemapData.Posts.map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
         { title: 'Glossário', icon: FileText, items: sitemapData.Glossario.map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
         { title: 'Dúvidas e FAQ', icon: FileText, items: sitemapData.Alfabeto.map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
+        { title: 'Pesquisas Populares', icon: Search, items: (sitemapData.PesquisasFrequentes || []).map((i: any) => ({ ...i, path: scopedPath(i.path) })) },
     ];
 
     return (

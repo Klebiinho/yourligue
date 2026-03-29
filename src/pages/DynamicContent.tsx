@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
     Calendar, ArrowLeft, Share2, MessageCircle, 
     BookOpen, Briefcase, Tag, User, HelpCircle,
-    ArrowRight, Globe, Shield, Info
+    ArrowRight, Globe, Shield, Info, Search
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import rawSitemapData from '../sitemap_data.json';
@@ -62,6 +62,12 @@ const DynamicContent = () => {
         if (normalizedPath === '/autor') {
             setContent({ title: 'Nossos Autores', section: 'Autores', date: 'Equipe' });
             setListItems(sitemapData.Autores);
+            return;
+        }
+
+        if (normalizedPath === '/busca') {
+            setContent({ title: 'Tendências de Busca', section: 'PesquisasFrequentes', date: 'SEO / Orgânico' });
+            setListItems(sitemapData.PesquisasFrequentes || []);
             return;
         }
 
@@ -127,6 +133,12 @@ const DynamicContent = () => {
             paragraphs.push(`A figura do representante de equipe evoluiu muito, e compreender o tema **${title}** é essencial. O capitão não gesticula só em quadra: é o principal elo burocrático de toda a transação da equipe.`);
             paragraphs.push("Ele é o responsável por certificar exames, confirmar presenças via link e validar a escalação enviada pelo organizador da liga, distribuindo a carga de responsabilidade uniformemente através do app.");
         }
+        // Topic 5: Search & Typos (SEO)
+        else if (path.includes('/busca/')) {
+            paragraphs.push(`Você buscou por "${title}". Este é um dos termos mais frequentes entre organizadores que buscam profissionalizar suas competições.`);
+            paragraphs.push("Muitas vezes, a busca por soluções esportivas começa com termos simples ou até variações do nome da nossa marca, mas o destino final é sempre o mesmo: uma gestão de elite que garanta transparência e engajamento.");
+            paragraphs.push("O YourLeague resolve exatamente essa dor de cabeça, automatizando tabelas e integrando placares ao vivo para que sua liga seja encontrada e respeitada em qualquer busca orgânica.");
+        }
         // Fallback robusto genérico adaptativo
         else {
             paragraphs.push(`Discutir intensamente sobre **${title}** é tratar exatamente o que difere torneios comuns de grandes eventos da várzea. A infraestrutura digital chegou ao esporte local não apenas como luxo, mas como necessidade.`);
@@ -160,6 +172,7 @@ const DynamicContent = () => {
             case 'Categorias': return <Tag size={16} />;
             case 'Autores': return <User size={16} />;
             case 'Alfabeto': return <HelpCircle size={16} />;
+            case 'PesquisasFrequentes': return <Search size={16} />;
             default: return <Info size={16} />;
         }
     };
@@ -173,6 +186,7 @@ const DynamicContent = () => {
             case 'Categorias': return 'Tópico';
             case 'Autores': return 'Autor Colaborador';
             case 'Alfabeto': return 'Perguntas e Respostas';
+            case 'PesquisasFrequentes': return 'Tendência de Busca';
             default: return 'Conteúdo';
         }
     };

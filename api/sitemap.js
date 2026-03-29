@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
     // 2. Extract dynamic content pages (Blog, FAQ, Glossary)
     const contentRoutes = [];
-    ['Posts', 'Alfabeto', 'Glossario', 'Servicos'].forEach(category => {
+    ['Posts', 'Alfabeto', 'Glossario', 'Servicos', 'PesquisasFrequentes'].forEach(category => {
         if (sitemapData[category]) {
             sitemapData[category].forEach(item => {
                 contentRoutes.push(item.path);
