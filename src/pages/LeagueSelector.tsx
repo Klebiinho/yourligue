@@ -22,7 +22,6 @@ const LeagueSelector = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [searching, setSearching] = useState(false);
-    const [locationErrorCode, setLocationErrorCode] = useState<number | null>(null);
     const navigate = useNavigate();
 
     // ── Tab Reordering Logic ───────────────────────────────────
@@ -56,7 +55,6 @@ const LeagueSelector = () => {
         // Se mudou para Nearby ou clicou de novo na aba ativa, reseta tudo e busca
         if (tabId === 'nearby' && !locatingRef.current) {
             // Reset firme e instantâneo no trigger do clique
-            setLocationErrorCode(null);
             setHasSearchedNearby(false);
             setNearbyLeagues([]);
             handleRequestLocation(true);
@@ -91,7 +89,6 @@ const LeagueSelector = () => {
                 p.onchange = () => {
                     if (p.state === 'granted') {
                         localStorage.removeItem('geo_denied');
-                        setLocationErrorCode(null);
                         // Tenta buscar automaticamente se ganhou permissão agora
                         if (activeTab === 'nearby' && !locatingRef.current) {
                             handleRequestLocation(true);
@@ -135,7 +132,6 @@ const LeagueSelector = () => {
         // RESET TOTAL DE ESTADOS PARA EVITAR FLICKERING
         setIsLocating(true);
         locatingRef.current = true;
-        setLocationErrorCode(null);
         setHasSearchedNearby(false); // <--- ISSO EVITA QUE O CARD DE ERRO ANTIGO APAREÇA
 
         if (force) {
@@ -154,7 +150,6 @@ const LeagueSelector = () => {
         if (!force && localStorage.getItem('geo_denied') === '1') {
             setIsLocating(false);
             locatingRef.current = false;
-            setLocationErrorCode(1); // Seta agora pois confirmamos que não vamos buscar
             return;
         }
 
@@ -166,12 +161,10 @@ const LeagueSelector = () => {
                 setHasSearchedNearby(true);
                 setIsLocating(false);
                 locatingRef.current = false;
-                setLocationErrorCode(null);
                 localStorage.removeItem('geo_denied');
             },
             (error) => {
-                // Removido logs excessivos - o erro é tratado visualmente no UI
-                setLocationErrorCode(error.code);
+                // Erro tratado silenciosamente - cai no fallback de busca manual
                 setIsLocating(false);
                 locatingRef.current = false;
                 if (error.code === 1) {
@@ -354,43 +347,6 @@ const LeagueSelector = () => {
                                 </div>
                                 {/* Scanning line animation */}
                                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent animate-scan" />
-                            </div>
-                        ) : (locationErrorCode === 1 && hasSearchedNearby) ? (
-                            /* Explicit GPS Denied Card */
-                            <div className="glass-panel py-16 px-10 text-center space-y-8 border-danger/10 bg-danger/[0.02]">
-                                <div className="w-20 h-20 bg-danger/10 rounded-full flex items-center justify-center mx-auto border-2 border-danger/20 relative">
-                                    <MapPin size={40} className="text-danger" strokeWidth={1} />
-                                    <div className="absolute -top-1 -right-1 bg-danger text-white p-1.5 rounded-full border-2 border-bg-dark">
-                                        <X size={12} strokeWidth={4} />
-                                    </div>
-                                </div>
-                                <div className="space-y-4 max-w-sm mx-auto">
-                                    <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest text-danger">Acesso ao GPS Negado</h3>
-                                    <p className="text-slate-400 font-medium text-sm leading-relaxed">
-                                        Você escolheu pesquisar manualmente. Caso mude de ideia, permita o acesso na barra de endereços do seu navegador.
-                                    </p>
-                                    
-                                    <div className="relative mt-8 group animate-slide-up">
-                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                        <input 
-                                            type="text" 
-                                            id="nearby-denied-search"
-                                            name="nearby-denied-search"
-                                            placeholder="Busque por sua Cidade ou Bairro..." 
-                                            value={searchQuery}
-                                            onChange={e => setSearchQuery(e.target.value)}
-                                            onFocus={() => setActiveTab('explore')}
-                                            className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white placeholder:text-slate-600 focus:border-danger outline-none transition-all text-sm font-bold shadow-inner"
-                                        />
-                                    </div>
-
-                                    <button 
-                                        onClick={() => setActiveTab('explore')}
-                                        className="w-full py-4 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] hover:bg-white/10 transition-all font-outfit mt-4"
-                                    >
-                                        Explorar Todas as Ligas
-                                    </button>
-                                </div>
                             </div>
                         ) : nearbyLeagues.length === 0 ? (
                             /* No Results Found Card */
