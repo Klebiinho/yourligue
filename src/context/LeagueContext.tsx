@@ -290,26 +290,39 @@ const mapDBTeam = (t: any): Team => {
 };
 
 const mapDBBracket = (b: any): BracketMatch => ({
-    id: b.$id, round: b.round, matchOrder: b.match_order,
-    homeTeamId: b.home_team_id, awayTeamId: b.away_team_id,
-    homeScore: b.home_score || 0, awayScore: b.away_score || 0, 
-    status: b.status
+    id: b.$id, 
+    round: b.round, 
+    matchOrder: b.match_order,
+    homeTeamId: b.home_team_id, 
+    awayTeamId: b.away_team_id,
+    homeScore: b.home_score || 0, 
+    awayScore: b.away_score || 0, 
+    status: b.status || 'scheduled'
 });
 
 const mapDBLeague = (l: any): League => ({
-    id: l.$id, name: l.name || 'Sem nome', logo: l.logo || '', maxTeams: l.max_teams || 20,
-    pointsForWin: l.points_for_win || 3, pointsForDraw: l.points_for_draw || 1,
-    pointsForLoss: l.points_for_loss || 0, defaultHalfLength: l.default_half_length || 45,
+    id: l.$id, 
+    name: l.name || 'Sem nome', 
+    logo: l.logo || '', 
+    maxTeams: l.max_teams || 20,
+    pointsForWin: l.points_for_win || 3, 
+    pointsForDraw: l.points_for_draw || 1,
+    pointsForLoss: l.points_for_loss || 0, 
+    defaultHalfLength: l.default_half_length || 45,
     overtimeHalfLength: l.overtime_half_length || 15,
-    playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
+    playersPerTeam: l.players_per_team || 5, 
+    reserveLimitPerTeam: l.reserve_limit_per_team || 5,
     substitutionsLimit: l.substitutions_limit || 5,
     allowSubstitutionReturn: l.allow_substitution_return ?? true,
     hasOvertime: l.has_overtime ?? true,
     slug: l.slug || '',
     userId: l.user_id,
     sportType: l.sport_type || 'soccer',
-    lat: l.lat, lng: l.lng, address: l.address,
-    distancia_km: l.distancia_km, follower_count: l.follower_count
+    lat: l.lat, 
+    lng: l.lng, 
+    address: l.address,
+    distancia_km: l.distancia_km, 
+    follower_count: l.follower_count
 });
 
 const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
@@ -947,7 +960,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
 
         try {
-            const [teamsRes, matchesRes, adsRes] = await Promise.all([
+            const [teamsRes, matchesRes, adsRes, bracketsRes] = await Promise.all([
                 databases.listDocuments(databaseId, collections.teams, [
                     Query.equal('league_id', leagueId),
                     Query.limit(100)
@@ -959,6 +972,10 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 databases.listDocuments(databaseId, collections.ads, [
                     Query.equal('league_id', leagueId),
                     Query.limit(100)
+                ]),
+                databases.listDocuments(databaseId, collections.brackets, [
+                    Query.equal('league_id', leagueId),
+                    Query.limit(100)
                 ])
             ]);
 
@@ -968,6 +985,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
             setRawMatches(matchesRes.documents.map(mapDBMatch));
             setAds(adsRes.documents.map((a: any) => ({ ...a, display_order: a.display_order || 0 })));
+            setBrackets(bracketsRes.documents.map(mapDBBracket));
 
             // Lazy load players for each team
             const playerRes = await databases.listDocuments(databaseId, collections.players, [

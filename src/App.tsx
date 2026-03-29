@@ -149,17 +149,8 @@ const MainContent = () => {
 };
 
 const App = () => {
-    const hasConfig = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!hasConfig) {
-        return (
-            <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center p-6 text-center z-[9999]">
-                <h1 className="text-white font-outfit font-black text-3xl uppercase tracking-tighter mb-4">Configuração Necessária</h1>
-                <p className="text-slate-400 max-w-md mb-8 leading-relaxed">Verifique as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.</p>
-                <button onClick={() => window.location.reload()} className="bg-red-500 text-white px-10 py-4 rounded-2xl font-black uppercase text-xs tracking-widest">Tentar Novamente</button>
-            </div>
-        );
-    }
+    // Basic config check (Appwrite configuration is managed in lib/appwrite.ts)
+    const hasConfig = true; 
 
     return (
         <BrowserRouter>
