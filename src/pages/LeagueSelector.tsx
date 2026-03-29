@@ -21,7 +21,10 @@ const LeagueSelector = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [searching, setSearching] = useState(false);
-    const [locationErrorCode, setLocationErrorCode] = useState<number | null>(null);
+    const [locationErrorCode, setLocationErrorCode] = useState<number | null>(() => {
+        // Recuperar estado de negação salvo do navegador
+        return localStorage.getItem('geo_denied') === '1' ? 1 : null;
+    });
     const navigate = useNavigate();
 
     // ── Tab Reordering Logic ───────────────────────────────────
@@ -51,7 +54,7 @@ const LeagueSelector = () => {
 
     const handleTabClick = (tabId: 'owned' | 'following' | 'nearby' | 'explore') => {
         setActiveTab(tabId);
-        // Só tenta localizar automaticamente se não houver erro prévio de permissão negada
+        // Só tenta GPS se nunca buscou E não tem erro de permissão salvo
         if (tabId === 'nearby' && !hasSearchedNearby && locationErrorCode !== 1) handleRequestLocation();
     };
 
@@ -109,36 +112,30 @@ const LeagueSelector = () => {
             return;
         }
 
-        // Verificar permissão ANTES de chamar getCurrentPosition
-        // Isso evita o erro no console quando o usuário já bloqueou o acesso
-        try {
-            if (navigator.permissions) {
-                const permStatus = await navigator.permissions.query({ name: 'geolocation' });
-                if (permStatus.state === 'denied') {
-                    setLocationErrorCode(1);
-                    setHasSearchedNearby(true);
-                    setIsLocating(false);
-                    return;
-                }
-            }
-        } catch (_) {
-            // Permissions API não disponível — segue normalmente
+        // Se já sabemos que foi negado, pula direto pro fallback
+        if (localStorage.getItem('geo_denied') === '1') {
+            setLocationErrorCode(1);
+            setHasSearchedNearby(true);
+            setIsLocating(false);
+            return;
         }
 
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
-                const results = await fetchNearbyLeagues(latitude, longitude, 50); // Raio de 50km
+                const results = await fetchNearbyLeagues(latitude, longitude, 50);
                 setNearbyLeagues(results || []);
                 setHasSearchedNearby(true);
                 setIsLocating(false);
                 setLocationErrorCode(null);
+                localStorage.removeItem('geo_denied');
             },
             (error) => {
-                console.error("Erro de localização:", error.code, error.message);
+                console.warn("Geolocalização indisponível:", error.code);
                 setLocationErrorCode(error.code);
                 setIsLocating(false);
                 if (error.code === 1) {
+                    localStorage.setItem('geo_denied', '1');
                     setHasSearchedNearby(true);
                 }
             },
