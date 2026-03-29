@@ -200,8 +200,14 @@ const MatchControl = () => {
                 const lastUpdateStr = match.updatedAt || new Date().toISOString();
                 const lastUpdate = new Date(lastUpdateStr).getTime();
                 const now = Date.now();
-                const diffInSeconds = Math.max(0, Math.floor((now - lastUpdate) / 1000));
-                const calculatedSeconds = (match.timer || 0) + diffInSeconds;
+                
+                // Safety: If date parsing fails (NaN), default diff to 0
+                let diffInSeconds = Math.floor((now - (isNaN(lastUpdate) ? now : lastUpdate)) / 1000);
+                if (isNaN(diffInSeconds)) diffInSeconds = 0;
+                diffInSeconds = Math.max(0, diffInSeconds);
+
+                let calculatedSeconds = (match.timer || 0) + diffInSeconds;
+                if (isNaN(calculatedSeconds)) calculatedSeconds = match.timer || 0;
 
                 setLocalSeconds(calculatedSeconds);
                 setTimerRunning(true);
@@ -1328,7 +1334,7 @@ const MatchControl = () => {
                                                 ))}
                                                 <button onClick={() => setExtraTime(0)} className="flex-1 py-1.5 rounded-lg text-[0.65rem] font-black bg-white/5 text-slate-500 hover:bg-white/10">0</button>
                                             </div>
-                                            <input type="number" value={extraTime} onChange={e => setExtraTime(parseInt(e.target.value) || 0)}
+                                            <input type="number" value={extraTime || 0} onChange={e => setExtraTime(parseInt(e.target.value) || 0)}
                                                 className="w-full bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 text-white text-center text-xl font-black focus:border-primary outline-none" />
                                         </div>
                                         <div className="col-span-2">

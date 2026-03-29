@@ -89,40 +89,55 @@ export class YouTubeService {
         return !!this.accessToken;
     }
 
-    public async createLiveBroadcast(title: string, description: string) {
-        if (!this.accessToken) throw new Error('Not authenticated');
-
-        // 1. Create Broadcast
-        const broadcastResponse = await fetch('https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet,status,contentDetails', {
-            method: 'POST',
+    private async request(url: string, options: RequestInit, retryCount = 0): Promise<Response> {
+        const response = await fetch(url, {
+            ...options,
             headers: {
-                'Authorization': `Bearer ${this.accessToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                snippet: {
-                    title: title,
-                    scheduledStartTime: new Date().toISOString(),
-                    description: description
-                },
-                status: {
-                    privacyStatus: 'public',
-                    selfDeclaredMadeForKids: false
-                },
-                contentDetails: {
-                    enableAutoStart: true,
-                    enableAutoStop: true,
-                    monitorStream: {
-                        enableMonitorStream: false
-                    }
-                }
-            })
+                ...options.headers,
+                'Authorization': `Bearer ${this.accessToken}`
+            }
         });
-        
-        if (broadcastResponse.status === 401) {
+
+        if (response.status === 401 && retryCount === 0 && this.tokenClient) {
+            console.warn('YouTube API 401: Attempting silent token refresh...');
+            try {
+                const refreshedToken = await new Promise<string | null>((resolve) => {
+                    const originalCallback = this.tokenClient.callback;
+                    this.tokenClient.callback = (resp: any) => {
+                        this.tokenClient.callback = originalCallback;
+                        if (resp.error) resolve(null);
+                        else resolve(resp.access_token);
+                    };
+                    this.tokenClient.requestAccessToken({ prompt: 'none' });
+                });
+
+                if (refreshedToken) {
+                    this.accessToken = refreshedToken;
+                    localStorage.setItem('yt_access_token', refreshedToken);
+                    if (this.onAuthChange) this.onAuthChange(refreshedToken);
+                    return this.request(url, options, 1);
+                }
+            } catch (err) {
+                console.error('Silent refresh failed:', err);
+            }
             this.logOut();
             throw new Error('Sua sessão do YouTube expirou. Por favor, faça login novamente.');
         }
+        return response;
+    }
+
+    public async createLiveBroadcast(title: string, description: string) {
+        if (!this.accessToken) throw new Error('Not authenticated');
+
+        const broadcastResponse = await this.request('https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet,status,contentDetails', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                snippet: { title, scheduledStartTime: new Date().toISOString(), description },
+                status: { privacyStatus: 'public', selfDeclaredMadeForKids: false },
+                contentDetails: { enableAutoStart: true, enableAutoStop: true, monitorStream: { enableMonitorStream: false } }
+            })
+        });
 
         const broadcast = await broadcastResponse.json();
         if (!broadcast.id) {
@@ -130,29 +145,14 @@ export class YouTubeService {
             throw new Error(broadcast.error?.message || 'Failed to create broadcast');
         }
 
-        // 2. Create Stream
-        const streamResponse = await fetch('https://www.googleapis.com/youtube/v3/liveStreams?part=snippet,cdn', {
+        const streamResponse = await this.request('https://www.googleapis.com/youtube/v3/liveStreams?part=snippet,cdn', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${this.accessToken}`,
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                snippet: {
-                    title: title + ' Stream'
-                },
-                cdn: {
-                    frameRate: '60fps',
-                    ingestionType: 'rtmp',
-                    resolution: '720p'
-                }
+                snippet: { title: title + ' Stream' },
+                cdn: { frameRate: '60fps', ingestionType: 'rtmp', resolution: '720p' }
             })
         });
-
-        if (streamResponse.status === 401) {
-            this.logOut();
-            throw new Error('Sua sessão do YouTube expirou. Por favor, faça login novamente.');
-        }
 
         const stream = await streamResponse.json();
         if (!stream.id) {
@@ -161,18 +161,10 @@ export class YouTubeService {
         }
 
         // 3. Bind Broadcast to Stream
-        const bindRes = await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts/bind?id=${broadcast.id}&part=id,contentDetails&streamId=${stream.id}`, {
+        await this.request(`https://www.googleapis.com/youtube/v3/liveBroadcasts/bind?id=${broadcast.id}&part=id,contentDetails&streamId=${stream.id}`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${this.accessToken}`,
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
-
-        if (bindRes.status === 401) {
-            this.logOut();
-            throw new Error('Sua sessão do YouTube expirou. Por favor, faça login novamente.');
-        }
 
         return {
             broadcastId: broadcast.id,
@@ -185,8 +177,8 @@ export class YouTubeService {
         if (!this.accessToken) throw new Error('Not authenticated');
 
         // 1. Get Broadcast to find bound stream
-        const bRes = await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts?part=contentDetails&id=${broadcastId}`, {
-            headers: { 'Authorization': `Bearer ${this.accessToken}` }
+        const bRes = await this.request(`https://www.googleapis.com/youtube/v3/liveBroadcasts?part=contentDetails&id=${broadcastId}`, {
+            headers: { 'Content-Type': 'application/json' }
         });
         const bData = await bRes.json();
         const streamId = bData.items?.[0]?.contentDetails?.boundStreamId;
@@ -194,8 +186,8 @@ export class YouTubeService {
         if (!streamId) return null;
 
         // 2. Get Stream details
-        const sRes = await fetch(`https://www.googleapis.com/youtube/v3/liveStreams?part=cdn&id=${streamId}`, {
-            headers: { 'Authorization': `Bearer ${this.accessToken}` }
+        const sRes = await this.request(`https://www.googleapis.com/youtube/v3/liveStreams?part=cdn&id=${streamId}`, {
+            headers: { 'Content-Type': 'application/json' }
         });
         const sData = await sRes.json();
         const stream = sData.items?.[0];
@@ -211,15 +203,9 @@ export class YouTubeService {
     public async deleteBroadcast(broadcastId: string) {
         if (!this.accessToken) throw new Error('Not authenticated');
 
-        const response = await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts?id=${broadcastId}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${this.accessToken}` }
+        const response = await this.request(`https://www.googleapis.com/youtube/v3/liveBroadcasts?id=${broadcastId}`, {
+            method: 'DELETE'
         });
-
-        if (response.status === 401) {
-            this.logOut();
-            throw new Error('Sua sessão do YouTube expirou. Por favor, faça login novamente.');
-        }
 
         if (!response.ok && response.status !== 204) {
             const data = await response.json();
@@ -230,24 +216,11 @@ export class YouTubeService {
     public async setBroadcastPrivacy(broadcastId: string, privacy: 'public' | 'private' | 'unlisted') {
         if (!this.accessToken) throw new Error('Not authenticated');
 
-        const response = await fetch(`https://www.googleapis.com/youtube/v3/liveBroadcasts?part=status`, {
+        const response = await this.request(`https://www.googleapis.com/youtube/v3/liveBroadcasts?part=status`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${this.accessToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                id: broadcastId,
-                status: {
-                    privacyStatus: privacy
-                }
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: broadcastId, status: { privacyStatus: privacy } })
         });
-
-        if (response.status === 401) {
-            this.logOut();
-            throw new Error('Sua sessão do YouTube expirou. Por favor, faça login novamente.');
-        }
 
         if (!response.ok) {
             const data = await response.json();
