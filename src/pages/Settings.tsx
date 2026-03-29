@@ -41,6 +41,7 @@ const Settings = () => {
     const [lng, setLng] = useState(league?.lng ? String(league.lng) : '');
     const [saved, setSaved] = useState(false);
     const [isCapturingGPS, setIsCapturingGPS] = useState(false);
+    const [isSearchingAddress, setIsSearchingAddress] = useState(false);
     const [copied, setCopied] = useState(false);
 
     // Sync state with league data when it loads
@@ -211,11 +212,39 @@ const Settings = () => {
                 setIsCapturingGPS(false);
                 alert("✅ Localização capturada! Salve as configurações.");
             },
-            (err) => {
-                alert("❌ Erro ao capturar GPS: " + err.message);
+            (err: any) => {
+                console.error("GPS Error:", err);
+                alert("❌ Erro ao capturar GPS: " + (err.message || "Verifique as permissões do navegador."));
                 setIsCapturingGPS(false);
-            }
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
         );
+    };
+
+    const handleSearchAddress = async () => {
+        if (!address.trim()) {
+            alert("Digite um endereço para buscar.");
+            return;
+        }
+        setIsSearchingAddress(true);
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
+            const data = await response.json();
+            if (data && data.length > 0) {
+                const found = data[0];
+                setLat(String(found.lat));
+                setLng(String(found.lon));
+                setAddress(found.display_name); // Optional: use the more precise name found
+                alert("📍 Localização encontrada e vinculada!");
+            } else {
+                alert("Não encontramos coordenadas para este endereço. Tente ser mais específico (Ex: Rua, Cidade, Estado).");
+            }
+        } catch (error) {
+            console.error("Search Error:", error);
+            alert("Erro ao buscar endereço.");
+        } finally {
+            setIsSearchingAddress(false);
+        }
     };
 
     const handleCopyLink = () => {
@@ -510,15 +539,41 @@ const Settings = () => {
                                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white font-bold outline-none focus:border-accent transition-all h-14"
                                          />
                                      </div>
-                                     <button type="button" onClick={handleGetGPS} disabled={isCapturingGPS}
-                                         className="w-full py-3 bg-accent/10 border border-accent/20 text-accent rounded-xl font-black text-[0.6rem] uppercase tracking-widest hover:bg-accent hover:text-white transition-all flex items-center justify-center gap-2 mt-4">
-                                         {isCapturingGPS ? (
-                                             <>
-                                                 <div className="w-3 h-3 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                                                 Obtendo Localização...
-                                             </>
-                                         ) : 'Usar Minha Localização Atual'}
-                                     </button>
+                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                                         <button type="button" onClick={handleGetGPS} disabled={isCapturingGPS || isSearchingAddress}
+                                             className="w-full py-3.5 bg-accent/10 border border-accent/20 text-accent rounded-xl font-black text-[0.6rem] uppercase tracking-widest hover:bg-accent hover:text-white transition-all flex items-center justify-center gap-2">
+                                             {isCapturingGPS ? (
+                                                 <>
+                                                     <div className="w-3 h-3 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                                                     Capturando GPS...
+                                                 </>
+                                             ) : (
+                                                 <><Target size={14} /> GPS Atual</>
+                                             )}
+                                         </button>
+                                         <button type="button" onClick={handleSearchAddress} disabled={isCapturingGPS || isSearchingAddress}
+                                             className="w-full py-3.5 bg-primary/10 border border-primary/20 text-primary rounded-xl font-black text-[0.6rem] uppercase tracking-widest hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2 font-outfit">
+                                             {isSearchingAddress ? (
+                                                 <>
+                                                     <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                                     Buscando...
+                                                 </>
+                                             ) : (
+                                                 <><SettingsIcon size={14} /> Buscar Coordenadas</>
+                                             )}
+                                         </button>
+                                     </div>
+                                     {lat && lng && (
+                                         <div className="mt-4 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex items-center gap-3">
+                                             <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-500">
+                                                 <Check size={16} strokeWidth={3} />
+                                             </div>
+                                             <div>
+                                                 <p className="text-[0.6rem] font-black text-emerald-500 uppercase tracking-widest">Coordenadas Vinculadas</p>
+                                                 <p className="text-[0.55rem] text-slate-500 font-bold uppercase tracking-tight">{Number(lat).toFixed(4)}, {Number(lng).toFixed(4)}</p>
+                                             </div>
+                                         </div>
+                                     )}
                                      <p className="text-[0.55rem] text-slate-600 italic font-medium mt-2">A localização é necessária para que sua liga apareça na aba "Ligas Próximas" dos usuários.</p>
                                  </div>
                              </div>
