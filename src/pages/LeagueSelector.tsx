@@ -121,6 +121,10 @@ const LeagueSelector = () => {
                 console.error("Erro detalhado de localização:", error.code, error.message);
                 setLocationErrorCode(error.code);
                 setIsLocating(false);
+                // If permission is denied, consider the "attempt" as done so we can show the fallback UI
+                if (error.code === 1) {
+                    setHasSearchedNearby(true);
+                }
             },
             {
                 enableHighAccuracy: true,
@@ -270,67 +274,47 @@ const LeagueSelector = () => {
 
                     {activeTab === 'nearby' && (
                         nearbyLeagues.length === 0 ? (
-                            hasSearchedNearby ? (
-                                <div className="glass-panel py-20 px-10 text-center space-y-6">
-                                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
-                                        <MapPin size={40} className="text-slate-700" strokeWidth={1} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">Nenhuma liga encontrada</h3>
-                                        <p className="text-slate-500 font-medium text-sm">Não encontramos nenhuma liga num raio de 50km da sua localização selecionada.</p>
-                                        <button 
-                                            onClick={handleRequestLocation} 
-                                            disabled={isLocating}
-                                            className="mt-4 px-8 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
-                                        >
-                                            {isLocating ? 'Buscando novamente...' : 'Tentar Novamente'}
-                                        </button>
-                                    </div>
+                            <div className="glass-panel py-20 px-10 text-center space-y-6">
+                                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                                    <MapPin size={40} className="text-slate-700" strokeWidth={1} />
                                 </div>
-                            ) : (
-                                <div className="glass-panel py-20 px-10 text-center space-y-6">
-                                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
-                                        <MapPin size={40} className="text-slate-700" strokeWidth={1} />
+                                <div className="space-y-4 max-w-sm mx-auto">
+                                    <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">
+                                        {locationErrorCode === 1 ? 'Acesso Negado' : 'Ligas Próximas'}
+                                    </h3>
+                                    <p className="text-slate-500 font-medium text-sm">
+                                        {locationErrorCode === 1 
+                                            ? 'Você negou acesso ao GPS. Mas não se preocupe! Pode pesquisar sua cidade ou bairro abaixo.' 
+                                            : hasSearchedNearby 
+                                                ? 'Nenhuma liga encontrada num raio de 50km. Tente buscar por nome ou bairro.' 
+                                                : 'Sua localização ajuda a encontrar ligas locais em segundos.'
+                                        }
+                                    </p>
+                                    
+                                    <div className="relative mt-8 group animate-slide-up">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Ex: Rio de Janeiro, Copacabana..." 
+                                            value={searchQuery}
+                                            onChange={e => setSearchQuery(e.target.value)}
+                                            onFocus={() => setActiveTab('explore')}
+                                            className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white placeholder:text-slate-600 focus:border-primary outline-none transition-all text-sm font-bold group-hover:border-white/20"
+                                        />
                                     </div>
-                                    <div className="space-y-2">
-                                        <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest">
-                                            {locationErrorCode === 1 ? 'Localização Bloqueada' : 'Ligas Próximas a Você'}
-                                        </h3>
-                                        <p className="text-slate-500 font-medium text-sm">
-                                            {locationErrorCode === 1 
-                                                ? 'Você negou o acesso ao GPS. Mas não se preocupe! Você pode pesquisar sua cidade ou bairro abaixo.'
-                                                : 'Use sua localização para encontrar campeonatos regionais e interagir com a comunidade local.'
-                                            }
-                                        </p>
-                                        
-                                        {locationErrorCode === 1 && (
-                                            <div className="relative mt-8 group animate-slide-up">
-                                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Digite sua cidade ou bairro..." 
-                                                    value={searchQuery}
-                                                    onChange={e => setSearchQuery(e.target.value)}
-                                                    onFocus={() => setActiveTab('explore')}
-                                                    className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white placeholder:text-slate-600 focus:border-primary outline-none transition-all text-sm font-bold group-hover:border-white/20"
-                                                />
-                                            </div>
-                                        )}
 
+                                    <div className="flex flex-col gap-2 pt-4">
                                         <button 
                                             onClick={handleRequestLocation} 
                                             disabled={isLocating}
-                                            className="mt-6 px-8 py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                                            className="w-full py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-110 transition-all font-outfit"
                                         >
-                                            {isLocating ? 'Obtendo Localização...' : 'Solicitar Localização Novamente'}
+                                            {isLocating ? 'Buscando GPS...' : 'Tentar GPS Novamente'}
                                         </button>
-                                        
-                                        {locationErrorCode === 1 && (
-                                            <p className="text-[0.6rem] text-slate-600 font-black uppercase tracking-widest pt-4">Ou pesquise acima ↑</p>
-                                        )}
+                                        <p className="text-[0.6rem] text-slate-600 font-black uppercase tracking-widest">Acesso seguro via navegador</p>
                                     </div>
                                 </div>
-                            )
+                            </div>
                         ) : (
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between px-2 mb-2">
