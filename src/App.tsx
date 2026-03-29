@@ -205,8 +205,18 @@ const MainContent = () => {
                         <Route path="/:teamSlug/team" element={<Teams />} />
                         <Route path="/:slug/matches" element={<Matches />} />
                         <Route path="/:slug/matches/:matchId" element={<MatchControl />} />
+                        <Route path="/:slug/match/:matchId" element={<MatchControl />} />
+                        <Route path="/:slug/:matchSlug/match" element={<MatchControl />} />
                         <Route path="/:matchSlug/match" element={<MatchControl />} />
+                        
+                        <Route path="/:slug/player/:playerSlug" element={<PlayerDetail />} />
+                        <Route path="/:slug/:playerSlug/player" element={<PlayerDetail />} />
                         <Route path="/:playerSlug/player" element={<PlayerDetail />} />
+                        
+                        <Route path="/:slug/team/:teamId" element={<Teams />} />
+                        <Route path="/:slug/:teamSlug/team" element={<Teams />} />
+                        <Route path="/:teamSlug/team" element={<Teams />} />
+                        
                         <Route path="/:slug/standings" element={<Standings />} />
                         <Route path="/:slug/bracket" element={<Bracket />} />
                         <Route path="/:slug/live" element={<LiveMatches />} />
