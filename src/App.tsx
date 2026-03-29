@@ -20,6 +20,7 @@ import MatchOverlay from './pages/MatchOverlay';
 import Sitemap from './pages/Sitemap';
 import PlayerDetail from './pages/PlayerDetail';
 import DynamicContent from './pages/DynamicContent';
+import LeagueLocation from './pages/LeagueLocation';
 
 // Components
 import Sidebar from './components/Sidebar';
@@ -165,6 +166,7 @@ const MainContent = () => {
                         <Route path="live" element={<LiveMatches />} />
                         <Route path="match/:matchId" element={<MatchControl />} />
                         <Route path="settings" element={<Settings />} />
+                        <Route path="localizacao" element={<LeagueLocation />} />
 
                         {/* Special case for //:slug/match/:matchId/overlay */}
                         <Route path="match/:matchId/overlay" element={<MatchOverlay />} />

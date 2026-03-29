@@ -29,9 +29,13 @@ export default async function handler(req, res) {
         xml += `  <url>\n    <loc>${base_url}${route}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
     });
 
-    // Add Leagues
+    // Add Leagues and Locations
     leagues?.forEach(item => {
+        // Main League Page
         xml += `  <url>\n    <loc>${base_url}/${item.slug}</loc>\n    <lastmod>${new Date(item.updated_at).toISOString().split('T')[0]}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
+        
+        // Dedicated Location Page (SEO Local)
+        xml += `  <url>\n    <loc>${base_url}/${item.slug}/localizacao</loc>\n    <lastmod>${new Date(item.updated_at).toISOString().split('T')[0]}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.5</priority>\n  </url>\n`;
     });
 
     // Add Players
