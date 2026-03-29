@@ -63,7 +63,7 @@ const MainContent = () => {
             'blog', 'servicos', 'glossario', 'categoria', 'autor', 'duvidas', 'informacoes',
             'sobre-nos', 'contato', 'inicio', 'politica-de-atualizacao-de-resultados',
             'direitos-de-transmissao-e-imagem', 'regulamento-geral-de-competicoes',
-            'diretrizes-do-capitao-titular'
+            'diretrizes-do-capitao-titular', 'player'
         ];
         if (slug && !fixedPaths.includes(slug)) {
             setNotFound(false);
@@ -92,7 +92,14 @@ const MainContent = () => {
         return <LoadingScreen />;
     }
 
-    const isPublicPage = ['/politica-de-privacidade', '/termos-de-uso', '/sitemap', '/auth', '/leagues'].includes(location.pathname);
+    const publicPaths = [
+        'leagues', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sitemap', 
+        'blog', 'servicos', 'glossario', 'categoria', 'autor', 'duvidas', 'informacoes',
+        'sobre-nos', 'contato', 'inicio', 'politica-de-atualizacao-de-resultados',
+        'direitos-de-transmissao-e-imagem', 'regulamento-geral-de-competicoes',
+        'diretrizes-do-capitao-titular'
+    ];
+    const isPublicPage = publicPaths.some(p => location.pathname.startsWith('/' + p));
     const hasLeague = !!league || !!slug;
 
     // Only force login if not a public page AND not viewing a league AND not logged in
@@ -180,25 +187,6 @@ const App = () => {
             <AuthProvider>
                 <LeagueProvider>
                     <Routes>
-                        <Route path="/leagues/*" element={<MainContent />} />
-                        <Route path="/auth/*" element={<MainContent />} />
-                        <Route path="/politica-de-privacidade/*" element={<MainContent />} />
-                        <Route path="/termos-de-uso/*" element={<MainContent />} />
-                        <Route path="/sitemap/*" element={<MainContent />} />
-                        <Route path="/blog/*" element={<MainContent />} />
-                        <Route path="/servicos/*" element={<MainContent />} />
-                        <Route path="/glossario/*" element={<MainContent />} />
-                        <Route path="/categoria/*" element={<MainContent />} />
-                        <Route path="/autor/*" element={<MainContent />} />
-                        <Route path="/duvidas/*" element={<MainContent />} />
-                        <Route path="/sobre-nos/*" element={<MainContent />} />
-                        <Route path="/contato/*" element={<MainContent />} />
-                        <Route path="/informacoes/*" element={<MainContent />} />
-                        <Route path="/politica-de-atualizacao-de-resultados/*" element={<MainContent />} />
-                        <Route path="/direitos-de-transmissao-e-imagem/*" element={<MainContent />} />
-                        <Route path="/regulamento-geral-de-competicoes/*" element={<MainContent />} />
-                        <Route path="/diretrizes-do-capitao-titular/*" element={<MainContent />} />
-                        <Route path="/:slug/*" element={<MainContent />} />
                         <Route path="/*" element={<MainContent />} />
                     </Routes>
                 </LeagueProvider>
