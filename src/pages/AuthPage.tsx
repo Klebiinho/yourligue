@@ -32,13 +32,11 @@ const AuthPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [googleLoading, setGoogleLoading] = useState(false);
 
     // Reset loading states when page becomes visible again (e.g. back button)
     useEffect(() => {
         const handlePageShow = () => {
             setLoading(false);
-            setGoogleLoading(false);
         };
         window.addEventListener('pageshow', handlePageShow);
         return () => window.removeEventListener('pageshow', handlePageShow);
@@ -62,12 +60,10 @@ const AuthPage = () => {
     };
 
     const handleGoogle = async () => {
-        setGoogleLoading(true);
         try {
             await signInWithGoogle();
         } catch (err) {
             console.error('AuthPage: Google redirect failed', err);
-            setGoogleLoading(false);
         }
     };
 
@@ -94,11 +90,10 @@ const AuthPage = () => {
                     {/* Google Button */}
                     <button
                         onClick={handleGoogle}
-                        disabled={googleLoading}
-                        className="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white font-semibold transition-all duration-300 mb-6 disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white font-semibold transition-all duration-300 mb-6"
                     >
                         <GoogleIcon />
-                        {googleLoading ? 'Redirecionando...' : 'Continuar com Google'}
+                        Continuar com Google
                     </button>
 
                     {/* Divider */}
