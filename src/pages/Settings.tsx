@@ -912,7 +912,7 @@ const Settings = () => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Nome do Gestor</span>
-                                    <p className="text-white font-black truncate text-base leading-tight mt-1">{user?.user_metadata?.name || 'Administrador Master'}</p>
+                                    <p className="text-white font-black truncate text-base leading-tight mt-1">{user?.user_metadata?.full_name || user?.user_metadata?.name || 'Administrador'}</p>
                                 </div>
                             </div>
 
