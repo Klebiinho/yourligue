@@ -1107,6 +1107,17 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
         loadLeagueData(league.id);
         localStorage.setItem('selectedLeagueId', league.id);
+    }, [league, loadLeagueData]);
+
+    // Separate effect for user-specific data that reloads when user auth state changes or leagueId changes
+    useEffect(() => {
+        if (league?.id) {
+            loadUserInteractions(league.id);
+        }
+    }, [league?.id, user, loadUserInteractions]);
+
+    useEffect(() => {
+        if (!league) return;
 
         // ─── CENTRALIZED REALTIME (GOLDEN RULE: ZERO REFETCH) ───────
         const channel = supabase.channel(`league-central-${league.id}`);
