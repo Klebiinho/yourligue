@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye, User } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye, User, Zap, Globe } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 import { VideoGenerator } from '../components/VideoGenerator';
@@ -92,7 +92,7 @@ const MatchControl = () => {
     } | null>(null);
 
     const [isEditingFinishedMatch, setIsEditingFinishedMatch] = useState(false);
-
+    const currentMinute = Math.floor(localSeconds / 60);
 
     // ... moved below to fix usage ...
 
@@ -613,136 +613,151 @@ const MatchControl = () => {
                 <AdBanner position="halftime" className="z-[60]" />
             )}
 
-            {isPublicView && (period.includes('Intervalo') || match.status === 'scheduled') && showOverlay && (
+            {isPublicView && (period.includes('Intervalo') || (match && match.status === 'scheduled')) && showOverlay && (
                 <AdBanner position="overlay" onClose={() => setShowOverlay(false)} />
             )}
 
-            {/* YouTube Stream Setup Modal */}
             {!isPublicView && isAdmin && showYtSetup && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-                    <div className="glass-panel p-6 max-w-lg w-full border-primary/30 shadow-[0_0_50px_rgba(109,40,217,0.2)]">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-red-600/20 rounded-xl flex items-center justify-center text-red-500">
-                                    <Video size={20} />
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-md animate-fade-in">
+                    <div className="glass-panel p-6 sm:p-8 max-w-xl w-full border-primary/30 shadow-[0_0_80px_rgba(109,40,217,0.3)] max-h-[90vh] overflow-y-auto custom-scrollbar relative">
+                        <div className="flex items-center justify-between mb-8 sticky top-0 bg-[#07070a]/95 backdrop-blur-xl z-20 -mx-6 sm:-mx-8 px-6 sm:px-8 py-3 -mt-6 rounded-t-2xl border-b border-white/5">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-red-600/20 rounded-2xl flex items-center justify-center text-red-500 shadow-lg shadow-red-600/10">
+                                    <Video size={24} />
                                 </div>
                                 <div>
-                                    <h3 className="text-white font-black uppercase text-sm tracking-widest leading-none">Configurar Transmissão</h3>
-                                    <p className="text-slate-500 text-[0.65rem] font-bold uppercase tracking-wide mt-1">Ao vivo no YouTube</p>
+                                    <h3 className="text-white font-black uppercase text-base sm:text-lg tracking-tight leading-none">Configurar Transmissão</h3>
+                                <div className="text-slate-500 text-[0.6rem] sm:text-[0.7rem] font-black uppercase tracking-[0.15em] mt-1.5 flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /> Ao vivo no YouTube
+                                </div>
                                 </div>
                             </div>
-                            <button onClick={() => setShowYtSetup(false)} className="text-slate-500 hover:text-white transition-colors">
+                            <button onClick={() => setShowYtSetup(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 text-slate-500 hover:text-white hover:bg-white/10 transition-all">
                                 <XCircle size={24} />
                             </button>
                         </div>
 
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             {currentYtLiveStream ? (
-                                <>
-                                    <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-2">URL do Servidor (RTMP)</label>
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="p-5 bg-white/[0.03] rounded-2xl border border-white/10 shadow-inner">
+                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.2em] block mb-3 ml-1">URL do Servidor (RTMP)</label>
                                         <div className="flex gap-2">
                                             <input 
                                                 readOnly 
                                                 value={currentYtLiveStream.rtmpUrl} 
-                                                className="bg-black/40 border border-white/5 flex-1 px-3 py-2 rounded-lg text-xs font-mono text-slate-300" 
+                                                className="bg-black/60 border border-white/5 flex-1 px-4 py-3 rounded-xl text-[0.65rem] font-mono text-slate-300 focus:border-primary/50 outline-none transition-all" 
                                             />
                                             <button 
                                                 onClick={() => { navigator.clipboard.writeText(currentYtLiveStream.rtmpUrl); alert('URL Copiada!'); }}
-                                                className="bg-primary/20 text-primary p-2 rounded-lg hover:bg-primary/30 transition-all"
+                                                className="bg-primary/20 text-primary w-12 h-12 flex items-center justify-center rounded-xl hover:bg-primary hover:text-white transition-all shadow-lg shadow-primary/10 active:scale-90"
                                             >
-                                                <Check size={16} />
+                                                <Check size={18} />
                                             </button>
                                         </div>
                                     </div>
 
-                                    <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest block mb-2">Chave de Transmissão</label>
+                                    <div className="p-5 bg-white/[0.03] rounded-2xl border border-white/10 shadow-inner">
+                                        <label className="text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.2em] block mb-3 ml-1">Chave de Transmissão</label>
                                         <div className="flex gap-2">
                                             <input 
                                                 readOnly 
                                                 type="password"
                                                 value={currentYtLiveStream.streamKey} 
-                                                className="bg-black/40 border border-white/5 flex-1 px-3 py-2 rounded-lg text-xs font-mono text-slate-300" 
+                                                className="bg-black/60 border border-white/5 flex-1 px-4 py-3 rounded-xl text-[0.65rem] font-mono text-slate-300 focus:border-primary/50 outline-none transition-all" 
                                             />
                                             <button 
                                                 onClick={() => { navigator.clipboard.writeText(currentYtLiveStream.streamKey); alert('Chave Copiada!'); }}
-                                                className="bg-primary/20 text-primary p-2 rounded-lg hover:bg-primary/30 transition-all"
+                                                className="bg-primary/20 text-primary w-12 h-12 flex items-center justify-center rounded-xl hover:bg-primary hover:text-white transition-all shadow-lg shadow-primary/10 active:scale-90"
                                             >
-                                                <Check size={16} />
+                                                <Check size={18} />
                                             </button>
                                         </div>
                                     </div>
-                                </>
+                                </div>
                             ) : match?.youtubeLiveId ? (
-                                <div className="p-4 bg-white/5 rounded-xl border border-white/10 text-center">
-                                    <p className="text-[0.65rem] text-slate-400 font-bold uppercase tracking-wide mb-3">YouTube detectado, mas detalhes pendentes...</p>
-                                    <button 
-                                        onClick={() => recoverStreamDetails(match.youtubeLiveId!)}
-                                        className="bg-primary/20 text-primary px-4 py-2 rounded-lg text-[0.6rem] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all"
-                                    >
-                                        Carregar Chaves do YouTube
-                                    </button>
+                                <div className="p-8 bg-white/[0.03] rounded-3xl border border-white/10 text-center flex flex-col items-center gap-4">
+                                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary animate-pulse">
+                                        <Zap size={32} />
+                                    </div>
+                                    <div>
+                                        <p className="text-[0.7rem] text-slate-400 font-black uppercase tracking-[0.1em] mb-4">YouTube detectado, mas detalhes pendentes...</p>
+                                        <button 
+                                            onClick={() => recoverStreamDetails(match.youtubeLiveId!)}
+                                            className="bg-primary text-black px-10 py-4 rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-primary/20"
+                                        >
+                                            Carregar Chaves do YouTube
+                                        </button>
+                                    </div>
                                 </div>
                             ) : (
-                                <div className="p-4 bg-red-600/10 rounded-xl border border-red-600/20 text-center">
-                                    <p className="text-[0.65rem] text-red-400 font-bold uppercase tracking-wide mb-3">Nenhuma Live ativa no YouTube</p>
-                                    <button 
-                                        onClick={async (e) => {
-                                            const btn = e.currentTarget;
-                                            if (!isYtAuthenticated) {
-                                                alert("Por favor, conecte sua conta do YouTube primeiro.");
-                                                return;
-                                            }
-                                            if (window.confirm("Deseja criar uma nova live para esta partida agora? Isso pode levar alguns segundos.")) {
-                                                btn.disabled = true;
-                                                btn.innerText = "Criando Live...";
-                                                try {
-                                                    await startMatch(match.id, localSeconds, true);
-                                                } finally {
-                                                    btn.disabled = false;
-                                                    btn.innerHTML = "Iniciar Transmissão agora";
+                                <div className="p-8 bg-red-600/5 rounded-3xl border border-red-600/20 text-center flex flex-col items-center gap-4">
+                                    <div className="w-16 h-16 bg-red-600/10 rounded-full flex items-center justify-center text-red-500">
+                                        <Video size={32} />
+                                    </div>
+                                    <div>
+                                        <p className="text-[0.7rem] text-red-400 font-black uppercase tracking-[0.1em] mb-6">Nenhuma Live ativa no YouTube para esta partida</p>
+                                        <button 
+                                            onClick={async (e) => {
+                                                const btn = e.currentTarget;
+                                                if (!isYtAuthenticated) {
+                                                    alert("Por favor, conecte sua conta do YouTube primeiro.");
+                                                    return;
                                                 }
-                                            }
-                                        }}
-                                        className="bg-red-600/20 text-red-500 px-4 py-2 rounded-lg text-[0.6rem] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <Video size={14} />
-                                        Iniciar Transmissão agora
-                                    </button>
+                                                if (window.confirm("Deseja criar uma nova live para esta partida agora? Isso pode levar alguns segundos.")) {
+                                                    btn.disabled = true;
+                                                    btn.innerText = "Criando Live...";
+                                                    try {
+                                                        await startMatch(match.id, localSeconds, true);
+                                                    } finally {
+                                                        btn.disabled = false;
+                                                        btn.innerHTML = "Iniciar Transmissão agora";
+                                                    }
+                                                }
+                                            }}
+                                            className="bg-red-600 text-white px-10 py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-red-500 transition-all flex items-center justify-center gap-3 shadow-xl shadow-red-600/20 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                                        >
+                                            <Video size={18} />
+                                            Iniciar Transmissão agora
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
-                            <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
-                                <label className="text-[0.6rem] font-black text-primary uppercase tracking-widest block mb-2">Link do Placar (Overlay Widget)</label>
+                            <div className="p-6 bg-primary/5 rounded-3xl border border-primary/20 shadow-inner">
+                                <label className="text-[0.6rem] font-black text-primary uppercase tracking-[0.2em] block mb-3 ml-1 flex items-center gap-2">
+                                    <Globe size={14} /> Link do Placar (Overlay Widget)
+                                </label>
                                 <div className="flex gap-2">
                                     <input 
                                         readOnly 
                                         value={`${window.location.origin}/match/${mId}/overlay`} 
-                                        className="bg-black/40 border border-primary/10 flex-1 px-3 py-2 rounded-lg text-[0.65rem] font-mono text-white" 
+                                        className="bg-black/60 border border-primary/20 flex-1 px-4 py-3 rounded-xl text-[0.7rem] font-mono text-white focus:border-primary outline-none transition-all" 
                                     />
                                     <button 
                                         onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/match/${mId}/overlay`); alert('Link do Placar Copiado!'); }}
-                                        className="bg-primary text-white p-2 rounded-lg hover:bg-primary-hover transition-all shadow-lg shadow-primary/20"
+                                        className="bg-primary text-black w-12 h-12 flex items-center justify-center rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/30 active:scale-90"
                                     >
-                                        <Check size={16} />
+                                        <Check size={20} />
                                     </button>
                                 </div>
-                                <p className="text-[0.55rem] text-primary/70 font-bold uppercase tracking-tight mt-2">
-                                    Cole este link no "Web Widget" ou "Browser Source" do seu app de live.
+                                <p className="text-[0.6rem] text-primary/70 font-bold uppercase tracking-widest mt-4 italic leading-relaxed text-center px-4">
+                                    Cole este link no "Web Widget" ou "Browser Source" do seu software de transmissão (OBS, Prism).
                                 </p>
                             </div>
 
-                            <p className="text-[0.65rem] text-slate-500 italic text-center px-4">
-                                Insira esses dados no seu aplicativo de transmissão (OBS, PRISM, Larix Broadcaster) para começar a enviar o vídeo.
-                            </p>
-                            
-                            <button 
-                                onClick={() => setShowYtSetup(false)}
-                                className="w-full py-3 bg-white/5 border border-white/10 rounded-xl font-black text-[0.65rem] uppercase tracking-[0.2em] text-white hover:bg-white/10 transition-all mt-2"
-                            >
-                                Entendi, fechar painel
-                            </button>
+                            <div className="flex flex-col gap-4">
+                                <p className="text-[0.65rem] text-slate-500 font-medium italic text-center px-6 leading-relaxed">
+                                    Insira esses dados no seu aplicativo de transmissão para que o vídeo e o placar em tempo real apareçam simultaneamente.
+                                </p>
+                                
+                                <button 
+                                    onClick={() => setShowYtSetup(false)}
+                                    className="w-full py-5 bg-white/5 border border-white/10 rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.3em] text-white hover:bg-white/10 hover:border-white/20 active:scale-[0.98] transition-all shadow-lg"
+                                >
+                                    Tudo Pronto, fechar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

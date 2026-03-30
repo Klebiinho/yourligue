@@ -78,6 +78,8 @@ const MainContent = () => {
             loadPublicLeague(slug).then((success: boolean) => {
                 if (!success) setNotFound(true);
             });
+        } else {
+            setNotFound(false);
         }
     }, [slug, loadPublicLeague]);
 
