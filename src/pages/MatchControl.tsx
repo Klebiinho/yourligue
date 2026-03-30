@@ -783,6 +783,20 @@ const MatchControl = () => {
                         </div>
                         <h2 className="text-center font-black text-white font-outfit uppercase text-[0.65rem] sm:text-xs tracking-wide truncate w-full leading-tight">{homeTeam.name}</h2>
                         <span className="text-[0.5rem] font-black text-primary tracking-widest uppercase">Casa</span>
+                        <div className="mt-1 flex items-center gap-2">
+                            <div className="flex items-center gap-1 text-[0.5rem] font-black text-slate-500">
+                                <Heart size={8} className="text-primary" fill={userInteractions.some(i => i.teamId === homeTeam.id && i.interactionType === 'supporting') ? 'currentColor' : 'none'} />
+                                <span>{interactionCounts[homeTeam.id]?.supporting || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-[0.5rem] font-black text-slate-500">
+                                <Wind size={8} className="text-danger" />
+                                <span>{interactionCounts[homeTeam.id]?.rival || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-[0.5rem] font-black text-slate-500">
+                                <Star size={8} className="text-warning" fill={userInteractions.some(i => i.teamId === homeTeam.id && i.interactionType === 'favorite') ? 'currentColor' : 'none'} />
+                                <span>{interactionCounts[homeTeam.id]?.favorite || 0}</span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Score */}
@@ -876,6 +890,20 @@ const MatchControl = () => {
                         </div>
                         <h2 className="text-center font-black text-white font-outfit uppercase text-[0.65rem] sm:text-xs tracking-wide truncate w-full leading-tight">{awayTeam.name}</h2>
                         <span className="text-[0.5rem] font-black text-slate-500 tracking-widest uppercase">Fora</span>
+                        <div className="mt-1 flex items-center gap-2">
+                            <div className="flex items-center gap-1 text-[0.5rem] font-black text-slate-500">
+                                <Heart size={8} className="text-primary" fill={userInteractions.some(i => i.teamId === awayTeam.id && i.interactionType === 'supporting') ? 'currentColor' : 'none'} />
+                                <span>{interactionCounts[awayTeam.id]?.supporting || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-[0.5rem] font-black text-slate-500">
+                                <Wind size={8} className="text-danger" />
+                                <span>{interactionCounts[awayTeam.id]?.rival || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-[0.5rem] font-black text-slate-500">
+                                <Star size={8} className="text-warning" fill={userInteractions.some(i => i.teamId === awayTeam.id && i.interactionType === 'favorite') ? 'currentColor' : 'none'} />
+                                <span>{interactionCounts[awayTeam.id]?.favorite || 0}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
