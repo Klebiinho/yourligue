@@ -202,7 +202,7 @@ interface LeagueContextType {
     setPendingInteraction: (val: { teamId: string, type: TeamInteraction['interactionType'] } | null) => void;
     showAuthModal: boolean;
     setShowAuthModal: (val: boolean) => void;
-    supportCounts: Record<string, number>;
+    interactionCounts: Record<string, { supporting: number, favorite: number, rival: number }>;
     notifications: LeagueNotification[];
     clearNotification: (id: string) => void;
     leagueBasePath: string;
@@ -523,7 +523,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const [userInteractions, setUserInteractions] = useState<TeamInteraction[]>([]);
     const [pendingInteraction, setPendingInteraction] = useState<{ teamId: string, type: TeamInteraction['interactionType'] } | null>(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
-    const [supportCounts, setSupportCounts] = useState<Record<string, number>>({});
+    const [interactionCounts, setInteractionCounts] = useState<Record<string, { supporting: number, favorite: number, rival: number }>>({});
     const [notifications, setNotifications] = useState<LeagueNotification[]>([]);
     const [ads, setAds] = useState<Ad[]>([]);
     const [globalAdTick, setGlobalAdTick] = useState(0);
@@ -837,7 +837,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 setRawMatches([]);
                 setBrackets([]);
                 setUserInteractions([]);
-                setSupportCounts({});
+                setInteractionCounts({});
             } else {
                 console.log('LeagueContext: Same league requested, keeping current data for seamless transition');
                 // Silent update in background if it's the same league
@@ -924,36 +924,46 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [user]);
 
-    const loadSupportCounts = useCallback(async (leagueId: string) => {
+    const loadInteractionCounts = useCallback(async (leagueId: string) => {
         try {
-            const { data } = await supabase.rpc('get_league_support_counts', { l_id: leagueId });
-            // Fallback if RPC doesn't exist yet, we'll try a manual count
-            if (data) {
-                const counts: Record<string, number> = {};
-                data.forEach((item: any) => { counts[item.team_id] = item.count; });
-                setSupportCounts(counts);
+            const { data, error } = await supabase.rpc('get_league_support_counts', { l_id: leagueId });
+            
+            if (!error && data) {
+                const counts: Record<string, { supporting: number, favorite: number, rival: number }> = {};
+                data.forEach((item: any) => {
+                    const tid = item.team_id;
+                    const type = item.interaction_type as 'supporting' | 'favorite' | 'rival';
+                    const count = parseInt(item.count) || 0;
+                    
+                    if (!counts[tid]) counts[tid] = { supporting: 0, favorite: 0, rival: 0 };
+                    counts[tid][type] = count;
+                });
+                setInteractionCounts(counts);
             } else {
+                // Fallback: Fetch directly from table if RPC fails or returns no data
                 const { data: interactionData } = await supabase.from('user_team_interactions')
-                    .select('team_id').eq('league_id', leagueId).eq('interaction_type', 'supporting');
+                    .select('team_id, interaction_type').eq('league_id', leagueId);
                 if (interactionData) {
-                    const counts: Record<string, number> = {};
+                    const counts: Record<string, { supporting: number, favorite: number, rival: number }> = {};
                     interactionData.forEach((item: any) => {
-                        counts[item.team_id] = (counts[item.team_id] || 0) + 1;
+                        const tid = item.team_id;
+                        const type = item.interaction_type as 'supporting' | 'favorite' | 'rival';
+                        if (!counts[tid]) counts[tid] = { supporting: 0, favorite: 0, rival: 0 };
+                        counts[tid][type]++;
                     });
-                    setSupportCounts(counts);
+                    setInteractionCounts(counts);
                 }
             }
         } catch (e) {
-            console.warn('LeagueContext: Error loading support counts', e);
+            console.warn('LeagueContext: Error loading interaction counts', e);
         }
     }, []);
 
     // ── Load league data (teams, matches, brackets) ────────────
-    // Use refs to avoid stale closure issues and prevent needless dependency array changes
     const loadUserInteractionsRef = useRef(loadUserInteractions);
-    const loadSupportCountsRef = useRef(loadSupportCounts);
+    const loadInteractionCountsRef = useRef(loadInteractionCounts);
     useEffect(() => { loadUserInteractionsRef.current = loadUserInteractions; }, [loadUserInteractions]);
-    useEffect(() => { loadSupportCountsRef.current = loadSupportCounts; }, [loadSupportCounts]);
+    useEffect(() => { loadInteractionCountsRef.current = loadInteractionCounts; }, [loadInteractionCounts]);
 
     const loadLeagueData = useCallback(async (leagueId: string, background = false) => {
         if (!leagueId) return;
@@ -966,7 +976,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
         
         loadUserInteractionsRef.current(leagueId);
-        loadSupportCountsRef.current(leagueId);
+        loadInteractionCountsRef.current(leagueId);
 
         // Try cache for instant mount
         const recovered = tryRecoverFromCache(leagueId);
@@ -1091,7 +1101,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         if (!league) {
-            setRawTeams([]); setRawMatches([]); setBrackets([]); setUserInteractions([]); setSupportCounts({});
+            setRawTeams([]); setRawMatches([]); setBrackets([]); setUserInteractions([]); setInteractionCounts({});
             return;
         }
 
@@ -1181,7 +1191,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
                 case 'user_team_interactions':
                     // Refresh support counts and personal interactions
-                    loadSupportCounts(league.id);
+                    loadInteractionCounts(league.id);
                     loadUserInteractions(league.id);
                     break;
             }
@@ -2256,7 +2266,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             // Final refresh to ensure sync with DB (IDs etc)
             loadUserInteractions(league.id);
-            loadSupportCounts(league.id);
+            loadInteractionCounts(league.id);
         }
     };
 
@@ -2314,7 +2324,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             generateBracket, updateBracket, loadLeagues, isPublicView, setIsPublicView, isAdmin, loadPublicLeague,
             userInteractions, interactWithTeam, removeInteraction, pendingInteraction, setPendingInteraction,
             showAuthModal, setShowAuthModal, loadTeamPhotos, loadPlayerPhotos,
-            supportCounts, notifications, clearNotification, leagueBasePath,
+            interactionCounts, notifications, clearNotification, leagueBasePath,
             ads, addAd, updateAd, deleteAd, reorderAds, globalAdTick,
             ytToken, ytLogin, ytLogout, isYtAuthenticated, currentYtLiveStream, recoverStreamDetails,
             deleteYtLive, setYtLivePrivacy, getMatchSlug, getTeamSlug, getPlayerSlug

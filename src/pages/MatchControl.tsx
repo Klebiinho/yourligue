@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye, User, Zap, Globe } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye, User, Zap, Globe, Heart, Wind, Star } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 import { VideoGenerator } from '../components/VideoGenerator';
@@ -15,7 +15,8 @@ const MatchControl = () => {
         currentYtLiveStream, isYtAuthenticated, recoverStreamDetails,
         ytLogin, setYtLivePrivacy, startMatch, pauseMatch, 
         loading: leagueLoading, dataLoading, leagueBasePath,
-        getMatchSlug, getPlayerSlug
+        getMatchSlug, getPlayerSlug, userInteractions, interactWithTeam,
+        interactionCounts
     } = useLeague();
 
     const match = useMemo(() => {
@@ -772,7 +773,14 @@ const MatchControl = () => {
                 <div className="flex items-center gap-3 sm:gap-6 relative z-10">
                     {/* Home Team */}
                     <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
-                        <TeamLogo src={homeTeam.logo} size={44} />
+                        <div className="relative group/logo">
+                            <TeamLogo src={homeTeam.logo} size={44} />
+                            <div className="absolute -bottom-2 -right-2 flex flex-col gap-1 opacity-0 group-hover/logo:opacity-100 transition-all scale-75 origin-top-right z-20">
+                                <button onClick={() => interactWithTeam(homeTeam.id, 'supporting')} className={`p-1.5 rounded-lg shadow-lg backdrop-blur-md border ${userInteractions.some(i => i.teamId === homeTeam.id && i.interactionType === 'supporting') ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-black/60 border-white/10 text-white/40 hover:text-white'}`} title="Torcer"><Heart size={14} fill={userInteractions.some(i => i.teamId === homeTeam.id && i.interactionType === 'supporting') ? 'currentColor' : 'none'} /></button>
+                                <button onClick={() => interactWithTeam(homeTeam.id, 'rival')} className={`p-1.5 rounded-lg shadow-lg backdrop-blur-md border ${userInteractions.some(i => i.teamId === homeTeam.id && i.interactionType === 'rival') ? 'bg-danger/20 border-danger/40 text-danger' : 'bg-black/60 border-white/10 text-white/40 hover:text-white'}`} title="Secar"><Wind size={14} /></button>
+                                <button onClick={() => interactWithTeam(homeTeam.id, 'favorite')} className={`p-1.5 rounded-lg shadow-lg backdrop-blur-md border ${userInteractions.some(i => i.teamId === homeTeam.id && i.interactionType === 'favorite') ? 'bg-warning/20 border-warning/40 text-warning' : 'bg-black/60 border-white/10 text-white/40 hover:text-white'}`} title="Favoritar"><Star size={14} fill={userInteractions.some(i => i.teamId === homeTeam.id && i.interactionType === 'favorite') ? 'currentColor' : 'none'} /></button>
+                            </div>
+                        </div>
                         <h2 className="text-center font-black text-white font-outfit uppercase text-[0.65rem] sm:text-xs tracking-wide truncate w-full leading-tight">{homeTeam.name}</h2>
                         <span className="text-[0.5rem] font-black text-primary tracking-widest uppercase">Casa</span>
                     </div>
@@ -858,7 +866,14 @@ const MatchControl = () => {
 
                     {/* Away Team */}
                     <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
-                        <TeamLogo src={awayTeam.logo} size={44} />
+                        <div className="relative group/logo">
+                            <TeamLogo src={awayTeam.logo} size={44} />
+                            <div className="absolute -bottom-2 -left-2 flex flex-col gap-1 opacity-0 group-hover/logo:opacity-100 transition-all scale-75 origin-top-left z-20">
+                                <button onClick={() => interactWithTeam(awayTeam.id, 'supporting')} className={`p-1.5 rounded-lg shadow-lg backdrop-blur-md border ${userInteractions.some(i => i.teamId === awayTeam.id && i.interactionType === 'supporting') ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-black/60 border-white/10 text-white/40 hover:text-white'}`} title="Torcer"><Heart size={14} fill={userInteractions.some(i => i.teamId === awayTeam.id && i.interactionType === 'supporting') ? 'currentColor' : 'none'} /></button>
+                                <button onClick={() => interactWithTeam(awayTeam.id, 'rival')} className={`p-1.5 rounded-lg shadow-lg backdrop-blur-md border ${userInteractions.some(i => i.teamId === awayTeam.id && i.interactionType === 'rival') ? 'bg-danger/20 border-danger/40 text-danger' : 'bg-black/60 border-white/10 text-white/40 hover:text-white'}`} title="Secar"><Wind size={14} /></button>
+                                <button onClick={() => interactWithTeam(awayTeam.id, 'favorite')} className={`p-1.5 rounded-lg shadow-lg backdrop-blur-md border ${userInteractions.some(i => i.teamId === awayTeam.id && i.interactionType === 'favorite') ? 'bg-warning/20 border-warning/40 text-warning' : 'bg-black/60 border-white/10 text-white/40 hover:text-white'}`} title="Favoritar"><Star size={14} fill={userInteractions.some(i => i.teamId === awayTeam.id && i.interactionType === 'favorite') ? 'currentColor' : 'none'} /></button>
+                            </div>
+                        </div>
                         <h2 className="text-center font-black text-white font-outfit uppercase text-[0.65rem] sm:text-xs tracking-wide truncate w-full leading-tight">{awayTeam.name}</h2>
                         <span className="text-[0.5rem] font-black text-slate-500 tracking-widest uppercase">Fora</span>
                     </div>

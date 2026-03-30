@@ -21,6 +21,7 @@ import Sitemap from './pages/Sitemap';
 import PlayerDetail from './pages/PlayerDetail';
 import DynamicContent from './pages/DynamicContent';
 import LeagueLocation from './pages/LeagueLocation';
+import MyInteractions from './pages/MyInteractions';
 
 // Components
 import Sidebar from './components/Sidebar';
@@ -184,6 +185,7 @@ const MainContent = () => {
                         <Route path="/:slug/teams/:teamId" element={<Teams />} />
                         <Route path="/:slug/standings" element={<Standings />} />
                         <Route path="/:slug/bracket" element={<Bracket />} />
+                        <Route path="/:slug/torcedor" element={<MyInteractions />} />
                         <Route path="/:slug/live" element={<LiveMatches />} />
                         <Route path="/:slug/settings" element={<Settings />} />
                         <Route path="/:slug/sitemap" element={<Sitemap />} />

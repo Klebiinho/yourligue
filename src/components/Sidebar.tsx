@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Swords, Trophy, Settings, GitBranch, ArrowLeftRight, Grid3x3, X, Signal, Home } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, Trophy, Settings, GitBranch, ArrowLeftRight, Grid3x3, X, Signal, Home, Heart } from 'lucide-react';
 import { useLeague } from '../context/LeagueContext';
 import TeamLogo from './TeamLogo';
 
@@ -11,6 +11,7 @@ const navItems = [
     { to: '/live', icon: Signal, label: 'Ao Vivo', shortLabel: 'Ao Vivo' },
     { to: '/teams', icon: Users, label: 'Times', shortLabel: 'Times' },
     { to: '/bracket', icon: GitBranch, label: 'Chaveamento', shortLabel: 'Chaveam.' },
+    { to: '/torcedor', icon: Heart, label: 'Minha Torcida', shortLabel: 'Torcida' },
     { to: '/settings', icon: Settings, label: 'Config.', shortLabel: 'Config.' },
 ];
 
@@ -39,7 +40,7 @@ const Sidebar = () => {
 
     // Filter nav items: if it's public view OR user is not an admin, show only base items
     const filteredNavItems = (isPublicView || !isAdmin)
-        ? navItems.filter(item => ['/', '/live', '/matches', '/standings', '/bracket', '/teams'].includes(item.to))
+        ? navItems.filter(item => ['/', '/live', '/matches', '/standings', '/bracket', '/teams', '/torcedor'].includes(item.to))
         : navItems;
 
     const primaryItems = filteredNavItems.slice(0, 4);
