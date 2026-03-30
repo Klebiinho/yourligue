@@ -468,31 +468,33 @@ const Teams = () => {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                                            <button 
-                                                onClick={() => interactWithTeam(currentTeam.id, 'supporting')}
-                                                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[0.65rem] font-black uppercase tracking-widest transition-all border ${userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'supporting') ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
-                                                title="Torcer por este time"
-                                            >
-                                                <Heart size={14} className={userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'supporting') ? 'animate-bounce' : ''} fill={userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'supporting') ? 'currentColor' : 'none'} /> Torcer
-                                            </button>
-                                            
-                                            <button 
-                                                onClick={() => interactWithTeam(currentTeam.id, 'rival')}
-                                                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[0.65rem] font-black uppercase tracking-widest transition-all border ${userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'rival') ? 'bg-danger text-white border-danger shadow-lg shadow-danger/20' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
-                                                title="Secar este time"
-                                            >
-                                                <Wind size={14} /> Secar
-                                            </button>
+                                         {isPublicView && (
+                                            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                                                <button 
+                                                    onClick={() => interactWithTeam(currentTeam.id, 'supporting')}
+                                                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[0.65rem] font-black uppercase tracking-widest transition-all border ${userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'supporting') ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
+                                                    title="Torcer por este time"
+                                                >
+                                                    <Heart size={14} className={userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'supporting') ? 'animate-bounce' : ''} fill={userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'supporting') ? 'currentColor' : 'none'} /> Torcer
+                                                </button>
+                                                
+                                                <button 
+                                                    onClick={() => interactWithTeam(currentTeam.id, 'rival')}
+                                                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[0.65rem] font-black uppercase tracking-widest transition-all border ${userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'rival') ? 'bg-danger text-white border-danger shadow-lg shadow-danger/20' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
+                                                    title="Secar este time"
+                                                >
+                                                    <Wind size={14} /> Secar
+                                                </button>
 
-                                            <button 
-                                                onClick={() => interactWithTeam(currentTeam.id, 'favorite')}
-                                                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[0.65rem] font-black uppercase tracking-widest transition-all border ${userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'favorite') ? 'bg-warning text-black border-warning shadow-lg shadow-warning/20' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
-                                                title="Favoritar este time"
-                                            >
-                                                <Star size={14} fill={userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'favorite') ? 'currentColor' : 'none'} /> Favoritar
-                                            </button>
-                                        </div>
+                                                <button 
+                                                    onClick={() => interactWithTeam(currentTeam.id, 'favorite')}
+                                                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[0.65rem] font-black uppercase tracking-widest transition-all border ${userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'favorite') ? 'bg-warning text-black border-warning shadow-lg shadow-warning/20' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
+                                                    title="Favoritar este time"
+                                                >
+                                                    <Star size={14} fill={userInteractions.some(i => i.teamId === currentTeam.id && i.interactionType === 'favorite') ? 'currentColor' : 'none'} /> Favoritar
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                             </div>
 
