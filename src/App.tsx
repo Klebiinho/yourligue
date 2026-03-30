@@ -59,10 +59,10 @@ const MainContent = () => {
 
     // Extract potential slug from URL safely without relying on nested wildcard matches
     const pathParts = location.pathname.split('/').filter(Boolean);
-    const firstSegment = pathParts[0] || '';
+    const firstSegment = (pathParts[0] || '').toLowerCase();
 
     const fixedGlobalPaths = [
-        'leagues', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sitemap',
+        'leagues', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sitemap', 'sitemap.xml', 'robots.txt',
         'blog', 'servicos', 'glossario', 'categoria', 'autor', 'duvidas', 'duvidas-de-a-a-z', 'informacoes', 'busca',
         'sobre-nos', 'contato', 'inicio', 'politica-de-atualizacao-de-resultados',
         'direitos-de-transmissao-e-imagem', 'regulamento-geral-de-competicoes',
@@ -70,7 +70,7 @@ const MainContent = () => {
     ];
 
     const isFixedGlobal = fixedGlobalPaths.includes(firstSegment);
-    const slug = (!isFixedGlobal && firstSegment) ? firstSegment : undefined;
+    const slug = (!isFixedGlobal && pathParts[0]) ? pathParts[0] : undefined;
 
     useEffect(() => {
         if (slug) {
@@ -124,6 +124,9 @@ const MainContent = () => {
                         <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
                         <Route path="/termos-de-uso" element={<TermsOfService />} />
                         <Route path="/sitemap" element={<Sitemap />} />
+                        <Route path="/SITEMAP" element={<Sitemap />} />
+                        <Route path="/sitemap.xml" element={<Sitemap />} />
+                        <Route path="/SITEMAP.XML" element={<Sitemap />} />
                         <Route path="/auth" element={<AuthPage />} />
                         <Route path="/leagues" element={<LeagueSelector />} />
 
