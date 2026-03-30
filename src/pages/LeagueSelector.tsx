@@ -156,24 +156,35 @@ const LeagueSelector = () => {
             return;
         }
 
+        const startTime = Date.now();
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
                 const results = await fetchNearbyLeagues(latitude, longitude, 50);
-                setNearbyLeagues(results || []);
-                setHasSearchedNearby(true);
-                setIsLocating(false);
-                locatingRef.current = false;
-                localStorage.removeItem('geo_denied');
+                
+                const elapsed = Date.now() - startTime;
+                const minDelay = 1200; // Mínimo de 1.2s para que o usuário veja o scanner
+                
+                setTimeout(() => {
+                    setNearbyLeagues(results || []);
+                    setHasSearchedNearby(true);
+                    setIsLocating(false);
+                    locatingRef.current = false;
+                    localStorage.removeItem('geo_denied');
+                }, Math.max(0, minDelay - elapsed));
             },
             (error) => {
-                // Erro tratado silenciosamente - cai no fallback de busca manual
-                setIsLocating(false);
-                locatingRef.current = false;
-                if (error.code === 1) {
-                    localStorage.setItem('geo_denied', '1');
-                    setHasSearchedNearby(true);
-                }
+                const elapsed = Date.now() - startTime;
+                const minDelay = 1200;
+
+                setTimeout(() => {
+                    setIsLocating(false);
+                    locatingRef.current = false;
+                    if (error.code === 1) {
+                        localStorage.setItem('geo_denied', '1');
+                        setHasSearchedNearby(true);
+                    }
+                }, Math.max(0, minDelay - elapsed));
             },
             {
                 enableHighAccuracy: true,
