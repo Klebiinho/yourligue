@@ -92,7 +92,6 @@ const MatchControl = () => {
     } | null>(null);
 
     const [isEditingFinishedMatch, setIsEditingFinishedMatch] = useState(false);
-    const currentMinute = Math.floor(localSeconds / 60);
 
     // ... moved below to fix usage ...
 
@@ -1252,7 +1251,7 @@ const MatchControl = () => {
                                                             </button>
                                                         )}
 
-                                                                        {match.status === 'finished' && !isPublicView && isAdmin && (
+                                                                        {match?.status === 'finished' && !isPublicView && isAdmin && (
                                                                             <div className="flex items-center gap-1.5 flex-none relative">
                                                                                 <button 
                                                                                     onClick={(e) => handleGenerateHighlight(player.id, 'Gol', e)}
