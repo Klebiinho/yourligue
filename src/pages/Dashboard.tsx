@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Bell, BellOff, Heart, Wind, ArrowUp } from 'lucide-react';
+import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Bell, BellOff, ArrowUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
@@ -10,8 +10,8 @@ import { useAuth } from '../context/AuthContext';
 const Dashboard = () => {
     const { 
         league, teams: rawTeams, matches: rawMatches, loading, dataLoading, isPublicView, isAdmin, leagueBasePath, 
-        followedLeagues, followLeague, unfollowLeague, setShowAuthModal, userInteractions, 
-        interactWithTeam, interactionCounts, loadPlayerPhotos, getMatchSlug, getTeamSlug, getPlayerSlug 
+        followedLeagues, followLeague, unfollowLeague, setShowAuthModal, 
+        loadPlayerPhotos, getMatchSlug, getTeamSlug, getPlayerSlug 
     } = useLeague();
     const { user } = useAuth();
     const navigate = useNavigate();

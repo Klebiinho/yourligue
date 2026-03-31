@@ -8,8 +8,8 @@ import AdBanner from '../components/AdBanner';
 const Teams = () => {
     const { 
         league, teams, addTeam, updateTeam, deleteTeam, addPlayer, removePlayer, updatePlayer, 
-        toggleCaptain, reorderPlayers, isPublicView, isAdmin, interactWithTeam, 
-        userInteractions, interactionCounts, loadTeamPhotos, getTeamSlug, getPlayerSlug, leagueBasePath 
+        toggleCaptain, reorderPlayers, isPublicView, isAdmin, 
+        interactionCounts, loadTeamPhotos, getTeamSlug, getPlayerSlug, leagueBasePath 
     } = useLeague();
     const { teamId: teamIdParam, teamSlug } = useParams<{ teamId?: string; teamSlug?: string; slug?: string }>();
     const navigate = useNavigate();

@@ -1,11 +1,11 @@
 import { useLeague } from '../context/LeagueContext';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Trophy, Info, Medal, TrendingUp, Heart, Wind, Star } from 'lucide-react';
+import { Trophy, Info, Medal, TrendingUp, Heart } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const Standings = () => {
-    const { teams, matches, isPublicView, isAdmin, userInteractions, interactWithTeam, interactionCounts, league, getTeamSlug } = useLeague();
+    const { teams, matches, isPublicView, userInteractions, league, getTeamSlug } = useLeague();
     const navigate = useNavigate();
     const { slug } = useParams<{ slug: string }>();
     const lSlug = slug || league?.slug || league?.id;
