@@ -111,8 +111,8 @@ export const HighlightCard = forwardRef<HTMLDivElement, HighlightCardProps>(
                         top: '50%',
                         left: '-1000px', // Large negative offset to shift the logo way to the left
                         transform: 'translateY(-50%)',
-                        width: '2400px',
-                        height: '2400px',
+                        width: '1500px', // Reduced from 2400px for better generation reliability
+                        height: '1500px', 
                         opacity: 0.04,
                         zIndex: 1,
                         pointerEvents: 'none',

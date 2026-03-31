@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useMemo } from 'react';
-import { toPng } from 'html-to-image';
+import { toPng, toBlob } from 'html-to-image';
 import type { Player, Team } from '../context/LeagueContext';
 import { HighlightCard } from './HighlightCard';
 import { Loader2, ImageDown, Video, X, Pencil } from 'lucide-react';
@@ -79,16 +79,23 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                 const fetchAsBase64 = async (url: string) => {
                     if (!url) return undefined;
                     try {
-                        const response = await fetch(url, { mode: 'cors' });
+                        // Use a timeout for fetch
+                        const controller = new AbortController();
+                        const id = setTimeout(() => controller.abort(), 10000); // 10s timeout
+                        const response = await fetch(url, { mode: 'cors', signal: controller.signal });
+                        clearTimeout(id);
+                        
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
                         const blob = await response.blob();
-                        return new Promise<string>((resolve) => {
+                        return new Promise<string>((resolve, reject) => {
                             const reader = new FileReader();
                             reader.onloadend = () => resolve(reader.result as string);
+                            reader.onerror = reject;
                             reader.readAsDataURL(blob);
                         });
                     } catch (e) {
                         console.warn('Preload failed for', url, e);
-                        return url; // Fallback to original
+                        return undefined; // Fallback to original via HighlightCard's internal crossOrigin
                     }
                 };
 
@@ -116,41 +123,33 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
         if (!cardRef.current) return;
         setGenerating(true);
         try {
-            // Wait for assets to be ready
-            await new Promise(r => setTimeout(r, 800));
+            // Give extra time for React to render the hidden elements and for images to paint
+            await new Promise(r => setTimeout(r, 1200));
 
-            const dataUrl = await toPng(cardRef.current, {
+            const fileName = `Destaque-${player.name.replace(/\s+/g, '-')}-${Date.now()}.png`;
+            
+            // toBlob is generally more memory-efficient and reliable for large snapshots
+            const blob = await toBlob(cardRef.current, {
                 canvasWidth: 1080,
                 canvasHeight: 1920,
                 pixelRatio: 1,
-                backgroundColor: '#1e1b4b',
                 cacheBust: true,
                 fetchRequestInit: { mode: 'cors' },
                 skipAutoScale: true,
             });
 
-            const fileName = `Destaque-${player.name.replace(/\s+/g, '-')}-${Date.now()}.png`;
+            if (!blob) throw new Error('Falha ao gerar arquivo de imagem');
 
-            // On mobile, we still prefer Blob for sharing
-            if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
-                const res = await fetch(dataUrl);
-                const blob = await res.blob();
-                await downloadBlob(blob, fileName);
-            } else {
-                // On PC/Desktop, dataUrl directly is more reliable for large images
-                const a = document.createElement('a');
-                a.href = dataUrl;
-                a.download = fileName;
-                a.style.display = 'none';
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => {
-                    document.body.removeChild(a);
-                }, 1000);
-            }
-        } catch (err) {
+            await downloadBlob(blob, fileName);
+            
+        } catch (err: any) {
             console.error('Error generating image', err);
-            alert('Erro ao gerar imagem. Verifique se as imagens permitem acesso público (CORS).');
+            // Informatively handle CORS or memory errors
+            if (err.message?.includes('CORS')) {
+                alert('Erro de permissão: Algumas imagens não permitem o download direto. Tente usar fotos públicas.');
+            } else {
+                alert('Erro ao gerar imagem. Tente novamente em alguns segundos ou use um navegador mais atualizado.');
+            }
         } finally {
             setGenerating(false);
         }
@@ -179,11 +178,14 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
 
             const contentImg = new Image();
             contentImg.src = contentDataUrl;
-            await new Promise(r => { contentImg.onload = r; });
+            await new Promise((resolve, reject) => { 
+                contentImg.onload = resolve; 
+                contentImg.onerror = () => reject(new Error('Falha ao carregar frame base do vídeo'));
+            });
 
             const canvas = canvasRef.current;
-            const ctx = canvas.getContext('2d')!;
-            if (!ctx) throw new Error('Canvas context failed');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+            if (!ctx) throw new Error('Falha ao inicializar o processador de vídeo (Canvas context failed)');
 
             // Pick the best supported codec
             const mimeType = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m)) ?? 'video/webm';
