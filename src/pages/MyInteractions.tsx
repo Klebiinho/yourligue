@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { Heart, Star, Wind, Shield, Users, TrendingUp, Calendar, Zap, Crown } from 'lucide-react';
+import { Heart, Star, Wind, Shield, Users, TrendingUp, Calendar, Crown } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 import { useNavigate } from 'react-router-dom';
@@ -213,38 +213,55 @@ const MyInteractions = () => {
                                 {upcomingMatches.length > 0 ? (
                                     <div className="space-y-3">
                                         {upcomingMatches.map(m => {
-                                            const isHome = m.homeTeamId === selectedTeamId;
-                                            const opponentId = isHome ? m.awayTeamId : m.homeTeamId;
-                                            const opponent = getTeam(opponentId);
                                             return (
-                                                <div key={m.id} className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 group hover:bg-white/[0.06] transition-all">
-                                                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-                                                        <div className="flex flex-row sm:flex-col items-center gap-2 sm:gap-1">
-                                                            <div className="bg-accent/10 p-1.5 sm:p-2 rounded-xl">
-                                                                <Zap size={14} className="text-accent" />
+                                                <div key={m.id} className="bg-white/[0.03] border border-white/[0.05] rounded-3xl p-5 hover:bg-white/[0.06] transition-all group border-b-4 border-b-primary/20">
+                                                    <div className="flex flex-col gap-5">
+                                                        {/* Teams Row */}
+                                                        <div className="flex items-center justify-between gap-4">
+                                                            {/* Home Team */}
+                                                            <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                                                                <TeamLogo src={getTeam(m.homeTeamId)?.logo} size={40} className={m.homeTeamId === selectedTeamId ? 'ring-2 ring-primary ring-offset-4 ring-offset-transparent' : ''} />
+                                                                <span className={`text-[0.65rem] font-black uppercase tracking-tight text-center leading-tight line-clamp-2 ${m.homeTeamId === selectedTeamId ? 'text-primary' : 'text-white'}`}>
+                                                                    {getTeam(m.homeTeamId)?.name}
+                                                                </span>
                                                             </div>
-                                                            <span className="text-[0.5rem] sm:text-[0.6rem] font-black text-slate-500 uppercase tracking-tighter">VS</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
-                                                            <TeamLogo src={opponent?.logo} size={36} />
-                                                            <div className="min-w-0">
-                                                                <p className="text-sm font-bold text-white uppercase truncate">{opponent?.name}</p>
-                                                                <p className="text-[0.55rem] sm:text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">{formatDate(m.scheduledAt)}</p>
+
+                                                            {/* VS Center */}
+                                                            <div className="flex flex-col items-center gap-1 flex-none px-4">
+                                                                <div className="bg-white/5 border border-white/10 px-3 py-1 rounded-full">
+                                                                    <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">VS</span>
+                                                                </div>
+                                                                <div className="flex flex-col items-center">
+                                                                    <p className="text-[0.55rem] font-black text-slate-600 uppercase tracking-tighter whitespace-nowrap">{formatDate(m.scheduledAt).split(',')[0].trim()}</p>
+                                                                    <p className="text-[0.55rem] font-black text-slate-400 font-mono tracking-widest">{formatDate(m.scheduledAt).split(',')[1].trim()}</p>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Away Team */}
+                                                            <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                                                                <TeamLogo src={getTeam(m.awayTeamId)?.logo} size={40} className={m.awayTeamId === selectedTeamId ? 'ring-2 ring-primary ring-offset-4 ring-offset-transparent' : ''} />
+                                                                <span className={`text-[0.65rem] font-black uppercase tracking-tight text-center leading-tight line-clamp-2 ${m.awayTeamId === selectedTeamId ? 'text-primary' : 'text-white'}`}>
+                                                                    {getTeam(m.awayTeamId)?.name}
+                                                                </span>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/5">
-                                                        <span className={`text-[0.55rem] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border ${m.status === 'live' ? 'bg-danger/10 border-danger/30 text-danger animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'bg-white/5 border-white/10 text-slate-500'
+
+                                                        {/* Footer Action */}
+                                                        <div className="flex items-center justify-between pt-4 border-t border-white/5 gap-3">
+                                                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[0.55rem] font-black uppercase tracking-widest ${
+                                                                m.status === 'live' ? 'bg-danger/10 border-danger/20 text-danger animate-pulse' : 'bg-slate-900 border-white/5 text-slate-500'
                                                             }`}>
-                                                            {m.status === 'live' ? 'AO VIVO' : 'Agendado'}
-                                                        </span>
-                                                        <button 
-                                                            onClick={() => navigate(`${leagueBasePath}/match/${m.id}`)} 
-                                                            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5 group/link"
-                                                        >
-                                                            <span className="text-[0.55rem] font-black text-slate-400 group-hover/link:text-white uppercase tracking-widest">Súmula</span>
-                                                            <TrendingUp size={14} className="text-slate-600 group-hover/link:text-accent" />
-                                                        </button>
+                                                                {m.status === 'live' ? (
+                                                                    <><div className="w-1 h-1 bg-danger rounded-full animate-ping" /> AO VIVO</>
+                                                                ) : 'Agendado'}
+                                                            </div>
+                                                            <button 
+                                                                onClick={() => navigate(`${leagueBasePath}/match/${m.id}`)}
+                                                                className="flex items-center gap-2 px-5 py-2.5 bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-white rounded-xl transition-all font-black text-[0.6rem] uppercase tracking-widest flex-none active:scale-95 shadow-lg group/btn"
+                                                            >
+                                                                Ver Súmula <TrendingUp size={12} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             );
