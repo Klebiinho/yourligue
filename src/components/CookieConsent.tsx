@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { ShieldCheck, X } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
 const CookieConsent = () => {
     const [show, setShow] = useState(false);
@@ -31,41 +31,39 @@ const CookieConsent = () => {
     if (location.pathname.includes('/match/') && location.pathname.includes('/widget')) return null;
 
     return (
-        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-8 md:max-w-md z-[1000] animate-slide-up">
-            <div className="glass-panel p-5 md:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-primary/20 relative overflow-hidden group">
-                {/* Decorative background flare */}
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-colors" />
-                
-                <button 
-                    onClick={() => setShow(false)}
-                    className="absolute top-3 right-3 p-1 text-slate-500 hover:text-white transition-colors"
-                >
-                    <X size={16} />
-                </button>
+        <div className="fixed inset-0 flex items-center justify-center p-6 z-[2000] animate-fade-in backdrop-blur-sm bg-black/60">
+            <div className="glass-panel max-w-sm w-full p-8 md:p-10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] border-primary/20 relative overflow-hidden group animate-scale-up">
+                {/* Decorative background glow */}
+                <div className="absolute -top-20 -right-20 w-48 h-48 bg-primary/20 rounded-full blur-[60px] group-hover:bg-primary/30 transition-colors" />
+                <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-accent/10 rounded-full blur-[60px] group-hover:bg-accent/20 transition-colors" />
 
-                <div className="flex gap-4 items-start relative z-10">
-                    <div className="p-3 bg-primary/10 text-primary rounded-2xl flex-none border border-primary/20">
-                        <ShieldCheck size={24} />
+                <div className="flex flex-col items-center gap-6 relative z-10 text-center">
+                    <div className="p-5 bg-primary/10 text-primary rounded-3xl flex-none border border-primary/20 shadow-xl shadow-primary/10">
+                        <ShieldCheck size={40} strokeWidth={2.5} />
                     </div>
-                    <div className="flex-1">
-                        <h3 className="text-sm font-outfit font-black text-white uppercase tracking-wider mb-2 flex items-center gap-2">
-                            Privacidade e Cookies
+                    
+                    <div>
+                        <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest mb-3">
+                            Privacidade & Cookies
                         </h3>
-                        <p className="text-[0.7rem] leading-relaxed text-slate-400 mb-4">
-                            Utilizamos cookies para melhorar sua experiência, analisar o tráfego e personalizar conteúdos. Ao continuar navegando, você concorda com nossa <Link to="/politica-de-privacidade" className="text-primary hover:underline font-bold">Política de Privacidade</Link>.
+                        <p className="text-[0.75rem] leading-relaxed text-slate-400 mb-8 max-w-[280px] mx-auto">
+                            Sua privacidade é nossa prioridade. Utilizamos cookies para otimizar sua experiência e analisar o uso da plataforma YourLigue. 
+                            <br /><br />
+                            Ao continuar, você aceita nossa <Link to="/politica-de-privacidade" className="text-primary font-extrabold hover:text-white transition-colors">Política de Dados</Link>.
                         </p>
-                        <div className="flex items-center gap-3">
+                        
+                        <div className="flex flex-col gap-3">
                             <button
                                 onClick={handleAccept}
-                                className="flex-1 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-xl font-black text-[0.6rem] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-primary/20"
+                                className="w-full py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-primary/30 hover:brightness-110"
                             >
-                                Aceitar Tudo
+                                Aceitar e Continuar
                             </button>
                             <button
                                 onClick={handleDecline}
-                                className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl font-black text-[0.6rem] uppercase tracking-widest transition-all border border-white/5"
+                                className="w-full py-4 bg-white/5 text-slate-500 hover:text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] transition-all border border-white/5 hover:bg-white/10"
                             >
-                                Recusar
+                                Recusar Cookies
                             </button>
                         </div>
                     </div>
