@@ -6,7 +6,7 @@ import AdBanner from '../components/AdBanner';
 import { useNavigate } from 'react-router-dom';
 
 const MyInteractions = () => {
-    const { teams, matches, userInteractions, league, leagueBasePath, getPlayerSlug, loadPlayerPhotos } = useLeague();
+    const { teams, matches, userInteractions, league, leagueBasePath, getPlayerSlug, getMatchSlug, loadPlayerPhotos } = useLeague();
     const navigate = useNavigate();
 
     const supporting = userInteractions.filter(i => i.interactionType === 'supporting');
@@ -267,7 +267,7 @@ const MyInteractions = () => {
                                                                 ) : 'Agendado'}
                                                             </div>
                                                             <button 
-                                                                onClick={() => navigate(`${leagueBasePath}/match/${m.id}`)}
+                                                                onClick={() => navigate(`${leagueBasePath}/${getMatchSlug(m)}/match`)}
                                                                 className="flex items-center gap-2 px-5 py-2.5 bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-white rounded-xl transition-all font-black text-[0.6rem] uppercase tracking-widest flex-none active:scale-95 shadow-lg group/btn"
                                                             >
                                                                 Ver Súmula <TrendingUp size={12} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />

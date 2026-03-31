@@ -166,16 +166,13 @@ const MainContent = () => {
                         <Route path="/regulamento-geral-de-competicoes" element={<DynamicContent />} />
                         <Route path="/diretrizes-do-capitao-titular" element={<DynamicContent />} />
                         
-                        <Route path="/match/:matchId/overlay" element={<MatchOverlay />} />
-                        <Route path="/match/:matchId" element={<MatchControl />} />
 
-                        {/* Prioritized Nested Specific Routes */}
+                        {/* Standard Entity Slug-Based Routes */}
                         <Route path="/:slug/:matchSlug/match" element={<MatchControl />} />
+                        <Route path="/:slug/:matchSlug/overlay" element={<MatchOverlay />} />
                         <Route path="/:slug/:playerSlug/player" element={<PlayerDetail />} />
                         <Route path="/:slug/:teamSlug/team" element={<Teams />} />
-                        <Route path="/:slug/match/:matchId" element={<MatchControl />} />
-                        <Route path="/:slug/player/:playerSlug" element={<PlayerDetail />} />
-                        <Route path="/:slug/team/:teamId" element={<Teams />} />
+                        
                         <Route path="/:slug/localizacao" element={<LeagueLocation />} />
 
                         {/* Standard League Pages */}
@@ -183,7 +180,6 @@ const MainContent = () => {
                         <Route path="/:slug/home" element={<Dashboard />} />
                         <Route path="/:slug/matches" element={<Matches />} />
                         <Route path="/:slug/teams" element={<Teams />} />
-                        <Route path="/:slug/teams/:teamId" element={<Teams />} />
                         <Route path="/:slug/standings" element={<Standings />} />
                         <Route path="/:slug/bracket" element={<Bracket />} />
                         <Route path="/:slug/torcedor" element={<MyInteractions />} />

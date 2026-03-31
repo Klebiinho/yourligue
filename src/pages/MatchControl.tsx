@@ -730,11 +730,11 @@ const MatchControl = () => {
                                 <div className="flex gap-2">
                                     <input 
                                         readOnly 
-                                        value={`${window.location.origin}/match/${mId}/overlay`} 
+                                        value={`${window.location.origin}/${league?.slug}/${getMatchSlug(match)}/overlay`} 
                                         className="bg-black/60 border border-primary/20 flex-1 px-4 py-3 rounded-xl text-[0.7rem] font-mono text-white focus:border-primary outline-none transition-all" 
                                     />
                                     <button 
-                                        onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/match/${mId}/overlay`); alert('Link do Placar Copiado!'); }}
+                                        onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/${league?.slug}/${getMatchSlug(match)}/overlay`); alert('Link do Placar Copiado!'); }}
                                         className="bg-primary text-black w-12 h-12 flex items-center justify-center rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/30 active:scale-90"
                                     >
                                         <Check size={20} />

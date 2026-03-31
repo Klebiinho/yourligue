@@ -5,9 +5,12 @@ import TeamLogo from '../components/TeamLogo';
 import { supabase } from '../lib/supabase';
 
 const MatchOverlay = () => {
-    const { matchId } = useParams<{ matchId: string }>();
-    const { matches, teams, league, loadPublicLeague } = useLeague();
-    const match = matches.find((m: Match) => String(m.id) === String(matchId));
+    const { matchId, matchSlug } = useParams<{ matchId?: string, matchSlug?: string }>();
+    const { matches, teams, league, loadPublicLeague, getMatchSlug } = useLeague();
+    const match = matches.find((m: Match) => 
+        (matchId && String(m.id) === String(matchId)) || 
+        (matchSlug && (getMatchSlug(m) === matchSlug || String(m.id) === String(matchSlug)))
+    );
     
     const [localSeconds, setLocalSeconds] = useState(match?.timer || 0);
 
