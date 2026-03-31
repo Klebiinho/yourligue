@@ -6,7 +6,7 @@ import AdBanner from '../components/AdBanner';
 import { useNavigate } from 'react-router-dom';
 
 const MyInteractions = () => {
-    const { teams, matches, userInteractions, league, leagueBasePath } = useLeague();
+    const { teams, matches, userInteractions, league, leagueBasePath, getPlayerSlug } = useLeague();
     const navigate = useNavigate();
 
     const supporting = userInteractions.filter(i => i.interactionType === 'supporting');
@@ -266,7 +266,11 @@ const MyInteractions = () => {
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {selectedTeam.players.sort((a, b) => (a.isReserve ? 1 : 0) - (b.isReserve ? 1 : 0)).map(p => (
-                                        <div key={p.id} className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] transition-all group">
+                                        <div 
+                                            key={p.id} 
+                                            onClick={() => navigate(`${leagueBasePath}/${getPlayerSlug(p)}/player`)}
+                                            className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/10 transition-all group cursor-pointer"
+                                        >
                                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/10 to-transparent flex items-center justify-center text-xs font-black text-white relative overflow-hidden group-hover:scale-105 transition-transform">
                                                 {p.photo ? (
                                                     <img src={p.photo} alt={p.name} className="w-full h-full object-cover" />
