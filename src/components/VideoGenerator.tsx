@@ -3,6 +3,7 @@ import { toPng, toBlob } from 'html-to-image';
 import type { Player, Team } from '../context/LeagueContext';
 import { HighlightCard } from './HighlightCard';
 import { Loader2, ImageDown, Video, X, Pencil } from 'lucide-react';
+import download from 'downloadjs';
 
 interface VideoGeneratorProps {
     player: Player;
@@ -15,36 +16,34 @@ interface VideoGeneratorProps {
 
 // Shared download helper – works on desktop and mobile
 async function downloadBlob(blob: Blob, fileName: string) {
-    // Try Web Share first (mobile)
+    // 1. Try Capacitor or advanced share (if available)
     const file = new File([blob], fileName, { type: blob.type });
     const shareData = { title: 'Meu Destaque na Partida', files: [file] };
 
+    // navigator.share with files is finicky. We only try if canShare is true.
     if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
         try {
             await navigator.share(shareData);
             return;
         } catch (err: any) {
-            if (err.name === 'AbortError') return; // user cancelled
+             if (err.name !== 'AbortError') console.warn('Share failed', err);
         }
     }
-    // Fallback: force-download via object URL
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    
-    // Ensure consistent download on PC
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    
-    // Some browsers need a tiny delay to register the element in the DOM
-    setTimeout(() => {
+
+    // 2. Fallback to downloadjs (very reliable context-aware downloader)
+    try {
+        download(blob, fileName, blob.type);
+    } catch (err) {
+        console.error('downloadjs failed', err);
+        // last resort manual link
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
         a.click();
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 1000); // 1s cleanup should be enough
-    }, 50);
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+    }
 }
 
 export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
@@ -131,15 +130,18 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
 
     // Static image download
     const handleDownloadImage = async () => {
-        if (!cardRef.current) return;
+        if (!cardRef.current) {
+            alert('Erro: O processador de arte não foi encontrado. Recarregue a página.');
+            return;
+        }
         setGenerating(true);
         try {
-            // Give extra time for React to render the hidden elements and for images to paint
-            await new Promise(r => setTimeout(r, 1200));
+            // Short delay to ensure browser layout is stable
+            await new Promise(r => setTimeout(r, 600));
 
-            const fileName = `Destaque-${player.name.replace(/\s+/g, '-')}-${Date.now()}.png`;
+            const fileName = `Arte-${Date.now()}.png`;
             
-            // toBlob is generally more memory-efficient and reliable for large snapshots
+            // Generate blob
             const blob = await toBlob(cardRef.current, {
                 canvasWidth: 1080,
                 canvasHeight: 1920,
@@ -148,17 +150,16 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                 skipAutoScale: true,
             });
 
-            if (!blob) throw new Error('Falha ao gerar arquivo de imagem');
+            if (!blob) throw new Error('Não foi possível gerar o arquivo de imagem.');
 
             await downloadBlob(blob, fileName);
             
         } catch (err: any) {
-            console.error('Error generating image', err);
-            // Informatively handle CORS or memory errors
+            console.error('Error in handleDownloadImage', err);
             if (err.message?.includes('CORS')) {
-                alert('Erro de permissão: Algumas imagens não permitem o download direto. Tente usar fotos públicas.');
+                alert('Erro de permissão: Algumas imagens (fotos) não permitem download direto. Tente trocá-las.');
             } else {
-                alert('Erro ao gerar imagem. Tente novamente em alguns segundos ou use um navegador mais atualizado.');
+                alert('Erro ao processar imagem. Tente novamente.');
             }
         } finally {
             setGenerating(false);
@@ -463,25 +464,33 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                 </div>
             )}
 
-            {/* ── Off-screen renders (Only for generation) ────────────────── */}
-            {generating && (
-                <div style={{ position: 'fixed', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none', width: '1080px', height: '1920px' }}>
-                    <HighlightCard
-                        ref={cardRef}
-                        player={pData} team={tData}
-                        sportType={sportType} eventType={eventType}
-                        stats={stats} description={description}
-                    />
-                    <HighlightCard
-                        ref={transparentCardRef}
-                        player={pData} team={tData}
-                        sportType={sportType} eventType={eventType}
-                        stats={stats} description={description}
-                        transparent hideValues
-                    />
-                    <canvas ref={canvasRef} width={1080} height={1920} />
-                </div>
-            )}
+            {/* ── Off-screen renders (Always in DOM for reliable Ref access) ────────────────── */}
+            <div 
+                style={{ 
+                    position: 'fixed', 
+                    left: '-10000px', 
+                    top: 0, 
+                    pointerEvents: 'none', 
+                    width: '1080px', 
+                    height: '1920px',
+                    visibility: 'hidden' // Ensures it is in DOM but invisible
+                }}
+            >
+                <HighlightCard
+                    ref={cardRef}
+                    player={pData} team={tData}
+                    sportType={sportType} eventType={eventType}
+                    stats={stats} description={description}
+                />
+                <HighlightCard
+                    ref={transparentCardRef}
+                    player={pData} team={tData}
+                    sportType={sportType} eventType={eventType}
+                    stats={stats} description={description}
+                    transparent hideValues
+                />
+                <canvas ref={canvasRef} width={1080} height={1920} />
+            </div>
 
             {/* ── Modal ─────────────────────────────────────────────── */}
             <div
