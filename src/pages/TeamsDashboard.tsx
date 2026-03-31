@@ -17,6 +17,8 @@ const TeamsDashboard = () => {
     const [isEditingTeam, setIsEditingTeam] = useState<string | null>(null);
     const [isAddingPlayer, setIsAddingPlayer] = useState(false);
     const [isEditingPlayer, setIsEditingPlayer] = useState<string | null>(null);
+    const [isSubmittingTeam, setIsSubmittingTeam] = useState(false);
+    const [isSubmittingPlayer, setIsSubmittingPlayer] = useState(false);
 
     interface FormPlayer {
         name: string;
@@ -81,30 +83,36 @@ const TeamsDashboard = () => {
 
     const handleTeamSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmittingTeam) return;
+        setIsSubmittingTeam(true);
         if (isEditingTeam) {
             await updateTeam(isEditingTeam, formTeam);
             setIsEditingTeam(null);
         } else {
             const { error } = await addTeam(formTeam);
-            if (error) { alert(error); return; }
+            if (error) { alert(error); setIsSubmittingTeam(false); return; }
             setIsAddingTeam(false);
         }
         setFormTeam({ name: '', logo: '' });
+        setIsSubmittingTeam(false);
     };
 
     const handlePlayerSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmittingPlayer) return;
         if (!selectedTeamId) return;
+        setIsSubmittingPlayer(true);
         if (isEditingPlayer) {
             const { error } = await updatePlayer(selectedTeamId, isEditingPlayer, formPlayer);
             if (error) { alert(error); return; }
             setIsEditingPlayer(null);
         } else {
             const { error } = await addPlayer(selectedTeamId, formPlayer);
-            if (error) { alert(error); return; }
+            if (error) { alert(error); setIsSubmittingPlayer(false); return; }
             setIsAddingPlayer(false);
         }
         setFormPlayer({ name: '', number: 0, position: isBasket ? 'Armador' : 'Goleiro', isCaptain: false, isReserve: false, photo: '' });
+        setIsSubmittingPlayer(false);
     };
 
     // List filtering
@@ -152,7 +160,14 @@ const TeamsDashboard = () => {
                                     </label>
                                 </div>
                                 <div className="flex gap-2 pt-1">
-                                    <button type="submit" className="flex-1 bg-primary text-white font-black py-2.5 rounded-xl uppercase tracking-widest text-[0.62rem] shadow-lg hover:brightness-110 active:scale-95 transition-all">
+                                    <button 
+                                        type="submit" 
+                                        disabled={isSubmittingTeam}
+                                        className="flex-1 bg-primary text-white font-black py-2.5 rounded-xl uppercase tracking-widest text-[0.62rem] shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isSubmittingTeam ? (
+                                            <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                        ) : null}
                                         {isEditingTeam ? 'Salvar' : 'Confirmar'}
                                     </button>
                                     <button type="button" onClick={() => { setIsAddingTeam(false); setIsEditingTeam(null); }} className="px-4 border border-white/10 text-slate-500 font-black py-2.5 rounded-xl uppercase text-[0.62rem] hover:bg-white/5 transition-all">
@@ -319,8 +334,16 @@ const TeamsDashboard = () => {
                                             </div>
 
                                             <div className="flex gap-3 pt-2">
-                                                <button type="submit" className="flex-1 bg-accent text-white font-black py-4 rounded-xl uppercase tracking-[0.15em] text-xs shadow-xl shadow-accent/20 hover:brightness-110 active:scale-[0.98] transition-all">
-                                                    {isEditingPlayer ? 'Atualizar Atleta' : 'Finalizar Inscrição'}
+                                                <button 
+                                                    type="submit" 
+                                                    disabled={isSubmittingPlayer}
+                                                    className="flex-1 bg-accent text-white font-black py-4 rounded-xl uppercase tracking-[0.15em] text-xs shadow-xl shadow-accent/20 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                                >
+                                                    {isSubmittingPlayer ? (
+                                                        <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> Processando...</>
+                                                    ) : (
+                                                        isEditingPlayer ? 'Atualizar Atleta' : 'Finalizar Inscrição'
+                                                    )}
                                                 </button>
                                                 <button type="button" onClick={() => { setIsAddingPlayer(false); setIsEditingPlayer(null); }} className="px-8 bg-white/5 border border-white/10 text-slate-500 font-black py-4 rounded-xl uppercase text-xs hover:bg-white/10 transition-all">Cancelar</button>
                                             </div>

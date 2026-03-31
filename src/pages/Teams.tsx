@@ -49,6 +49,8 @@ const Teams = () => {
     const [teamError, setTeamError] = useState('');
     const [isAddingPlayer, setIsAddingPlayer] = useState(false);
     const [isEditingPlayer, setIsEditingPlayer] = useState<string | null>(null);
+    const [isSubmittingTeam, setIsSubmittingTeam] = useState(false);
+    const [isSubmittingPlayer, setIsSubmittingPlayer] = useState(false);
     const isBasket = league?.sportType === 'basketball';
     const [formPlayer, setFormPlayer] = useState({
         name: '',
@@ -178,7 +180,10 @@ const Teams = () => {
 
     const handleAddTeam = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmittingTeam) return;
         if (!newTeamName.trim()) return;
+        
+        setIsSubmittingTeam(true);
         setTeamError('');
         
         let errorResult = null;
@@ -203,10 +208,12 @@ const Teams = () => {
 
         if (errorResult) {
             setTeamError(errorResult);
+            setIsSubmittingTeam(false);
             return;
         }
         
         setNewTeamName(''); setNewTeamLogo(''); setNewTeamColor('#6366f1'); setNewTeamColor2('#4338ca');
+        setIsSubmittingTeam(false);
     };
 
     const startEditingTeam = (team: any) => {
@@ -219,19 +226,23 @@ const Teams = () => {
 
     const handlePlayerSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmittingPlayer) return;
         if (!activeTeamId) return;
+        
+        setIsSubmittingPlayer(true);
         setError('');
         
         if (isEditingPlayer) {
             const { error } = await updatePlayer(activeTeamId, isEditingPlayer, formPlayer);
-            if (error) { setError(error); return; }
+            if (error) { setError(error); setIsSubmittingPlayer(false); return; }
             setIsEditingPlayer(null);
         } else {
             const { error } = await addPlayer(activeTeamId, formPlayer);
-            if (error) { setError(error); return; }
+            if (error) { setError(error); setIsSubmittingPlayer(false); return; }
             setIsAddingPlayer(false);
         }
         setFormPlayer({ name: '', number: 0, position: isBasket ? 'Armador' : 'Atacante', isCaptain: false, isReserve: false, photo: '' });
+        setIsSubmittingPlayer(false);
     };
 
     const startEdit = (player: Player) => {
@@ -359,8 +370,16 @@ const Teams = () => {
 
                                 {teamError && <ErrorMsg msg={teamError} />}
 
-                                <button type="submit" className="w-full bg-primary text-white font-black py-3 rounded-xl shadow-[0_4px_20px_rgba(109,40,217,0.3)] hover:brightness-110 active:scale-[0.98] transition-all uppercase tracking-widest text-[0.65rem] flex items-center justify-center gap-2">
-                                    <Shield size={15} fill="currentColor" /> {isEditingTeam ? 'Salvar Alterações' : 'Cadastrar Clube'}
+                                <button 
+                                    type="submit" 
+                                    disabled={isSubmittingTeam}
+                                    className="w-full bg-primary text-white font-black py-4 rounded-xl shadow-[0_4px_20px_rgba(109,40,217,0.3)] hover:brightness-110 active:scale-[0.98] transition-all uppercase tracking-widest text-[0.65rem] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isSubmittingTeam ? (
+                                        <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> Processando...</>
+                                    ) : (
+                                        <><Shield size={15} fill="currentColor" /> {isEditingTeam ? 'Salvar Alterações' : 'Cadastrar Clube'}</>
+                                    )}
                                 </button>
                             </form>
                         </div>
@@ -575,8 +594,16 @@ const Teams = () => {
                                                 {error && <ErrorMsg msg={error} />}
 
                                                 <div className="flex gap-3 pt-2">
-                                                    <button type="submit" className="flex-1 bg-accent text-white font-black py-4 rounded-xl uppercase tracking-[0.15em] text-xs shadow-xl shadow-accent/20 hover:brightness-110 active:scale-[0.98] transition-all">
-                                                        {isEditingPlayer ? 'Atualizar Atleta' : 'Finalizar Inscrição'}
+                                                    <button 
+                                                        type="submit" 
+                                                        disabled={isSubmittingPlayer}
+                                                        className="flex-1 bg-accent text-white font-black py-4 rounded-xl uppercase tracking-[0.15em] text-xs shadow-xl shadow-accent/20 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        {isSubmittingPlayer ? (
+                                                            <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> Finalizando...</>
+                                                        ) : (
+                                                            isEditingPlayer ? 'Atualizar Atleta' : 'Finalizar Inscrição'
+                                                        )}
                                                     </button>
                                                     <button type="button" onClick={() => { setIsAddingPlayer(false); setIsEditingPlayer(null); setError(''); }} className="px-8 bg-white/5 border border-white/10 text-slate-500 font-black py-4 rounded-xl uppercase text-xs hover:bg-white/10 transition-all">Cancelar</button>
                                                 </div>
