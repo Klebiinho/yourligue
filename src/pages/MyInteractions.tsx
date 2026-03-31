@@ -217,29 +217,33 @@ const MyInteractions = () => {
                                             const opponentId = isHome ? m.awayTeamId : m.homeTeamId;
                                             const opponent = getTeam(opponentId);
                                             return (
-                                                <div key={m.id} className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-4 flex items-center justify-between group hover:bg-white/[0.06] transition-all">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="flex flex-col items-center">
-                                                            <div className="bg-accent/10 p-2 rounded-xl mb-1">
+                                                <div key={m.id} className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 group hover:bg-white/[0.06] transition-all">
+                                                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                                                        <div className="flex flex-row sm:flex-col items-center gap-2 sm:gap-1">
+                                                            <div className="bg-accent/10 p-1.5 sm:p-2 rounded-xl">
                                                                 <Zap size={14} className="text-accent" />
                                                             </div>
-                                                            <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-tighter">VS</span>
+                                                            <span className="text-[0.5rem] sm:text-[0.6rem] font-black text-slate-500 uppercase tracking-tighter">VS</span>
                                                         </div>
-                                                        <div className="flex items-center gap-3">
-                                                            <TeamLogo src={opponent?.logo} size={32} />
-                                                            <div>
-                                                                <p className="text-sm font-bold text-white uppercase">{opponent?.name}</p>
-                                                                <p className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">{formatDate(m.scheduledAt)}</p>
+                                                        <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
+                                                            <TeamLogo src={opponent?.logo} size={36} />
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm font-bold text-white uppercase truncate">{opponent?.name}</p>
+                                                                <p className="text-[0.55rem] sm:text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">{formatDate(m.scheduledAt)}</p>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`text-[0.55rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${m.status === 'live' ? 'bg-danger/10 border-danger/30 text-danger animate-pulse' : 'bg-white/5 border-white/10 text-slate-500'
+                                                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/5">
+                                                        <span className={`text-[0.55rem] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border ${m.status === 'live' ? 'bg-danger/10 border-danger/30 text-danger animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'bg-white/5 border-white/10 text-slate-500'
                                                             }`}>
                                                             {m.status === 'live' ? 'AO VIVO' : 'Agendado'}
                                                         </span>
-                                                        <button onClick={() => navigate(`${leagueBasePath}/match/${m.id}`)} className="p-2 hover:bg-white/10 rounded-xl transition-colors">
-                                                            <TrendingUp size={14} className="text-slate-600" />
+                                                        <button 
+                                                            onClick={() => navigate(`${leagueBasePath}/match/${m.id}`)} 
+                                                            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5 group/link"
+                                                        >
+                                                            <span className="text-[0.55rem] font-black text-slate-400 group-hover/link:text-white uppercase tracking-widest">Súmula</span>
+                                                            <TrendingUp size={14} className="text-slate-600 group-hover/link:text-accent" />
                                                         </button>
                                                     </div>
                                                 </div>
