@@ -15,7 +15,7 @@ const MatchControl = () => {
         currentYtLiveStream, isYtAuthenticated, recoverStreamDetails,
         ytLogin, setYtLivePrivacy, startMatch, pauseMatch, 
         loading: leagueLoading, dataLoading, leagueBasePath,
-        getMatchSlug, getPlayerSlug, userInteractions, interactWithTeam,
+        getMatchSlug, getPlayerSlug, userInteractions, 
         interactionCounts
     } = useLeague();
 
