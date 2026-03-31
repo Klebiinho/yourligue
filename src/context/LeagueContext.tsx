@@ -518,7 +518,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const [dataLoading, setDataLoading] = useState(false);
     const [isPublicView, setIsPublicView] = useState(() => {
         const saved = localStorage.getItem('isPublicView');
-        return saved !== null ? saved === 'true' : false;
+        return saved !== null ? saved === 'true' : true;
     });
     const [userInteractions, setUserInteractions] = useState<TeamInteraction[]>([]);
     const [pendingInteraction, setPendingInteraction] = useState<{ teamId: string, type: TeamInteraction['interactionType'] } | null>(null);

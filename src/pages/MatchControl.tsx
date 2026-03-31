@@ -775,7 +775,7 @@ const MatchControl = () => {
                     <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
                         <div className="relative group/logo">
                             <TeamLogo src={homeTeam.logo} size={44} />
-                            {isPublicView && (
+                            {(isPublicView || !isAdmin) && (
                                 <div className="absolute -bottom-2 -right-2 flex flex-col gap-1 opacity-0 group-hover/logo:opacity-100 transition-all scale-75 origin-top-right z-20">
                                     <button onClick={() => interactWithTeam(homeTeam.id, 'supporting')} className={`p-1.5 rounded-lg shadow-lg backdrop-blur-md border ${userInteractions.some(i => i.teamId === homeTeam.id && i.interactionType === 'supporting') ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-black/60 border-white/10 text-white/40 hover:text-white'}`} title="Torcer"><Heart size={14} fill={userInteractions.some(i => i.teamId === homeTeam.id && i.interactionType === 'supporting') ? 'currentColor' : 'none'} /></button>
                                     <button onClick={() => interactWithTeam(homeTeam.id, 'rival')} className={`p-1.5 rounded-lg shadow-lg backdrop-blur-md border ${userInteractions.some(i => i.teamId === homeTeam.id && i.interactionType === 'rival') ? 'bg-danger/20 border-danger/40 text-danger' : 'bg-black/60 border-white/10 text-white/40 hover:text-white'}`} title="Secar"><Wind size={14} /></button>
@@ -884,7 +884,7 @@ const MatchControl = () => {
                     <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
                         <div className="relative group/logo">
                             <TeamLogo src={awayTeam.logo} size={44} />
-                            {isPublicView && (
+                            {(isPublicView || !isAdmin) && (
                                 <div className="absolute -bottom-2 -left-2 flex flex-col gap-1 opacity-0 group-hover/logo:opacity-100 transition-all scale-75 origin-top-left z-20">
                                     <button onClick={() => interactWithTeam(awayTeam.id, 'supporting')} className={`p-1.5 rounded-lg shadow-lg backdrop-blur-md border ${userInteractions.some(i => i.teamId === awayTeam.id && i.interactionType === 'supporting') ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-black/60 border-white/10 text-white/40 hover:text-white'}`} title="Torcer"><Heart size={14} fill={userInteractions.some(i => i.teamId === awayTeam.id && i.interactionType === 'supporting') ? 'currentColor' : 'none'} /></button>
                                     <button onClick={() => interactWithTeam(awayTeam.id, 'rival')} className={`p-1.5 rounded-lg shadow-lg backdrop-blur-md border ${userInteractions.some(i => i.teamId === awayTeam.id && i.interactionType === 'rival') ? 'bg-danger/20 border-danger/40 text-danger' : 'bg-black/60 border-white/10 text-white/40 hover:text-white'}`} title="Secar"><Wind size={14} /></button>

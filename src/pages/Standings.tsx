@@ -5,7 +5,7 @@ import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const Standings = () => {
-    const { teams, matches, isPublicView, userInteractions, interactWithTeam, interactionCounts, league, getTeamSlug } = useLeague();
+    const { teams, matches, isPublicView, isAdmin, userInteractions, interactWithTeam, interactionCounts, league, getTeamSlug } = useLeague();
     const navigate = useNavigate();
     const { slug } = useParams<{ slug: string }>();
     const lSlug = slug || league?.slug || league?.id;
@@ -130,7 +130,7 @@ const Standings = () => {
                                                             <span className={`font-outfit font-black uppercase tracking-wider truncate text-sm sm:text-base leading-none mb-1 ${isMyTeam ? 'text-accent' : 'text-white'}`}>
                                                                 {team.name}
                                                             </span>
-                                                            {isPublicView && (
+                                                            {(isPublicView || !isAdmin) && (
                                                                 <div className="flex items-center gap-2">
                                                                     <button
                                                                         onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'supporting'); }}

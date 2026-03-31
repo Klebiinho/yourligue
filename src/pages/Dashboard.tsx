@@ -354,7 +354,7 @@ const Dashboard = () => {
                                                 <span className="text-[0.5rem] text-slate-700 font-black uppercase">pts</span>
                                             </div>
 
-                                            {isPublicView && (
+                                            {(isPublicView || !isAdmin) && (
                                                 <div className="flex gap-1 items-center pl-2 border-l border-white/5">
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'supporting'); }}
