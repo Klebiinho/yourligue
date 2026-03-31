@@ -177,7 +177,7 @@ const MyInteractions = () => {
                                                 </p>
                                             </div>
                                             <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl">
-                                                <p className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest mb-1">Gols Marcados</p>
+                                                <p className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest mb-1">{league?.sportType === 'basketball' ? 'Pontos Marcados' : 'Gols Marcados'}</p>
                                                 <p className="text-lg font-bold text-accent">{selectedTeam.stats?.goalsFor || 0}</p>
                                             </div>
                                             <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl">
@@ -287,7 +287,11 @@ const MyInteractions = () => {
                                                 </div>
                                             </div>
                                             <div className="text-right flex-none">
-                                                <p className="text-xs font-black text-accent">{p.stats?.goals || 0} Gols</p>
+                                                <p className="text-xs font-black text-accent">
+                                                    {league?.sportType === 'basketball' 
+                                                        ? `${p.stats?.points || 0} Pontos` 
+                                                        : `${p.stats?.goals || 0} Gols`}
+                                                </p>
                                                 <p className="text-[0.6rem] font-bold text-slate-600 uppercase tracking-widest">{p.stats?.assists || 0} Assist.</p>
                                             </div>
                                         </div>
