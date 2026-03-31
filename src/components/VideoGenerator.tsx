@@ -434,14 +434,18 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Calculate how much horizontal space we have for the preview
+    // Calculate how much space we have for the preview
     // Modal max-width is 520px, but on mobile it's windowWidth - padding
-    const horizontalPadding = windowWidth < 640 ? 40 : 80;
+    const horizontalPadding = windowWidth < 640 ? 32 : 80;
+    const verticalPadding = windowWidth < 640 ? 120 : 180;
     const availableWidth = Math.min(520, windowWidth) - horizontalPadding;
+    const availableHeight = typeof window !== 'undefined' ? window.innerHeight - verticalPadding : 800;
     
     // We want the preview to fit nicely. 
     // Original card is 1080x1920.
-    const PREVIEW_W = Math.min(270, availableWidth);
+    // We want the preview to fit nicely, considering both width and height constraints.
+    // Original card is 1080x1920 (9:16 aspect ratio).
+    const PREVIEW_W = Math.min(300, availableWidth, availableHeight * (9/16));
     const PREVIEW_SCALE = PREVIEW_W / 1080;
     const PREVIEW_H = 1920 * PREVIEW_SCALE;
 
@@ -481,7 +485,7 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
 
             {/* ── Modal ─────────────────────────────────────────────── */}
             <div
-                className="bg-slate-900 border border-slate-700/60 rounded-3xl shadow-2xl flex flex-col items-center overflow-hidden w-full max-w-[520px] max-h-[96dvh]"
+                className="bg-slate-950/90 border border-white/10 rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.8)] flex flex-col items-center overflow-hidden w-full max-w-[500px] max-h-[94dvh] animate-scale-in"
             >
                 {/* Header */}
                 <div className="w-full flex items-center justify-between p-3 sm:p-5 border-b border-slate-700/50 flex-none bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
@@ -500,28 +504,34 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                     </button>
                 </div>
 
-                <div className="p-4 sm:p-5 w-full flex flex-col items-center gap-4 sm:gap-5 overflow-y-auto no-scrollbar">
-                    {/* Preview */}
-                    <div
-                        className="relative rounded-2xl overflow-hidden shadow-2xl ring-4 ring-slate-800 flex-none"
-                        style={{ width: `${PREVIEW_W}px`, height: `${PREVIEW_H}px` }}
-                    >
-                        <div style={{ width: '1080px', height: '1920px', transform: `scale(${PREVIEW_SCALE})`, transformOrigin: 'top left' }}>
-                            <HighlightCard
-                                player={pData} team={tData}
-                                sportType={sportType} eventType={eventType}
-                                stats={stats} description={description}
-                            />
+                <div className="p-4 sm:p-7 w-full flex flex-col items-center gap-5 sm:gap-7 overflow-y-auto no-scrollbar scroll-smooth">
+                    {/* Preview Area */}
+                    <div className="relative group">
+                        {/* Static Glow behind preview */}
+                        <div 
+                            className="absolute inset-[-40px] opacity-20 blur-[80px] rounded-full pointer-events-none"
+                            style={{ background: team.primaryColor || '#6366f1' }}
+                        />
+                        
+                        <div
+                            className="relative rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/20 flex-none bg-black/40"
+                            style={{ width: `${PREVIEW_W}px`, height: `${PREVIEW_H}px` }}
+                        >
+                            <div style={{ width: '1080px', height: '1920px', transform: `scale(${PREVIEW_SCALE})`, transformOrigin: 'top left' }}>
+                                <HighlightCard
+                                    player={pData} team={tData}
+                                    sportType={sportType} eventType={eventType}
+                                    stats={stats} description={description}
+                                />
+                            </div>
                         </div>
-                        {/* Shine overlay */}
-                        <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-black/20 via-transparent to-white/10 rounded-2xl" />
                     </div>
 
-                    {/* Description input */}
+                    {/* Description Section */}
                     {showDescField && eventType !== 'MVP' && (
-                        <div className="w-full">
-                            <label className="flex items-center gap-2 text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-2">
-                                <Pencil size={12} /> Descrição do lance <span className="text-slate-600">(opcional)</span>
+                        <div className="w-full animate-fade-in">
+                            <label className="flex items-center gap-2 text-[0.6rem] font-black text-slate-500 uppercase tracking-[0.2em] mb-2.5 ml-1">
+                                <Pencil size={11} className="text-primary" /> Descrição do lance <span className="opacity-40">(opcional)</span>
                             </label>
                             <textarea
                                 rows={2}
@@ -534,58 +544,78 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                                     'Descreva o lance...'
                                 }
                                 maxLength={120}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm placeholder:text-slate-600 resize-none focus:border-indigo-500 outline-none transition"
+                                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-4 py-3.5 text-white text-sm placeholder:text-slate-600 resize-none focus:border-primary/50 focus:bg-white/[0.05] outline-none transition-all shadow-inner"
                             />
-                            <p className="text-slate-600 text-[0.6rem] text-right mt-1">{description.length}/120</p>
+                            <div className="flex justify-between items-center mt-2 px-1">
+                                <span className="text-[0.55rem] text-slate-600 font-bold uppercase tracking-widest italic">Personalize sua arte</span>
+                                <span className={`text-[0.6rem] font-black tabular-nums ${description.length >= 110 ? 'text-danger' : 'text-slate-600'}`}>
+                                    {description.length}/120
+                                </span>
+                            </div>
                         </div>
                     )}
                     {eventType === 'MVP' && (
                         <button
                             onClick={() => setShowDescField(v => !v)}
-                            className="text-[0.65rem] font-black text-slate-500 hover:text-slate-300 uppercase tracking-widest transition"
+                            className="text-[0.6rem] font-black text-slate-500 hover:text-primary uppercase tracking-[0.2em] transition-all py-2 px-4 rounded-full border border-white/5 bg-white/[0.02] hover:bg-primary/10 active:scale-95"
                         >
-                            {showDescField ? '− Remover descrição' : '+ Adicionar descrição'}
+                            {showDescField ? '− Remover descrição' : '+ Adicionar descrição personalizada'}
                         </button>
                     )}
 
                     {/* Action buttons */}
-                    <div className="grid grid-cols-2 gap-3 w-full flex-none">
+                    <div className="grid grid-cols-2 gap-4 w-full flex-none">
                         <button
                             onClick={handleDownloadImage}
                             disabled={generating}
-                            className="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-black text-[0.65rem] sm:text-xs py-3 sm:py-4 px-2 sm:px-4 rounded-2xl flex flex-col items-center justify-center gap-1 sm:gap-1.5 transition-all disabled:opacity-40 shadow-lg shadow-indigo-900/30"
+                            className="group relative bg-white/[0.03] hover:bg-indigo-600 border border-white/10 hover:border-indigo-400 text-white font-black text-xs py-5 px-4 rounded-[2rem] flex flex-col items-center justify-center gap-2 transition-all duration-300 disabled:opacity-40 active:scale-95 overflow-hidden shadow-xl"
                         >
+                            <div className="absolute inset-0 bg-indigo-600/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                             {generating && !isRecordingFlow ? (
-                                <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
+                                <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
                             ) : (
-                                <ImageDown className="w-5 h-5 sm:w-6 sm:h-6" />
+                                <ImageDown className="w-6 h-6 group-hover:scale-110 transition-transform" />
                             )}
-                            <span className="uppercase tracking-wider truncate w-full px-1">
-                                {generating && !isRecordingFlow ? 'Gerando...' : 'Baixar Imagem'}
-                            </span>
-                            <span className="text-indigo-300 text-[0.5rem] sm:text-[0.55rem] font-normal">PNG · 1080×1920</span>
+                            <div className="relative z-10 flex flex-col items-center">
+                                <span className="uppercase tracking-[0.15em]">Imagem</span>
+                                <span className="text-[0.55rem] text-slate-500 group-hover:text-indigo-200 font-bold mt-0.5">1080×1920 PNG</span>
+                            </div>
                         </button>
 
                         <button
                             onClick={handleRecordVideo}
                             disabled={generating}
-                            className="bg-pink-600 hover:bg-pink-500 active:scale-95 text-white font-black text-[0.65rem] sm:text-xs py-3 sm:py-4 px-2 sm:px-4 rounded-2xl flex flex-col items-center justify-center gap-1 sm:gap-1.5 transition-all disabled:opacity-40 shadow-lg shadow-pink-900/30"
+                            className="group relative bg-white/[0.03] hover:bg-pink-600 border border-white/10 hover:border-pink-400 text-white font-black text-xs py-5 px-4 rounded-[2rem] flex flex-col items-center justify-center gap-2 transition-all duration-300 disabled:opacity-40 active:scale-95 overflow-hidden shadow-xl"
                         >
+                            <div className="absolute inset-0 bg-pink-600/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                             {isRecordingFlow ? (
                                 <>
-                                    <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
-                                    <span className="uppercase tracking-wider">{progress}%</span>
-                                    <span className="text-pink-300 text-[0.5rem] sm:text-[0.55rem] font-normal">Gravando…</span>
+                                    <Loader2 className="w-6 h-6 animate-spin text-pink-400" />
+                                    <div className="relative z-10 flex flex-col items-center">
+                                        <span className="uppercase tracking-[0.15em]">{progress}%</span>
+                                        <span className="text-[0.55rem] text-pink-200 font-bold mt-0.5 uppercase">Gravando...</span>
+                                    </div>
                                 </>
                             ) : (
                                 <>
-                                    <Video className="w-5 h-5 sm:w-6 sm:h-6" />
-                                    <span className="uppercase tracking-wider truncate w-full px-1">Gerar Vídeo</span>
-                                    <span className="text-pink-300 text-[0.5rem] sm:text-[0.55rem] font-normal">8s · Animado</span>
+                                    <Video className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                                    <div className="relative z-10 flex flex-col items-center">
+                                        <span className="uppercase tracking-[0.15em]">Vídeo</span>
+                                        <span className="text-[0.55rem] text-slate-500 group-hover:text-pink-200 font-bold mt-0.5">8s Animado</span>
+                                    </div>
                                 </>
                             )}
                         </button>
                     </div>
+
+                    {!generating && (
+                        <button 
+                            onClick={onClose}
+                            className="text-[0.55rem] font-bold text-slate-600 hover:text-white uppercase tracking-[0.3em] py-3 transition-colors mt-2"
+                        >
+                            Cancelar e Voltar
+                        </button>
+                    )}
 
                     {/* Progress bar for video */}
                     {isRecordingFlow && (
