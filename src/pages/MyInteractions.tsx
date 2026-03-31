@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { Heart, Star, Wind, Shield, Users, TrendingUp, Calendar, Crown } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
@@ -6,7 +6,7 @@ import AdBanner from '../components/AdBanner';
 import { useNavigate } from 'react-router-dom';
 
 const MyInteractions = () => {
-    const { teams, matches, userInteractions, league, leagueBasePath, getPlayerSlug } = useLeague();
+    const { teams, matches, userInteractions, league, leagueBasePath, getPlayerSlug, loadPlayerPhotos } = useLeague();
     const navigate = useNavigate();
 
     const supporting = userInteractions.filter(i => i.interactionType === 'supporting');
@@ -20,6 +20,12 @@ const MyInteractions = () => {
     );
 
     const selectedTeam = teams.find(t => t.id === selectedTeamId);
+    
+    useEffect(() => {
+        if (selectedTeam?.players?.length) {
+            loadPlayerPhotos(selectedTeam.players.map(p => p.id));
+        }
+    }, [selectedTeam?.id, loadPlayerPhotos]);
 
     const teamMatches = matches.filter(m => m.homeTeamId === selectedTeamId || m.awayTeamId === selectedTeamId);
     const upcomingMatches = teamMatches
