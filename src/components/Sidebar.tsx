@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, Swords, Trophy, Settings, GitBranch, ArrowLeftRight, Grid3x3, X, Signal, Home, Heart } from 'lucide-react';
 import { useLeague } from '../context/LeagueContext';
+import { useAuth } from '../context/AuthContext';
 import TeamLogo from './TeamLogo';
 
 const navItems = [
@@ -19,7 +20,8 @@ const navItems = [
 
 
 const Sidebar = () => {
-    const { league, isPublicView, setIsPublicView, isAdmin } = useLeague();
+    const { user } = useAuth();
+    const { league, isPublicView, setIsPublicView, isAdmin, setShowAuthModal } = useLeague();
     const navigate = useNavigate();
     const location = useLocation();
     const [moreOpen, setMoreOpen] = useState(false);
@@ -107,7 +109,14 @@ const Sidebar = () => {
                                                 key={item.to}
                                                 to={getLink(item.to)}
                                                 end={item.to === '/'}
-                                                onClick={() => setMoreOpen(false)}
+                                                onClick={(e) => {
+                                                    if (item.to === '/torcedor' && !user) {
+                                                        e.preventDefault();
+                                                        setShowAuthModal(true);
+                                                        return;
+                                                    }
+                                                    setMoreOpen(false);
+                                                }}
                                                 className={({ isActive }) =>
                                                     `flex flex-col items-center justify-center gap-2 py-5 transition-all ${isActive ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-white/[0.04] hover:text-slate-200'}`
                                                 }
@@ -135,6 +144,12 @@ const Sidebar = () => {
                                     key={item.to}
                                     to={getLink(item.to)}
                                     end={item.to === '/'}
+                                    onClick={(e) => {
+                                        if (item.to === '/torcedor' && !user) {
+                                            e.preventDefault();
+                                            setShowAuthModal(true);
+                                        }
+                                    }}
                                     className={({ isActive }) =>
                                         `flex flex-col items-center justify-center gap-1 flex-1 px-1 transition-all duration-200 relative ${isActive ? 'text-primary' : 'text-slate-600 active:text-slate-300'}`
                                     }
@@ -231,6 +246,12 @@ const Sidebar = () => {
                             key={to}
                             to={getLink(to)}
                             end={to === '/'}
+                            onClick={(e) => {
+                                if (to === '/torcedor' && !user) {
+                                    e.preventDefault();
+                                    setShowAuthModal(true);
+                                }
+                            }}
                             className={({ isActive }) =>
                                 `flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-semibold ${isActive
                                     ? 'bg-primary/15 text-white shadow-[inset_0_0_0_1px_rgba(109,40,217,0.25)]'

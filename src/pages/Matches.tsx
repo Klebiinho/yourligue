@@ -104,13 +104,16 @@ const Matches = () => {
         .sort((a: any, b: any) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
     const formatDate = (dt?: string) => dt ? new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 
-    const tabConfig = [
+    const baseTabs = [
         { key: 'all' as const, label: 'Todas', count: matches.length },
         { key: 'live' as const, label: 'AO VIVO', count: matches.filter((m: any) => m.status === 'live').length },
         { key: 'scheduled' as const, label: 'Agendadas', count: matches.filter((m: any) => m.status === 'scheduled').length },
         { key: 'finished' as const, label: 'Concluídas', count: matches.filter((m: any) => m.status === 'finished').length },
-        { key: 'my_team' as const, label: 'Meu time', count: matches.filter((m: any) => myTeamIds.includes(m.homeTeamId) || myTeamIds.includes(m.awayTeamId)).length },
     ];
+
+    const myTeamTab = { key: 'my_team' as const, label: 'Meu time', count: matches.filter((m: any) => myTeamIds.includes(m.homeTeamId) || myTeamIds.includes(m.awayTeamId)).length };
+
+    const tabConfig = myTeamIds.length > 0 ? [myTeamTab, ...baseTabs] : [...baseTabs, myTeamTab];
 
     return (
         <div className="animate-fade-in">
