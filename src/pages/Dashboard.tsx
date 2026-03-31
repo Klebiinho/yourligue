@@ -354,34 +354,6 @@ const Dashboard = () => {
                                                 <span className="text-[0.5rem] text-slate-700 font-black uppercase">pts</span>
                                             </div>
 
-                                            {(isPublicView || !isAdmin) && (
-                                                <div className="flex gap-1 items-center pl-2 border-l border-white/5">
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'supporting'); }}
-                                                        className={`p-1 flex items-center gap-1 rounded-md transition-all ${userInteractions.some(i => i.teamId === team.id && i.interactionType === 'supporting') ? 'text-primary bg-primary/20' : 'text-slate-600 hover:text-primary hover:bg-white/5'}`}
-                                                        title="Torcer"
-                                                    >
-                                                        <Heart size={10} strokeWidth={3} fill={userInteractions.some(i => i.teamId === team.id && i.interactionType === 'supporting') ? 'currentColor' : 'none'} />
-                                                        <span className="text-[0.55rem] font-bold opacity-60">{interactionCounts[team.id]?.supporting || 0}</span>
-                                                    </button>
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'rival'); }}
-                                                        className={`p-1 flex items-center gap-1 rounded-md transition-all ${userInteractions.some(i => i.teamId === team.id && i.interactionType === 'rival') ? 'text-danger bg-danger/20' : 'text-slate-600 hover:text-danger hover:bg-white/5'}`}
-                                                        title="Secar"
-                                                    >
-                                                        <Wind size={10} strokeWidth={3} />
-                                                        <span className="text-[0.55rem] font-bold opacity-60">{interactionCounts[team.id]?.rival || 0}</span>
-                                                    </button>
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'favorite'); }}
-                                                        className={`p-1 flex items-center gap-1 rounded-md transition-all ${userInteractions.some(i => i.teamId === team.id && i.interactionType === 'favorite') ? 'text-warning bg-warning/20' : 'text-slate-600 hover:text-warning hover:bg-white/5'}`}
-                                                        title="Favoritar"
-                                                    >
-                                                        <Star size={10} strokeWidth={3} fill={userInteractions.some(i => i.teamId === team.id && i.interactionType === 'favorite') ? 'currentColor' : 'none'} />
-                                                        <span className="text-[0.55rem] font-bold opacity-60">{interactionCounts[team.id]?.favorite || 0}</span>
-                                                    </button>
-                                                </div>
-                                            )}
                                         </div>
                                     );
                                 })

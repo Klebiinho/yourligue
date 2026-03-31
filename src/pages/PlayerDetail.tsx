@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague } from '../context/LeagueContext';
 import { User, Target, Zap, Clock, ArrowLeft, Star, TrendingUp, Medal, History, Crown, ShieldAlert, CheckCircle, Activity, Edit3, Trash2, Camera, X } from 'lucide-react';
@@ -58,6 +58,13 @@ const PlayerDetail = () => {
         }
         return null;
     }, [playerSlug, teams, getPlayerSlug]);
+
+    const { loadPlayerPhotos } = useLeague();
+    useEffect(() => {
+        if (playerWithTeam?.player?.id) {
+            loadPlayerPhotos([playerWithTeam.player.id]);
+        }
+    }, [playerWithTeam?.player?.id, loadPlayerPhotos]);
 
     if (leagueLoading) {
         return (

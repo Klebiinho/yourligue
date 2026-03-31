@@ -15,9 +15,14 @@ const MyInteractions = () => {
 
     const getTeam = (id: string) => teams.find(t => t.id === id);
 
-    const [selectedTeamId, setSelectedTeamId] = useState<string | null>(
-        supporting[0]?.teamId || favorites[0]?.teamId || rivals[0]?.teamId || null
-    );
+    const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+
+    // Auto-select first interaction if none selected
+    useEffect(() => {
+        if (!selectedTeamId && userInteractions.length > 0) {
+            setSelectedTeamId(userInteractions[0].teamId);
+        }
+    }, [userInteractions, selectedTeamId]);
 
     const selectedTeam = teams.find(t => t.id === selectedTeamId);
     
@@ -25,7 +30,7 @@ const MyInteractions = () => {
         if (selectedTeam?.players?.length) {
             loadPlayerPhotos(selectedTeam.players.map(p => p.id));
         }
-    }, [selectedTeam?.id, loadPlayerPhotos]);
+    }, [selectedTeam?.id, selectedTeam?.players?.length, loadPlayerPhotos]);
 
     const teamMatches = matches.filter(m => m.homeTeamId === selectedTeamId || m.awayTeamId === selectedTeamId);
     const upcomingMatches = teamMatches
@@ -223,30 +228,30 @@ const MyInteractions = () => {
                                                 <div key={m.id} className="bg-white/[0.03] border border-white/[0.05] rounded-3xl p-5 hover:bg-white/[0.06] transition-all group border-b-4 border-b-primary/20">
                                                     <div className="flex flex-col gap-5">
                                                         {/* Teams Row */}
-                                                        <div className="flex items-center justify-between gap-4">
+                                                        <div className="grid grid-cols-[1fr_80px_1fr] items-center gap-2">
                                                             {/* Home Team */}
-                                                            <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
-                                                                <TeamLogo src={getTeam(m.homeTeamId)?.logo} size={40} className={m.homeTeamId === selectedTeamId ? 'ring-2 ring-primary ring-offset-4 ring-offset-transparent' : ''} />
-                                                                <span className={`text-[0.65rem] font-black uppercase tracking-tight text-center leading-tight line-clamp-2 ${m.homeTeamId === selectedTeamId ? 'text-primary' : 'text-white'}`}>
+                                                            <div className="flex flex-col items-center gap-2 min-w-0">
+                                                                <TeamLogo src={getTeam(m.homeTeamId)?.logo} size={40} className={m.homeTeamId === selectedTeamId ? 'ring-2 ring-primary ring-offset-4 ring-offset-transparent shadow-lg shadow-primary/20' : ''} />
+                                                                <span className={`text-[0.65rem] font-black uppercase tracking-tight text-center leading-none line-clamp-2 w-full ${m.homeTeamId === selectedTeamId ? 'text-primary' : 'text-slate-300'}`}>
                                                                     {getTeam(m.homeTeamId)?.name}
                                                                 </span>
                                                             </div>
 
                                                             {/* VS Center */}
-                                                            <div className="flex flex-col items-center gap-1 flex-none px-4">
-                                                                <div className="bg-white/5 border border-white/10 px-3 py-1 rounded-full">
-                                                                    <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">VS</span>
+                                                            <div className="flex flex-col items-center justify-center gap-1 flex-none">
+                                                                <div className="bg-white/5 border border-white/10 px-2.5 py-1 rounded-full shadow-inner">
+                                                                    <span className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest">VS</span>
                                                                 </div>
                                                                 <div className="flex flex-col items-center">
-                                                                    <p className="text-[0.55rem] font-black text-slate-600 uppercase tracking-tighter whitespace-nowrap">{formatDate(m.scheduledAt).split(',')[0].trim()}</p>
-                                                                    <p className="text-[0.55rem] font-black text-slate-400 font-mono tracking-widest">{formatDate(m.scheduledAt).split(',')[1].trim()}</p>
+                                                                    <span className="text-[0.5rem] font-black text-slate-600 uppercase tracking-tighter whitespace-nowrap">{formatDate(m.scheduledAt).split(',')[0].trim()}</span>
+                                                                    <span className="text-[0.5rem] font-black text-primary/60 font-mono tracking-widest leading-none mt-0.5">{formatDate(m.scheduledAt).split(',')[1].trim()}</span>
                                                                 </div>
                                                             </div>
 
                                                             {/* Away Team */}
-                                                            <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
-                                                                <TeamLogo src={getTeam(m.awayTeamId)?.logo} size={40} className={m.awayTeamId === selectedTeamId ? 'ring-2 ring-primary ring-offset-4 ring-offset-transparent' : ''} />
-                                                                <span className={`text-[0.65rem] font-black uppercase tracking-tight text-center leading-tight line-clamp-2 ${m.awayTeamId === selectedTeamId ? 'text-primary' : 'text-white'}`}>
+                                                            <div className="flex flex-col items-center gap-2 min-w-0">
+                                                                <TeamLogo src={getTeam(m.awayTeamId)?.logo} size={40} className={m.awayTeamId === selectedTeamId ? 'ring-2 ring-primary ring-offset-4 ring-offset-transparent shadow-lg shadow-primary/20' : ''} />
+                                                                <span className={`text-[0.65rem] font-black uppercase tracking-tight text-center leading-none line-clamp-2 w-full ${m.awayTeamId === selectedTeamId ? 'text-primary' : 'text-slate-300'}`}>
                                                                     {getTeam(m.awayTeamId)?.name}
                                                                 </span>
                                                             </div>
@@ -317,9 +322,12 @@ const MyInteractions = () => {
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="text-right flex-none">
+                                            <div 
+                                                className="text-right flex-none cursor-pointer hover:bg-white/5 p-1 rounded-lg transition-colors"
+                                                onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/${getPlayerSlug(p)}/player`); }}
+                                            >
                                                 <p className="text-xs font-black text-accent">
-                                                    {league?.sportType === 'basketball' 
+                                                    {league?.sportType === 'basketball'
                                                         ? `${p.stats?.points || 0} Pontos` 
                                                         : `${p.stats?.goals || 0} Gols`}
                                                 </p>

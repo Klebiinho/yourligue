@@ -130,35 +130,9 @@ const Standings = () => {
                                                             <span className={`font-outfit font-black uppercase tracking-wider truncate text-sm sm:text-base leading-none mb-1 ${isMyTeam ? 'text-accent' : 'text-white'}`}>
                                                                 {team.name}
                                                             </span>
-                                                            {(isPublicView || !isAdmin) && (
-                                                                <div className="flex items-center gap-2">
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'supporting'); }}
-                                                                        className={`p-1 rounded-md transition-all ${userInteractions.some((i: any) => i.teamId === team.id && i.interactionType === 'supporting') ? 'text-primary bg-primary/20' : 'text-slate-600 hover:text-primary hover:bg-white/5'}`}
-                                                                        title="Torcer"
-                                                                    >
-                                                                        <Heart size={12} strokeWidth={3} fill={userInteractions.some((i: any) => i.teamId === team.id && i.interactionType === 'supporting') ? 'currentColor' : 'none'} />
-                                                                        <span className="text-[0.6rem] ml-1 opacity-60">{interactionCounts[team.id]?.supporting || 0}</span>
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'rival'); }}
-                                                                        className={`p-1 rounded-md transition-all ${userInteractions.some((i: any) => i.teamId === team.id && i.interactionType === 'rival') ? 'text-danger bg-danger/20' : 'text-slate-600 hover:text-danger hover:bg-white/5'}`}
-                                                                        title="Secar"
-                                                                    >
-                                                                        <Wind size={12} strokeWidth={3} />
-                                                                        <span className="text-[0.6rem] ml-1 opacity-60">{interactionCounts[team.id]?.rival || 0}</span>
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); interactWithTeam(team.id, 'favorite'); }}
-                                                                        className={`p-1 rounded-md transition-all ${userInteractions.some((i: any) => i.teamId === team.id && i.interactionType === 'favorite') ? 'text-warning bg-warning/20' : 'text-slate-600 hover:text-warning hover:bg-white/5'}`}
-                                                                        title="Favoritar"
-                                                                    >
-                                                                        <Star size={12} strokeWidth={3} fill={userInteractions.some((i: any) => i.teamId === team.id && i.interactionType === 'favorite') ? 'currentColor' : 'none'} />
-                                                                        <span className="text-[0.6rem] ml-1 opacity-60">{interactionCounts[team.id]?.favorite || 0}</span>
-                                                                    </button>
-                                                                </div>
-                                                            )}
+                                                            {/* Interaction buttons removed for cleaner UI */}
                                                         </div>
+
                                                     </div>
                                                 </td>
 

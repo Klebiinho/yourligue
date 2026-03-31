@@ -1,69 +1,58 @@
 import { useState, useEffect } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { ShieldCheck } from 'lucide-react';
+import { Shield, X, Check } from 'lucide-react';
 
 const CookieConsent = () => {
-    const [show, setShow] = useState(false);
-    const location = useLocation();
+    const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-        const consent = localStorage.getItem('yourligue-cookie-consent');
+        const consent = localStorage.getItem('cookie-consent');
         if (!consent) {
-            // Delay showing the banner for better UX
-            const timer = setTimeout(() => setShow(true), 2000);
+            const timer = setTimeout(() => setIsVisible(true), 1500);
             return () => clearTimeout(timer);
         }
     }, []);
 
     const handleAccept = () => {
-        localStorage.setItem('yourligue-cookie-consent', 'accepted');
-        setShow(false);
+        localStorage.setItem('cookie-consent', 'accepted');
+        setIsVisible(false);
     };
 
-    const handleDecline = () => {
-        localStorage.setItem('yourligue-cookie-consent', 'declined');
-        setShow(false);
-    };
-
-    if (!show) return null;
-
-    // Don't show cookie consent on match overlay pages
-    if (location.pathname.includes('/match/') && location.pathname.includes('/widget')) return null;
+    if (!isVisible) return null;
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center p-6 z-[2000] animate-fade-in backdrop-blur-sm bg-black/60">
-            <div className="glass-panel max-w-sm w-full p-8 md:p-10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] border-primary/20 relative overflow-hidden group animate-scale-up">
-                {/* Decorative background glow */}
-                <div className="absolute -top-20 -right-20 w-48 h-48 bg-primary/20 rounded-full blur-[60px] group-hover:bg-primary/30 transition-colors" />
-                <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-accent/10 rounded-full blur-[60px] group-hover:bg-accent/20 transition-colors" />
-
-                <div className="flex flex-col items-center gap-6 relative z-10 text-center">
-                    <div className="p-5 bg-primary/10 text-primary rounded-3xl flex-none border border-primary/20 shadow-xl shadow-primary/10">
-                        <ShieldCheck size={40} strokeWidth={2.5} />
+        <div className="fixed bottom-6 left-6 right-6 md:left-auto md:right-8 md:w-[400px] z-[9999] animate-slide-up">
+            <div className="glass-panel p-6 border-t-2 border-t-primary shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden relative group">
+                {/* Background glow */}
+                <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 blur-[60px] rounded-full group-hover:bg-primary/20 transition-all duration-700" />
+                
+                <div className="flex gap-5 relative z-10">
+                    <div className="flex-none">
+                        <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary border border-primary/20">
+                            <Shield size={24} />
+                        </div>
                     </div>
                     
-                    <div>
-                        <h3 className="text-xl font-outfit font-black text-white uppercase tracking-widest mb-3">
-                            Privacidade & Cookies
-                        </h3>
-                        <p className="text-[0.75rem] leading-relaxed text-slate-400 mb-8 max-w-[280px] mx-auto">
-                            Sua privacidade é nossa prioridade. Utilizamos cookies para otimizar sua experiência e analisar o uso da plataforma YourLigue. 
-                            <br /><br />
-                            Ao continuar, você aceita nossa <Link to="/politica-de-privacidade" className="text-primary font-extrabold hover:text-white transition-colors">Política de Dados</Link>.
-                        </p>
+                    <div className="flex-1 space-y-4">
+                        <div>
+                            <h3 className="text-white font-outfit font-black uppercase tracking-widest text-sm mb-1">Nossa Política de Dados</h3>
+                            <p className="text-slate-400 text-xs leading-relaxed font-medium">
+                                Utilizamos cookies para garantir a melhor experiência, salvar suas preferências de liga e manter sua sessão segura. Ao continuar, você concorda com nossos termos.
+                            </p>
+                        </div>
                         
-                        <div className="flex flex-col gap-3">
-                            <button
+                        <div className="flex items-center gap-3">
+                            <button 
                                 onClick={handleAccept}
-                                className="w-full py-4 bg-primary text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-primary/30 hover:brightness-110"
+                                className="flex-1 bg-white text-black font-black uppercase text-[0.65rem] tracking-[0.2em] py-3.5 rounded-xl hover:bg-primary hover:text-white transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-2"
                             >
-                                Aceitar e Continuar
+                                <Check size={14} strokeWidth={3} /> Aceitar Tudo
                             </button>
-                            <button
-                                onClick={handleDecline}
-                                className="w-full py-4 bg-white/5 text-slate-500 hover:text-white rounded-2xl font-black text-[0.7rem] uppercase tracking-[0.2em] transition-all border border-white/5 hover:bg-white/10"
+                            <button 
+                                onClick={() => setIsVisible(false)}
+                                className="px-4 py-3.5 bg-white/5 border border-white/10 text-slate-500 rounded-xl hover:bg-white/10 transition-all"
+                                title="Fechar"
                             >
-                                Recusar Cookies
+                                <X size={16} strokeWidth={3} />
                             </button>
                         </div>
                     </div>
