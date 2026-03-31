@@ -464,16 +464,17 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                 </div>
             )}
 
-            {/* ── Off-screen renders (Always in DOM for reliable Ref access) ────────────────── */}
+            {/* ── Off-screen renders (Persistent in DOM for stable Ref access) ────────────────── */}
             <div 
                 style={{ 
-                    position: 'fixed', 
-                    left: '-10000px', 
+                    position: 'absolute', 
+                    left: '-15000px', 
                     top: 0, 
                     pointerEvents: 'none', 
                     width: '1080px', 
                     height: '1920px',
-                    visibility: 'hidden' // Ensures it is in DOM but invisible
+                    zIndex: -1,
+                    opacity: 0.01 // Minimal opacity ensures rendering without being seen
                 }}
             >
                 <HighlightCard
