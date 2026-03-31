@@ -92,6 +92,14 @@ const MatchControl = () => {
     } | null>(null);
 
     const [isEditingFinishedMatch, setIsEditingFinishedMatch] = useState(false);
+    const [autoLive, setAutoLive] = useState(() => {
+        const saved = localStorage.getItem('yl_auto_live');
+        return saved === 'true';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('yl_auto_live', autoLive.toString());
+    }, [autoLive]);
 
     // ... moved below to fix usage ...
 
@@ -314,7 +322,10 @@ const MatchControl = () => {
             
             if (localSeconds === 0 && !match.youtubeLiveId) {
                 if (isYtAuthenticated) {
-                    shouldStartLive = window.confirm("Deseja iniciar uma Transmissão Ao Vivo no YouTube para esta partida?\n\nIsso criará automaticamente uma live no seu canal e pegará as chaves para o seu app de stream.");
+                    shouldStartLive = autoLive;
+                    if (!autoLive) {
+                        shouldStartLive = window.confirm("Deseja iniciar uma Transmissão Ao Vivo no YouTube para esta partida?\n\nIsso criará automaticamente uma live no seu canal e pegará as chaves para o seu app de stream.");
+                    }
                 } else {
                     if (window.confirm("Você não está conectado ao YouTube. Deseja conectar agora para transmitir esta partida ao vivo?")) {
                         await ytLogin();
@@ -873,9 +884,30 @@ const MatchControl = () => {
                 </div>
 
                 {/* Controls */}
-                <div className="flex items-center justify-center gap-2 sm:gap-3 mt-5 border-t border-white/[0.05] pt-5">
-                    {!isPublicView && isAdmin && match.status !== 'finished' && (
-                        <>
+                <div className="flex flex-col items-center justify-center gap-4 mt-5 border-t border-white/[0.05] pt-5">
+                    {!isPublicView && isAdmin && match.status !== 'finished' && localSeconds === 0 && !match.youtubeLiveId && (
+                        <div 
+                            className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-red-600/5 border border-red-600/10 shadow-inner group cursor-pointer hover:bg-red-600/10 transition-all" 
+                            onClick={() => setAutoLive(!autoLive)}
+                        >
+                            <input 
+                                type="checkbox" 
+                                id="auto-live-checkbox"
+                                checked={autoLive}
+                                onChange={(e) => setAutoLive(e.target.checked)}
+                                className="w-4 h-4 rounded border-white/10 bg-black/40 text-red-500 focus:ring-red-500/50"
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                            <label htmlFor="auto-live-checkbox" className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest cursor-pointer group-hover:text-red-400 transition-colors flex items-center gap-2">
+                                <Video size={14} className={autoLive ? 'text-red-500 animate-pulse' : 'text-slate-600'} /> 
+                                Iniciar Transmissão ao Vivo Automaticamente
+                            </label>
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-center gap-2 sm:gap-3 w-full">
+                        {!isPublicView && isAdmin && match.status !== 'finished' && (
+                            <>
                             <button onClick={handleToggleTimer}
                                 className={`flex-1 sm:flex-none px-4 sm:px-8 py-3 rounded-xl font-black text-[0.65rem] uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${timerRunning ? 'bg-white/5 border border-white/10 text-slate-400 hover:text-white' : 'bg-primary text-white shadow-primary/30 hover:brightness-110'
                                     }`}>
@@ -901,6 +933,7 @@ const MatchControl = () => {
                              </button>
                         </>
                     )}
+                    </div>
                     {!isPublicView && isAdmin && match.status === 'finished' && (
                         <button 
                             onClick={() => setIsEditingFinishedMatch(!isEditingFinishedMatch)}
@@ -1610,19 +1643,30 @@ const MatchControl = () => {
                                 <p className="text-[0.65rem] font-black text-slate-500 uppercase tracking-widest italic">Confirma que este é o placar final?</p>
                             </div>
 
-                            <div className="space-y-3">
+                            <div className="space-y-3 bg-white/5 p-5 rounded-2xl border border-white/10">
                                 <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <Video size={14} className="text-red-500" /> Gravação do Jogo (YouTube URL)
+                                    <Video size={14} className="text-red-500" /> Link do Vídeo (YouTube / Live Realizada)
                                 </label>
-                                <input 
-                                    type="text"
-                                    placeholder="Ex: https://youtube.com/watch?v=..."
-                                    value={finishedMatchVideoUrl}
-                                    onChange={(e) => setFinishedMatchVideoUrl(e.target.value)}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-slate-700 focus:border-primary outline-none transition-all text-sm font-bold"
-                                />
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text"
+                                        placeholder="Ex: https://youtube.com/watch?v=..."
+                                        value={finishedMatchVideoUrl}
+                                        onChange={(e) => setFinishedMatchVideoUrl(e.target.value)}
+                                        className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-slate-700 focus:border-primary outline-none transition-all text-sm font-bold"
+                                    />
+                                    <button 
+                                        onClick={() => {
+                                            const url = prompt("Cole aqui o link do vídeo realizado:");
+                                            if (url) setFinishedMatchVideoUrl(url);
+                                        }}
+                                        className="bg-white/10 text-white px-4 rounded-xl hover:bg-white/20 transition-all text-[0.6rem] font-black uppercase"
+                                    >
+                                        Vincular
+                                    </button>
+                                </div>
                                 <p className="text-[0.55rem] text-slate-600 font-bold uppercase tracking-tight italic">
-                                    Deixe em branco se não houver vídeo. Se você transmitiu ao vivo pelo app, o link já deve estar acima.
+                                    O vídeo será exibido na página da partida. Se a live foi gerada pelo sistema, o link já aparecerá aqui.
                                 </p>
                             </div>
 

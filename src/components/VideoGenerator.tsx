@@ -130,37 +130,40 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
 
     // Static image download
     const handleDownloadImage = async () => {
+        if (preloading) {
+            alert('Aguarde: Ainda estamos otimizando as fotos para o download...');
+            return;
+        }
         if (!cardRef.current) {
             alert('Erro: O processador de arte não foi encontrado. Recarregue a página.');
             return;
         }
+
+        console.log('Starting image generation...');
         setGenerating(true);
         try {
-            // Short delay to ensure browser layout is stable
-            await new Promise(r => setTimeout(r, 600));
+            // Short delay to ensure browser layout is stable and painted
+            await new Promise(r => setTimeout(r, 400));
 
-            const fileName = `Arte-${Date.now()}.png`;
+            const fileName = `Destaque_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.png`;
             
             // Generate blob
             const blob = await toBlob(cardRef.current, {
                 canvasWidth: 1080,
                 canvasHeight: 1920,
-                pixelRatio: 1,
-                fetchRequestInit: { mode: 'cors' },
+                pixelRatio: 1, // 1 is safer for memory/mobile
+                cacheBust: true,
                 skipAutoScale: true,
             });
 
             if (!blob) throw new Error('Não foi possível gerar o arquivo de imagem.');
 
             await downloadBlob(blob, fileName);
+            console.log('Image download initiated');
             
         } catch (err: any) {
-            console.error('Error in handleDownloadImage', err);
-            if (err.message?.includes('CORS')) {
-                alert('Erro de permissão: Algumas imagens (fotos) não permitem download direto. Tente trocá-las.');
-            } else {
-                alert('Erro ao processar imagem. Tente novamente.');
-            }
+            console.error('Error in handleDownloadImage:', err);
+            alert(`Falha ao baixar imagem: ${err.message || 'Erro desconhecido'}`);
         } finally {
             setGenerating(false);
         }
@@ -168,13 +171,20 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
 
     // Animated video recording
     const handleRecordVideo = async () => {
-        if (!canvasRef.current || !transparentCardRef.current) return;
+        if (preloading) {
+            alert('Aguarde o carregamento das fotos...');
+            return;
+        }
+        if (!canvasRef.current || !transparentCardRef.current) {
+             alert('Erro técnico: Elementos de captura indisponíveis.');
+             return;
+        }
         setIsRecordingFlow(true);
         setGenerating(true);
         setProgress(0);
 
         try {
-            await new Promise(r => setTimeout(r, 600));
+            await new Promise(r => setTimeout(r, 400));
 
             // Capture the static layout without values (video will draw them animating)
             const contentDataUrl = await toPng(transparentCardRef.current, {
@@ -466,15 +476,16 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
 
             {/* ── Off-screen renders (Persistent in DOM for stable Ref access) ────────────────── */}
             <div 
+                id="offscreen-gen-container"
                 style={{ 
-                    position: 'absolute', 
-                    left: '-15000px', 
+                    position: 'fixed', 
+                    left: 0, 
                     top: 0, 
                     pointerEvents: 'none', 
                     width: '1080px', 
                     height: '1920px',
-                    zIndex: -1,
-                    opacity: 0.01 // Minimal opacity ensures rendering without being seen
+                    zIndex: -110,
+                    opacity: 0.001 // Extremely low but non-zero to keep it "active" in the rendering tree
                 }}
             >
                 <HighlightCard
