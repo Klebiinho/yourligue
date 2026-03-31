@@ -78,13 +78,13 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
             try {
                 const fetchAsBase64 = async (url: string) => {
                     if (!url) return undefined;
-                    try {
-                        // Use a timeout for fetch
+                    
+                    // Helper to try fetch with specific strategy
+                    const tryFetch = async (targetUrl: string) => {
                         const controller = new AbortController();
-                        const id = setTimeout(() => controller.abort(), 10000); // 10s timeout
-                        const response = await fetch(url, { mode: 'cors', signal: controller.signal });
+                        const id = setTimeout(() => controller.abort(), 8000); 
+                        const response = await fetch(targetUrl, { mode: 'cors', signal: controller.signal });
                         clearTimeout(id);
-                        
                         if (!response.ok) throw new Error(`HTTP ${response.status}`);
                         const blob = await response.blob();
                         return new Promise<string>((resolve, reject) => {
@@ -93,9 +93,20 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                             reader.onerror = reject;
                             reader.readAsDataURL(blob);
                         });
+                    };
+
+                    try {
+                        return await tryFetch(url);
                     } catch (e) {
-                        console.warn('Preload failed for', url, e);
-                        return undefined; // Fallback to original via HighlightCard's internal crossOrigin
+                        console.warn('Initial preload failed, trying proxy...', url, e);
+                        try {
+                            // Use images.weserv.nl as a CORS proxy/optimizer fallback
+                            const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}&output=webp`;
+                            return await tryFetch(proxyUrl);
+                        } catch (e2) {
+                            console.error('Proxy fallback also failed for', url, e2);
+                            return undefined; 
+                        }
                     }
                 };
 
@@ -133,7 +144,6 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                 canvasWidth: 1080,
                 canvasHeight: 1920,
                 pixelRatio: 1,
-                cacheBust: true,
                 fetchRequestInit: { mode: 'cors' },
                 skipAutoScale: true,
             });
@@ -171,7 +181,6 @@ export const VideoGenerator: React.FC<VideoGeneratorProps> = ({
                 canvasHeight: 1920,
                 pixelRatio: 1,
                 backgroundColor: 'transparent',
-                cacheBust: true,
                 fetchRequestInit: { mode: 'cors' },
                 skipAutoScale: true,
             });
