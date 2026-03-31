@@ -28,6 +28,7 @@ import Sidebar from './components/Sidebar';
 import AuthModal from './components/AuthModal';
 import NotificationTray from './components/NotificationTray';
 import Footer from './components/Footer';
+import CookieConsent from './components/CookieConsent';
 
 // ── Shared UI ──────────────────────────────────────────────────────────────────
 
@@ -215,6 +216,7 @@ const App = () => {
                         {/* We use a single root catch-all to ensure precise path checking in MainContent */}
                         <Route path="/*" element={<MainContent />} />
                     </Routes>
+                    <CookieConsent />
                 </LeagueProvider>
             </AuthProvider>
         </BrowserRouter>
