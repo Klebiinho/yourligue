@@ -19,6 +19,7 @@ const LeagueSelector = () => {
     const [newName, setNewName] = useState('');
     const [newSport, setNewSport] = useState<'soccer' | 'basketball'>('soccer');
     const [loading, setLoading] = useState(false);
+    const [createError, setCreateError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [searching, setSearching] = useState(false);
@@ -496,10 +497,11 @@ const LeagueSelector = () => {
                 {activeTab === 'owned' && user && (
                     <div className="space-y-4">
                         {showCreate ? (
-                            <form onSubmit={async (e) => {
+                                <form onSubmit={async (e) => {
                                 e.preventDefault();
                                 if (!newName.trim()) return;
                                 setLoading(true);
+                                setCreateError(null);
                                 const isBasket = newSport === 'basketball';
                                 try {
                                     const res = await createLeague({
@@ -521,9 +523,12 @@ const LeagueSelector = () => {
                                         setNewName(''); setNewSport('soccer'); setShowCreate(false); 
                                         const finalSlug = res.data.slug || res.data.id;
                                         navigate(`/${finalSlug}/home`);
+                                    } else {
+                                        setCreateError(res.error);
                                     }
                                 } catch (err) {
                                     console.error(err);
+                                    setCreateError('Erro inesperado ao criar liga.');
                                 } finally {
                                     setLoading(false);
                                 }
@@ -532,17 +537,24 @@ const LeagueSelector = () => {
                                     <div className="flex flex-col gap-2">
                                         <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Crie sua nova liga</label>
                                         <input type="text" id="new-league-name" name="new-league-name" placeholder="Ex: Premier League 2026" value={newName}
-                                            onChange={e => setNewName(e.target.value)} autoFocus required
+                                            onChange={e => { setNewName(e.target.value); setCreateError(null); }} autoFocus required
                                             className="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 text-white font-bold text-lg outline-none focus:border-accent transition-all placeholder:text-slate-700"
                                         />
                                         
+                                        {createError && (
+                                            <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-[0.7rem] font-bold mt-1 flex items-center gap-2">
+                                                <X size={14} strokeWidth={3} />
+                                                {createError}
+                                            </div>
+                                        )}
+                                        
                                         <label className="text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.2em] ml-1 mt-2">Modalidade / Esporte</label>
                                         <div className="flex gap-2">
-                                            <button type="button" onClick={() => setNewSport('soccer')} 
+                                            <button type="button" onClick={() => { setNewSport('soccer'); setCreateError(null); }} 
                                                 className={`flex-1 py-4 rounded-xl font-black text-[0.7rem] uppercase tracking-widest transition-all ${newSport === 'soccer' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}>
                                                 ⚽ Futebol
                                             </button>
-                                            <button type="button" onClick={() => setNewSport('basketball')} 
+                                            <button type="button" onClick={() => { setNewSport('basketball'); setCreateError(null); }} 
                                                 className={`flex-1 py-4 rounded-xl font-black text-[0.7rem] uppercase tracking-widest transition-all ${newSport === 'basketball' ? 'bg-[#ff6b00] text-white shadow-lg shadow-[#ff6b00]/20' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}>
                                                 🏀 Basquete
                                             </button>

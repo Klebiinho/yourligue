@@ -1354,9 +1354,24 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 return { error: 'Usuário não autenticado' };
             }
 
-            const slug = generateSlug(data.name);
-            const { data: existing } = await supabase.from('leagues').select('id').eq('slug', slug).single();
-            if (existing) return { error: 'Uma liga com este nome já existe.' };
+            const slug = generateSlug(data.name + (data.sportType === 'basketball' ? '-basquete' : ''));
+            
+            // Verificação de duplicidade: Nome + Esporte
+            const { data: existingSameNameSport } = await supabase
+                .from('leagues')
+                .select('id')
+                .eq('name', data.name)
+                .eq('sport_type', data.sportType)
+                .limit(1)
+                .single();
+
+            if (existingSameNameSport) {
+                return { error: `Já existe uma liga de ${data.sportType === 'basketball' ? 'Basquete' : 'Futebol'} com o nome "${data.name}". Por favor, escolha outro nome.` };
+            }
+
+            // Verificação secundária: Slug (caso o nome seja o mesmo mas esporte diferente, o slug ajustado acima resolve)
+            const { data: existingSlug } = await supabase.from('leagues').select('id').eq('slug', slug).limit(1).single();
+            if (existingSlug) return { error: 'Uma liga com este nome (ou slug) já existe. Tente um nome ligeiramente diferente.' };
 
             const { data: row, error } = await supabase.from('leagues').insert({
                 user_id: activeUser.id, 
