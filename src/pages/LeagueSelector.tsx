@@ -516,7 +516,17 @@ const LeagueSelector = () => {
                                         allowSubstitutionReturn: true,
                                         hasOvertime: true,
                                         overtimeHalfLength: 15,
-                                        sportType: newSport
+                                        sportType: newSport,
+                                        isPickupMode: false,
+                                        pickupConfig: {
+                                            maxPoints: 21,
+                                            timeLimit: 10,
+                                            gameFormat: '3x3',
+                                            entryType: 'auto',
+                                            rotationType: 'winner_stays',
+                                            substitutionType: 'free',
+                                            pointsValue: { regular: 2, longRange: 3 }
+                                        }
                                     }) as { data: any; error: any };
                                     
                                     if (!res.error && res.data) {

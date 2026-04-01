@@ -21,6 +21,8 @@ export type Player = {
         rebounds?: number; blocks?: number; steals?: number; fouls?: number;
         mvp: number; matchesPlayed: number; cleanSheets: number; goalsConceded: number;
     };
+    pickupStatus?: 'available' | 'in_court_a' | 'in_court_b' | 'in_queue' | 'away';
+    queuePosition?: number;
 };
 
 export type Team = {
@@ -109,12 +111,27 @@ export type League = {
     slug: string;
     userId: string;
     sportType: 'soccer' | 'basketball';
+    isPickupMode: boolean;
+    pickupConfig: PickupConfig;
     lat?: number;
     lng?: number;
     address?: string;
     distancia_km?: number;
     follower_count?: { count: number }[];
 };
+
+export interface PickupConfig {
+    maxPoints: number;
+    timeLimit: number; // minutes
+    gameFormat: '3x3' | '4x4' | '5x5';
+    entryType: 'auto' | 'manual';
+    rotationType: 'winner_stays' | 'all_swap' | 'none';
+    substitutionType: 'free' | 'event' | 'rotative' | 'none';
+    pointsValue: {
+        regular: number;
+        longRange: number;
+    };
+}
 
 export type Ad = {
     id: string;
@@ -193,6 +210,12 @@ interface LeagueContextType {
     unfollowLeague: (leagueId: string) => Promise<void>;
     searchLeagues: (query: string) => Promise<League[]>;
     fetchNearbyLeagues: (lat: number, lng: number, radiusKm: number) => Promise<League[]>;
+
+    // Pickup Mode actions
+    updatePlayerPickupStatus: (playerId: string, status: Player['pickupStatus']) => Promise<void>;
+    joinPickupQueue: (playerId: string) => Promise<void>;
+    leavePickupQueue: (playerId: string) => Promise<void>;
+    startPickupMatch: (homePlayerIds: string[], awayPlayerIds: string[]) => Promise<string | null>;
 
     // User Interactions
     userInteractions: TeamInteraction[];
@@ -276,7 +299,9 @@ const mapDBPlayer = (p: any): Player => ({
         goals: 0, assists: 0, ownGoals: 0, yellowCards: 0, redCards: 0, 
         points1: 0, points2: 0, points3: 0, rebounds: 0, blocks: 0, steals: 0, fouls: 0,
         mvp: 0, matchesPlayed: 0, cleanSheets: 0, goalsConceded: 0
-    }
+    },
+    pickupStatus: p.pickup_status || 'available',
+    queuePosition: p.queue_position
 });
 
 const mapDBTeam = (t: any): Team => {
@@ -314,7 +339,17 @@ const mapDBLeague = (l: any): League => ({
     userId: l.user_id,
     sportType: l.sport_type || 'soccer',
     lat: l.lat, lng: l.lng, address: l.address,
-    distancia_km: l.distancia_km, follower_count: l.follower_count
+    distancia_km: l.distancia_km, follower_count: l.follower_count,
+    isPickupMode: l.is_pickup_mode || false,
+    pickupConfig: l.pickup_config || {
+        maxPoints: 21,
+        timeLimit: 10,
+        gameFormat: '3x3',
+        entryType: 'auto',
+        rotationType: 'winner_stays',
+        substitutionType: 'free',
+        pointsValue: { regular: 2, longRange: 3 }
+    }
 });
 
 export const generateSlug = (name: string) => {
@@ -1936,6 +1971,34 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const endMatch = async (matchId: string, currentTimer: number) => {
+        const m = rawMatches.find(x => x.id === matchId);
+        if (league?.isPickupMode && m) {
+            console.log('[LeagueContext] Pickup match ending... handling rotation.');
+            const homePlayers = rawTeams.find(t => t.id === m.homeTeamId)?.players || [];
+            const awayPlayers = rawTeams.find(t => t.id === m.awayTeamId)?.players || [];
+            const isWinnerHome = m.homeScore > m.awayScore;
+            const winners = isWinnerHome ? homePlayers : awayPlayers;
+            const losers = !isWinnerHome ? homePlayers : awayPlayers;
+
+            // In our pickup system, winning or losing always ends in "Available" or "Back of Queue"
+            // Start simple: reset both if not winner_stays, reset loser and available winner
+            if (league.pickupConfig?.rotationType === 'winner_stays') {
+                await supabase.from('players').update({ pickup_status: 'available' }).in('id', winners.map(p => p.id));
+                // Losers move back to the end of the queue if on automatic mode
+                if (league.pickupConfig?.entryType === 'auto') {
+                   losers.forEach(p => joinPickupQueue(p.id));
+                } else {
+                   await supabase.from('players').update({ pickup_status: 'available' }).in('id', losers.map(p => p.id));
+                }
+            } else {
+                // Full rotation: everyone back to available/queue
+                if (league.pickupConfig?.entryType === 'auto') {
+                   [...homePlayers, ...awayPlayers].forEach(p => joinPickupQueue(p.id));
+                } else {
+                   await supabase.from('players').update({ pickup_status: 'available' }).in('id', [...homePlayers, ...awayPlayers].map(p => p.id));
+                }
+            }
+        }
         return updateMatch(matchId, { status: 'finished', timer: currentTimer });
     };
     
@@ -2049,7 +2112,15 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             }
         });
 
-        // Lógica de Transferência de Braçadeira (Substituição ou Vermelho do Capitão)
+        // 8. Basketball Pickup Point Limit Check
+        if (league?.isPickupMode && league?.sportType === 'basketball' && league?.pickupConfig?.maxPoints > 0) {
+            const maxPoints = league.pickupConfig.maxPoints;
+            if (newHomeScore >= maxPoints || newAwayScore >= maxPoints) {
+                console.log('[LeagueContext] Pickup match reached point limit. Ending match...');
+                await endMatch(matchId, snapshotTimer);
+                // Force a redirect or notify if needed - UI will handle the state change
+            }
+        }
         if (event.type === 'substitution' || event.type === 'red_card') {
             const team = rawTeams.find(t => t.id === event.teamId);
             const match = rawMatches.find(m => m.id === matchId);
@@ -2356,6 +2427,109 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         recover();
     }, [loadPublicLeague]);
 
+    const updatePlayerPickupStatus = async (playerId: string, status: Player['pickupStatus']) => {
+        try {
+            const { error } = await supabase
+                .from('players')
+                .update({ pickup_status: status })
+                .eq('id', playerId);
+            if (error) throw error;
+        } catch (err) {
+            console.error('Error updating pickup status:', err);
+        }
+    };
+
+    const joinPickupQueue = async (playerId: string) => {
+        try {
+            // Get max queue position
+            const { data: players } = await supabase
+                .from('players')
+                .select('queue_position')
+                .eq('league_id', league?.id)
+                .order('queue_position', { ascending: false });
+                
+            const nextPos = (players?.[0]?.queue_position || 0) + 1;
+            
+            const { error } = await supabase
+                .from('players')
+                .update({ 
+                    pickup_status: 'in_queue',
+                    queue_position: nextPos
+                })
+                .eq('id', playerId);
+            if (error) throw error;
+        } catch (err) {
+            console.error('Error joining queue:', err);
+        }
+    };
+
+    const leavePickupQueue = async (playerId: string) => {
+        try {
+            const { error } = await supabase
+                .from('players')
+                .update({ 
+                    pickup_status: 'available',
+                    queue_position: null
+                })
+                .eq('id', playerId);
+            if (error) throw error;
+        } catch (err) {
+            console.error('Error leaving queue:', err);
+        }
+    };
+
+    const startPickupMatch = async (homePlayerIds: string[], awayPlayerIds: string[]) => {
+        if (!league) return null;
+        try {
+            // 1. Get or Create "Rachão" teams
+            const { data: existingTeams } = await supabase
+                .from('teams')
+                .select('id, name')
+                .eq('league_id', league.id)
+                .in('name', ['Time A (Rachão)', 'Time B (Rachão)']);
+            
+            let teamAId = existingTeams?.find(t => t.name === 'Time A (Rachão)')?.id;
+            let teamBId = existingTeams?.find(t => t.name === 'Time B (Rachão)')?.id;
+            
+            if (!teamAId) {
+                const { data: tA } = await supabase.from('teams').insert({ name: 'Time A (Rachão)', league_id: league.id, logo: '' }).select().single();
+                teamAId = tA?.id;
+            }
+            if (!teamBId) {
+                const { data: tB } = await supabase.from('teams').insert({ name: 'Time B (Rachão)', league_id: league.id, logo: '' }).select().single();
+                teamBId = tB?.id;
+            }
+            
+            if (!teamAId || !teamBId) throw new Error('Could not initialize pickup teams');
+            
+            // 2. Create the match
+            const { data: match, error: matchError } = await supabase
+                .from('matches')
+                .insert({
+                    league_id: league.id,
+                    home_team_id: teamAId,
+                    away_team_id: teamBId,
+                    status: 'live',
+                    timer: 0,
+                    period: '1º Quarto',
+                    half_length: league.pickupConfig?.timeLimit || 10
+                })
+                .select()
+                .single();
+            
+            if (matchError) throw matchError;
+            
+            // 3. Update player statuses
+            await supabase.from('players').update({ pickup_status: 'in_court_a', queue_position: null }).in('id', homePlayerIds);
+            await supabase.from('players').update({ pickup_status: 'in_court_b', queue_position: null }).in('id', awayPlayerIds);
+            
+            return match.id;
+        } catch (err) {
+            console.error('Error starting pickup match:', err);
+            return null;
+        }
+    };
+
     return (
         <LeagueContext.Provider value={{
             league, leagues, followedLeagues, teams, matches, brackets, loading, dataLoading,
@@ -2371,7 +2545,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             interactionCounts, notifications, clearNotification, leagueBasePath,
             ads, addAd, updateAd, deleteAd, reorderAds, globalAdTick,
             ytToken, ytLogin, ytLogout, isYtAuthenticated, currentYtLiveStream, recoverStreamDetails,
-            deleteYtLive, setYtLivePrivacy, getMatchSlug, getTeamSlug, getPlayerSlug
+            deleteYtLive, setYtLivePrivacy, getMatchSlug, getTeamSlug, getPlayerSlug,
+            updatePlayerPickupStatus, joinPickupQueue, leavePickupQueue, startPickupMatch
         }}>
             {children}
         </LeagueContext.Provider>
