@@ -54,8 +54,8 @@ const Matches = () => {
             // SEO-friendly navigation
             const ht = teams.find(t => t.id === homeTeamId);
             const at = teams.find(t => t.id === awayTeamId);
-            const dateStr = finalScheduledAt ? new Date(finalScheduledAt).toLocaleDateString('pt-BR').replace(/\//g, '-') : '';
-            const matchSlug = ht && at ? `${generateSlug(ht.name)}-x-${generateSlug(at.name)}${dateStr ? '-' + dateStr : ''}` : matchId;
+            const datePart = finalScheduledAt ? finalScheduledAt.split('T')[0].split('-').reverse().join('-') : '';
+            const matchSlug = ht && at ? `${generateSlug(ht.name)}-x-${generateSlug(at.name)}${datePart ? '-' + datePart : ''}` : matchId;
             
             if (matchId) navigate(`${leagueBasePath}/${matchSlug}/match`);
         }

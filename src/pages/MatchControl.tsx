@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
-import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye, User, Zap, Globe } from 'lucide-react';
+import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye, User, Zap, Globe, ShieldOff } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 import { VideoGenerator } from '../components/VideoGenerator';
+import { supabase } from '../lib/supabase';
 
 const MatchControl = () => {
     const { leagueSlug, matchIdOrSlug } = useParams<{ leagueSlug?: string; matchIdOrSlug?: string }>();
@@ -24,6 +25,49 @@ const MatchControl = () => {
             m.id === matchIdOrSlug || getMatchSlug(m) === matchIdOrSlug
         );
     }, [matches, matchIdOrSlug, getMatchSlug]);
+
+    const [bootstrapLoading, setBootstrapLoading] = useState(false);
+    const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+
+    // Bootstrap Recovery: If match not in context, try fetching from DB
+    useEffect(() => {
+        const recoverMatch = async () => {
+            if (!matchIdOrSlug || match || leagueLoading || dataLoading) return;
+            
+            // If league is loaded but match still not in local 'matches', try direct search
+            if (league && !match) {
+                console.log('MatchControl: Match not found in context, attempting direct recovery for:', matchIdOrSlug);
+                setBootstrapLoading(true);
+                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(matchIdOrSlug);
+                
+                try {
+                    const { data, error } = await supabase.from('matches')
+                        .select('*')
+                        .or(isUUID ? `id.eq.${matchIdOrSlug}` : `slug.eq.${matchIdOrSlug}`)
+                        .maybeSingle();
+                    
+                    if (error) throw error;
+                    if (!data) {
+                        setBootstrapError('Partida não encontrada para este campeonato.');
+                        return;
+                    }
+                    
+                    // If it's a match from another league, we might have a broader issue
+                    if (data.league_id !== league.id) {
+                        console.warn('MatchControl: Found match, but league_id mismatch!');
+                    }
+                    
+                    // The context Realtime might pick it up soon, but we've verified it exists
+                    console.log('MatchControl: Match verified in DB');
+                } catch (e: any) {
+                    console.error('MatchControl: Recovery failed:', e);
+                } finally {
+                    setBootstrapLoading(false);
+                }
+            }
+        };
+        recoverMatch();
+    }, [matchIdOrSlug, !!match, league, leagueLoading, dataLoading]);
     const mId = match?.id;
     const homeTeam = teams.find((t: Team) => t.id === match?.homeTeamId);
     const awayTeam = teams.find((t: Team) => t.id === match?.awayTeamId);
@@ -239,28 +283,40 @@ const MatchControl = () => {
 
     // ─── EARLY RETURNS (ONLY AFTER ALL HOOKS) ─────────────────────────
 
-    if (leagueLoading || (dataLoading && !match) || (!league && leagueSlug)) {
+    // Loading states for data sync
+    const isSyncing = leagueLoading || dataLoading || bootstrapLoading;
+    const isWaitingForLeague = !league && leagueSlug;
+    
+    if (isSyncing || isWaitingForLeague) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 animate-fade-in p-6">
                 <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
                 <p className="text-slate-500 font-black uppercase tracking-widest text-[0.6rem]">Acessando dados da partida...</p>
-                {leagueSlug && <p className="text-[0.45rem] font-bold text-slate-700 uppercase tracking-widest">Sincronizando Liga: {leagueSlug}</p>}
+                {isWaitingForLeague && <p className="text-[0.45rem] font-bold text-slate-700 uppercase tracking-widest">Sincronizando Campeonato: {leagueSlug}</p>}
+                {isSyncing && !match && <p className="text-[0.45rem] font-bold text-slate-700 uppercase tracking-widest">Aguardando dados da partida...</p>}
+                {bootstrapLoading && <p className="text-[0.45rem] font-bold text-slate-700 uppercase tracking-widest italic animate-pulse">Buscando na base de dados...</p>}
             </div>
         );
     }
 
-    if (!match || !homeTeam || !awayTeam) {
+    if (!match || !homeTeam || !awayTeam || bootstrapError) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
-                <div className="w-20 h-20 bg-danger/10 text-danger rounded-3xl flex items-center justify-center border border-danger/20">
-                    <AlertCircle size={40} />
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center animate-fade-in p-6">
+                <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center">
+                    <ShieldOff size={32} className="text-red-500" />
                 </div>
-                <div className="space-y-1">
-                    <h2 className="text-xl font-black text-white uppercase font-outfit">Partida não encontrada</h2>
-                    <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">Os dados desta partida podem ter sido removidos ou o link está incorreto.</p>
+                <div>
+                    <h2 className="text-xl font-outfit font-black text-white uppercase tracking-tight mb-2">Partida não encontrada</h2>
+                    <p className="text-slate-400 text-sm max-w-md mx-auto">
+                        {bootstrapError || "Os dados desta partida podem ter sido removidos ou o link está incorreto."}
+                    </p>
                 </div>
-                <button onClick={() => navigate(-1)} className="bg-white/5 border border-white/10 text-white px-8 py-3 rounded-xl font-black uppercase text-xs hover:bg-white/10 transition-all">
-                    Voltar para Partidas
+                <button
+                    onClick={() => navigate(leagueBasePath + '/matches')}
+                    className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all duration-200 group"
+                >
+                    <ArrowLeft size={18} className="text-slate-400 group-hover:text-primary transition-colors" />
+                    <span className="font-outfit font-bold text-white text-sm uppercase tracking-wide">Voltar para Partidas</span>
                 </button>
             </div>
         );

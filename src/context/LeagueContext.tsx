@@ -832,7 +832,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             if (!isSameLeague) {
                 console.log('LeagueContext: Resetting data for new public league');
                 setLoading(true);
-                setDataLoading(true); // Ensure full reload state for new league
+                setDataLoading(true); // Ensure full reload state for new league IMMEDIATELY
                 setRawTeams([]);
                 setRawMatches([]);
                 setBrackets([]);
@@ -843,11 +843,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 // Silent update in background if it's the same league
             }
             
-            // Fetch by slug
+            // Fetch by slug (case-insensitive for URL flexibility)
             let { data: slugData } = await supabase.from('leagues').select(`
                 *,
                 follower_count:followed_leagues(count)
-            `).eq('slug', slugOrId).limit(1);
+            `).ilike('slug', slugOrId).limit(1);
 
             let row = slugData?.[0];
 
@@ -1327,8 +1327,10 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         const ht = currentTeams.find(t => t.id === m.homeTeamId);
         const at = currentTeams.find(t => t.id === m.awayTeamId);
         if (!ht || !at) return m.id;
-        const date = m.scheduledAt ? new Date(m.scheduledAt).toLocaleDateString('pt-BR').replace(/\//g, '-') : '';
-        return `${generateSlug(ht.name)}-x-${generateSlug(at.name)}${date ? '-' + date : ''}`;
+        
+        // Deterministic date part (DD-MM-YYYY) - avoid toLocaleDateString() locale/timezone drift
+        const datePart = m.scheduledAt ? m.scheduledAt.split('T')[0].split('-').reverse().join('-') : '';
+        return `${generateSlug(ht.name)}-x-${generateSlug(at.name)}${datePart ? '-' + datePart : ''}`;
     }, [rawTeams]);
 
     const getTeamSlug = useCallback((t: Team) => {
