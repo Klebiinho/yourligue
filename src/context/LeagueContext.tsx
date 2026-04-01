@@ -185,7 +185,7 @@ interface LeagueContextType {
     getPlayerSlug: (p: Player) => string;
 
     // Match actions
-    createMatch: (data: { homeTeamId: string; awayTeamId: string; scheduledAt?: string; location?: string; youtubeLiveId?: string }) => Promise<{ error: string | null; matchId?: string }>;
+    createMatch: (data: { homeTeamId: string; awayTeamId: string; scheduledAt?: string; location?: string; youtubeLiveId?: string }) => Promise<{ error: string | null; matchData?: Match }>;
     updateMatch: (matchId: string, data: Partial<Match>) => Promise<void>;
     deleteMatch: (matchId: string) => Promise<void>;
     startMatch: (matchId: string, currentTimer: number, shouldStartLive?: boolean) => Promise<void>;
@@ -215,7 +215,7 @@ interface LeagueContextType {
     updatePlayerPickupStatus: (playerId: string, status: Player['pickupStatus']) => Promise<void>;
     joinPickupQueue: (playerId: string) => Promise<void>;
     leavePickupQueue: (playerId: string) => Promise<void>;
-    startPickupMatch: (homePlayerIds: string[], awayPlayerIds: string[]) => Promise<string | null>;
+    startPickupMatch: (homePlayerIds: string[], awayPlayerIds: string[]) => Promise<Match | null>;
 
     // User Interactions
     userInteractions: TeamInteraction[];
@@ -1360,9 +1360,17 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         const at = currentTeams.find(t => t.id === m.awayTeamId);
         if (!ht || !at) return m.id;
         
-        // Deterministic date part (DD-MM-YYYY) - avoid toLocaleDateString() locale/timezone drift
-        const datePart = m.scheduledAt ? m.scheduledAt.split('T')[0].split('-').reverse().join('-') : '';
-        return `${generateSlug(ht.name)}-x-${generateSlug(at.name)}${datePart ? '-' + datePart : ''}`;
+        // Deterministic date/time part (DD-MM-YYYY-HH-MM-SS)
+        const dateObj = m.scheduledAt ? new Date(m.scheduledAt) : new Date(m.updatedAt || Date.now());
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const year = dateObj.getFullYear();
+        const hours = String(dateObj.getHours()).padStart(2, '0');
+        const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+        const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+        
+        const dateStr = `${day}-${month}-${year}-${hours}-${minutes}-${seconds}`;
+        return `${generateSlug(ht.name)}-x-${generateSlug(at.name)}-${dateStr}`;
     }, [rawTeams]);
 
     const getTeamSlug = useCallback((t: Team) => {
@@ -1851,15 +1859,25 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     const createMatch = async (data: { homeTeamId: string; awayTeamId: string; scheduledAt?: string; location?: string; youtubeLiveId?: string }) => {
         if (!league) return { error: 'Nenhuma liga selecionada' };
         if (data.homeTeamId === data.awayTeamId) return { error: 'Um time não pode jogar contra ele mesmo.' };
+        
+        const ht = rawTeams.find(t => t.id === data.homeTeamId);
+        const at = rawTeams.find(t => t.id === data.awayTeamId);
+        
+        // Pre-generate slug with HH-MM-SS for DB persistence and external link stability
+        const dateObj = data.scheduledAt ? new Date(data.scheduledAt) : new Date();
+        const dateStr = `${String(dateObj.getDate()).padStart(2, '0')}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${dateObj.getFullYear()}-${String(dateObj.getHours()).padStart(2, '0')}-${String(dateObj.getMinutes()).padStart(2, '0')}-${String(dateObj.getSeconds()).padStart(2, '0')}`;
+        const slug = ht && at ? `${generateSlug(ht.name)}-x-${generateSlug(at.name)}-${dateStr}` : undefined;
+
         const { data: row, error } = await supabase.from('matches').insert({
             league_id: league.id, home_team_id: data.homeTeamId, away_team_id: data.awayTeamId,
             scheduled_at: data.scheduledAt || null, location: data.location || '',
-            youtube_live_id: data.youtubeLiveId || '', half_length: league.defaultHalfLength
+            youtube_live_id: data.youtubeLiveId || '', half_length: league.defaultHalfLength,
+            slug
         }).select().single();
         if (error) return { error: error.message };
         if (row) {
             setRawMatches((prev: Match[]) => [...prev, mapDBMatch(row)]);
-            return { error: null, matchId: row.id };
+            return { error: null, matchData: mapDBMatch(row) };
         }
         return { error: 'Unknown error' };
     };
@@ -2517,7 +2535,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             
             if (!teamAId || !teamBId) throw new Error('Could not initialize pickup teams');
             
-            // 2. Create the match
+            // 2. Create the match with high-precision slug (HH-MM-SS)
+            const now = new Date();
+            const dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}-${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
+            const slug = `time-a-x-time-b-${dateStr}`;
+
             const { data: match, error: matchError } = await supabase
                 .from('matches')
                 .insert({
@@ -2527,7 +2549,8 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                     status: 'live',
                     timer: 0,
                     period: '1º Quarto',
-                    half_length: league.pickupConfig?.timeLimit || 10
+                    half_length: league.pickupConfig?.timeLimit || 10,
+                    slug
                 })
                 .select()
                 .single();
@@ -2547,7 +2570,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 team_id: teamBId
             }).in('id', awayPlayerIds);
             
-            return match.id;
+            return match;
         } catch (err) {
             console.error('Error starting pickup match:', err);
             return null;

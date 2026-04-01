@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLeague, generateSlug } from '../context/LeagueContext';
+import { useLeague } from '../context/LeagueContext';
 import { Swords, PlusCircle, Play, Trash2, Edit2, Calendar, MapPin, AlertCircle, Clock, CheckCircle2, Signal, Heart, Search, Video, ChevronUp, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -48,16 +48,13 @@ const Matches = () => {
             await updateMatch(editingMatchId, { homeTeamId, awayTeamId, scheduledAt: finalScheduledAt, location, youtubeLiveId: videoId });
             setEditingMatchId(null);
         } else {
-            const { error: err, matchId } = await createMatch({ homeTeamId, awayTeamId, scheduledAt: finalScheduledAt, location, youtubeLiveId: videoId });
+            const { error: err, matchData } = await createMatch({ homeTeamId, awayTeamId, scheduledAt: finalScheduledAt, location, youtubeLiveId: videoId });
             if (err) { setError(err); return; }
             
-            // SEO-friendly navigation
-            const ht = teams.find(t => t.id === homeTeamId);
-            const at = teams.find(t => t.id === awayTeamId);
-            const datePart = finalScheduledAt ? finalScheduledAt.split('T')[0].split('-').reverse().join('-') : '';
-            const matchSlug = ht && at ? `${generateSlug(ht.name)}-x-${generateSlug(at.name)}${datePart ? '-' + datePart : ''}` : matchId;
-            
-            if (matchId) navigate(`${leagueBasePath}/${matchSlug}/match`);
+            if (matchData) {
+              const matchSlug = getMatchSlug(matchData);
+              navigate(`${leagueBasePath}/${matchSlug}/match`);
+            }
         }
         resetForm();
         setFormOpen(false);

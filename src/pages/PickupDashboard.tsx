@@ -12,7 +12,7 @@ import TeamLogo from '../components/TeamLogo';
 const PickupDashboard = () => {
     const { 
         league, teams, matches, isAdmin,
-        joinPickupQueue, leavePickupQueue, startPickupMatch
+        joinPickupQueue, leavePickupQueue, startPickupMatch, getMatchSlug
     } = useLeague();
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -66,10 +66,13 @@ const PickupDashboard = () => {
             const homePlayers = queue.slice(0, numPerTeam).map(p => p.id);
             const awayPlayers = queue.slice(numPerTeam, numPerTeam * 2).map(p => p.id);
             
-            const matchId = await startPickupMatch(homePlayers, awayPlayers);
-            if (matchId) {
-                // Navigate to match control if admin, or just refresh
-                if (isAdmin) navigate(`/${league?.slug || league?.id}/${matchId}/match`);
+            const match = await startPickupMatch(homePlayers, awayPlayers);
+            if (match) {
+                // Navigate to match control if admin using the new timestamped slug
+                if (isAdmin) {
+                    const matchSlug = getMatchSlug(match);
+                    navigate(`/${league?.slug || league?.id}/${matchSlug}/match`);
+                }
             }
         } catch (err) {
             console.error(err);
