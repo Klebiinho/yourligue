@@ -446,87 +446,99 @@ const Settings = () => {
 
                             {/* MODO RACHÃO (BASKETBALL ONLY) */}
                             {league?.sportType === 'basketball' && (
-                                <div className="space-y-6 bg-gradient-to-br from-amber-500/10 to-orange-600/5 p-8 rounded-3xl border border-amber-500/20 relative overflow-hidden group/rachao">
+                                <div className="space-y-6 bg-gradient-to-br from-amber-500/10 to-orange-600/5 p-6 md:p-10 rounded-[2rem] border border-amber-500/20 relative overflow-hidden group/rachao">
                                     <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover/rachao:opacity-10 transition-opacity">
                                         <Zap size={100} className="text-amber-500" />
                                     </div>
                                     
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-1">
-                                            <h3 className="text-xl font-black text-amber-500 font-outfit uppercase tracking-tight flex items-center gap-3">
-                                                🏀 MODO RACHÃO (PICKUP GAME)
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                                        <div className="space-y-2">
+                                            <h3 className="text-xl md:text-2xl font-black text-amber-500 font-outfit uppercase tracking-tight flex items-center gap-3">
+                                                🏀 MODO RACHÃO
                                             </h3>
-                                            <p className="text-[0.65rem] text-slate-400 font-bold uppercase tracking-widest">Ative para jogos contínuos com rotação de jogadores e sem times fixos</p>
+                                            <p className="text-[0.65rem] md:text-[0.7rem] text-slate-400 font-bold uppercase tracking-[0.15em] leading-relaxed max-w-md">Ative para jogos contínuos com rotação automática de jogadores e sem times fixos.</p>
                                         </div>
-                                        <button 
-                                            type="button" 
-                                            onClick={() => setIsPickupMode(!isPickupMode)}
-                                            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${isPickupMode ? 'bg-amber-500' : 'bg-white/10'}`}
-                                        >
-                                            <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${isPickupMode ? 'translate-x-7' : 'translate-x-1'}`} />
-                                        </button>
+                                        <div className="flex items-center justify-between md:justify-end gap-4 p-4 bg-black/20 rounded-2xl md:bg-transparent md:p-0">
+                                            <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest md:hidden">Ativar Modo</span>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setIsPickupMode(!isPickupMode)}
+                                                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all focus:outline-none shadow-inner ${isPickupMode ? 'bg-amber-500 shadow-amber-500/20' : 'bg-white/10'}`}
+                                            >
+                                                <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform ${isPickupMode ? 'translate-x-7' : 'translate-x-1'}`} />
+                                            </button>
+                                        </div>
                                     </div>
 
                                     {isPickupMode && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-slide-down border-t border-amber-500/10 pt-6">
-                                            <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 animate-slide-down border-t border-amber-500/10 pt-8 mt-4">
+                                            <div className="space-y-5">
                                                 <div className="space-y-2">
-                                                    <label className="text-[0.6rem] font-black text-amber-500/70 uppercase tracking-widest ml-1">Pontuação Máxima (Fim do Jogo)</label>
+                                                    <label className="text-[0.6rem] font-black text-amber-500/70 uppercase tracking-widest ml-1">Pontuação Máxima</label>
                                                     <input type="number" value={pickupConfig.maxPoints} onChange={e => setPickupConfig({...pickupConfig, maxPoints: parseInt(e.target.value)})}
-                                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-amber-500 transition-colors"
+                                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white font-bold outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 transition-all"
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <label className="text-[0.6rem] font-black text-amber-500/70 uppercase tracking-widest ml-1">Tempo Limite (minutos)</label>
                                                     <input type="number" value={pickupConfig.timeLimit} onChange={e => setPickupConfig({...pickupConfig, timeLimit: parseInt(e.target.value)})}
-                                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-amber-500 transition-colors"
+                                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white font-bold outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 transition-all"
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <label className="text-[0.6rem] font-black text-amber-500/70 uppercase tracking-widest ml-1">Formato de Jogo</label>
-                                                    <select value={pickupConfig.gameFormat} onChange={e => setPickupConfig({...pickupConfig, gameFormat: e.target.value as any})}
-                                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-amber-500 transition-colors appearance-none"
-                                                    >
-                                                        <option value="3x3">3x3 (Rua)</option>
-                                                        <option value="4x4">4x4 (Misto)</option>
-                                                        <option value="5x5">5x5 (Quadra Inteira)</option>
-                                                    </select>
+                                                    <div className="relative">
+                                                        <select value={pickupConfig.gameFormat} onChange={e => setPickupConfig({...pickupConfig, gameFormat: e.target.value as any})}
+                                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white font-bold outline-none focus:border-amber-500 transition-all appearance-none pr-10"
+                                                        >
+                                                            <option value="3x3">3x3 (Rua)</option>
+                                                            <option value="4x4">4x4 (Misto)</option>
+                                                            <option value="5x5">5x5 (Full Court)</option>
+                                                        </select>
+                                                        <ArrowDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                                    </div>
                                                 </div>
                                             </div>
                                             
-                                            <div className="space-y-4">
+                                            <div className="space-y-5">
                                                 <div className="space-y-2">
                                                     <label className="text-[0.6rem] font-black text-amber-500/70 uppercase tracking-widest ml-1">Tipo de Entrada</label>
-                                                    <select value={pickupConfig.entryType} onChange={e => setPickupConfig({...pickupConfig, entryType: e.target.value as any})}
-                                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-amber-500 transition-colors appearance-none"
-                                                    >
-                                                        <option value="auto">Fila Automática (FIFO)</option>
-                                                        <option value="manual">Escolha Manual (ADM)</option>
-                                                    </select>
+                                                    <div className="relative">
+                                                        <select value={pickupConfig.entryType} onChange={e => setPickupConfig({...pickupConfig, entryType: e.target.value as any})}
+                                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white font-bold outline-none focus:border-amber-500 transition-all appearance-none pr-10"
+                                                        >
+                                                            <option value="auto">Fila Automática (FIFO)</option>
+                                                            <option value="manual">Escolha Manual (ADM)</option>
+                                                        </select>
+                                                        <ArrowDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                                    </div>
                                                 </div>
                                                 <div className="space-y-2">
                                                     <label className="text-[0.6rem] font-black text-amber-500/70 uppercase tracking-widest ml-1">Rotação Pós-Jogo</label>
-                                                    <select value={pickupConfig.rotationType} onChange={e => setPickupConfig({...pickupConfig, rotationType: e.target.value as any})}
-                                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-amber-500 transition-colors appearance-none"
-                                                    >
-                                                        <option value="winner_stays">Quem Ganha Fica (Rei da Quadra)</option>
-                                                        <option value="all_swap">Troca Tudo (Todos Saem)</option>
-                                                        <option value="none">Manual</option>
-                                                    </select>
+                                                    <div className="relative">
+                                                        <select value={pickupConfig.rotationType} onChange={e => setPickupConfig({...pickupConfig, rotationType: e.target.value as any})}
+                                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white font-bold outline-none focus:border-amber-500 transition-all appearance-none pr-10"
+                                                        >
+                                                            <option value="winner_stays">Quem Ganha Fica (King)</option>
+                                                            <option value="all_swap">Troca Tudo (Reset)</option>
+                                                            <option value="none">Manual</option>
+                                                        </select>
+                                                        <ArrowDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                                    </div>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <label className="text-[0.6rem] font-black text-amber-500/70 uppercase tracking-widest ml-1">Valor dos Pontos</label>
-                                                    <div className="flex gap-4">
-                                                        <div className="flex-1">
-                                                            <span className="text-[0.5rem] font-black text-slate-600 block mb-1">REGULAR</span>
+                                                    <label className="text-[0.6rem] font-black text-amber-500/70 uppercase tracking-widest ml-1">Valor das Cestas</label>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div className="space-y-1.5">
+                                                            <span className="text-[0.55rem] font-black text-slate-600 block ml-1 uppercase">Regular</span>
                                                             <input type="number" value={pickupConfig.pointsValue.regular} onChange={e => setPickupConfig({...pickupConfig, pointsValue: {...pickupConfig.pointsValue, regular: parseInt(e.target.value)}})}
-                                                                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white font-bold text-center"
+                                                                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-3 text-white font-bold text-center focus:border-amber-500 transition-all"
                                                             />
                                                         </div>
-                                                        <div className="flex-1">
-                                                            <span className="text-[0.5rem] font-black text-slate-600 block mb-1">LONGA DISTÂNCIA</span>
+                                                        <div className="space-y-1.5">
+                                                            <span className="text-[0.55rem] font-black text-slate-600 block ml-1 uppercase">Longa</span>
                                                             <input type="number" value={pickupConfig.pointsValue.longRange} onChange={e => setPickupConfig({...pickupConfig, pointsValue: {...pickupConfig.pointsValue, longRange: parseInt(e.target.value)}})}
-                                                                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white font-bold text-center"
+                                                                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-3 text-white font-bold text-center focus:border-amber-500 transition-all"
                                                             />
                                                         </div>
                                                     </div>

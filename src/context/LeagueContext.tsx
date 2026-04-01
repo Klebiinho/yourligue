@@ -1986,14 +1986,16 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 await supabase.from('players').update({ pickup_status: 'available' }).in('id', winners.map(p => p.id));
                 // Losers move back to the end of the queue if on automatic mode
                 if (league.pickupConfig?.entryType === 'auto') {
-                   losers.forEach(p => joinPickupQueue(p.id));
+                   const ids = losers.map(p => p.id);
+                   joinPickupQueue(ids);
                 } else {
                    await supabase.from('players').update({ pickup_status: 'available' }).in('id', losers.map(p => p.id));
                 }
             } else {
                 // Full rotation: everyone back to available/queue
                 if (league.pickupConfig?.entryType === 'auto') {
-                   [...homePlayers, ...awayPlayers].forEach(p => joinPickupQueue(p.id));
+                   const ids = [...homePlayers, ...awayPlayers].map(p => p.id);
+                   joinPickupQueue(ids);
                 } else {
                    await supabase.from('players').update({ pickup_status: 'available' }).in('id', [...homePlayers, ...awayPlayers].map(p => p.id));
                 }
@@ -2002,7 +2004,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         return updateMatch(matchId, { status: 'finished', timer: currentTimer });
     };
     
-    const updateTimer = async (matchId: string, time: number) => updateMatch(matchId, { timer: time });
+    const updateTimer = async (matchId: string, time: number) => {
+        const m = rawMatches.find(x => x.id === matchId);
+        if (league?.isPickupMode && m?.status === 'live' && league.pickupConfig?.timeLimit > 0) {
+            const limitSeconds = (league.pickupConfig.timeLimit || 10) * 60;
+            if (time >= limitSeconds) {
+                console.log('[LeagueContext] Pickup match time limit reached. Ending match...');
+                return endMatch(matchId, time);
+            }
+        }
+        return updateMatch(matchId, { timer: time });
+    };
+
 
     const isPlayerOnPitch = (match: Match, playerId: string) => {
         const teamId = [...rawTeams].find(t => t.players.some(p => p.id === playerId))?.id;
@@ -2439,7 +2452,10 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const joinPickupQueue = async (playerId: string) => {
+    const joinPickupQueue = async (playerIds: string | string[]) => {
+        const ids = Array.isArray(playerIds) ? playerIds : [playerIds];
+        if (ids.length === 0) return;
+
         try {
             // Get max queue position
             const { data: players } = await supabase
@@ -2448,16 +2464,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 .eq('league_id', league?.id)
                 .order('queue_position', { ascending: false });
                 
-            const nextPos = (players?.[0]?.queue_position || 0) + 1;
+            let nextPos = (players?.[0]?.queue_position || 0) + 1;
             
-            const { error } = await supabase
-                .from('players')
-                .update({ 
+            // For each player, set increasing queue position
+            // Since Supabase doesn't easily do INCREMENT in an .in() update with different values per ID,
+            // we'll use a loop but with careful state (or we could use a RPC if we wanted perfect safety)
+            // But for now, we'll do them in sequence to avoid the fetch-max collision
+            for (const id of ids) {
+                await supabase.from('players').update({ 
                     pickup_status: 'in_queue',
-                    queue_position: nextPos
-                })
-                .eq('id', playerId);
-            if (error) throw error;
+                    queue_position: nextPos++
+                }).eq('id', id);
+            }
         } catch (err) {
             console.error('Error joining queue:', err);
         }
@@ -2519,9 +2537,18 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             
             if (matchError) throw matchError;
             
-            // 3. Update player statuses
-            await supabase.from('players').update({ pickup_status: 'in_court_a', queue_position: null }).in('id', homePlayerIds);
-            await supabase.from('players').update({ pickup_status: 'in_court_b', queue_position: null }).in('id', awayPlayerIds);
+            // 3. Update player statuses AND temporarily move them to the Rachão teams
+            await supabase.from('players').update({ 
+                pickup_status: 'in_court_a', 
+                queue_position: null,
+                team_id: teamAId
+            }).in('id', homePlayerIds);
+            
+            await supabase.from('players').update({ 
+                pickup_status: 'in_court_b', 
+                queue_position: null,
+                team_id: teamBId
+            }).in('id', awayPlayerIds);
             
             return match.id;
         } catch (err) {
@@ -2529,6 +2556,38 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             return null;
         }
     };
+
+    // ── Realtime Synchronization for Live Updates ────────────────────────────────
+    useEffect(() => {
+        if (!league?.id) return;
+
+        console.log('LeagueContext: Establishing Realtime sync for league:', league.id);
+        const channel = supabase.channel(`league-realtime-${league.id}`)
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'matches', 
+                filter: `league_id=eq.${league.id}` 
+            }, () => {
+                console.log('LeagueContext: Match update detected via Realtime');
+                loadLeagueData(league.id, true);
+            })
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'players', 
+                filter: `league_id=eq.${league.id}` 
+            }, () => {
+                console.log('LeagueContext: Player/Queue update detected via Realtime');
+                loadLeagueData(league.id, true);
+            })
+            .subscribe();
+
+        return () => {
+            console.log('LeagueContext: Cleaning up Realtime sync for league:', league.id);
+            supabase.removeChannel(channel);
+        };
+    }, [league?.id, loadLeagueData]);
 
     return (
         <LeagueContext.Provider value={{
