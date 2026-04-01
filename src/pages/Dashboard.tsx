@@ -1,15 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { Trophy, Users, Swords, Calendar, ChevronRight, TrendingUp, Star, ArrowRight, Zap, XCircle, Bell, BellOff, ArrowUp } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
+    const { leagueSlug } = useParams<{ leagueSlug: string }>();
     const { 
-        league, teams: rawTeams, matches: rawMatches, loading, dataLoading, isPublicView, isAdmin, leagueBasePath, 
+        league, teams: rawTeams, matches: rawMatches, loading, dataLoading, isPublicView, isAdmin,
         followedLeagues, followLeague, unfollowLeague, setShowAuthModal, 
         loadPlayerPhotos, getMatchSlug, getTeamSlug, getPlayerSlug 
     } = useLeague();
@@ -189,7 +190,7 @@ const Dashboard = () => {
                         <div className="flex items-center gap-2 flex-none self-start mt-1">
                             {league.isPickupMode && (
                                 <button
-                                    onClick={() => navigate(`${leagueBasePath}/pickups`)}
+                                    onClick={() => navigate(`/${leagueSlug}/pickups`)}
                                     className="flex items-center gap-2 bg-primary text-white border border-primary/20 px-3 py-1.5 rounded-xl text-[0.6rem] font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-primary/20"
                                 >
                                     <Zap size={12} fill="currentColor" /> Gerenciar Rachão
@@ -254,7 +255,7 @@ const Dashboard = () => {
                             <Zap size={16} className="text-primary" />
                             Próximas & Ao Vivo
                         </h2>
-                        <button onClick={() => navigate(`${leagueBasePath}/matches`)} className="flex items-center gap-1 text-primary text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
+                        <button onClick={() => navigate(`/${leagueSlug}/matches`)} className="flex items-center gap-1 text-primary text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
                             Ver todas <ArrowRight size={12} />
                         </button>
                     </div>
@@ -272,11 +273,11 @@ const Dashboard = () => {
                                 const isLive = match.status === 'live';
                                 return (
                                     <div key={match.id}
-                                        onClick={() => navigate(`${leagueBasePath}/${getMatchSlug(match)}/match`)}
+                                        onClick={() => navigate(`/${leagueSlug}/${getMatchSlug(match)}/match`)}
                                         className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 sm:py-5 cursor-pointer transition-all duration-200 ${isLive ? 'bg-danger/[0.04]' : 'hover:bg-white/[0.03]'}`}>
 
                                         {/* Home: logo + nome */}
-                                        <div onClick={(e) => { e.stopPropagation(); if(ht) navigate(`${leagueBasePath}/${getTeamSlug(ht)}/team`); }} className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer h-full hover:bg-white/5 p-1 rounded-xl transition-all">
+                                        <div onClick={(e) => { e.stopPropagation(); if(ht) navigate(`/${leagueSlug}/${getTeamSlug(ht)}/team`); }} className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer h-full hover:bg-white/5 p-1 rounded-xl transition-all">
                                             <TeamLogo src={ht?.logo} size={30} />
                                             <span className="font-bold text-[0.7rem] sm:text-sm truncate leading-tight">{ht?.name}</span>
                                         </div>
@@ -308,7 +309,7 @@ const Dashboard = () => {
                                         </div>
 
                                         {/* Away: nome + logo */}
-                                        <div onClick={(e) => { e.stopPropagation(); if(at) navigate(`${leagueBasePath}/${getTeamSlug(at)}/team`); }} className="flex items-center justify-end gap-2 flex-1 min-w-0 cursor-pointer h-full hover:bg-white/5 p-1 rounded-xl transition-all text-right">
+                                        <div onClick={(e) => { e.stopPropagation(); if(at) navigate(`/${leagueSlug}/${getTeamSlug(at)}/team`); }} className="flex items-center justify-end gap-2 flex-1 min-w-0 cursor-pointer h-full hover:bg-white/5 p-1 rounded-xl transition-all text-right">
                                             <span className="font-bold text-[0.7rem] sm:text-sm truncate text-right leading-tight">{at?.name}</span>
                                             <TeamLogo src={at?.logo} size={30} />
                                         </div>
@@ -332,7 +333,7 @@ const Dashboard = () => {
                                 <Trophy size={16} className="text-warning" />
                                 Classificação
                             </h2>
-                            <button onClick={() => navigate(`${leagueBasePath}/standings`)} className="flex items-center gap-1 text-accent text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
+                            <button onClick={() => navigate(`/${leagueSlug}/standings`)} className="flex items-center gap-1 text-accent text-[0.6rem] sm:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
                                 Tabela <ArrowRight size={12} />
                             </button>
                         </div>
@@ -348,7 +349,7 @@ const Dashboard = () => {
                                     const pts = calcPoints(team);
                                     return (
                                         <div key={team.id} 
-                                            onClick={() => navigate(`${leagueBasePath}/${getTeamSlug(team)}/team`)}
+                                            onClick={() => navigate(`/${leagueSlug}/${getTeamSlug(team)}/team`)}
                                             className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3.5 hover:bg-white/[0.08] transition-all cursor-pointer group"
                                         >
                                             {/* Position badge */}
@@ -394,7 +395,7 @@ const Dashboard = () => {
                                 ) : (
                                     topScorers.map((player, i) => (
                                         <div key={player.id} 
-                                            onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/${getPlayerSlug(player)}/player`); }}
+                                            onClick={(e) => { e.stopPropagation(); navigate(`/${leagueSlug}/${getPlayerSlug(player)}/player`); }}
                                             className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-white/[0.05] transition-colors group cursor-pointer"
                                         >
                                             <span className={`w-5 h-5 flex items-center justify-center rounded-md font-black text-[0.55rem] font-outfit flex-none ${i === 0 ? 'bg-warning/20 text-warning' : 'text-slate-500'}`}>
@@ -442,7 +443,7 @@ const Dashboard = () => {
                                 ) : (
                                     topAssisters.map((player, i) => (
                                         <div key={player.id} 
-                                            onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/${getPlayerSlug(player)}/player`); }}
+                                            onClick={(e) => { e.stopPropagation(); navigate(`/${leagueSlug}/${getPlayerSlug(player)}/player`); }}
                                             className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-white/[0.05] transition-all group cursor-pointer">
                                             <span className={`w-5 h-5 flex items-center justify-center rounded-md font-black text-[0.55rem] font-outfit flex-none ${i === 0 ? 'bg-primary/20 text-primary' : 'text-slate-500'}`}>
                                                 {i + 1}

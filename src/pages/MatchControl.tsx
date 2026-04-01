@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLeague, type MatchEvent, type Player, type Match, type Team } from '../context/LeagueContext';
 import { Clock, StopCircle, Award, Settings2, XCircle, Target, Trash2, Crown, Pause, Play, AlertCircle, History, ArrowLeft, ArrowLeftRight, Check, Video, CheckCircle2, Lock, Edit3, Unlink, Eye, User, Zap, Globe, ShieldOff } from 'lucide-react';
@@ -281,6 +281,27 @@ const MatchControl = () => {
         return () => clearInterval(interval);
     }, [match?.id, match?.status, match?.timer, match?.updatedAt]);
 
+    // --- AUTO-END FOR PICKUP MODE ---
+    const isProcessingEnd = useRef(false);
+
+    useEffect(() => {
+        if (league?.isPickupMode && match?.status === 'live' && !isPublicView && isAdmin && !isProcessingEnd.current) {
+            const timeLimitSeconds = (league.pickupConfig?.timeLimit || 10) * 60;
+            const maxPoints = league.pickupConfig?.maxPoints || 21;
+            
+            const timeReached = localSeconds >= timeLimitSeconds && localSeconds < timeLimitSeconds + 5;
+            const scoreReached = match.homeScore >= maxPoints || match.awayScore >= maxPoints;
+
+            if (timeReached || scoreReached) {
+                isProcessingEnd.current = true;
+                console.log(`[MatchControl] Pickup ${timeReached ? 'time' : 'score'} limit reached! Ending match...`);
+                handleEndMatch();
+                // Reset ref after a delay if match still live (safety)
+                setTimeout(() => { isProcessingEnd.current = false; }, 5000);
+            }
+        }
+    }, [localSeconds, match?.homeScore, match?.awayScore, league?.isPickupMode, match?.status, isPublicView, isAdmin]);
+
     // ─── EARLY RETURNS (ONLY AFTER ALL HOOKS) ─────────────────────────
 
     // Loading states for data sync
@@ -452,7 +473,11 @@ const MatchControl = () => {
         await updateMatch(mId, updates);
         
         setShowFinishModal(false);
-        navigate(`${leagueBasePath}/matches`);
+        if (league?.isPickupMode) {
+            navigate(`/${leagueSlug}/pickups`);
+        } else {
+            navigate(`/${leagueSlug}/matches`);
+        }
     };
 
     const confirmShooters = () => {
@@ -918,6 +943,15 @@ const MatchControl = () => {
                                 return round > 5 ? `MORTE SÚBITA (${round}º)` : `Cobrança ${round} de 5`;
                             })() : period === 'Sel. Batedores' ? 'Seleção de Batedores' : period}
                         </span>
+
+                        {league?.isPickupMode && league.pickupConfig && (
+                            <div className="mt-2 flex flex-col items-center gap-1">
+                                <div className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
+                                    <span className="text-[0.55rem] font-black text-amber-500 uppercase tracking-widest">Alvo: {league.pickupConfig.maxPoints} pts</span>
+                                </div>
+                                <p className="text-[0.45rem] font-bold text-slate-600 uppercase tracking-tighter italic">Vence quem chegar primeiro</p>
+                            </div>
+                        )}
                         
                         {match.youtubeLiveId && (
                             <div className="flex justify-center mt-3">
@@ -1250,12 +1284,35 @@ const MatchControl = () => {
                                                                     <div className="flex items-center gap-1 flex-none">
                                                                         {league?.sportType === 'basketball' ? (
                                                                             <>
-                                                                                <button disabled={(match.status !== 'live' && !(match.status === 'finished' && isEditingFinishedMatch)) || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 1)} 
-                                                                                    className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/10 text-accent font-black text-[0.55rem] hover:bg-accent hover:text-white transition-all">+1</button>
-                                                                                <button disabled={(match.status !== 'live' && !(match.status === 'finished' && isEditingFinishedMatch)) || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 2)} 
-                                                                                    className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/20 text-accent font-black text-[0.6rem] hover:bg-accent hover:text-white transition-all">+2</button>
-                                                                                <button disabled={(match.status !== 'live' && !(match.status === 'finished' && isEditingFinishedMatch)) || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 3)} 
-                                                                                    className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/30 text-accent font-black text-[0.65rem] hover:bg-accent hover:text-white transition-all">+3</button>
+                                                                                {league?.isPickupMode && league.pickupConfig ? (
+                                                                                    <>
+                                                                                        <button 
+                                                                                            disabled={(match.status !== 'live' && !(match.status === 'finished' && isEditingFinishedMatch)) || period.includes('Intervalo')} 
+                                                                                            onClick={() => handlePoints(team.id, player.id, 2)} 
+                                                                                            className="w-12 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/10 text-accent font-black text-[0.6rem] hover:bg-accent hover:text-white transition-all ring-1 ring-accent/20"
+                                                                                            title="Ponto Normal"
+                                                                                        >
+                                                                                            +{league.pickupConfig.pointsValue?.regular || 1}
+                                                                                        </button>
+                                                                                        <button 
+                                                                                            disabled={(match.status !== 'live' && !(match.status === 'finished' && isEditingFinishedMatch)) || period.includes('Intervalo')} 
+                                                                                            onClick={() => handlePoints(team.id, player.id, 3)} 
+                                                                                            className="w-12 h-7 flex-none flex items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 font-black text-[0.6rem] hover:bg-amber-500 hover:text-white transition-all ring-1 ring-amber-500/20"
+                                                                                            title="Fora do Garrafão"
+                                                                                        >
+                                                                                            +{league.pickupConfig.pointsValue?.longRange || 2}
+                                                                                        </button>
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <>
+                                                                                        <button disabled={(match.status !== 'live' && !(match.status === 'finished' && isEditingFinishedMatch)) || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 1)} 
+                                                                                            className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/10 text-accent font-black text-[0.55rem] hover:bg-accent hover:text-white transition-all">+1</button>
+                                                                                        <button disabled={(match.status !== 'live' && !(match.status === 'finished' && isEditingFinishedMatch)) || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 2)} 
+                                                                                            className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/10 text-accent font-black text-[0.6rem] hover:bg-accent hover:text-white transition-all">+2</button>
+                                                                                        <button disabled={(match.status !== 'live' && !(match.status === 'finished' && isEditingFinishedMatch)) || period.includes('Intervalo')} onClick={() => handlePoints(team.id, player.id, 3)} 
+                                                                                            className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-accent/10 text-accent font-black text-[0.65rem] hover:bg-accent hover:text-white transition-all">+3</button>
+                                                                                    </>
+                                                                                )}
                                                                                 <div className="w-px h-4 bg-white/10 mx-1 flex-none" />
                                                                                 <button disabled={(match.status !== 'live' && !(match.status === 'finished' && isEditingFinishedMatch)) || period.includes('Intervalo')} onClick={() => handleAssist(team.id, player.id)} 
                                                                                     className="w-7 h-7 flex-none flex items-center justify-center rounded-lg bg-warning/10 text-warning font-black text-[0.5rem] hover:bg-warning hover:text-white transition-all">ASS</button>

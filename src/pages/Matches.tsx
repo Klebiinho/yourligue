@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { Swords, PlusCircle, Play, Trash2, Edit2, Calendar, MapPin, AlertCircle, Clock, CheckCircle2, Signal, Heart, Search, Video, ChevronUp, ChevronDown } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const Matches = () => {
+    const { leagueSlug } = useParams<{ leagueSlug: string }>();
     const { user } = useAuth();
-    const { league, teams, matches, userInteractions, createMatch, startMatch, deleteMatch, updateMatch, isPublicView, isAdmin, leagueBasePath, setShowAuthModal, getMatchSlug, getTeamSlug } = useLeague();
+    const { league, teams, matches, userInteractions, createMatch, startMatch, deleteMatch, updateMatch, isPublicView, isAdmin, setShowAuthModal, getMatchSlug, getTeamSlug } = useLeague();
     const navigate = useNavigate();
     const [homeTeamId, setHomeTeamId] = useState(teams[0]?.id || '');
     const [awayTeamId, setAwayTeamId] = useState(teams[1]?.id || '');
@@ -53,7 +54,7 @@ const Matches = () => {
             
             if (matchData) {
               const matchSlug = getMatchSlug(matchData);
-              navigate(`${leagueBasePath}/${matchSlug}/match`);
+              navigate(`/${leagueSlug}/${matchSlug}/match`);
             }
         }
         resetForm();
@@ -79,7 +80,7 @@ const Matches = () => {
 
     const handleEnter = async (m: any) => {
         if (!isPublicView && isAdmin && m.status === 'scheduled') await startMatch(m.id, 0);
-        navigate(`${leagueBasePath}/${getMatchSlug(m)}/match`);
+        navigate(`/${leagueSlug}/${getMatchSlug(m)}/match`);
     };
 
     const myTeamIds = userInteractions.filter(i => i.interactionType === 'supporting').map((i: any) => i.teamId);
@@ -125,7 +126,7 @@ const Matches = () => {
                     <button
                         onClick={() => { 
                             if (league?.isPickupMode) {
-                                navigate(`${leagueBasePath}/pickups`);
+                                navigate(`/${leagueSlug}/pickups`);
                             } else {
                                 setFormOpen(!formOpen); 
                                 setEditingMatchId(null); 
@@ -282,7 +283,7 @@ const Matches = () => {
                                 <div className="flex items-center gap-3 sm:gap-4">
                                     {/* Home */}
                                     <div 
-                                        onClick={(e) => { e.stopPropagation(); if(ht) navigate(`${leagueBasePath}/${getTeamSlug(ht)}/team`); }}
+                                        onClick={(e) => { e.stopPropagation(); if(ht) navigate(`/${leagueSlug}/${getTeamSlug(ht)}/team`); }}
                                         className="flex flex-col items-center gap-1 flex-1 min-w-0 cursor-pointer hover:bg-white/5 p-2 rounded-2xl transition-all"
                                     >
                                         <TeamLogo src={ht?.logo} size={38} />
@@ -322,7 +323,7 @@ const Matches = () => {
 
                                     {/* Away */}
                                     <div 
-                                        onClick={(e) => { e.stopPropagation(); if(at) navigate(`${leagueBasePath}/${getTeamSlug(at)}/team`); }}
+                                        onClick={(e) => { e.stopPropagation(); if(at) navigate(`/${leagueSlug}/${getTeamSlug(at)}/team`); }}
                                         className="flex flex-col items-center gap-2 flex-1 min-w-0 cursor-pointer hover:bg-white/5 p-2 rounded-2xl transition-all"
                                     >
                                         <div className="transform transition-transform group-hover:scale-110 duration-500">

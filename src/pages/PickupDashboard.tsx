@@ -1,24 +1,27 @@
 import { useState, useMemo } from 'react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
     Zap, Users, Clock, Play, Plus, Trash2, 
     UserPlus, ArrowRight, UserCheck, Timer, 
-    Flame, Target, Settings, ChevronRight, LogIn
+    Flame, Target, Settings, ChevronRight, LogIn, XCircle
 } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const PickupDashboard = () => {
+    const { leagueSlug } = useParams<{ leagueSlug: string }>();
     const { 
         league, teams, matches, isAdmin,
-        joinPickupQueue, leavePickupQueue, startPickupMatch, getMatchSlug,
-        leagueBasePath
+        joinPickupQueue, leavePickupQueue, startPickupMatch, getMatchSlug
     } = useLeague();
     const { user } = useAuth();
     const navigate = useNavigate();
 
     const [isStarting, setIsStarting] = useState(false);
+    const [draftingA, setDraftingA] = useState<string[]>([]);
+    const [draftingB, setDraftingB] = useState<string[]>([]);
+    const [isSelectingFor, setIsSelectingFor] = useState<{ team: 'A' | 'B', slot: number } | null>(null);
 
     // Filter players by status
     const allPlayers = useMemo(() => {
@@ -54,32 +57,55 @@ const PickupDashboard = () => {
     const handleStartMatch = async () => {
         if (isStarting) return;
         
-        const format = league?.pickupConfig?.gameFormat || '3x3';
-        const numPerTeam = parseInt(format.split('x')[0]);
-        
-        if (queue.length < numPerTeam * 2) {
-            alert(`⚠️ Jogadores insuficientes! Precisa de pelo menos ${numPerTeam * 2} na fila.`);
+        if (draftingA.length === 0 || draftingB.length === 0) {
+            alert("⚠️ Selecione pelo menos um jogador para cada time!");
             return;
         }
 
         setIsStarting(true);
         try {
-            const homePlayers = queue.slice(0, numPerTeam).map(p => p.id);
-            const awayPlayers = queue.slice(numPerTeam, numPerTeam * 2).map(p => p.id);
-            
-            const match = await startPickupMatch(homePlayers, awayPlayers);
+            const match = await startPickupMatch(draftingA.filter(Boolean), draftingB.filter(Boolean));
             if (match) {
-                // Navigate to match control if admin using the new timestamped slug
                 if (isAdmin) {
                     const matchSlug = getMatchSlug(match);
-                    navigate(`${leagueBasePath}/${matchSlug}/match`);
+                    navigate(`/${leagueSlug}/${matchSlug}/match`);
                 }
+                setDraftingA([]);
+                setDraftingB([]);
             }
         } catch (err) {
             console.error(err);
         } finally {
             setIsStarting(false);
         }
+    };
+
+    const format = league?.pickupConfig?.gameFormat || '3x3';
+    const numPerTeam = parseInt(format.split('x')[0]) || 3;
+
+    const selectPlayer = (playerId: string) => {
+        if (!isSelectingFor) return;
+        
+        const { team, slot } = isSelectingFor;
+        const setDraft = team === 'A' ? setDraftingA : setDraftingB;
+        const currentDraft = team === 'A' ? draftingA : draftingB;
+        
+        // Remove from other draft if exists
+        if (team === 'A') {
+            setDraftingB(prev => prev.filter(id => id !== playerId));
+        } else {
+            setDraftingA(prev => prev.filter(id => id !== playerId));
+        }
+
+        const newDraft = [...currentDraft];
+        newDraft[slot] = playerId;
+        setDraft(newDraft);
+        setIsSelectingFor(null);
+    };
+
+    const removePlayerFromDraft = (team: 'A' | 'B', playerId: string) => {
+        if (team === 'A') setDraftingA(prev => prev.filter(id => id !== playerId));
+        else setDraftingB(prev => prev.filter(id => id !== playerId));
     };
 
     if (!league?.isPickupMode) {
@@ -137,7 +163,6 @@ const PickupDashboard = () => {
                     </div>
                 </div>
 
-                {/* Sub-stats bar */}
                 <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 pt-8 border-t border-white/10">
                     <div className="space-y-1">
                         <p className="text-white/40 text-[0.55rem] font-black uppercase tracking-widest">Na Fila</p>
@@ -159,9 +184,7 @@ const PickupDashboard = () => {
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                {/* Left Side: Court Status & Queue */}
                 <div className="lg:col-span-8 space-y-8">
-                    {/* Active Match Card */}
                     <div className={`glass-panel p-8 relative overflow-hidden transition-all duration-700 ${liveMatch ? 'border-amber-500/30' : 'border-white/5'}`}>
                         <div className="flex items-center justify-between mb-8">
                             <h2 className="text-xl font-black text-white font-outfit uppercase tracking-tight flex items-center gap-3">
@@ -169,7 +192,7 @@ const PickupDashboard = () => {
                                 STATUS DA QUADRA
                             </h2>
                             {liveMatch && (
-                                <button onClick={() => navigate(`${leagueBasePath}/${liveMatch.id}/match`)} className="px-4 py-2 rounded-xl bg-amber-500 text-white font-black text-[0.65rem] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center gap-2">
+                                <button onClick={() => navigate(`/${leagueSlug}/${getMatchSlug(liveMatch)}/match`)} className="px-4 py-2 rounded-xl bg-amber-500 text-white font-black text-[0.65rem] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center gap-2">
                                     Placar Ao Vivo <ArrowRight size={14} />
                                 </button>
                             )}
@@ -178,78 +201,147 @@ const PickupDashboard = () => {
                         {liveMatch ? (
                             <div className="flex flex-col md:flex-row items-center justify-center gap-12 py-6">
                                 {/* Team A */}
-                                <div className="flex flex-col items-center gap-4 text-center">
-                                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-white font-outfit font-black text-3xl shadow-2xl shadow-orange-500/20">
-                                        {liveMatch.homeScore}
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-black text-amber-500 uppercase tracking-widest mb-2">Time Alpha</p>
-                                        <div className="flex -space-x-3">
-                                            {activePlayers.courtA.slice(0, 3).map(p => (
-                                                <div key={p.id} className="w-10 h-10 rounded-full border-2 border-bg-dark overflow-hidden bg-white/5">
-                                                    <TeamLogo src={p.photo} size={40} />
-                                                </div>
-                                            ))}
-                                            {activePlayers.courtA.length > 3 && (
-                                                <div className="w-10 h-10 rounded-full border-2 border-bg-dark bg-slate-800 flex items-center justify-center text-[0.6rem] font-black text-white">
-                                                    +{activePlayers.courtA.length - 3}
-                                                </div>
-                                            )}
+                                <div className="flex flex-col items-center gap-6 w-full md:w-64">
+                                    <div className="flex items-center flex-col gap-2">
+                                        <p className="text-sm font-black text-amber-500 uppercase tracking-[0.2em] animate-pulse">TIME A</p>
+                                        <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-white font-outfit font-black text-4xl shadow-2xl shadow-orange-500/40 ring-4 ring-white/10">
+                                            {liveMatch.homeScore}
                                         </div>
+                                    </div>
+                                    <div className="w-full space-y-2">
+                                        {activePlayers.courtA.map(p => (
+                                            <div key={p.id} className="flex items-center gap-3 p-2 rounded-xl bg-white/5 border border-white/5">
+                                                <TeamLogo src={p.photo} size={32} />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-[0.65rem] font-black text-white truncate uppercase">{p.name}</p>
+                                                    <p className="text-[0.5rem] text-slate-500 font-bold uppercase">{p.position || 'ALA'}</p>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col items-center gap-2">
-                                    <div className="text-[0.6rem] font-black text-slate-600 uppercase tracking-[0.3em]">VERSUS</div>
-                                    <div className="w-px h-16 bg-gradient-to-b from-transparent via-white/10 to-transparent" />
+                                <div className="flex flex-col items-center gap-4">
+                                    <div className="px-4 py-1.5 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-[0.6rem] font-black text-slate-400 tracking-widest">VERSUS</div>
+                                    <div className="w-px h-32 bg-gradient-to-b from-transparent via-white/10 to-transparent" />
                                 </div>
 
                                 {/* Team B */}
-                                <div className="flex flex-col items-center gap-4 text-center">
-                                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white font-outfit font-black text-3xl shadow-2xl shadow-black/40 border border-white/5">
-                                        {liveMatch.awayScore}
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Time Delta</p>
-                                        <div className="flex -space-x-3">
-                                            {activePlayers.courtB.slice(0, 3).map(p => (
-                                                <div key={p.id} className="w-10 h-10 rounded-full border-2 border-bg-dark overflow-hidden bg-white/5">
-                                                    <TeamLogo src={p.photo} size={40} />
-                                                </div>
-                                            ))}
-                                            {activePlayers.courtB.length > 3 && (
-                                                <div className="w-10 h-10 rounded-full border-2 border-bg-dark bg-slate-800 flex items-center justify-center text-[0.6rem] font-black text-white">
-                                                    +{activePlayers.courtB.length - 3}
-                                                </div>
-                                            )}
+                                <div className="flex flex-col items-center gap-6 w-full md:w-64">
+                                    <div className="flex items-center flex-col gap-2">
+                                        <p className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">TIME B</p>
+                                        <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white font-outfit font-black text-4xl shadow-2xl shadow-black/40 border-2 border-white/10 ring-4 ring-white/5">
+                                            {liveMatch.awayScore}
                                         </div>
+                                    </div>
+                                    <div className="w-full space-y-2">
+                                        {activePlayers.courtB.map(p => (
+                                            <div key={p.id} className="flex items-center gap-3 p-2 rounded-xl bg-white/5 border border-white/5">
+                                                <TeamLogo src={p.photo} size={32} />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-[0.65rem] font-black text-white truncate uppercase">{p.name}</p>
+                                                    <p className="text-[0.5rem] text-slate-500 font-bold uppercase">{p.position || 'ALA'}</p>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="py-12 flex flex-col items-center justify-center text-center space-y-6">
-                                <div className="w-24 h-24 rounded-full bg-white/5 border border-white/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                                    <Zap size={40} className="text-slate-800" />
-                                </div>
-                                <div className="space-y-2">
-                                    <h3 className="text-2xl font-black text-white uppercase tracking-tight">Quadra Livre</h3>
-                                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Inicie o próximo jogo usando os atletas da fila.</p>
+                            <div className="py-6 space-y-8">
+                                <div className="flex flex-col md:flex-row items-start justify-center gap-8">
+                                    {/* Draft Team A */}
+                                    <div className="w-full md:w-64 space-y-4">
+                                        <p className="text-xs font-black text-amber-500 uppercase tracking-widest text-center">Escalação Time A</p>
+                                        <div className="grid grid-cols-1 gap-2">
+                                            {Array.from({ length: numPerTeam }).map((_, i) => {
+                                                const pId = draftingA[i];
+                                                const p = allPlayers.find(x => x.id === pId);
+                                                return (
+                                                    <button 
+                                                        key={i}
+                                                        onClick={() => setIsSelectingFor({ team: 'A', slot: i })}
+                                                        className={`w-full p-3 rounded-2xl border-2 border-dashed transition-all flex items-center gap-3 ${p ? 'bg-amber-500/10 border-amber-500/50 shadow-lg shadow-amber-500/5' : 'bg-black/20 border-white/5 hover:border-amber-500/30 text-slate-600'}`}
+                                                    >
+                                                        {p ? (
+                                                            <>
+                                                                <TeamLogo src={p.photo} size={32} />
+                                                                <div className="flex-1 text-left">
+                                                                    <p className="text-[0.65rem] font-black text-white uppercase truncate">{p.name}</p>
+                                                                    <p className="text-[0.5rem] text-slate-500 font-bold uppercase">{p.position}</p>
+                                                                </div>
+                                                                <XCircle size={14} className="text-white/20 hover:text-danger" onClick={(e) => { e.stopPropagation(); removePlayerFromDraft('A', p.id); }} />
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                                                                    <Plus size={16} />
+                                                                </div>
+                                                                <span className="text-[0.6rem] font-black uppercase tracking-widest">Selecionar Atleta</span>
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="hidden md:flex flex-col items-center pt-10">
+                                        <div className="text-[0.6rem] font-black text-slate-700 font-outfit">V S</div>
+                                    </div>
+
+                                    {/* Draft Team B */}
+                                    <div className="w-full md:w-64 space-y-4">
+                                        <p className="text-xs font-black text-slate-500 uppercase tracking-widest text-center">Escalação Time B</p>
+                                        <div className="grid grid-cols-1 gap-2">
+                                            {Array.from({ length: numPerTeam }).map((_, i) => {
+                                                const pId = draftingB[i];
+                                                const p = allPlayers.find(x => x.id === pId);
+                                                return (
+                                                    <button 
+                                                        key={i}
+                                                        onClick={() => setIsSelectingFor({ team: 'B', slot: i })}
+                                                        className={`w-full p-3 rounded-2xl border-2 border-dashed transition-all flex items-center gap-3 ${p ? 'bg-slate-500/10 border-slate-500/50 shadow-lg shadow-slate-500/5' : 'bg-black/20 border-white/5 hover:border-slate-500/30 text-slate-600'}`}
+                                                    >
+                                                        {p ? (
+                                                            <>
+                                                                <TeamLogo src={p.photo} size={32} />
+                                                                <div className="flex-1 text-left">
+                                                                    <p className="text-[0.65rem] font-black text-white uppercase truncate">{p.name}</p>
+                                                                    <p className="text-[0.5rem] text-slate-500 font-bold uppercase">{p.position}</p>
+                                                                </div>
+                                                                <XCircle size={14} className="text-white/20 hover:text-danger" onClick={(e) => { e.stopPropagation(); removePlayerFromDraft('B', p.id); }} />
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                                                                    <Plus size={16} />
+                                                                </div>
+                                                                <span className="text-[0.6rem] font-black uppercase tracking-widest">Selecionar Atleta</span>
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                 </div>
                                 
-                                {isAdmin && queue.length >= (parseInt((league.pickupConfig?.gameFormat || '3x3').split('x')[0]) * 2) && (
-                                    <button 
-                                        onClick={handleStartMatch}
-                                        disabled={isStarting}
-                                        className="mt-4 px-10 py-5 bg-amber-500 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest shadow-2xl shadow-amber-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 animate-bounce-slow"
-                                    >
-                                        <Play size={20} fill="currentColor" /> Próximo Jogo Agora
-                                    </button>
+                                {isAdmin && (
+                                    <div className="pt-4 flex justify-center">
+                                        <button 
+                                            onClick={handleStartMatch}
+                                            disabled={isStarting || draftingA.length === 0 || draftingB.length === 0}
+                                            className="px-12 py-5 bg-amber-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl shadow-amber-500/30 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:hover:scale-100 transition-all flex items-center gap-3"
+                                        >
+                                            <Play size={20} fill="currentColor" /> Começar Rachão Agora
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         )}
                     </div>
 
-                    {/* Queue List */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between px-2">
                             <h2 className="text-lg font-black text-white font-outfit uppercase tracking-widest flex items-center gap-3">
@@ -278,12 +370,11 @@ const PickupDashboard = () => {
                                         </div>
                                         
                                         <div className="flex items-center gap-3">
-                                            {/* Priority indicator if near head of queue */}
                                             {idx < (parseInt((league.pickupConfig?.gameFormat || '3x3').split('x')[0]) * 2) ? (
                                                 <div className="hidden md:flex flex-col items-end">
                                                     <span className="text-[0.5rem] font-black text-amber-500 uppercase tracking-widest">PRÓXIMO</span>
                                                     <div className="w-12 h-1 bg-amber-500/30 rounded-full mt-1 overflow-hidden">
-                                                        <div className="w-full h-full bg-amber-500 animate-slide-right" />
+                                                        <div className="w-full h-full bg-amber-500" />
                                                     </div>
                                                 </div>
                                             ) : (
@@ -303,9 +394,7 @@ const PickupDashboard = () => {
                     </div>
                 </div>
 
-                {/* Right Side: Available Players & Sidebar Info */}
                 <div className="lg:col-span-4 space-y-8">
-                    {/* Quick Config Card (Admin Only) */}
                     {isAdmin && (
                         <div className="glass-panel p-6 bg-primary/5 border-primary/20 space-y-6">
                             <h3 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
@@ -313,14 +402,13 @@ const PickupDashboard = () => {
                             </h3>
                             <div className="space-y-3">
                                 <button 
-                                    onClick={() => navigate(`${leagueBasePath}/settings`)}
+                                    onClick={() => navigate(`/${leagueSlug}/settings`)}
                                     className="w-full py-3 rounded-xl bg-black/40 border border-white/5 text-[0.65rem] font-black text-white/60 uppercase tracking-widest hover:border-primary/40 hover:text-white transition-all flex items-center justify-center gap-2"
                                 >
                                     Alterar Regras do Rachão <ChevronRight size={14} />
                                 </button>
                                 <button 
                                     onClick={() => {
-                                        // Simple logic to add all "available" to queue
                                         availablePlayers.forEach(p => joinPickupQueue(p.id));
                                     }}
                                     className="w-full py-3 rounded-xl bg-primary text-white text-[0.65rem] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
@@ -331,7 +419,6 @@ const PickupDashboard = () => {
                         </div>
                     )}
 
-                    {/* Available Players Box */}
                     <div className="glass-panel p-6 space-y-6">
                         <div className="flex items-center justify-between">
                             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -364,7 +451,6 @@ const PickupDashboard = () => {
                         </div>
                     </div>
 
-                    {/* Basketball Wisdom Card */}
                     <div className="glass-panel p-0 overflow-hidden relative group">
                         <div className="absolute inset-0 bg-gradient-to-br from-orange-600/20 to-transparent pointer-events-none" />
                         <div className="p-6 relative z-10 space-y-4">
@@ -376,6 +462,72 @@ const PickupDashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {isSelectingFor && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-fade-in" onClick={() => setIsSelectingFor(null)} />
+                    <div className="relative glass-panel w-full max-w-lg max-h-[70vh] flex flex-col animate-scale-in border-white/10 overflow-hidden">
+                        <div className="p-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-black text-white uppercase tracking-tight font-outfit">Selecionar Atleta</h3>
+                                <p className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">Escalando para o Time {isSelectingFor.team}</p>
+                            </div>
+                            <button onClick={() => setIsSelectingFor(null)} className="p-2.5 rounded-xl bg-white/5 text-slate-500 hover:text-white transition-all">
+                                <XCircle size={24} />
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar">
+                            <div className="mb-4">
+                                <p className="text-[0.55rem] font-black text-amber-500 uppercase tracking-widest mb-3 px-2 flex items-center gap-2">
+                                    <Users size={10} /> Atletas na Fila
+                                </p>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {queue.length === 0 ? (
+                                        <p className="text-[0.6rem] text-slate-600 italic px-2">Fila vazia</p>
+                                    ) : (
+                                        queue.map(p => (
+                                            <button 
+                                                key={p.id} 
+                                                onClick={() => selectPlayer(p.id)}
+                                                className="w-full flex items-center justify-between p-3 rounded-2xl bg-white/5 hover:bg-amber-500/10 border border-white/5 hover:border-amber-500/30 transition-all group"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <TeamLogo src={p.photo} size={32} />
+                                                    <div className="text-left">
+                                                        <p className="text-xs font-black text-white uppercase group-hover:text-amber-500 transition-colors">{p.name}</p>
+                                                        <p className="text-[0.5rem] text-slate-500 font-bold uppercase">{p.position}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="px-2 py-1 rounded bg-black/40 text-[0.45rem] font-black text-amber-500 border border-amber-500/20">POS {p.queuePosition}</div>
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-[0.55rem] font-black text-slate-500 uppercase tracking-widest mb-3 px-2">Outros Disponíveis</p>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {availablePlayers.map(p => (
+                                        <button 
+                                            key={p.id} 
+                                            onClick={() => selectPlayer(p.id)}
+                                            className="w-full flex items-center gap-3 p-3 rounded-2xl bg-black/20 hover:bg-white/5 border border-white/5 transition-all group"
+                                        >
+                                            <TeamLogo src={p.photo} size={32} />
+                                            <div className="text-left">
+                                                <p className="text-xs font-black text-white uppercase group-hover:text-primary transition-colors">{p.name}</p>
+                                                <p className="text-[0.5rem] text-slate-500 font-bold uppercase">{p.position}</p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

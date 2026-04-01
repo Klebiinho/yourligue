@@ -435,7 +435,7 @@ const Teams = () => {
                                 filteredTeams.map(team => (
                                     <div key={team.id} onClick={() => {
                                         const tSlug = getTeamSlug(team);
-                                        navigate(`${leagueBasePath}/${tSlug}/team`);
+                                        navigate(`/${leagueSlug}/${tSlug}/team`);
                                     }}
                                         className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 border relative group/team ${activeTeamId === team.id
                                             ? 'bg-primary/10 border-primary/25 shadow-sm'
@@ -631,7 +631,7 @@ const Teams = () => {
 
                                                     <div className="flex-1 min-w-0">
                                                         <div 
-                                                            onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/${getPlayerSlug(player)}/player`); }}
+                                                            onClick={(e) => { e.stopPropagation(); navigate(`/${leagueSlug}/${getPlayerSlug(player)}/player`); }}
                                                             className="flex items-center gap-2 mb-0.5 cursor-pointer group/name"
                                                         >
                                                             <span className="w-7 h-7 flex items-center justify-center rounded-lg bg-black/30 font-black font-outfit text-white border border-white/5 text-[0.65rem] flex-none group-hover/name:bg-primary/20 group-hover/name:text-primary transition-all">

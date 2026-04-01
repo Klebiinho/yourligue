@@ -326,31 +326,40 @@ const mapDBBracket = (b: any): BracketMatch => ({
     status: b.status
 });
 
-const mapDBLeague = (l: any): League => ({
-    id: l.id, name: l.name || 'Sem nome', logo: l.logo || '', maxTeams: l.max_teams || 20,
-    pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
-    pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
-    overtimeHalfLength: l.overtime_half_length || 15,
-    playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
-    substitutionsLimit: l.substitutions_limit || 5,
-    allowSubstitutionReturn: l.allow_substitution_return ?? true,
-    hasOvertime: l.has_overtime ?? true,
-    slug: l.slug || '',
-    userId: l.user_id,
-    sportType: l.sport_type || 'soccer',
-    lat: l.lat, lng: l.lng, address: l.address,
-    distancia_km: l.distancia_km, follower_count: l.follower_count,
-    isPickupMode: l.is_pickup_mode || false,
-    pickupConfig: l.pickup_config || {
-        maxPoints: 21,
-        timeLimit: 10,
-        gameFormat: '3x3',
-        entryType: 'auto',
-        rotationType: 'winner_stays',
-        substitutionType: 'free',
-        pointsValue: { regular: 2, longRange: 3 }
-    }
-});
+const mapDBLeague = (l: any): League => {
+    // Robustly map pickup_config from DB (which might be snake_case) to camelCase
+    const rawConfig = l.pickup_config || {};
+    const pickupConfig: PickupConfig = {
+        maxPoints: rawConfig.maxPoints ?? rawConfig.max_points ?? 21,
+        timeLimit: rawConfig.timeLimit ?? rawConfig.time_limit ?? 10,
+        gameFormat: rawConfig.gameFormat ?? rawConfig.game_format ?? '3x3',
+        entryType: rawConfig.entryType ?? rawConfig.entry_type ?? 'auto',
+        rotationType: rawConfig.rotationType ?? rawConfig.rotation_type ?? 'winner_stays',
+        substitutionType: rawConfig.substitutionType ?? rawConfig.substitution_type ?? 'free',
+        pointsValue: {
+            regular: rawConfig.pointsValue?.regular ?? rawConfig.points_value?.regular ?? 2,
+            longRange: rawConfig.pointsValue?.longRange ?? rawConfig.points_value?.long_range ?? 3
+        }
+    };
+
+    return {
+        id: l.id, name: l.name || 'Sem nome', logo: l.logo || '', maxTeams: l.max_teams || 20,
+        pointsForWin: l.points_for_win, pointsForDraw: l.points_for_draw,
+        pointsForLoss: l.points_for_loss, defaultHalfLength: l.default_half_length,
+        overtimeHalfLength: l.overtime_half_length || 15,
+        playersPerTeam: l.players_per_team || 5, reserveLimitPerTeam: l.reserve_limit_per_team || 5,
+        substitutionsLimit: l.substitutions_limit || 5,
+        allowSubstitutionReturn: l.allow_substitution_return ?? true,
+        hasOvertime: l.has_overtime ?? true,
+        slug: l.slug || '',
+        userId: l.user_id,
+        sportType: l.sport_type || 'soccer',
+        lat: l.lat, lng: l.lng, address: l.address,
+        distancia_km: l.distancia_km, follower_count: l.follower_count,
+        isPickupMode: l.is_pickup_mode || false,
+        pickupConfig
+    };
+};
 
 export const generateSlug = (name: string) => {
     return name.toLowerCase()
@@ -2652,7 +2661,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 team_id: teamBId
             }).in('id', awayPlayerIds);
             
-            return match;
+            // 4. Update local state
+            const mappedMatch = mapDBMatch(match);
+            setRawMatches(prev => [...prev, mappedMatch]);
+            
+            return mappedMatch;
         } catch (err) {
             console.error('Error starting pickup match:', err);
             return null;
@@ -2682,6 +2695,17 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             }, () => {
                 console.log('LeagueContext: Player/Queue update detected via Realtime');
                 loadLeagueData(league.id, true);
+            })
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'leagues',
+                filter: `id=eq.${league.id}`
+            }, (payload) => {
+                console.log('LeagueContext: League settings update detected via Realtime');
+                if (payload.new) {
+                    setLeague(mapDBLeague(payload.new));
+                }
             })
             .subscribe();
 
