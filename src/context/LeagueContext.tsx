@@ -2320,20 +2320,35 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     // ── Initial Logic & Recovery ─────────────────────────────
     useEffect(() => {
         const recover = async () => {
-            const isLeaguesPage = window.location.pathname === '/leagues' || window.location.pathname === '/';
+            const pathname = window.location.pathname;
+            const parts = pathname.split('/').filter(Boolean);
+            const maybeSlug = parts[0];
+
+            const isLeaguesPage = pathname === '/leagues' || pathname === '/';
             if (isLeaguesPage) {
-                console.log('LeagueContext: Hub path detected - skipping auto-recovery to ensure clean Hub landing');
-                // Cleanup to ensure Hub has 100% width and no stale data
+                console.log('LeagueContext: Hub path detected - skipping auto-recovery');
                 setLeague(null);
                 setRawTeams([]);
                 setRawMatches([]);
                 return;
             }
 
+            // If we have a slug in the URL, prioritize it over localStorage
+            if (maybeSlug) {
+                const globalPaths = ['blog', 'servicos', 'glossario', 'categoria', 'autor', 'duvidas', 'auth', 'politica-de-privacidade', 'termos-de-uso', 'sobre-nos', 'p', 'contato', 'informacoes', 'inicio'];
+                if (!globalPaths.includes(maybeSlug)) {
+                    console.log('LeagueContext: Found slug in URL:', maybeSlug);
+                    // Match found in URL, let's load it
+                    const loaded = await loadPublicLeague(maybeSlug);
+                    if (loaded) return; // Success perfectly!
+                }
+            }
+
+            // Fallback to localStorage if no slug in URL or load failed
             const lastLeagueId = localStorage.getItem('selectedLeagueId');
             if (lastLeagueId) {
-                console.log('LeagueContext: Recovering last active league for non-Hub path:', lastLeagueId);
-                loadPublicLeague(lastLeagueId);
+                const loaded = await loadPublicLeague(lastLeagueId);
+                if (loaded) return;
             }
         };
         recover();

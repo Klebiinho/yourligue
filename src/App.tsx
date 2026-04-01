@@ -168,12 +168,12 @@ const MainContent = () => {
                         
 
                         {/* Standard Entity Slug-Based Routes */}
-                        <Route path="/:slug/:matchSlug/match" element={<MatchControl />} />
-                        <Route path="/:slug/:matchSlug/overlay" element={<MatchOverlay />} />
-                        <Route path="/:slug/:playerSlug/player" element={<PlayerDetail />} />
-                        <Route path="/:slug/:teamSlug/team" element={<Teams />} />
+                        <Route path="/:leagueSlug/:matchIdOrSlug/match" element={<MatchControl />} />
+                        <Route path="/:leagueSlug/:matchIdOrSlug/overlay" element={<MatchOverlay />} />
+                        <Route path="/:leagueSlug/:playerIdOrSlug/player" element={<PlayerDetail />} />
+                        <Route path="/:leagueSlug/:teamIdOrSlug/team" element={<Teams />} />
                         
-                        <Route path="/:slug/localizacao" element={<LeagueLocation />} />
+                        <Route path="/:leagueSlug/localizacao" element={<LeagueLocation />} />
 
                         {/* Standard League Pages */}
                         <Route path="/:slug" element={<Dashboard />} />

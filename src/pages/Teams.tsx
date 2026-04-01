@@ -9,21 +9,18 @@ const Teams = () => {
     const { 
         league, teams, addTeam, updateTeam, deleteTeam, addPlayer, removePlayer, updatePlayer, 
         toggleCaptain, reorderPlayers, isPublicView, isAdmin, 
-        interactionCounts, loadTeamPhotos, getTeamSlug, getPlayerSlug, leagueBasePath 
+        interactionCounts, loadTeamPhotos, getTeamSlug, getPlayerSlug, leagueBasePath,
+        loading: leagueLoading
     } = useLeague();
-    const { teamId: teamIdParam, teamSlug } = useParams<{ teamId?: string; teamSlug?: string; slug?: string }>();
+    const { leagueSlug, teamIdOrSlug } = useParams<{ leagueSlug?: string; teamIdOrSlug?: string }>();
     const navigate = useNavigate();
-    const lSlug = useParams<{ slug?: string }>().slug || league?.slug || league?.id;
     
     // Resolve which team is active based on ID or slug
     const resolvedTeamId = useMemo(() => {
-        if (teamIdParam) return teamIdParam;
-        if (teamSlug) {
-            const team = teams.find(t => getTeamSlug(t) === teamSlug);
-            return team?.id || null;
-        }
-        return teams[0]?.id || null;
-    }, [teamIdParam, teamSlug, teams, getTeamSlug]);
+        if (!teamIdOrSlug) return teams[0]?.id || null;
+        const team = teams.find(t => t.id === teamIdOrSlug || getTeamSlug(t) === teamIdOrSlug);
+        return team?.id || null;
+    }, [teamIdOrSlug, teams, getTeamSlug]);
 
     const [activeTeamId, setActiveTeamId] = useState<string | null>(resolvedTeamId);
     const [isEditingTeam, setIsEditingTeam] = useState<string | null>(null);
@@ -310,6 +307,15 @@ const Teams = () => {
             setSwappingPlayerId(null);
         }
     };
+    if (leagueLoading || (!league && leagueSlug)) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                <p className="text-slate-500 font-black uppercase tracking-widest text-[0.6rem]">Sincronizando Liga...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="animate-fade-in">
             {isPublicView && <AdBanner position="top" />}
@@ -429,7 +435,7 @@ const Teams = () => {
                                 filteredTeams.map(team => (
                                     <div key={team.id} onClick={() => {
                                         const tSlug = getTeamSlug(team);
-                                        navigate(`/${lSlug}/${tSlug}/team`);
+                                        navigate(`/${leagueSlug}/${tSlug}/team`);
                                     }}
                                         className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 border relative group/team ${activeTeamId === team.id
                                             ? 'bg-primary/10 border-primary/25 shadow-sm'

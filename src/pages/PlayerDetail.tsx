@@ -5,7 +5,7 @@ import { User, Target, Zap, Clock, ArrowLeft, Star, TrendingUp, Medal, History, 
 import TeamLogo from '../components/TeamLogo';
 
 const PlayerDetail = () => {
-    const { playerSlug, slug: leagueSlug } = useParams<{ playerSlug: string; slug: string }>();
+    const { playerIdOrSlug, leagueSlug } = useParams<{ playerIdOrSlug: string; leagueSlug: string }>();
     const navigate = useNavigate();
     const { 
         league, teams, matches, getPlayerSlug, getTeamSlug, getMatchSlug,
@@ -51,13 +51,13 @@ const PlayerDetail = () => {
 
     const isBasket = league?.sportType === 'basketball';
     const playerWithTeam = useMemo(() => {
-        if (!playerSlug || !teams.length) return null;
+        if (!playerIdOrSlug || !teams.length) return null;
         for (const team of teams) {
-            const player = team.players.find(p => getPlayerSlug(p) === playerSlug);
+            const player = team.players.find(p => p.id === playerIdOrSlug || getPlayerSlug(p) === playerIdOrSlug);
             if (player) return { player, team };
         }
         return null;
-    }, [playerSlug, teams, getPlayerSlug]);
+    }, [playerIdOrSlug, teams, getPlayerSlug]);
 
     const { loadPlayerPhotos } = useLeague();
     useEffect(() => {
@@ -66,10 +66,11 @@ const PlayerDetail = () => {
         }
     }, [playerWithTeam?.player?.id, loadPlayerPhotos]);
 
-    if (leagueLoading) {
+    if (leagueLoading || (!league && leagueSlug)) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                <p className="text-slate-500 font-black uppercase tracking-widest text-[0.6rem]">Sincronizando Atleta...</p>
             </div>
         );
     }
@@ -244,7 +245,7 @@ const PlayerDetail = () => {
                                 .replace(/-+/g, '-')
                                 .replace(/^-|-$/g, '');
                                 
-                            if (newSlug !== playerSlug) {
+                            if (newSlug !== playerIdOrSlug) {
                                 navigate(`/${leagueSlug}/${newSlug}/player`, { replace: true });
                             }
                         }} className="space-y-6">

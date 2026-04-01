@@ -5,11 +5,11 @@ import TeamLogo from '../components/TeamLogo';
 import { supabase } from '../lib/supabase';
 
 const MatchOverlay = () => {
-    const { matchId, matchSlug } = useParams<{ matchId?: string, matchSlug?: string }>();
-    const { matches, teams, league, loadPublicLeague, getMatchSlug } = useLeague();
+    const { leagueSlug, matchIdOrSlug } = useParams<{ leagueSlug?: string, matchIdOrSlug?: string }>();
+    const { matches, teams, league, loadPublicLeague, getMatchSlug, loading: leagueLoading } = useLeague();
+    
     const match = matches.find((m: Match) => 
-        (matchId && String(m.id) === String(matchId)) || 
-        (matchSlug && (getMatchSlug(m) === matchSlug || String(m.id) === String(matchSlug)))
+        m.id === matchIdOrSlug || getMatchSlug(m) === matchIdOrSlug
     );
     
     const [localSeconds, setLocalSeconds] = useState(match?.timer || 0);
@@ -20,15 +20,15 @@ const MatchOverlay = () => {
     const awayTeam = teams.find(t => String(t.id) === String(awayTeamId));
 
     useEffect(() => {
-        if (matchId && matches.length > 0 && !match) {
+        if (matchIdOrSlug && matches.length > 0 && !match) {
             console.log('[Overlay] Match IDs na memória:', matches.map(m => m.id));
-            console.log('[Overlay] Procurando por:', matchId);
+            console.log('[Overlay] Procurando por:', matchIdOrSlug);
         }
         if (match && teams.length > 0 && (!homeTeam || !awayTeam)) {
             console.log('[Overlay] IDs dos times na match:', homeTeamId, awayTeamId);
             console.log('[Overlay] IDs dos times na memória:', teams.map(t => t.id));
         }
-    }, [matchId, match, matches, teams, homeTeam, awayTeam, homeTeamId, awayTeamId]);
+    }, [matchIdOrSlug, match, matches, teams, homeTeam, awayTeam, homeTeamId, awayTeamId]);
 
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [status, setStatus] = useState<string>('Iniciando...');
@@ -36,21 +36,21 @@ const MatchOverlay = () => {
     // Bootstrap: Se entrar direto no overlay via link, precisamos carregar a liga
     useEffect(() => {
         const bootstrap = async () => {
-            if (!matchId) return;
+            if (!matchIdOrSlug) return;
             if (match && homeTeam && awayTeam) {
                 setStatus('Pronto');
                 return;
             }
             
             setStatus('Buscando partida no banco...');
-            console.log('[Overlay] Buscando match no banco:', matchId);
+            console.log('[Overlay] Buscando match no banco:', matchIdOrSlug);
 
             try {
                 // Buscamos a liga via matches table diretamente
                 const { data: matchData, error: matchError } = await supabase
                     .from('matches')
                     .select('league_id')
-                    .eq('id', matchId)
+                    .eq('id', matchIdOrSlug)
                     .maybeSingle();
                 
                 if (matchError) {
@@ -80,7 +80,7 @@ const MatchOverlay = () => {
             }
         };
         bootstrap();
-    }, [matchId, !!match, !!homeTeam, !!awayTeam, loadPublicLeague]);
+    }, [matchIdOrSlug, !!match, !!homeTeam, !!awayTeam, loadPublicLeague]);
 
     useEffect(() => {
         if (match) {
@@ -140,6 +140,16 @@ const MatchOverlay = () => {
         `}</style>
     );
 
+    if (leagueLoading || (!league && leagueSlug)) {
+        return (
+            <div className="min-h-screen bg-black/80 flex flex-col items-center justify-center gap-4 text-white p-6">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                <p className="text-slate-500 font-black uppercase tracking-widest text-[0.6rem]">Sincronizando Overlay...</p>
+                {leagueSlug && <p className="text-[0.45rem] font-bold text-slate-700 uppercase tracking-widest">Campeonato: {leagueSlug}</p>}
+            </div>
+        );
+    }
+
     if (!match || !homeTeam || !awayTeam) {
         return (
             <div className="min-h-screen w-screen bg-transparent flex items-start justify-start p-6" data-state="loading">
@@ -182,7 +192,7 @@ const MatchOverlay = () => {
                         )}
 
                         <div className="pt-2 border-t border-white/5 flex flex-col gap-1">
-                            <span className="text-[0.35rem] text-white/20 font-mono">MATCH_ID: {matchId}</span>
+                            <span className="text-[0.35rem] text-white/20 font-mono">MATCH_ID: {matchIdOrSlug}</span>
                             <p className="text-[0.45rem] text-white/30 font-medium leading-relaxed italic">
                                 Verifique se a partida está ativa no painel de controle.
                             </p>

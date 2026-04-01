@@ -7,7 +7,7 @@ import AdBanner from '../components/AdBanner';
 import { VideoGenerator } from '../components/VideoGenerator';
 
 const MatchControl = () => {
-    const { matchId: matchIdParam, matchSlug } = useParams<{ matchId?: string; matchSlug?: string }>();
+    const { leagueSlug, matchIdOrSlug } = useParams<{ leagueSlug?: string; matchIdOrSlug?: string }>();
     const navigate = useNavigate();
     const { 
         league, matches, teams, endMatch, addEvent, removeEvent, 
@@ -19,11 +19,11 @@ const MatchControl = () => {
     } = useLeague();
 
     const match = useMemo(() => {
+        if (!matchIdOrSlug) return null;
         return matches.find((m: Match) => 
-            (matchIdParam && m.id === matchIdParam) || 
-            (matchSlug && (getMatchSlug(m) === matchSlug || m.id === matchSlug))
+            m.id === matchIdOrSlug || getMatchSlug(m) === matchIdOrSlug
         );
-    }, [matches, matchIdParam, matchSlug, getMatchSlug]);
+    }, [matches, matchIdOrSlug, getMatchSlug]);
     const mId = match?.id;
     const homeTeam = teams.find((t: Team) => t.id === match?.homeTeamId);
     const awayTeam = teams.find((t: Team) => t.id === match?.awayTeamId);
@@ -239,11 +239,12 @@ const MatchControl = () => {
 
     // ─── EARLY RETURNS (ONLY AFTER ALL HOOKS) ─────────────────────────
 
-    if (leagueLoading || (dataLoading && !match)) {
+    if (leagueLoading || (dataLoading && !match) || (!league && leagueSlug)) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
                 <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
                 <p className="text-slate-500 font-black uppercase tracking-widest text-[0.6rem]">Acessando dados da partida...</p>
+                {leagueSlug && <p className="text-[0.45rem] font-bold text-slate-700 uppercase tracking-widest">Sincronizando Liga: {leagueSlug}</p>}
             </div>
         );
     }
