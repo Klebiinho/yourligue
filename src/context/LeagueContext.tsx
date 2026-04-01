@@ -858,24 +858,16 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         return (data || []).map(mapDBLeague);
     };
 
-    const loadPublicLeague = useCallback(async (slugOrId: string) => {
+    const loadPublicLeague = useCallback(async (slugOrId: string, forceReset = false) => {
         if (!slugOrId) return false;
         
         try {
             const isSameLeague = league && (league.slug === slugOrId || league.id === slugOrId);
 
-            if (!isSameLeague) {
-                console.log('LeagueContext: Resetting data for new public league');
-                setLoading(true);
-                setDataLoading(true); // Ensure full reload state for new league IMMEDIATELY
-                setRawTeams([]);
-                setRawMatches([]);
-                setBrackets([]);
-                setUserInteractions([]);
-                setInteractionCounts({});
-            } else {
-                console.log('LeagueContext: Same league requested, keeping current data for seamless transition');
-                // Silent update in background if it's the same league
+            if (forceReset || (slugOrId && !isSameLeague)) {
+                console.log('LeagueContext: Preparing for new public league data update');
+                // We set states but we don't clear completely yet to avoid too much jump
+                // unless it is a CLEARLY different league (which we handle below)
             }
             
             // Fetch by slug (case-insensitive for URL flexibility)
@@ -887,7 +879,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             let row = slugData?.[0];
 
             // If not found by slug, maybe it was an ID (UUID)
-            if (!row && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId)) {
+            if (!row && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId)) {
                 const { data: idData } = await supabase.from('leagues').select(`
                     *,
                     follower_count:followed_leagues(count)
@@ -897,41 +889,46 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
             if (row) {
                 const mapped = mapDBLeague(row);
-                
-                if (!isSameLeague || JSON.stringify(mapped) !== JSON.stringify(league)) {
+                const actualIsSame = league?.id === mapped.id;
+
+                if (!actualIsSame) {
+                    console.log('LeagueContext: Resetting data for new public league:', mapped.name);
+                    setLoading(true);
+                    setDataLoading(true);
+                    setRawTeams([]);
+                    setRawMatches([]);
+                    setBrackets([]);
+                    setUserInteractions([]);
+                    setInteractionCounts({});
+                    
                     setLeague(mapped);
                     localStorage.setItem('selectedLeagueId', mapped.id);
                     
-                    // SMART VIEW MODE: Only override if auth is settled and we are sure it's NOT the owner
                     if (!authLoading) {
                         const isOwner = user && mapped.userId === user.id;
-                        const hasAutoSwitched = sessionStorage.getItem(`auto_switched_${mapped.id}`);
-                        
                         if (isOwner) {
-                            // If owner, force Gestor Mode only if not already handled in this session
+                            const hasAutoSwitched = sessionStorage.getItem(`auto_switched_${mapped.id}`);
                             if (!hasAutoSwitched) {
                                 setIsPublicView(false);
                                 localStorage.setItem('isPublicView', 'false');
                                 sessionStorage.setItem(`auto_switched_${mapped.id}`, 'true');
                             }
-                        } else if (!isSameLeague) {
-                            // If NOT owner and first load of this league, default to Spectator
+                        } else {
                             setIsPublicView(true);
                         }
                     }
-                }
-
-                if (!isSameLeague || JSON.stringify(mapped) !== JSON.stringify(league)) {
+                } else if (JSON.stringify(mapped) !== JSON.stringify(league)) {
+                    // Just update metadata if same league but different data
                     setLeague(mapped);
-                    localStorage.setItem('selectedLeagueId', mapped.id);
                 }
                 
-                // If it's the SAME league, loadLeagueData will be called by useEffect [league?.id]
-                // But we already have the data, so it will be a background refresh.
                 return true;
             } else {
-                console.warn('LeagueContext: Public league not found');
-                setLeague(null);
+                // Not found. We only clear if it was a forced load that failed.
+                if (forceReset) {
+                    console.warn('LeagueContext: Public league not found for:', slugOrId);
+                    setLeague(null);
+                }
                 return false;
             }
         } catch (err) {
@@ -939,11 +936,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             return false;
         } finally {
             setLoading(false);
-            setDataLoading(false); // Safety: ensure data loading is also reset
+            setDataLoading(false);
             console.log('LeagueContext: loadPublicLeague completed');
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [user?.id, authLoading]);
 
     const loadUserInteractions = useCallback(async (leagueId: string) => {
         if (!user) { setUserInteractions([]); return; }
