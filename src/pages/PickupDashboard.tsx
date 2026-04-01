@@ -100,13 +100,13 @@ const PickupDashboard = () => {
                     <div className="text-center md:text-left space-y-3">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/30 backdrop-blur-md border border-white/10">
                             <div className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                            <span className="text-[0.6rem] font-black text-amber-400 uppercase tracking-widest">Quadra Ativa • {league.pickupConfig.gameFormat}</span>
+                            <span className="text-[0.6rem] font-black text-amber-400 uppercase tracking-widest">Quadra Ativa • {league.pickupConfig?.gameFormat || '3x3'}</span>
                         </div>
                         <h1 className="text-4xl md:text-6xl font-outfit font-black text-white uppercase tracking-tight leading-none drop-shadow-xl">
                             Rachão Automático
                         </h1>
                         <p className="text-white/70 font-bold uppercase text-xs tracking-widest flex items-center justify-center md:justify-start gap-3">
-                            <Clock size={16} /> {league.pickupConfig.timeLimit} Min por partida • {league.pickupConfig.maxPoints} Pontos Limite
+                            <Clock size={16} /> {league.pickupConfig?.timeLimit || 10} Min por partida • {league.pickupConfig?.maxPoints || 21} Pontos Limite
                         </p>
                     </div>
 
@@ -149,7 +149,7 @@ const PickupDashboard = () => {
                     </div>
                     <div className="space-y-1 border-l border-white/5 pl-4 md:pl-8">
                         <p className="text-white/40 text-[0.55rem] font-black uppercase tracking-widest">Tipo de Rotação</p>
-                        <p className="text-base font-black text-white uppercase truncate">{league.pickupConfig.rotationType === 'winner_stays' ? 'King of Court' : 'Geral'}</p>
+                        <p className="text-base font-black text-white uppercase truncate">{league.pickupConfig?.rotationType === 'winner_stays' ? 'King of Court' : 'Geral'}</p>
                     </div>
                 </div>
             </header>
@@ -232,7 +232,7 @@ const PickupDashboard = () => {
                                     <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Inicie o próximo jogo usando os atletas da fila.</p>
                                 </div>
                                 
-                                {isAdmin && queue.length >= (parseInt(league.pickupConfig.gameFormat.split('x')[0]) * 2) && (
+                                {isAdmin && queue.length >= (parseInt((league.pickupConfig?.gameFormat || '3x3').split('x')[0]) * 2) && (
                                     <button 
                                         onClick={handleStartMatch}
                                         disabled={isStarting}
@@ -275,7 +275,7 @@ const PickupDashboard = () => {
                                         
                                         <div className="flex items-center gap-3">
                                             {/* Priority indicator if near head of queue */}
-                                            {idx < (parseInt(league.pickupConfig.gameFormat.split('x')[0]) * 2) ? (
+                                            {idx < (parseInt((league.pickupConfig?.gameFormat || '3x3').split('x')[0]) * 2) ? (
                                                 <div className="hidden md:flex flex-col items-end">
                                                     <span className="text-[0.5rem] font-black text-amber-500 uppercase tracking-widest">PRÓXIMO</span>
                                                     <div className="w-12 h-1 bg-amber-500/30 rounded-full mt-1 overflow-hidden">

@@ -46,14 +46,17 @@ const Settings = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [copied, setCopied] = useState(false);
     const [isPickupMode, setIsPickupMode] = useState(league?.isPickupMode ?? false);
-    const [pickupConfig, setPickupConfig] = useState<PickupConfig>(league?.pickupConfig ?? {
-        maxPoints: 21,
-        timeLimit: 10,
-        gameFormat: '3x3',
-        entryType: 'auto',
-        rotationType: 'winner_stays',
-        substitutionType: 'free',
-        pointsValue: { regular: 2, longRange: 3 }
+    const [pickupConfig, setPickupConfig] = useState<PickupConfig>({
+        maxPoints: league?.pickupConfig?.maxPoints ?? 21,
+        timeLimit: league?.pickupConfig?.timeLimit ?? 10,
+        gameFormat: league?.pickupConfig?.gameFormat ?? '3x3',
+        entryType: league?.pickupConfig?.entryType ?? 'auto',
+        rotationType: league?.pickupConfig?.rotationType ?? 'winner_stays',
+        substitutionType: league?.pickupConfig?.substitutionType ?? 'free',
+        pointsValue: {
+            regular: league?.pickupConfig?.pointsValue?.regular ?? 2,
+            longRange: league?.pickupConfig?.pointsValue?.longRange ?? 3
+        }
     });
 
     // Sync state with league data when it loads
@@ -76,14 +79,17 @@ const Settings = () => {
             setLat(league.lat ? String(league.lat) : '');
             setLng(league.lng ? String(league.lng) : '');
             setIsPickupMode(league.isPickupMode ?? false);
-            setPickupConfig(league.pickupConfig ?? {
-                maxPoints: 21,
-                timeLimit: 10,
-                gameFormat: '3x3',
-                entryType: 'auto',
-                rotationType: 'winner_stays',
-                substitutionType: 'free',
-                pointsValue: { regular: 2, longRange: 3 }
+            setPickupConfig({
+                maxPoints: league.pickupConfig?.maxPoints ?? 21,
+                timeLimit: league.pickupConfig?.timeLimit ?? 10,
+                gameFormat: league.pickupConfig?.gameFormat ?? '3x3',
+                entryType: league.pickupConfig?.entryType ?? 'auto',
+                rotationType: league.pickupConfig?.rotationType ?? 'winner_stays',
+                substitutionType: league.pickupConfig?.substitutionType ?? 'free',
+                pointsValue: {
+                    regular: league.pickupConfig?.pointsValue?.regular ?? 2,
+                    longRange: league.pickupConfig?.pointsValue?.longRange ?? 3
+                }
             });
         }
     }, [league]);
