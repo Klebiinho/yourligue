@@ -12,7 +12,8 @@ import TeamLogo from '../components/TeamLogo';
 const PickupDashboard = () => {
     const { 
         league, teams, matches, isAdmin,
-        joinPickupQueue, leavePickupQueue, startPickupMatch, getMatchSlug
+        joinPickupQueue, leavePickupQueue, startPickupMatch, getMatchSlug,
+        leagueBasePath
     } = useLeague();
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -71,7 +72,7 @@ const PickupDashboard = () => {
                 // Navigate to match control if admin using the new timestamped slug
                 if (isAdmin) {
                     const matchSlug = getMatchSlug(match);
-                    navigate(`/${league?.slug || league?.id}/${matchSlug}/match`);
+                    navigate(`${leagueBasePath}/${matchSlug}/match`);
                 }
             }
         } catch (err) {
@@ -168,7 +169,7 @@ const PickupDashboard = () => {
                                 STATUS DA QUADRA
                             </h2>
                             {liveMatch && (
-                                <button onClick={() => navigate(`/${league.slug || league.id}/${liveMatch.id}/match`)} className="px-4 py-2 rounded-xl bg-amber-500 text-white font-black text-[0.65rem] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center gap-2">
+                                <button onClick={() => navigate(`${leagueBasePath}/${liveMatch.id}/match`)} className="px-4 py-2 rounded-xl bg-amber-500 text-white font-black text-[0.65rem] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center gap-2">
                                     Placar Ao Vivo <ArrowRight size={14} />
                                 </button>
                             )}
@@ -312,7 +313,7 @@ const PickupDashboard = () => {
                             </h3>
                             <div className="space-y-3">
                                 <button 
-                                    onClick={() => navigate(`/${league.slug || league.id}/settings`)}
+                                    onClick={() => navigate(`${leagueBasePath}/settings`)}
                                     className="w-full py-3 rounded-xl bg-black/40 border border-white/5 text-[0.65rem] font-black text-white/60 uppercase tracking-widest hover:border-primary/40 hover:text-white transition-all flex items-center justify-center gap-2"
                                 >
                                     Alterar Regras do Rachão <ChevronRight size={14} />

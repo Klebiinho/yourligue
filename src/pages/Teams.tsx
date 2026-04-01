@@ -435,7 +435,7 @@ const Teams = () => {
                                 filteredTeams.map(team => (
                                     <div key={team.id} onClick={() => {
                                         const tSlug = getTeamSlug(team);
-                                        navigate(`/${leagueSlug}/${tSlug}/team`);
+                                        navigate(`${leagueBasePath}/${tSlug}/team`);
                                     }}
                                         className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 border relative group/team ${activeTeamId === team.id
                                             ? 'bg-primary/10 border-primary/25 shadow-sm'

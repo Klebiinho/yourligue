@@ -1,14 +1,12 @@
 import { useLeague } from '../context/LeagueContext';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Trophy, Info, Medal, TrendingUp, Heart } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
 
 const Standings = () => {
-    const { teams, matches, isPublicView, userInteractions, league, getTeamSlug } = useLeague();
+    const { teams, matches, isPublicView, userInteractions, league, getTeamSlug, leagueBasePath } = useLeague();
     const navigate = useNavigate();
-    const { slug } = useParams<{ slug: string }>();
-    const lSlug = slug || league?.slug || league?.id;
 
     const isBasket = league?.sportType === 'basketball';
 
@@ -98,7 +96,7 @@ const Standings = () => {
                                         return (
                                             <tr 
                                                 key={team.id} 
-                                                onClick={() => navigate(`/${lSlug}/${getTeamSlug(team)}/team`)}
+                                                onClick={() => navigate(`${leagueBasePath}/${getTeamSlug(team)}/team`)}
                                                 className={`group hover:bg-white/[0.06] transition-all duration-300 relative cursor-pointer ${isTop ? 'bg-primary/[0.03]' : isZone ? 'bg-danger/[0.02]' : ''} ${isMyTeam ? 'bg-accent/[0.05]' : ''}`}>
                                                 {/* Position # */}
                                                 <td className="px-2 sm:px-4 py-4 sm:py-4.5 text-center sticky left-0 z-20 transition-colors group-hover:bg-white/5 bg-[#0a0a0f] border-r border-white/5">

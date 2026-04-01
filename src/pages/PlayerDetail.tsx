@@ -9,7 +9,8 @@ const PlayerDetail = () => {
     const navigate = useNavigate();
     const { 
         league, teams, matches, getPlayerSlug, getTeamSlug, getMatchSlug,
-        loading: leagueLoading, isAdmin, isPublicView, updatePlayer, removePlayer
+        loading: leagueLoading, isAdmin, isPublicView, updatePlayer, removePlayer,
+        leagueBasePath
     } = useLeague();
 
     const [isEditing, setIsEditing] = useState(false);
@@ -173,7 +174,7 @@ const PlayerDetail = () => {
                                 )}
                             </div>
                             <div 
-                                onClick={() => navigate(`/${leagueSlug}/${getTeamSlug(team)}/team`)}
+                                onClick={() => navigate(`${leagueBasePath}/${getTeamSlug(team)}/team`)}
                                 className="flex items-center justify-center md:justify-start gap-4 cursor-pointer group/team"
                             >
                                 <TeamLogo src={team.logo} size={32} />
@@ -246,7 +247,7 @@ const PlayerDetail = () => {
                                 .replace(/^-|-$/g, '');
                                 
                             if (newSlug !== playerIdOrSlug) {
-                                navigate(`/${leagueSlug}/${newSlug}/player`, { replace: true });
+                                navigate(`${leagueBasePath}/${newSlug}/player`, { replace: true });
                             }
                         }} className="space-y-6">
                             <div className="flex gap-6 items-start">
@@ -445,7 +446,7 @@ const PlayerDetail = () => {
                             const score = isBasket ? events.filter(e => e.type.startsWith('points_')).reduce((acc,e) => acc + (parseInt(e.type.split('_')[1])), 0) : events.filter(e => e.type === 'goal' || e.type === 'penalty_goal').length;
                             
                             return (
-                                <div key={m.id} className="glass-panel p-4 flex flex-col gap-3 group hover:bg-white/[0.04] transition-colors cursor-pointer" onClick={() => navigate(`/${leagueSlug}/${getMatchSlug(m)}/match`)}>
+                                <div key={m.id} className="glass-panel p-4 flex flex-col gap-3 group hover:bg-white/[0.04] transition-colors cursor-pointer" onClick={() => navigate(`${leagueBasePath}/${getMatchSlug(m)}/match`)}>
                                     <div className="flex items-center justify-between text-[0.5rem] font-black text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">
                                         <span>{m.updatedAt ? new Date(m.updatedAt).toLocaleDateString() : 'Partida Encerrada'}</span>
                                         <span className="text-primary">Ver Súmula →</span>
