@@ -2009,36 +2009,91 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const endMatch = async (matchId: string, currentTimer: number) => {
         const m = rawMatches.find(x => x.id === matchId);
-        if (league?.isPickupMode && m) {
+        if (!m) return;
+
+        // 1. Mark current match as finished
+        await updateMatch(matchId, { status: 'finished', timer: currentTimer });
+
+        if (league?.isPickupMode) {
             console.log('[LeagueContext] Pickup match ending... handling rotation.');
-            const homePlayers = rawTeams.find(t => t.id === m.homeTeamId)?.players || [];
-            const awayPlayers = rawTeams.find(t => t.id === m.awayTeamId)?.players || [];
+            
+            // Get fresh player data to ensure consistency
+            const { data: allPlayers } = await supabase.from('players').select('*').eq('league_id', league.id);
+            if (!allPlayers) return;
+
+            const homePlayers = allPlayers.filter(p => p.team_id === m.homeTeamId && (p.pickup_status === 'in_court_a' || p.pickup_status === 'in_court_b'));
+            const awayPlayers = allPlayers.filter(p => p.team_id === m.awayTeamId && (p.pickup_status === 'in_court_a' || p.pickup_status === 'in_court_b'));
+            
             const isWinnerHome = m.homeScore > m.awayScore;
-            const winners = isWinnerHome ? homePlayers : awayPlayers;
             const losers = !isWinnerHome ? homePlayers : awayPlayers;
 
-            // In our pickup system, winning or losing always ends in "Available" or "Back of Queue"
-            // Start simple: reset both if not winner_stays, reset loser and available winner
-            if (league.pickupConfig?.rotationType === 'winner_stays') {
-                await supabase.from('players').update({ pickup_status: 'available' }).in('id', winners.map(p => p.id));
-                // Losers move back to the end of the queue if on automatic mode
-                if (league.pickupConfig?.entryType === 'auto') {
-                   const ids = losers.map(p => p.id);
-                   joinPickupQueue(ids);
+            const rotationType = league.pickupConfig?.rotationType || 'winner_stays';
+            const isAuto = league.pickupConfig?.entryType === 'auto';
+            const numPerTeam = parseInt((league.pickupConfig?.gameFormat || '3x3').split('x')[0]);
+
+            // 2. Handle rotation (Move people out of court)
+            if (rotationType === 'winner_stays') {
+                // Winners stay in their current status (court A or B)
+                // Losers move to queue or become available
+                if (isAuto) {
+                    await joinPickupQueue(losers.map(p => p.id));
                 } else {
-                   await supabase.from('players').update({ pickup_status: 'available' }).in('id', losers.map(p => p.id));
+                    await supabase.from('players').update({ 
+                        pickup_status: 'available', 
+                        team_id: null,
+                        queue_position: null 
+                    }).in('id', losers.map(p => p.id));
                 }
             } else {
-                // Full rotation: everyone back to available/queue
-                if (league.pickupConfig?.entryType === 'auto') {
-                   const ids = [...homePlayers, ...awayPlayers].map(p => p.id);
-                   joinPickupQueue(ids);
+                // All players move out (Swap All)
+                if (isAuto) {
+                    await joinPickupQueue([...homePlayers, ...awayPlayers].map(p => p.id));
                 } else {
-                   await supabase.from('players').update({ pickup_status: 'available' }).in('id', [...homePlayers, ...awayPlayers].map(p => p.id));
+                    await supabase.from('players').update({ 
+                        pickup_status: 'available', 
+                        team_id: null,
+                        queue_position: null 
+                    }).in('id', [...homePlayers, ...awayPlayers].map(p => p.id));
+                }
+            }
+
+            // 3. Automatic Start of Next Match
+            if (isAuto) {
+                // Wait a moment for the DB update above to propagate if needed, 
+                // but we can just use the logic here:
+                // Fetch queue again after rotation
+                const { data: updatedPlayers } = await supabase.from('players')
+                    .select('*')
+                    .eq('league_id', league.id)
+                    .order('queue_position', { ascending: true });
+                
+                if (updatedPlayers) {
+                    const currentInCourt = updatedPlayers.filter(p => p.pickup_status === 'in_court_a' || p.pickup_status === 'in_court_b');
+                    const currentQueue = updatedPlayers.filter(p => p.pickup_status === 'in_queue');
+                    
+                    const vacancies = (numPerTeam * 2) - currentInCourt.length;
+                    
+                    if (currentQueue.length >= vacancies) {
+                        // Determine who enters which "team"
+                        // Rule: First fill A vacancies, then B vacancies
+                        const courtA = updatedPlayers.filter(p => p.pickup_status === 'in_court_a');
+                        const courtB = updatedPlayers.filter(p => p.pickup_status === 'in_court_b');
+                        
+                        const needA = numPerTeam - courtA.length;
+                        const needB = numPerTeam - courtB.length;
+                        
+                        const nextForA = currentQueue.slice(0, needA);
+                        const nextForB = currentQueue.slice(needA, needA + needB);
+                        
+                        const homeIds = [...courtA.map(p => p.id), ...nextForA.map(p => p.id)];
+                        const awayIds = [...courtB.map(p => p.id), ...nextForB.map(p => p.id)];
+                        
+                        console.log('[LeagueContext] Auto-starting next pickup match...', { homeIds, awayIds });
+                        await startPickupMatch(homeIds, awayIds);
+                    }
                 }
             }
         }
-        return updateMatch(matchId, { status: 'finished', timer: currentTimer });
     };
     
     const updateTimer = async (matchId: string, time: number) => {
@@ -2111,16 +2166,21 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
         let newAwayScore = m.awayScore || 0;
         const isHome = String(event.teamId) === String(m.homeTeamId);
 
+        // Pickup point values
+        const regPoints = league?.isPickupMode ? (league.pickupConfig?.pointsValue?.regular || 2) : 2;
+        const longPoints = league?.isPickupMode ? (league.pickupConfig?.pointsValue?.longRange || 3) : 3;
+
         if (event.type === 'goal' || event.type === 'penalty_goal') {
             if (isHome) newHomeScore++; else newAwayScore++;
         } else if (event.type === 'own_goal') {
             if (isHome) newAwayScore++; else newHomeScore++;
         } else if (event.type === 'points_1') {
+            // Free throw is always 1
             if (isHome) newHomeScore += 1; else newAwayScore += 1;
         } else if (event.type === 'points_2') {
-            if (isHome) newHomeScore += 2; else newAwayScore += 2;
+            if (isHome) newHomeScore += regPoints; else newAwayScore += regPoints;
         } else if (event.type === 'points_3') {
-            if (isHome) newHomeScore += 3; else newAwayScore += 3;
+            if (isHome) newHomeScore += longPoints; else newAwayScore += longPoints;
         }
 
         const newMatchState = {
