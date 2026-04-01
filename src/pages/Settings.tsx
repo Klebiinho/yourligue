@@ -452,14 +452,14 @@ const Settings = () => {
                                     </div>
                                     
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-                                        <div className="space-y-2">
-                                            <h3 className="text-xl md:text-2xl font-black text-amber-500 font-outfit uppercase tracking-tight flex items-center gap-3">
+                                        <div className="space-y-1 md:space-y-2">
+                                            <h3 className="text-lg md:text-2xl font-black text-amber-500 font-outfit uppercase tracking-tight flex items-center gap-3">
                                                 🏀 MODO RACHÃO
                                             </h3>
-                                            <p className="text-[0.65rem] md:text-[0.7rem] text-slate-400 font-bold uppercase tracking-[0.15em] leading-relaxed max-w-md">Ative para jogos contínuos com rotação automática de jogadores e sem times fixos.</p>
+                                            <p className="text-[0.6rem] md:text-[0.7rem] text-slate-400 font-bold uppercase tracking-[0.12em] md:tracking-[0.15em] leading-relaxed max-w-sm">Junte-se à fila e jogue! Rotação automática de atletas para partidas rápidas e dinâmicas.</p>
                                         </div>
-                                        <div className="flex items-center justify-between md:justify-end gap-4 p-4 bg-black/20 rounded-2xl md:bg-transparent md:p-0">
-                                            <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest md:hidden">Ativar Modo</span>
+                                        <div className="flex items-center justify-between md:justify-end gap-3 p-4 bg-black/30 md:bg-transparent rounded-2xl md:p-0 border border-white/5 md:border-none shadow-sm md:shadow-none">
+                                            <span className="text-[0.55rem] font-black text-slate-400 uppercase tracking-widest md:hidden">Habilitar Recurso</span>
                                             <button 
                                                 type="button" 
                                                 onClick={() => setIsPickupMode(!isPickupMode)}
@@ -471,7 +471,7 @@ const Settings = () => {
                                     </div>
 
                                     {isPickupMode && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 animate-slide-down border-t border-amber-500/10 pt-8 mt-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 animate-slide-down border-t border-amber-500/10 pt-8 mt-6">
                                             <div className="space-y-5">
                                                 <div className="space-y-2">
                                                     <label className="text-[0.6rem] font-black text-amber-500/70 uppercase tracking-widest ml-1">Pontuação Máxima</label>

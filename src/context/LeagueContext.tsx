@@ -1434,6 +1434,16 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
                 address: (data as any).address,
                 lat: (data as any).lat,
                 lng: (data as any).lng,
+                is_pickup_mode: data.isPickupMode || false,
+                pickup_config: data.pickupConfig || {
+                    maxPoints: 21,
+                    timeLimit: 10,
+                    gameFormat: '3x3',
+                    entryType: 'auto',
+                    rotationType: 'winner_stays',
+                    substitutionType: 'free',
+                    pointsValue: { regular: 2, longRange: 3 }
+                },
                 slug
             }).select().single();
 
@@ -1478,7 +1488,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             sport_type: data.sportType,
             address: data.address,
             lat: data.lat,
-            lng: data.lng
+            lng: data.lng,
+            is_pickup_mode: data.isPickupMode,
+            pickup_config: data.pickupConfig
         };
 
         if (data.name && data.name !== league.name) {
@@ -1491,7 +1503,17 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
             updateData.slug = newSlug;
         }
 
-        await supabase.from('leagues').update(updateData).eq('id', league.id);
+        const { error } = await supabase.from('leagues').update(updateData).eq('id', league.id);
+        if (error) {
+            console.error('Error updating league:', error);
+            if (error.code === '42703') {
+                alert('Erro de Banco de Dados: Colunas do Modo Rachão não encontradas. \n\nPOR FAVOR, EXECUTE O SCRIPT SQL PARA ATUALIZAR SUA TABELA "leagues".');
+            } else {
+                alert('Erro ao salvar alterações: ' + error.message);
+            }
+            return;
+        }
+
         const updated = { ...league, ...data };
         if (updateData.slug) updated.slug = updateData.slug;
         setLeague(updated);
