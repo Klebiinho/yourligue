@@ -9,7 +9,7 @@ const Teams = () => {
     const { 
         league, teams, addTeam, updateTeam, deleteTeam, addPlayer, removePlayer, updatePlayer, 
         toggleCaptain, reorderPlayers, isPublicView, isAdmin, 
-        interactionCounts, loadTeamPhotos, getTeamSlug, getPlayerSlug, leagueBasePath,
+        interactionCounts, loadTeamPhotos, getTeamSlug, getPlayerSlug,
         loading: leagueLoading
     } = useLeague();
     const { leagueSlug, teamIdOrSlug } = useParams<{ leagueSlug?: string; teamIdOrSlug?: string }>();

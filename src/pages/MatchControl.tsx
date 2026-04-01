@@ -15,7 +15,7 @@ const MatchControl = () => {
         updateMatch, isPublicView, isAdmin, isPlayerOnPitch,
         currentYtLiveStream, isYtAuthenticated, recoverStreamDetails,
         ytLogin, setYtLivePrivacy, startMatch, pauseMatch, 
-        loading: leagueLoading, dataLoading, leagueBasePath,
+        loading: leagueLoading, dataLoading,
         getMatchSlug, getPlayerSlug
     } = useLeague();
 
@@ -333,7 +333,7 @@ const MatchControl = () => {
                     </p>
                 </div>
                 <button
-                    onClick={() => navigate(leagueBasePath + '/matches')}
+                    onClick={() => navigate(`/${leagueSlug}/matches`)}
                     className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all duration-200 group"
                 >
                     <ArrowLeft size={18} className="text-slate-400 group-hover:text-primary transition-colors" />
@@ -439,7 +439,7 @@ const MatchControl = () => {
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500 gap-4 opacity-75">
             <AlertCircle size={48} strokeWidth={1} />
             <p className="font-outfit font-black uppercase tracking-widest text-xs">Partida não encontrada</p>
-            <button onClick={() => navigate(leagueBasePath || '/')} className="text-primary font-bold hover:underline">Voltar ao Início</button>
+            <button onClick={() => navigate(`/${leagueSlug}`)} className="text-primary font-bold hover:underline">Voltar ao Início</button>
         </div>
     );
 
@@ -829,11 +829,11 @@ const MatchControl = () => {
                                 <div className="flex gap-2">
                                     <input 
                                         readOnly 
-                                        value={`${window.location.origin}${leagueBasePath}/${getMatchSlug(match)}/overlay`} 
+                                        value={`${window.location.origin}/${leagueSlug}/${getMatchSlug(match)}/overlay`} 
                                         className="bg-black/60 border border-primary/20 flex-1 px-4 py-3 rounded-xl text-[0.7rem] font-mono text-white focus:border-primary outline-none transition-all" 
                                     />
                                     <button 
-                                        onClick={() => { navigator.clipboard.writeText(`${window.location.origin}${leagueBasePath}/${getMatchSlug(match)}/overlay`); alert('Link do Placar Copiado!'); }}
+                                        onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/${leagueSlug}/${getMatchSlug(match)}/overlay`); alert('Link do Placar Copiado!'); }}
                                         className="bg-primary text-black w-12 h-12 flex items-center justify-center rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/30 active:scale-90"
                                     >
                                         <Check size={20} />
@@ -861,7 +861,7 @@ const MatchControl = () => {
                 </div>
             )}
             {/* Back Button */}
-            <button onClick={() => navigate(`${leagueBasePath}/matches`)} className="flex items-center gap-2 text-slate-500 hover:text-white text-xs font-black uppercase tracking-widest mb-6 transition-colors group">
+            <button onClick={() => navigate(`/${leagueSlug}/matches`)} className="flex items-center gap-2 text-slate-500 hover:text-white text-xs font-black uppercase tracking-widest mb-6 transition-colors group">
                 <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Voltar às Partidas
             </button>
 
@@ -1251,7 +1251,7 @@ const MatchControl = () => {
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
                                                                     <h4 
-                                                                        onClick={() => navigate(`${leagueBasePath}/${getPlayerSlug(player)}/player`)}
+                                                                        onClick={() => navigate(`/${leagueSlug}/${getPlayerSlug(player)}/player`)}
                                                                         className={`font-black uppercase leading-tight font-outfit truncate player-clickable ${isGestor ? 'text-[0.65rem]' : (player.id === suggestedMVPId ? 'text-warning text-sm' : 'text-white text-xs sm:text-sm')}`}
                                                                     >
                                                                         #{player.number} {player.name}
@@ -1623,7 +1623,7 @@ const MatchControl = () => {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <span 
-                                                    onClick={() => p && navigate(`${leagueBasePath}/${getPlayerSlug(p)}/player`)}
+                                                    onClick={() => p && navigate(`/${leagueSlug}/${getPlayerSlug(p)}/player`)}
                                                     className="font-outfit font-black text-white uppercase truncate text-xs block player-clickable"
                                                 >
                                                     {event.type === 'substitution' ? `${p?.name ?? '—'} ↔️ ${pOut?.name ?? '—'}` : (p?.name ?? '—')}

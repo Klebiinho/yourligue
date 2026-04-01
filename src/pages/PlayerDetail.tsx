@@ -9,8 +9,7 @@ const PlayerDetail = () => {
     const navigate = useNavigate();
     const { 
         league, teams, matches, getPlayerSlug, getTeamSlug, getMatchSlug,
-        loading: leagueLoading, isAdmin, isPublicView, updatePlayer, removePlayer,
-        leagueBasePath
+        loading: leagueLoading, isAdmin, isPublicView, updatePlayer, removePlayer
     } = useLeague();
 
     const [isEditing, setIsEditing] = useState(false);

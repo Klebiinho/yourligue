@@ -3,10 +3,11 @@ import { useLeague } from '../context/LeagueContext';
 import { Heart, Star, Wind, Shield, Users, TrendingUp, Calendar, Crown } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 import AdBanner from '../components/AdBanner';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const MyInteractions = () => {
-    const { teams, matches, userInteractions, league, leagueBasePath, getPlayerSlug, getMatchSlug, loadPlayerPhotos } = useLeague();
+    const { leagueSlug } = useParams<{ leagueSlug: string }>();
+    const { teams, matches, userInteractions, league, getPlayerSlug, getMatchSlug, loadPlayerPhotos } = useLeague();
     const navigate = useNavigate();
 
     const supporting = userInteractions.filter(i => i.interactionType === 'supporting');
@@ -53,7 +54,7 @@ const MyInteractions = () => {
                     Você ainda não escolheu um time para torcer, favoritar ou secar nesta liga.
                 </p>
                 <button
-                    onClick={() => navigate(leagueBasePath + '/teams')}
+                    onClick={() => navigate(`/${leagueSlug}/teams`)}
                     className="bg-primary hover:bg-primary-dark text-white font-black uppercase text-xs tracking-widest px-8 py-4 rounded-2xl transition-all active:scale-95 shadow-lg shadow-primary/20"
                 >
                     Explorar Times
@@ -267,7 +268,7 @@ const MyInteractions = () => {
                                                                 ) : 'Agendado'}
                                                             </div>
                                                             <button 
-                                                                onClick={() => navigate(`${leagueBasePath}/${getMatchSlug(m)}/match`)}
+                                                                onClick={() => navigate(`/${leagueSlug}/${getMatchSlug(m)}/match`)}
                                                                 className="flex items-center gap-2 px-5 py-2.5 bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-white rounded-xl transition-all font-black text-[0.6rem] uppercase tracking-widest flex-none active:scale-95 shadow-lg group/btn"
                                                             >
                                                                 Ver Súmula <TrendingUp size={12} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
@@ -300,7 +301,7 @@ const MyInteractions = () => {
                                     {selectedTeam.players.sort((a, b) => (a.isReserve ? 1 : 0) - (b.isReserve ? 1 : 0)).map(p => (
                                         <div 
                                             key={p.id} 
-                                            onClick={() => navigate(`${leagueBasePath}/${getPlayerSlug(p)}/player`)}
+                                            onClick={() => navigate(`/${leagueSlug}/${getPlayerSlug(p)}/player`)}
                                             className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/10 transition-all group cursor-pointer"
                                         >
                                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/10 to-transparent flex items-center justify-center text-xs font-black text-white relative overflow-hidden group-hover:scale-105 transition-transform">
@@ -324,7 +325,7 @@ const MyInteractions = () => {
                                             </div>
                                             <div 
                                                 className="text-right flex-none cursor-pointer hover:bg-white/5 p-1 rounded-lg transition-colors"
-                                                onClick={(e) => { e.stopPropagation(); navigate(`${leagueBasePath}/${getPlayerSlug(p)}/player`); }}
+                                                onClick={(e) => { e.stopPropagation(); navigate(`/${leagueSlug}/${getPlayerSlug(p)}/player`); }}
                                             >
                                                 <p className="text-xs font-black text-accent">
                                                     {league?.sportType === 'basketball'

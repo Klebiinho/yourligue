@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useLeague } from '../context/LeagueContext';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Shuffle, Shield, Trophy, LayoutGrid, Network, Info, ChevronRight, Check, X, Users } from 'lucide-react';
 import TeamLogo from '../components/TeamLogo';
 
 const Bracket = () => {
-    const { teams, brackets, generateBracket, updateBracket, generateGroups, isPublicView, isAdmin, leagueBasePath, getTeamSlug } = useLeague();
+    const { leagueSlug } = useParams<{ leagueSlug: string }>();
+    const { teams, brackets, generateBracket, updateBracket, generateGroups, isPublicView, isAdmin, getTeamSlug } = useLeague();
     const navigate = useNavigate();
     const [mode, setMode] = useState<'bracket' | 'groups'>('bracket');
     const [generating, setGenerating] = useState(false);
@@ -55,7 +56,7 @@ const Bracket = () => {
                     className={`w-64 bg-white/3 border ${b.status === 'finished' ? 'border-primary/30 shadow-lg shadow-primary/10' : 'border-white/5 shadow-xl'} rounded-2xl overflow-hidden ${(isPublicView || !isAdmin) ? 'cursor-default' : 'cursor-pointer'} backdrop-blur-md`}>
 
                     <div 
-                        onClick={(e) => { if (ht) { e.stopPropagation(); navigate(`${leagueBasePath}/${getTeamSlug(ht)}/team`); } }}
+                        onClick={(e) => { if (ht) { e.stopPropagation(); navigate(`/${leagueSlug}/${getTeamSlug(ht)}/team`); } }}
                         className={`flex items-center gap-3 p-3 transition-colors cursor-pointer ${b.status === 'finished' && b.homeScore > b.awayScore ? 'bg-primary/20 text-white' : 'hover:bg-white/10'}`}
                     >
                         <TeamLogo src={ht?.logo} size={28} />
@@ -70,7 +71,7 @@ const Bracket = () => {
                     <div className="h-px bg-white/5" />
 
                     <div 
-                        onClick={(e) => { if (at) { e.stopPropagation(); navigate(`${leagueBasePath}/${getTeamSlug(at)}/team`); } }}
+                        onClick={(e) => { if (at) { e.stopPropagation(); navigate(`/${leagueSlug}/${getTeamSlug(at)}/team`); } }}
                         className={`flex items-center gap-3 p-3 transition-colors cursor-pointer ${b.status === 'finished' && b.awayScore > b.homeScore ? 'bg-primary/20 text-white' : 'hover:bg-white/10'}`}
                     >
                         <TeamLogo src={at?.logo} size={28} />
@@ -248,7 +249,7 @@ const Bracket = () => {
                                     <div className="p-4 space-y-2">
                                         {groups[gn].map((t, idx) => (
                                             <div key={t.id} 
-                                                onClick={() => navigate(`${leagueBasePath}/${getTeamSlug(t)}/team`)}
+                                                onClick={() => navigate(`/${leagueSlug}/${getTeamSlug(t)}/team`)}
                                                 className="flex items-center gap-4 p-3.5 rounded-xl bg-white/3 border border-white/5 hover:bg-white/10 transition-all group cursor-pointer">
                                                 <div className="relative">
                                                     <TeamLogo src={t.logo} size={36} />
