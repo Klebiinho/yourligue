@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Swords, Trophy, Settings, GitBranch, ArrowLeftRight, Grid3x3, X, Signal, Home, Heart, Zap } from 'lucide-react';
+import { LayoutDashboard, Users, Swords, Trophy, Settings, GitBranch, ArrowLeftRight, Grid3x3, X, Signal, Home, Heart } from 'lucide-react';
 import { useLeague } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
 import TeamLogo from './TeamLogo';
@@ -13,7 +13,6 @@ const navItems = [
     { to: '/teams', icon: Users, label: 'Times', shortLabel: 'Times' },
     { to: '/bracket', icon: GitBranch, label: 'Chaveamento', shortLabel: 'Chaveam.' },
     { to: '/torcedor', icon: Heart, label: 'Minha Torcida', shortLabel: 'Torcida' },
-    { to: '/pickups', icon: Zap, label: 'Modo Rachão', shortLabel: 'Rachão' },
     { to: '/settings', icon: Settings, label: 'Config.', shortLabel: 'Config.' },
 ];
 
@@ -43,14 +42,10 @@ const Sidebar = () => {
 
     // Filter nav items: if it's public view OR user is not an admin, show only base items
     const filteredNavItems = (isPublicView || !isAdmin)
-        ? navItems.filter(item => ['/', '/live', '/matches', '/standings', '/bracket', '/teams', '/torcedor', '/pickups'].includes(item.to))
+        ? navItems.filter(item => ['/', '/live', '/matches', '/standings', '/bracket', '/teams', '/torcedor'].includes(item.to))
         : navItems;
 
-    // Further filter out pickups if not enabled in league
-    const finalNavItems = filteredNavItems.filter(item => {
-        if (item.to === '/pickups' && !league?.isPickupMode) return false;
-        return true;
-    });
+    const finalNavItems = filteredNavItems;
 
     const primaryItems = finalNavItems.slice(0, 4);
     const secondaryItems = finalNavItems.slice(4);

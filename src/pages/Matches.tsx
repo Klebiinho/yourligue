@@ -8,7 +8,7 @@ import AdBanner from '../components/AdBanner';
 
 const Matches = () => {
     const { user } = useAuth();
-    const { teams, matches, userInteractions, createMatch, startMatch, deleteMatch, updateMatch, isPublicView, isAdmin, leagueBasePath, setShowAuthModal, getMatchSlug, getTeamSlug } = useLeague();
+    const { league, teams, matches, userInteractions, createMatch, startMatch, deleteMatch, updateMatch, isPublicView, isAdmin, leagueBasePath, setShowAuthModal, getMatchSlug, getTeamSlug } = useLeague();
     const navigate = useNavigate();
     const [homeTeamId, setHomeTeamId] = useState(teams[0]?.id || '');
     const [awayTeamId, setAwayTeamId] = useState(teams[1]?.id || '');
@@ -123,10 +123,18 @@ const Matches = () => {
                 </div>
                 {!isPublicView && isAdmin && (
                     <button
-                        onClick={() => { setFormOpen(!formOpen); setEditingMatchId(null); resetForm(); }}
+                        onClick={() => { 
+                            if (league?.isPickupMode) {
+                                navigate(`${leagueBasePath}/pickups`);
+                            } else {
+                                setFormOpen(!formOpen); 
+                                setEditingMatchId(null); 
+                                resetForm(); 
+                            }
+                        }}
                         className="flex items-center gap-2 bg-primary text-white font-black py-3 px-6 rounded-2xl shadow-[0_8px_25px_rgba(109,40,217,0.35)] hover:brightness-110 active:scale-95 transition-all text-xs uppercase tracking-widest flex-none"
                     >
-                        <PlusCircle size={16} strokeWidth={3} /> Nova Partida
+                        <PlusCircle size={16} strokeWidth={3} /> {league?.isPickupMode ? 'Gerenciar Rachão' : 'Nova Partida'}
                     </button>
                 )}
             </header>

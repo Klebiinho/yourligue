@@ -186,17 +186,27 @@ const Dashboard = () => {
                         </button>
                     )}
                     {!isPublicView && isAdmin && league && (
-                        <button
-                            onClick={() => {
-                                const baseUrl = window.location.origin;
-                                const url = `${baseUrl}/${league.slug || league.id}/home`;
-                                navigator.clipboard.writeText(url);
-                                alert('Link da visão de telespectador copiado!');
-                            }}
-                            className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all text-[0.6rem] font-black uppercase tracking-widest flex-none self-start mt-1"
-                        >
-                            <ArrowRight size={12} className="rotate-[-45deg]" /> Compartilhar
-                        </button>
+                        <div className="flex items-center gap-2 flex-none self-start mt-1">
+                            {league.isPickupMode && (
+                                <button
+                                    onClick={() => navigate(`${leagueBasePath}/pickups`)}
+                                    className="flex items-center gap-2 bg-primary text-white border border-primary/20 px-3 py-1.5 rounded-xl text-[0.6rem] font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-primary/20"
+                                >
+                                    <Zap size={12} fill="currentColor" /> Gerenciar Rachão
+                                </button>
+                            )}
+                            <button
+                                onClick={() => {
+                                    const baseUrl = window.location.origin;
+                                    const url = `${baseUrl}/${league.slug || league.id}/home`;
+                                    navigator.clipboard.writeText(url);
+                                    alert('Link da visão de telespectador copiado!');
+                                }}
+                                className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all text-[0.6rem] font-black uppercase tracking-widest"
+                            >
+                                <ArrowRight size={12} className="rotate-[-45deg]" /> Compartilhar
+                            </button>
+                        </div>
                     )}
                 </div>
             </header>
