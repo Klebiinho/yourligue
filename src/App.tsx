@@ -187,10 +187,6 @@ const MainContent = () => {
                         <Route path="/:slug/settings" element={<Settings />} />
                         <Route path="/:slug/sitemap" element={<Sitemap />} />
 
-                        <Route path="/:matchSlug/match" element={<MatchControl />} />
-                        <Route path="/:playerSlug/player" element={<PlayerDetail />} />
-                        <Route path="/:teamSlug/team" element={<Teams />} />
-
                         <Route path="/" element={<LeagueSelector />} />
                         <Route path="*" element={<Navigate to={slug ? `/${slug}/home` : "/"} replace />} />
                     </Routes>

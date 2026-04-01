@@ -1323,12 +1323,13 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
     const getMatchSlug = useCallback((m: Match) => {
         if (m.slug) return m.slug;
-        const ht = teamsRef.current.find(t => t.id === m.homeTeamId);
-        const at = teamsRef.current.find(t => t.id === m.awayTeamId);
+        const currentTeams = teamsRef.current.length > 0 ? teamsRef.current : rawTeams;
+        const ht = currentTeams.find(t => t.id === m.homeTeamId);
+        const at = currentTeams.find(t => t.id === m.awayTeamId);
         if (!ht || !at) return m.id;
         const date = m.scheduledAt ? new Date(m.scheduledAt).toLocaleDateString('pt-BR').replace(/\//g, '-') : '';
         return `${generateSlug(ht.name)}-x-${generateSlug(at.name)}${date ? '-' + date : ''}`;
-    }, []);
+    }, [rawTeams]);
 
     const getTeamSlug = useCallback((t: Team) => {
         return t.slug || generateSlug(t.name) || t.id;

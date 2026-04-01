@@ -47,7 +47,7 @@ const MatchControl = () => {
     });
     const [showYtSetup, setShowYtSetup] = useState(false);
     const [showFinishModal, setShowFinishModal] = useState(false);
-    const [finishedMatchVideoUrl, setFinishedMatchVideoUrl] = useState(match?.youtubeLiveId || '');
+    const [finishedMatchVideoUrl, setFinishedMatchVideoUrl] = useState('');
     const [isEditingYtUrl, setIsEditingYtUrl] = useState(false);
     const suggestedMVPId = useMemo(() => {
         if (!match || !homeTeam || !awayTeam) return null;
@@ -141,6 +141,12 @@ const MatchControl = () => {
             }
         }
     }, [confirmedPenaltyShooters, mId]);
+
+    useEffect(() => {
+        if (match?.youtubeLiveId && !finishedMatchVideoUrl) {
+            setFinishedMatchVideoUrl(match.youtubeLiveId);
+        }
+    }, [match?.youtubeLiveId]);
 
     useEffect(() => {
         if (match) {
@@ -382,7 +388,7 @@ const MatchControl = () => {
         await endMatch(mId, localSeconds);
         
         const updates: Partial<Match> = {
-            youtubeLiveId: videoId || undefined,
+            youtubeLiveId: videoId || match.youtubeLiveId,
             mvpPlayerId: selectedMVPId
         };
         
