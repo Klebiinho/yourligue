@@ -177,17 +177,17 @@ const MainContent = () => {
                         <Route path="/:leagueSlug/localizacao" element={<LeagueLocation />} />
 
                         {/* Standard League Pages */}
-                        <Route path="/:slug" element={<Dashboard />} />
-                        <Route path="/:slug/home" element={<Dashboard />} />
-                        <Route path="/:slug/matches" element={<Matches />} />
-                        <Route path="/:slug/teams" element={<Teams />} />
-                        <Route path="/:slug/standings" element={<Standings />} />
-                        <Route path="/:slug/bracket" element={<Bracket />} />
-                        <Route path="/:slug/torcedor" element={<MyInteractions />} />
-                        <Route path="/:slug/pickups" element={<PickupDashboard />} />
-                        <Route path="/:slug/live" element={<LiveMatches />} />
-                        <Route path="/:slug/settings" element={<Settings />} />
-                        <Route path="/:slug/sitemap" element={<Sitemap />} />
+                        <Route path="/:leagueSlug" element={<Dashboard />} />
+                        <Route path="/:leagueSlug/home" element={<Dashboard />} />
+                        <Route path="/:leagueSlug/matches" element={<Matches />} />
+                        <Route path="/:leagueSlug/teams" element={<Teams />} />
+                        <Route path="/:leagueSlug/standings" element={<Standings />} />
+                        <Route path="/:leagueSlug/bracket" element={<Bracket />} />
+                        <Route path="/:leagueSlug/torcedor" element={<MyInteractions />} />
+                        <Route path="/:leagueSlug/pickups" element={<PickupDashboard />} />
+                        <Route path="/:leagueSlug/live" element={<LiveMatches />} />
+                        <Route path="/:leagueSlug/settings" element={<Settings />} />
+                        <Route path="/:leagueSlug/sitemap" element={<Sitemap />} />
 
                         <Route path="/" element={<LeagueSelector />} />
                         <Route path="*" element={<Navigate to={slug ? `/${slug}/home` : "/"} replace />} />
