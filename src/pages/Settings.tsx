@@ -3,7 +3,7 @@ import { useLeague } from '../context/LeagueContext';
 import type { PickupConfig } from '../context/LeagueContext';
 import { useAuth } from '../context/AuthContext';
 import TeamLogo from '../components/TeamLogo';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Settings as SettingsIcon, Save, Image as ImageIcon, LogOut, Trophy, User, Users, ArrowLeftRight, Clock, Target, ShieldCheck, Mail, Share2, Copy, CheckCircle2, Megaphone, Plus, Trash2, Video, Layout, Monitor, X, Check, Edit2, Smartphone, ArrowUp, ArrowDown, MapPin, Zap } from 'lucide-react';
 
 const AD_POSITIONS = [
@@ -21,7 +21,8 @@ const AD_POSITIONS = [
 ];
 
 const Settings = () => {
-    const { league, updateLeague, isAdmin, ytLogin, ytLogout, isYtAuthenticated, leagueBasePath } = useLeague();
+    const { leagueSlug } = useParams<{ leagueSlug: string }>();
+    const { league, updateLeague, isAdmin, ytLogin, ytLogout, isYtAuthenticated } = useLeague();
     const { user, signOut } = useAuth();
     const navigate = useNavigate();
     const [name, setName] = useState(league?.name ?? '');
@@ -305,7 +306,7 @@ const Settings = () => {
 
     const handleSignOut = async () => {
         await signOut();
-        navigate(leagueBasePath || '/');
+        navigate(leagueSlug ? `/${leagueSlug}/home` : '/');
     };
 
     const handleAdSubmit = async (e: React.FormEvent) => {
