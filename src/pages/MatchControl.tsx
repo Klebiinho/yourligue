@@ -799,7 +799,7 @@ const MatchControl = () => {
                                             onClick={async (e) => {
                                                 const btn = e.currentTarget;
                                                 if (!isYtAuthenticated) {
-                                                    alert("Por favor, conecte sua conta do YouTube primeiro.");
+                                                    if (window.confirm("Você não está conectado ao YouTube ou sua sessão expirou. Deseja conectar agora para transmitir esta partida ao vivo?")) { await ytLogin(); }
                                                     return;
                                                 }
                                                 if (window.confirm("Deseja criar uma nova live para esta partida agora? Isso pode levar alguns segundos.")) {

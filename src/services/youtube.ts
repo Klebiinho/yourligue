@@ -42,6 +42,9 @@ export class YouTubeService {
                         }
                         this.accessToken = response.access_token;
                         localStorage.setItem('yt_access_token', response.access_token);
+                        const expiresIn = response.expires_in ? parseInt(response.expires_in, 10) : 3600;
+                        const expiresAt = Date.now() + expiresIn * 1000;
+                        localStorage.setItem('yt_expires_at', expiresAt.toString());
                         if (this.onAuthChange) this.onAuthChange(response.access_token);
                     },
                 });
@@ -68,6 +71,16 @@ export class YouTubeService {
     public subscribeAuth(callback: (token: string | null) => void) {
         this.onAuthChange = callback;
         const savedToken = localStorage.getItem('yt_access_token');
+        const expiresAtStr = localStorage.getItem('yt_expires_at');
+        
+        if (savedToken && expiresAtStr) {
+            const expiresAt = parseInt(expiresAtStr, 10);
+            if (Date.now() > expiresAt - 60000) {
+                this.logOut();
+                return;
+            }
+        }
+        
         if (savedToken) {
             this.accessToken = savedToken;
             callback(savedToken);
@@ -82,11 +95,20 @@ export class YouTubeService {
     public logOut() {
         this.accessToken = null;
         localStorage.removeItem('yt_access_token');
+        localStorage.removeItem('yt_expires_at');
         if (this.onAuthChange) this.onAuthChange(null);
     }
 
     public getIsAuthenticated(): boolean {
-        return !!this.accessToken;
+        if (!this.accessToken) return false;
+        const expiresAtStr = localStorage.getItem('yt_expires_at');
+        if (expiresAtStr) {
+            const expiresAt = parseInt(expiresAtStr, 10);
+            if (Date.now() > expiresAt - 60000) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private async request(url: string, options: RequestInit, retryCount = 0): Promise<Response> {
@@ -106,7 +128,12 @@ export class YouTubeService {
                     this.tokenClient.callback = (resp: any) => {
                         this.tokenClient.callback = originalCallback;
                         if (resp.error) resolve(null);
-                        else resolve(resp.access_token);
+                        else {
+                            const expiresIn = resp.expires_in ? parseInt(resp.expires_in, 10) : 3600;
+                            const expiresAt = Date.now() + expiresIn * 1000;
+                            localStorage.setItem('yt_expires_at', expiresAt.toString());
+                            resolve(resp.access_token);
+                        }
                     };
                     this.tokenClient.requestAccessToken({ prompt: 'none' });
                 });

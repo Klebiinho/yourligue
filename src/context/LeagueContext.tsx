@@ -544,7 +544,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const ytLogout = () => ytService.logOut();
-    const isYtAuthenticated = !!ytToken;
+
+    const isYtAuthenticated = useMemo(() => {
+        if (!ytToken) return false;
+        return ytService.getIsAuthenticated();
+    }, [ytToken]);
     const recoverStreamDetails = async (broadcastId: string) => {
         if (!isYtAuthenticated) return;
         try {
